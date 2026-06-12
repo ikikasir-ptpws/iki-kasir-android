@@ -1,3 +1,32 @@
 <resources>
     <string name="app_name">IKIKASIR</string>
+
+    <string name="screen_splash">Splash</string>
+    <string name="screen_login">Login</string>
+    <string name="screen_dashboard">Dashboard</string>
+
+    <!-- Bottom Navigation -->
+    <string name="screen_kasir">Kasir</string>
+    <string name="screen_produk">Produk</string>
+    <string name="screen_riwayat">Riwayat</string>
+    <string name="screen_profil">Profil</string>
+
+    <!-- Produk -->
+    <string name="screen_cari_menu">Cari Menu</string>
+    <string name="screen_kategori_produk">Kategori Produk</string>
+    <string name="screen_manajemen_stok">Manajemen Stok</string>
+    <string name="screen_barang_rusak">Barang Rusak &amp; Expired</string>
+
+    <!-- Penjualan -->
+    <string name="screen_transaksi">Transaksi</string>
+
+    <!-- Keuangan -->
+    <string name="screen_laporan_keuangan">Laporan Keuangan</string>
+    <string name="screen_hutang">Hutang</string>
+    <string name="screen_auditlog">Audit Log</string>
+    <string name="screen_laporan_penjualan">Laporan Penjualan</string>
+
+    <!-- Pengguna -->
+    <string name="screen_pengguna">Pengguna</string>
+    <string name="screen_pengaturan">Pengaturan Menu</string>
 </resources>
