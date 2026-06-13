@@ -47,7 +47,7 @@ fun DaftarKategoriScreen(
                 title = {
                     Text(
                         text = "Kategori Produk",
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         fontFamily = interfamily,
                         fontSize = 20.sp
                     )

@@ -2,6 +2,7 @@ package com.example.app.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -29,66 +30,89 @@ fun MenuFullScreen(
 ) {
     val queryState = remember { mutableStateOf("") }
 
+    val sections = linkedMapOf(
+        "Produk" to listOf(
+            Triple(R.drawable.produk, "Produk", Color(0xFFF0FDF4)),
+            Triple(R.drawable.kategori, "Kategori Produk", Color(0xFFFAF5FF)),
+            Triple(R.drawable.manajemenstok, "Manajemen Stok", Color(0xFFFFF7ED)),
+            Triple(R.drawable.barangrusak, "Barang Rusak Exp", Color(0xFFFDF2F8))
+        ),
+        "Penjualan" to listOf(
+            Triple(R.drawable.kasirmenu, "Kasir", Color(0xFFEFF6FF)),
+            Triple(R.drawable.transaksi, "Transaksi", Color(0xFFECFEFF))
+        ),
+        "Keuangan" to listOf(
+            Triple(R.drawable.laporankeuangan, "Laporan Keuangan", Color(0xFFFFF0F6)),
+            Triple(R.drawable.hutang, "Hutang", Color(0xFFFFF7ED)),
+            Triple(R.drawable.auditlog, "Auditlog", Color(0xFFFFF6F0)),
+            Triple(R.drawable.laporanpenjualan, "Laporan Penjualan", Color(0xFFEFFCF8))
+        ),
+        "Pengguna" to listOf(
+            Triple(R.drawable.pengguna, "Pengguna", Color(0xFFEFF1FF)),
+            Triple(R.drawable.pengaturanmenu, "Pengaturan Menu", Color(0xFFF4F7FF))
+        )
+    )
+
     Scaffold(
         containerColor = Color(0xFFF0F4FF)
     ) { paddingValues ->
-        Column(
+
+        val query = queryState.value.trim()
+
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFF0F4FF))
                 .padding(paddingValues)
         ) {
-            TopBar(title = "Semua Menu", onBack = onBack)
-            Spacer(modifier = Modifier.height(12.dp))
-            SearchField(
-                query = queryState.value,
-                onQueryChange = { queryState.value = it }
-            )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            val query = queryState.value.trim()
-
-            // Define sections inline using Triple<iconRes, label, bgColor>
-            val sections = linkedMapOf(
-                "Produk" to listOf(
-                    Triple(R.drawable.produk, "Produk", Color(0xFFF0FDF4)),
-                    Triple(R.drawable.kategori, "Kategori Produk", Color(0xFFFAF5FF)),
-                    Triple(R.drawable.manajemenstok, "Manajemen Stok", Color(0xFFFFF7ED)),
-                    Triple(R.drawable.barangrusak, "Barang Rusak Exp", Color(0xFFFDF2F8))
-                ),
-                "Penjualan" to listOf(
-                    Triple(R.drawable.kasirmenu, "Kasir", Color(0xFFEFF6FF)),
-                    Triple(R.drawable.transaksi, "Transaksi", Color(0xFFECFEFF))
-                ),
-                "Keuangan" to listOf(
-                    Triple(R.drawable.laporankeuangan, "Laporan Keuangan", Color(0xFFFFF0F6)),
-                    Triple(R.drawable.hutang, "Hutang", Color(0xFFFFF7ED)),
-                    Triple(R.drawable.auditlog, "Auditlog", Color(0xFFFFF6F0)),
-                    Triple(R.drawable.laporanpenjualan, "Laporan Penjualan", Color(0xFFEFFCF8))
-                ),
-                "Pengguna" to listOf(
-                    Triple(R.drawable.pengguna, "Pengguna", Color(0xFFEFF1FF)),
-                    Triple(R.drawable.pengaturanmenu, "Pengaturan Menu", Color(0xFFF4F7FF))
+            item {
+                TopBar(
+                    title = "Semua Menu",
+                    onBack = onBack
                 )
-            )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                SearchField(
+                    query = queryState.value,
+                    onQueryChange = { queryState.value = it }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             if (query.isEmpty()) {
-                // Show grouped sections like dashboard
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    sections.forEach { (title, items) ->
-                        SectionTitle(title = title)
-                        MenuRowsTriple(items = items, onItemClick = onItemClick)
+
+                sections.forEach { entry ->
+
+                    item {
+                        SectionTitle(title = entry.key)
+
+                        MenuRowsTriple(
+                            items = entry.value,
+                            onItemClick = onItemClick
+                        )
+
                         Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
+
             } else {
-                // Filter all items and show results
-                val all = sections.flatMap { it.value }
-                val filtered = all.filter { it.second.contains(query, ignoreCase = true) }
-                SectionTitle(title = "Hasil")
+
+                val filtered = sections
+                    .flatMap { it.value }
+                    .filter {
+                        it.second.contains(query, ignoreCase = true)
+                    }
+
+                item {
+                    SectionTitle(title = "Hasil")
+                }
+
                 if (filtered.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+
+                    item {
                         Text(
                             text = "Tidak ada hasil untuk \"$query\"",
                             fontSize = 14.sp,
@@ -97,9 +121,20 @@ fun MenuFullScreen(
                             modifier = Modifier.padding(24.dp)
                         )
                     }
+
                 } else {
-                    MenuRowsTriple(items = filtered, onItemClick = onItemClick)
+
+                    item {
+                        MenuRowsTriple(
+                            items = filtered,
+                            onItemClick = onItemClick
+                        )
+                    }
                 }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }

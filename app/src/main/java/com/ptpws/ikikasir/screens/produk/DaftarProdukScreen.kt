@@ -48,7 +48,7 @@ fun DaftarProdukScreen(
                 title = {
                     Text(
                         text = "Daftar Produk",
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         fontFamily = interfamily,
                         fontSize = 20.sp, color = Color.Black
                     )

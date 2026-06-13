@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             IKIKASIRTheme {
 //                AppNavHost()
-                ManajemenStokScreen()
+                MenuFullScreen ()
             }
         }
     }

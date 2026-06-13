@@ -51,7 +51,7 @@ fun ManajemenStokScreen(
                 title = {
                     Text(
                         text = "Manajemen Stok",
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         fontSize = 20.sp
                     )
                 },
@@ -89,7 +89,7 @@ fun ManajemenStokScreen(
                 .padding(paddingValues)
         ) {
 
-            // ── Tab Row ─────────────────────────────────────────────────────
+            // Tab Row
             TabRow(
                 selectedTabIndex = pagerState.currentPage,
                 containerColor = Color(0xFFF3F4F6),
@@ -143,7 +143,6 @@ fun ManajemenStokScreen(
                 )
             }
 
-            // ── Horizontal Pager — panggil screen masing-masing ────────────
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize()
