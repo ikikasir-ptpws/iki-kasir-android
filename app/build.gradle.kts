@@ -54,6 +54,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     //navcontroler
     implementation(libs.androidx.navigation.compose)
+    //coil
+    implementation("io.coil-kt:coil-compose:2.6.0")
     implementation(libs.material3)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
