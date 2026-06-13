@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.app.ui.screen.DashboardScreen
+import com.example.app.ui.screen.MenuFullScreen
 import com.ikikasir.app.ui.screen.LoginScreen
 import com.ptpws.ikikasir.screens.SplashScreen
 import com.ptpws.ikikasir.screens.navigation.AppNavHost
@@ -24,7 +25,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             IKIKASIRTheme {
 //                AppNavHost()
-                DashboardScreen()
+                MenuFullScreen()
             }
         }
     }
