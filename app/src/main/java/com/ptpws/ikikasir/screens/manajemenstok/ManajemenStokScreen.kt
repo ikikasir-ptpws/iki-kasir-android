@@ -52,6 +52,7 @@ fun ManajemenStokScreen(
                     Text(
                         text = "Manajemen Stok",
                         fontWeight = FontWeight.SemiBold,
+                        color = Color.Black,
                         fontSize = 20.sp
                     )
                 },
