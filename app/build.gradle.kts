@@ -56,6 +56,10 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     //coil
     implementation("io.coil-kt:coil-compose:2.6.0")
+    //diagram
+    implementation("com.patrykandpatrick.vico:core:1.15.0")
+    implementation("com.patrykandpatrick.vico:compose:1.15.0")
+    implementation("com.patrykandpatrick.vico:compose-m3:1.15.0")
     implementation(libs.material3)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
