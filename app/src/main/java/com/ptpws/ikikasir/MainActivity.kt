@@ -17,10 +17,12 @@ import com.example.app.ui.screen.MenuFullScreen
 import com.ikikasir.app.ui.screen.LoginScreen
 import com.ptpws.ikikasir.screens.SplashScreen
 import com.ptpws.ikikasir.screens.keuangan.AuditLogScreen
+import com.ptpws.ikikasir.screens.keuangan.ManajemenHutangScreen
 import com.ptpws.ikikasir.screens.keuangan.MetodePembayaranScreen
 import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
 import com.ptpws.ikikasir.screens.navigation.AppNavHost
 import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiScreen
+import com.ptpws.ikikasir.screens.penjualan.LaporanPenjualanScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
 import com.ptpws.ikikasir.screens.promo.ManajemenPromoScreen
 import com.ptpws.ikikasir.ui.screens.kasir.KasirScreen
@@ -33,7 +35,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             IKIKASIRTheme {
 //                AppNavHost()
-                MetodePembayaranScreen()
+                LaporanPenjualanScreen()
             }
         }
     }

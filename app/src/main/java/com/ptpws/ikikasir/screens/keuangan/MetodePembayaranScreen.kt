@@ -81,7 +81,7 @@ fun MetodePembayaranScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
-            // ── Summary Card Total Metode Aktif ─────────────────────────────
+            // Card Total Metode Aktif
             item {
                 Box(
                     modifier = Modifier
@@ -206,7 +206,7 @@ fun MetodePembayaranScreen(
                 }
             }
 
-            // ── Header Section ──────────────────────────────────────────────
+            // Header Section
             item {
                 Text(
                     text = "ATUR METODE PEMBAYARAN",
@@ -218,7 +218,7 @@ fun MetodePembayaranScreen(
                 )
             }
 
-            // ── Toggle Card: Cash ───────────────────────────────────────────
+            // Toggle Card: Cash
             item {
                 MetodeToggleCard(
                     icon = Icons.Default.Wallet,
@@ -231,7 +231,7 @@ fun MetodePembayaranScreen(
                 )
             }
 
-            // ── Toggle Card: QRIS ───────────────────────────────────────────
+            // Toggle Card: QRIS
             item {
                 MetodeToggleCard(
                     icon = Icons.Default.QrCode,
@@ -244,7 +244,7 @@ fun MetodePembayaranScreen(
                 )
             }
 
-            // ── Toggle Card: Transfer ───────────────────────────────────────
+            //  Toggle Card: Transfer
             item {
                 MetodeToggleCard(
                     icon = Icons.Default.AccountBalance,
@@ -257,7 +257,7 @@ fun MetodePembayaranScreen(
                 )
             }
 
-            // ── Toggle Card: Hutang ─────────────────────────────────────────
+            // Toggle Card: Hutang
             item {
                 MetodeToggleCard(
                     icon = Icons.Default.CreditCard,
@@ -270,7 +270,7 @@ fun MetodePembayaranScreen(
                 )
             }
 
-            // ── Info Box Pemberitahuan ──────────────────────────────────────
+            // Info Box Pemberitahuan
             item {
                 Box(
                     modifier = Modifier
@@ -327,7 +327,7 @@ fun MetodePembayaranScreen(
     }
 }
 
-// ─── Metode Toggle Card ───────────────────────────────────────────────────────
+// Metode Toggle Card
 
 @Composable
 fun MetodeToggleCard(
@@ -402,7 +402,7 @@ fun MetodeToggleCard(
     }
 }
 
-// ─── Preview ──────────────────────────────────────────────────────────────────
+
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
