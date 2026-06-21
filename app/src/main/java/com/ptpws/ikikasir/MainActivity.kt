@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             IKIKASIRTheme {
 //                AppNavHost()
-                UpdateStokScreen()
+                KasirScreen()
             }
         }
     }
