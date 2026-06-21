@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import com.ptpws.ikikasir.screens.manajemenstok.component.DialogPindahStok
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -39,6 +40,25 @@ fun StokEtalaseScreen(
     onTambah: () -> Unit = {}
 ) {
     var cariproduketalase by remember { mutableStateOf("") }
+    var showDialogPindah by remember { mutableStateOf(false) }
+    var selectedProductName by remember { mutableStateOf("") }
+    var selectedProductStock by remember { mutableIntStateOf(0) }
+    var selectedProductImage by remember { mutableIntStateOf(R.drawable.kopi) }
+
+    if (showDialogPindah) {
+        DialogPindahStok(
+            title = "Pindah ke Gudang",
+            productName = selectedProductName,
+            stockLabel = "Stok Etalase",
+            maxStock = selectedProductStock,
+            imagePainter = painterResource(id = selectedProductImage),
+            onDismiss = { showDialogPindah = false },
+            onConfirm = { amount -> 
+                // Handle transfer logic here
+                showDialogPindah = false 
+            }
+        )
+    }
 
         LazyColumn(
             modifier = Modifier
@@ -233,7 +253,12 @@ fun StokEtalaseScreen(
                     isKritis = false,
                     painter = painterResource(R.drawable.kopi),
                     onRestock = {},
-                    onPindahKeGudang = {},
+                    onPindahKeGudang = {
+                        selectedProductName = "Kopi Arabika Toraja 250g Special Roast"
+                        selectedProductStock = 42
+                        selectedProductImage = R.drawable.kopi
+                        showDialogPindah = true
+                    },
                     onLihat = {}
                 )
             }
@@ -247,7 +272,12 @@ fun StokEtalaseScreen(
                     isKritis = true,
                     painter = painterResource(R.drawable.kopi),
                     onRestock = {},
-                    onPindahKeGudang = {},
+                    onPindahKeGudang = {
+                        selectedProductName = "Gula Semut Organik 500g"
+                        selectedProductStock = 5
+                        selectedProductImage = R.drawable.kopi
+                        showDialogPindah = true
+                    },
                     onLihat = {}
                 )
             }
@@ -261,7 +291,12 @@ fun StokEtalaseScreen(
                     isKritis = false,
                     painter = painterResource(R.drawable.kopi),
                     onRestock = {},
-                    onPindahKeGudang = {},
+                    onPindahKeGudang = {
+                        selectedProductName = "Teh Melati Premium Pack"
+                        selectedProductStock = 128
+                        selectedProductImage = R.drawable.kopi
+                        showDialogPindah = true
+                    },
                     onLihat = {}
                 )
             }
@@ -275,7 +310,12 @@ fun StokEtalaseScreen(
                     isKritis = false,
                     painter = painterResource(R.drawable.kopi),
                     onRestock = {},
-                    onPindahKeGudang = {},
+                    onPindahKeGudang = {
+                        selectedProductName = "Teh Melati Premium Pack"
+                        selectedProductStock = 128
+                        selectedProductImage = R.drawable.kopi
+                        showDialogPindah = true
+                    },
                     onLihat = {}
                 )
             }
