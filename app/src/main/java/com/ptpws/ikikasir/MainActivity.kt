@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             IKIKASIRTheme {
 //                AppNavHost()
-                TambahKategoriScreen()
+                ManajemenStokScreen()
             }
         }
     }
