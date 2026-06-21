@@ -14,6 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.app.ui.screen.DaftarProdukScreen
 import com.example.app.ui.screen.DashboardScreen
 import com.example.app.ui.screen.MenuFullScreen
+import com.example.app.ui.screen.TambahProdukScreen
 import com.ikikasir.app.ui.screen.LoginScreen
 import com.ptpws.ikikasir.screens.SplashScreen
 import com.ptpws.ikikasir.screens.keuangan.AuditLogScreen
@@ -25,6 +26,7 @@ import com.ptpws.ikikasir.screens.navigation.AppNavHost
 import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiScreen
 import com.ptpws.ikikasir.screens.penjualan.LaporanPenjualanScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
+import com.ptpws.ikikasir.screens.produk.TambahKategoriScreen
 import com.ptpws.ikikasir.screens.promo.ManajemenPromoScreen
 import com.ptpws.ikikasir.ui.screens.kasir.KasirScreen
 import com.ptpws.ikikasir.ui.theme.IKIKASIRTheme
@@ -36,7 +38,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             IKIKASIRTheme {
 //                AppNavHost()
-                ManajemenPenggunaScreen()
+                TambahKategoriScreen()
             }
         }
     }
