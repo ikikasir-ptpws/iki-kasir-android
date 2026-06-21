@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.screens.penjualan.component.BottomSheetPembayaran
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +43,17 @@ fun KasirScreen(
     onBayar: () -> Unit = {}
 ) {
     var cariprodukkasir by remember { mutableStateOf("") }
+    var showBottomSheetBayar by remember { mutableStateOf(false) }
+
+    if (showBottomSheetBayar) {
+        BottomSheetPembayaran(
+            onDismiss = { showBottomSheetBayar = false },
+            onProsesBayar = {
+                showBottomSheetBayar = false
+                onBayar()
+            }
+        )
+    }
 
     Scaffold(
         containerColor = Color(0xFFF3F4F6),
@@ -293,7 +305,7 @@ fun KasirScreen(
 
             item {
                 Button(
-                    onClick = onBayar,
+                    onClick = { showBottomSheetBayar = true },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp),
