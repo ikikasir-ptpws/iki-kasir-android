@@ -22,6 +22,7 @@ import com.ptpws.ikikasir.screens.keuangan.ManajemenHutangScreen
 import com.ptpws.ikikasir.screens.keuangan.MetodePembayaranScreen
 import com.ptpws.ikikasir.screens.manajemenpengguna.ManajemenPenggunaScreen
 import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
+import com.ptpws.ikikasir.screens.manajemenstok.component.UpdateStokScreen
 import com.ptpws.ikikasir.screens.navigation.AppNavHost
 import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiScreen
 import com.ptpws.ikikasir.screens.penjualan.LaporanPenjualanScreen
@@ -38,7 +39,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             IKIKASIRTheme {
 //                AppNavHost()
-                ManajemenStokScreen()
+                UpdateStokScreen()
             }
         }
     }
