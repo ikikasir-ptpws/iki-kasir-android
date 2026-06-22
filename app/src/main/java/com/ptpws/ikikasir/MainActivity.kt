@@ -20,6 +20,7 @@ import com.ptpws.ikikasir.screens.SplashScreen
 import com.ptpws.ikikasir.screens.keuangan.AuditLogScreen
 import com.ptpws.ikikasir.screens.keuangan.ManajemenHutangScreen
 import com.ptpws.ikikasir.screens.keuangan.MetodePembayaranScreen
+import com.ptpws.ikikasir.screens.keuangan.component.BayarHutangScreen
 import com.ptpws.ikikasir.screens.manajemenpengguna.ManajemenPenggunaScreen
 import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
 import com.ptpws.ikikasir.screens.manajemenstok.component.UpdateStokScreen
@@ -40,7 +41,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             IKIKASIRTheme {
 //                AppNavHost()
-                TambahPromoScreen()
+                BayarHutangScreen()
             }
         }
     }
