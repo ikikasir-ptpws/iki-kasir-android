@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -86,48 +87,50 @@ fun CatatHutangScreen(
             // ── Banner Input Transaksi
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(98.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     border = BorderStroke(1.dp, Color(0xFFE5E7EB))
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = "Input Transaksi",
-                                fontFamily = interfamily,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF111827)
-                            )
-                            Text(
-                                text = "Pastikan data pelanggan dan jumlah hutang sudah benar sebelum disimpan.",
-                                fontFamily = interfamily,
-                                fontSize = 12.sp,
-                                color = Color(0xFF6B7280)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Box(
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            imageVector = Icons.Default.ReceiptLong,
+                            contentDescription = null,
+                            tint = Color(0xFFDDD6FE),
                             modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFFEEF2FF)),
-                            contentAlignment = Alignment.Center
+                                .size(110.dp)
+                                .align(Alignment.CenterEnd)
+                                .offset(x = 35.dp, y = 35.dp)
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "📋",
-                                fontSize = 22.sp
-                            )
+                            Column(
+                                modifier = Modifier.weight(1f).padding(end = 40.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = "Input Transaksi",
+                                    fontFamily = interfamily,
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF111827)
+                                )
+                                Text(
+                                    text = "Pastikan data pelanggan dan jumlah hutang sudah benar sebelum disimpan.",
+                                    fontFamily = interfamily,
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF374151),
+                                    lineHeight = 16.sp,
+                                    maxLines = 2
+                                )
+                            }
                         }
                     }
                 }
