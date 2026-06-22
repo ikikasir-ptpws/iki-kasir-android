@@ -12,6 +12,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Payments
@@ -138,16 +139,17 @@ fun BayarHutangScreen(
 
                         Box(
                             modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFE5E7EB)),
+                                .align(Alignment.Top)
+                                .size(80.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFFFFFFF)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = namaPelanggan,
+                                imageVector = Icons.Default.AccountBalanceWallet,
+                                contentDescription = null,
                                 tint = Color(0xFF9CA3AF),
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(48.dp)
                             )
                         }
                     }
