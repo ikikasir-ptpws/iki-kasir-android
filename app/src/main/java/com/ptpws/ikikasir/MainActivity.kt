@@ -29,6 +29,7 @@ import com.ptpws.ikikasir.screens.penjualan.LaporanPenjualanScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
 import com.ptpws.ikikasir.screens.produk.TambahKategoriScreen
 import com.ptpws.ikikasir.screens.promo.ManajemenPromoScreen
+import com.ptpws.ikikasir.screens.promo.TambahPromoScreen
 import com.ptpws.ikikasir.ui.screens.kasir.KasirScreen
 import com.ptpws.ikikasir.ui.theme.IKIKASIRTheme
 
@@ -39,7 +40,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             IKIKASIRTheme {
 //                AppNavHost()
-                KasirScreen()
+                TambahPromoScreen()
             }
         }
     }
