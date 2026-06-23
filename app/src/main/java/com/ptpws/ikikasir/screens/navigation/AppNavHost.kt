@@ -33,6 +33,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.app.ui.screen.DaftarProdukScreen
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.example.app.ui.screen.DashboardScreen
@@ -65,7 +66,7 @@ fun AppNavHost() {
                 KasirScreen(navController)
             }
             composable(AppScreen.Produk.route) {
-                PlaceholderScreen("Produk")
+                DaftarProdukScreen(navController)
             }
             composable(AppScreen.Riwayat.route) {
                 PlaceholderScreen("Riwayat")

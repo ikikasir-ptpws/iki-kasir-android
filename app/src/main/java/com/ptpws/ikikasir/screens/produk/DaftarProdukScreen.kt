@@ -29,12 +29,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DaftarProdukScreen(
+    navController: NavController,
     onBack: () -> Unit = {},
     onTambah: () -> Unit = {}
 ) {
@@ -54,7 +57,9 @@ fun DaftarProdukScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {if (navController.currentDestination?.route == "produk") {
+                        navController.popBackStack()
+                    }}) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali"
@@ -71,6 +76,7 @@ fun DaftarProdukScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onTambah,
+                modifier = Modifier.padding(bottom = 86.dp),
                 containerColor = Color(0xFF4F46E5),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
@@ -92,7 +98,7 @@ fun DaftarProdukScreen(
                 start = 16.dp,
                 end = 16.dp,
                 top = 8.dp,
-                bottom = 80.dp
+                bottom = 120.dp
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -393,6 +399,6 @@ fun ProdukCardItem(
 @Composable
 fun DaftarProdukScreenPreview() {
     MaterialTheme {
-        DaftarProdukScreen()
+        DaftarProdukScreen(navController = rememberNavController())
     }
 }

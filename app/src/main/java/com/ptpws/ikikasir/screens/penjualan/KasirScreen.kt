@@ -71,7 +71,11 @@ fun KasirScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack()}) {
+                    IconButton(onClick = {
+                        if (navController.currentDestination?.route == "kasir") {
+                            navController.popBackStack()
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali"
