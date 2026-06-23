@@ -20,12 +20,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 
 @Composable
 fun MenuFullScreen(
-    onBack: () -> Unit = {},
+    navController: NavController,
     onItemClick: (String) -> Unit = {}
 ) {
     val queryState = remember { mutableStateOf("") }
@@ -69,7 +71,7 @@ fun MenuFullScreen(
             item {
                 TopBar(
                     title = "Semua Menu",
-                    onBack = onBack
+                    navController = navController
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -141,14 +143,16 @@ fun MenuFullScreen(
 }
 
 @Composable
-fun TopBar(title: String, onBack: () -> Unit) {
+fun TopBar(title: String, navController: NavController) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onBack) {
+        IconButton(onClick = {if (navController.currentDestination?.route == "semuamenu") {
+            navController.popBackStack()
+        }}) {
             Icon(
                 imageVector = Icons.Filled.ArrowBack,
                 contentDescription = "Kembali",
@@ -270,5 +274,5 @@ fun MenuRowsTriple(items: List<Triple<Int, String, Color>>, onItemClick: (String
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun MenuFullScreenPreview() {
-    MenuFullScreen()
+    MenuFullScreen(navController = rememberNavController())
 }

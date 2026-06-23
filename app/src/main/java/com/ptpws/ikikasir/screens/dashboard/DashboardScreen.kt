@@ -50,7 +50,7 @@ fun DashboardScreen(navController: NavController) {
         ) {
             item { HeaderSection() }
             item { StatCardsSection() }
-            item { SectionHeader(title = "Produk", onLihatSemua = {}) }
+            item { SectionHeader(title = "Produk", onLihatSemua = {navController.navigate(AppScreen.Semuamenu.route)}) }
             item { ProdukMenuSection(navController) }
             item {
                 Text(

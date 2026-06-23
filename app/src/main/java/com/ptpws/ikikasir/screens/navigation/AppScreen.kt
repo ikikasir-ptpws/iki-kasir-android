@@ -28,6 +28,12 @@ sealed class AppScreen(
         "dashboard"
     )
 
+    object Semuamenu : AppScreen(
+        R.string.screen_dashboard,
+        R.drawable.iconapk,
+        "semuamenu"
+    )
+
     object Kasir : AppScreen(
         R.string.screen_kasir,
         R.drawable.iconapk,

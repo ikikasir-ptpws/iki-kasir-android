@@ -37,6 +37,7 @@ import com.example.app.ui.screen.DaftarProdukScreen
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.example.app.ui.screen.DashboardScreen
+import com.example.app.ui.screen.MenuFullScreen
 import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
 import com.ptpws.ikikasir.screens.pengaturan.ProfilScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
@@ -64,6 +65,10 @@ fun AppNavHost() {
         ) {
             composable(AppScreen.Dashboard.route) {
                 DashboardScreen(navController)
+            }
+
+            composable(AppScreen.Semuamenu.route) {
+                MenuFullScreen(navController)
             }
             composable(AppScreen.Kasir.route) {
                 KasirScreen(navController)
