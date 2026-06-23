@@ -26,12 +26,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.commond.interfamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfilScreen(
-    onBack: () -> Unit = {},
+    navController: NavController,
     onEditProfil: () -> Unit = {},
     onKeamanan: () -> Unit = {},
     onAuditLog: () -> Unit = {},
@@ -54,7 +56,9 @@ fun ProfilScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {if (navController.currentDestination?.route == "profil") {
+                        navController.popBackStack()
+                    } }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
@@ -79,7 +83,7 @@ fun ProfilScreen(
                 start = 16.dp,
                 end = 16.dp,
                 top = 8.dp,
-                bottom = 24.dp
+                bottom = 86.dp
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -367,6 +371,6 @@ fun MenuAkunItem(
 @Composable
 fun ProfilScreenPreview() {
     MaterialTheme {
-        ProfilScreen()
+        ProfilScreen(navController = rememberNavController())
     }
 }

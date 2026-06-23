@@ -26,12 +26,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.commond.interfamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RiwayatTransaksiScreen(
-    onBack: () -> Unit = {},
+    navController: NavController,
     onDetailTransaksi: (String) -> Unit = {}
 ) {
     var cariTransaksi by remember { mutableStateOf("") }
@@ -51,7 +53,9 @@ fun RiwayatTransaksiScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { if (navController.currentDestination?.route == "riwayat") {
+                        navController.popBackStack()
+                    } }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
@@ -74,7 +78,7 @@ fun RiwayatTransaksiScreen(
                 start = 16.dp,
                 end = 16.dp,
                 top = 8.dp,
-                bottom = 24.dp
+                bottom = 86.dp
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -298,6 +302,20 @@ fun RiwayatTransaksiScreen(
                 )
             }
 
+            // Transaksi #TRX-2023-042
+            item {
+                TransaksiCardItem(
+                    kodeTransaksi = "#TRX-2023-042",
+                    jam = "14:30",
+                    metodePembayaran = "Cash",
+                    iconMetode = Icons.Default.Wallet,
+                    iconTint = Color(0xFF4F46E5),
+                    totalHarga = "Rp 150.000",
+                    statusBayar = "LUNAS",
+                    onDetail = { onDetailTransaksi("#TRX-2023-042") }
+                )
+            }
+
             // Transaksi #TRX-2023-041
             item {
                 TransaksiCardItem(
@@ -473,6 +491,6 @@ fun TransaksiCardItem(
 @Composable
 fun RiwayatTransaksiScreenPreview() {
     MaterialTheme {
-        RiwayatTransaksiScreen()
+        RiwayatTransaksiScreen(navController = rememberNavController())
     }
 }

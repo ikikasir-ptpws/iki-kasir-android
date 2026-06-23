@@ -30,11 +30,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.screens.navigation.AppScreen
 
 @Composable
-fun DashboardScreen() {
+fun DashboardScreen(navController: NavController) {
     Scaffold(
         containerColor = Color(0xFFF0F4FF),
     ) { paddingValues ->
@@ -48,7 +51,7 @@ fun DashboardScreen() {
             item { HeaderSection() }
             item { StatCardsSection() }
             item { SectionHeader(title = "Produk", onLihatSemua = {}) }
-            item { ProdukMenuSection() }
+            item { ProdukMenuSection(navController) }
             item {
                 Text(
                     text = "Penjualan",
@@ -276,7 +279,7 @@ fun SectionHeader(title: String, onLihatSemua: () -> Unit) {
 }
 
 @Composable
-fun ProdukMenuSection() {
+fun ProdukMenuSection(navController: NavController) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -287,13 +290,13 @@ fun ProdukMenuSection() {
             iconRes = R.drawable.produk,
             label = "Produk",
             bgColor = Color(0xFFF0FDF4),
-            onClick = { /* TODO: Navigasi ke Produk */ }
+            onClick = { navController.navigate(AppScreen.Produk.route) }
         )
         MenuIconItem(
             iconRes = R.drawable.kategori,
             label = "Kategori\nProduk",
             bgColor = Color(0xFFFAF5FF),
-            onClick = { /* TODO: Navigasi ke Kategori Produk */ }
+            onClick = { navController.navigate(AppScreen.KategoriProduk.route) }
         )
         MenuIconItem(
             iconRes = R.drawable.manajemenstok,
@@ -538,6 +541,6 @@ fun RingkasanCard(
 @Composable
 fun DashboardScreenPreview() {
     MaterialTheme {
-        DashboardScreen()
+        DashboardScreen(navController = rememberNavController())
     }
 }

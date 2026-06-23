@@ -37,6 +37,9 @@ import com.example.app.ui.screen.DaftarProdukScreen
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.example.app.ui.screen.DashboardScreen
+import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
+import com.ptpws.ikikasir.screens.pengaturan.ProfilScreen
+import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
 import com.ptpws.ikikasir.ui.screens.kasir.KasirScreen
 
 // Daftar item bottom navigation
@@ -60,7 +63,7 @@ fun AppNavHost() {
             modifier = Modifier.fillMaxSize()
         ) {
             composable(AppScreen.Dashboard.route) {
-                DashboardScreen()
+                DashboardScreen(navController)
             }
             composable(AppScreen.Kasir.route) {
                 KasirScreen(navController)
@@ -69,13 +72,13 @@ fun AppNavHost() {
                 DaftarProdukScreen(navController)
             }
             composable(AppScreen.Riwayat.route) {
-                PlaceholderScreen("Riwayat")
+                RiwayatTransaksiScreen(navController)
             }
             composable(AppScreen.Profil.route) {
-                PlaceholderScreen("Profil")
+                ProfilScreen(navController)
             }
             composable(AppScreen.KategoriProduk.route) {
-                PlaceholderScreen("Kategori Produk")
+                DaftarKategoriScreen(navController)
             }
             composable(AppScreen.ManajemenStok.route) {
                 PlaceholderScreen("Manajemen Stok")

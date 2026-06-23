@@ -29,13 +29,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DaftarKategoriScreen(
-    onBack: () -> Unit = {},
+    navController: NavController,
     onTambah: () -> Unit = {}
 ) {
     var carikategori by remember { mutableStateOf("") }
@@ -54,7 +56,9 @@ fun DaftarKategoriScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick =  {if (navController.currentDestination?.route == "kategori_produk") {
+                        navController.popBackStack()
+                    }}) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali"
@@ -140,7 +144,7 @@ fun DaftarKategoriScreen(
                                 ) {
                                     if (carikategori.isEmpty()) {
                                         Text(
-                                            text = "Cari Produk",
+                                            text = "Cari Kategori",
                                             fontFamily = interfamily,
                                             fontSize = 12.sp,
                                             color = Color(0x80474747)
@@ -328,6 +332,6 @@ fun KategoriCardItem(
 @Composable
 fun DaftarKategoriScreenPreview() {
     MaterialTheme {
-        DaftarKategoriScreen()
+        DaftarKategoriScreen(navController = rememberNavController())
     }
 }
