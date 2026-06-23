@@ -30,13 +30,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StokEtalaseScreen(
-    onBack: () -> Unit = {},
     onTambah: () -> Unit = {}
 ) {
     var cariproduketalase by remember { mutableStateOf("") }

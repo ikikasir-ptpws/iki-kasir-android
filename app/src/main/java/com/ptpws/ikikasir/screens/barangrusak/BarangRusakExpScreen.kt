@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 
@@ -77,7 +79,7 @@ private fun dummyBarangRusakExp(): List<BarangRusakExp> = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BarangRusakExpScreen(
-    onBack: () -> Unit = {},
+    navController: NavController,
     onTambahBarang: () -> Unit = {},
     onEditBarang: (BarangRusakExp) -> Unit = {},
     onHapusBarang: (BarangRusakExp) -> Unit = {}
@@ -106,7 +108,9 @@ fun BarangRusakExpScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { if (navController.currentDestination?.route == "barang_rusak_exp") {
+                        navController.popBackStack()
+                    } }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
@@ -394,6 +398,6 @@ private fun BarangRusakExpCard(
 @Composable
 fun BarangRusakExpScreenPreview() {
     MaterialTheme {
-        BarangRusakExpScreen()
+        BarangRusakExpScreen(navController = rememberNavController())
     }
 }

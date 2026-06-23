@@ -38,6 +38,7 @@ import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.example.app.ui.screen.DashboardScreen
 import com.example.app.ui.screen.MenuFullScreen
+import com.ptpws.ikikasir.screens.barangrusak.BarangRusakExpScreen
 import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
 import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
 import com.ptpws.ikikasir.screens.pengaturan.ProfilScreen
@@ -90,7 +91,7 @@ fun AppNavHost() {
                 ManajemenStokScreen(navController)
             }
             composable(AppScreen.BarangRusakExp.route) {
-                PlaceholderScreen("Barang Rusak & Exp")
+                BarangRusakExpScreen(navController)
             }
             composable(AppScreen.Transaksi.route) {
                 PlaceholderScreen("Transaksi")
@@ -172,12 +173,21 @@ fun IkiKasirBottomBar(navController: NavController, currentRoute: String?) {
                     isSelected = isSelected,
                     isCenter = isCenter,
                     onClick = {
-                        navController.navigate(screen.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
+                        if (currentRoute == screen.route) return@BottomNavItem
+                        
+                        if (screen.route == AppScreen.Dashboard.route) {
+                            navController.popBackStack(AppScreen.Dashboard.route, inclusive = false)
+                        } else {
+                            navController.navigate(screen.route) {
+                                val startRoute = navController.graph.findStartDestination().route
+                                if (startRoute != null) {
+                                    popUpTo(startRoute) {
+                                        saveState = true
+                                    }
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 )

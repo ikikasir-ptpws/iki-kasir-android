@@ -59,9 +59,9 @@ fun ManajemenStokScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = {{if (navController.currentDestination?.route == "manajemen_stok") {
+                    IconButton(onClick = {if (navController.currentDestination?.route == "manajemen_stok") {
                         navController.popBackStack()
-                    }} }) {
+                    }}) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali"

@@ -62,7 +62,7 @@ fun DashboardScreen(navController: NavController) {
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
                 )
             }
-            item { PenjualanMenuSection() }
+            item { PenjualanMenuSection(navController) }
             item { SectionHeader(title = "Ringkasan Hari Ini", onLihatSemua = {}) }
             item { RingkasanSection() }
             item { Spacer(modifier = Modifier.height(16.dp)) }
@@ -126,83 +126,115 @@ fun StatCardsSection() {
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Card Penjualan Hari Ini — gradient biru
-        Box(
+        Card(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(20.dp))
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color(0xFF3D5AF1), Color(0xFF6C8EF5))
-                    )
-                )
-                .padding(16.dp)
+                .fillMaxHeight(),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 2.dp
+            ),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Transparent
+            )
         ) {
-            Column {
-                Image(
-                    painter = painterResource(id = R.drawable.grafikicon),
-                    contentDescription = "Grafik",
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White.copy(alpha = 0.2f))
-                        .padding(6.dp),
-                    contentScale = ContentScale.Fit
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "PENJUALAN HARI INI ⓘ",
-                    fontSize = 11.sp,
-                    color = Color.White.copy(alpha = 0.85f)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Rp",
-                    fontSize = 14.sp,
-                    color = Color.White,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "10.000.000",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color(0xFF3D5AF1),
+                                Color(0xFF6C8EF5)
+                            )
+                        )
+                    )
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Image(
+                        painter = painterResource(id = R.drawable.grafikicon),
+                        contentDescription = "Grafik",
                         modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
                             .background(Color.White.copy(alpha = 0.2f))
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                            .padding(6.dp),
+                        contentScale = ContentScale.Fit
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "PENJUALAN HARI INI ⓘ",
+                        fontSize = 11.sp,
+                        color = Color.White.copy(alpha = 0.85f)
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "Rp",
+                        fontSize = 14.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Text(
+                        text = "10.000.000",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(Color.White.copy(alpha = 0.2f))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "+5%",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
                         Text(
-                            text = "+5%",
+                            text = "dari kemarin",
                             fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White
+                            color = Color.White.copy(alpha = 0.7f)
                         )
                     }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "dari kemarin",
-                        fontSize = 11.sp,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
                 }
             }
         }
 
-        // Card Total Transaksi — putih
-        Box(
+        //card total transaksi
+
+        Card(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(20.dp))
-                .background(Color(0xFFFFFFFF))
-                .padding(16.dp)
+                .fillMaxHeight(),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 2.dp
+            ),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
         ) {
-            Column {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
                 Image(
                     painter = painterResource(id = R.drawable.penjualan),
                     contentDescription = "Transaksi",
@@ -213,21 +245,29 @@ fun StatCardsSection() {
                         .padding(6.dp),
                     contentScale = ContentScale.Fit
                 )
+
                 Spacer(modifier = Modifier.height(12.dp))
+
                 Text(
                     text = "TOTAL TRANSAKSI ⓘ",
                     fontSize = 10.sp,
                     color = Color(0xFF8A8FA8)
                 )
+
                 Spacer(modifier = Modifier.height(4.dp))
+
                 Text(
                     text = "50 trx",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1A1D2E)
                 )
+
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
@@ -241,7 +281,9 @@ fun StatCardsSection() {
                             color = Color(0xFF22C55E)
                         )
                     }
+
                     Spacer(modifier = Modifier.width(4.dp))
+
                     Text(
                         text = "dari kemarin",
                         fontSize = 11.sp,
@@ -308,13 +350,13 @@ fun ProdukMenuSection(navController: NavController) {
             iconRes = R.drawable.barangrusak,
             label = "Barang Rusak\nExp",
             bgColor = Color(0xFFFDF2F8),
-            onClick = { /* TODO: Navigasi ke Barang Rusak/Exp */ }
+            onClick = { navController.navigate(AppScreen.BarangRusakExp.route) }
         )
     }
 }
 
 @Composable
-fun PenjualanMenuSection() {
+fun PenjualanMenuSection(navController: NavController) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -325,14 +367,14 @@ fun PenjualanMenuSection() {
             iconRes = R.drawable.kasirmenu,
             label = "Kasir",
             bgColor = Color(0xFFEFF6FF),
-            onClick = { /* TODO: Navigasi ke Kasir */ }
+            onClick = { navController.navigate(AppScreen.Kasir.route) }
         )
         Spacer(modifier = Modifier.width(28.dp))
         MenuIconItem(
             iconRes = R.drawable.transaksi,
             label = "Transaksi",
             bgColor = Color(0xFFECFEFF),
-            onClick = { /* TODO: Navigasi ke Transaksi */ }
+            onClick = { navController.navigate(AppScreen.Riwayat.route) }
         )
     }
 }
