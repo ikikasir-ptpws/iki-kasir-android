@@ -677,9 +677,9 @@ fun TambahProdukScreen(
                         )
                     ) {
                         Text(
-                            text = "Simpan Draft",
+                            text = "Batal",
                             fontFamily = interfamily,
-                            fontSize = 14.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -703,7 +703,7 @@ fun TambahProdukScreen(
                         Text(
                             text = "Simpan Produk",
                             fontFamily = interfamily,
-                            fontSize = 14.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White
                         )
