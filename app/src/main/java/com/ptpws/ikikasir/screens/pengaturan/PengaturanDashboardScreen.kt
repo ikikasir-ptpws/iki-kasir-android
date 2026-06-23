@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
@@ -331,7 +332,8 @@ fun PengaturanToggleItem(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
+            Modifier.scale(0.8f),
+                    colors = SwitchDefaults.colors(
                 checkedTrackColor = Color(0xFF4F46E5),
                 checkedThumbColor = Color.White
             )
@@ -386,6 +388,7 @@ fun AksesCepatCard(
                 Switch(
                     checked = checked,
                     onCheckedChange = onCheckedChange,
+                    Modifier.scale(0.8f),
                     colors = SwitchDefaults.colors(
                         checkedTrackColor = Color(0xFF4F46E5),
                         checkedThumbColor = Color.White

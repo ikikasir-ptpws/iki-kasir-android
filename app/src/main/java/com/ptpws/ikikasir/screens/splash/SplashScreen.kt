@@ -1,6 +1,5 @@
-package com.ptpws.ikikasir.screens
+package com.ptpws.ikikasir.screens.splash
 
-import android.window.SplashScreen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
