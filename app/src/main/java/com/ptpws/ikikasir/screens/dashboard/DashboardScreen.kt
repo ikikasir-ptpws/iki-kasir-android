@@ -57,7 +57,7 @@ fun DashboardScreen(navController: NavController) {
                     text = "Penjualan",
                     fontSize = 18.sp,
                     fontFamily = interfamily,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF1A1D2E),
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
                 )
@@ -266,7 +266,7 @@ fun SectionHeader(title: String, onLihatSemua: () -> Unit) {
             text = title,
             fontSize = 18.sp,
             fontFamily = interfamily,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             color = Color(0xFF1A1D2E)
         )
         Text(
@@ -302,7 +302,7 @@ fun ProdukMenuSection(navController: NavController) {
             iconRes = R.drawable.manajemenstok,
             label = "Manajemen\nStok",
             bgColor = Color(0xFFFFF7ED),
-            onClick = { /* TODO: Navigasi ke Manajemen Stok */ }
+            onClick = { navController.navigate(AppScreen.ManajemenStok.route) }
         )
         MenuIconItem(
             iconRes = R.drawable.barangrusak,

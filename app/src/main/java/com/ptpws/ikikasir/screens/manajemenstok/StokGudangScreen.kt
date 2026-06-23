@@ -64,7 +64,7 @@ fun StokGudangScreen(
             .fillMaxSize()
             .padding(start = 16.dp, end = 16.dp, top = 16.dp),
         contentPadding = PaddingValues(
-            top = 16.dp,
+            top = 16.dp,bottom = 16.dp
         ),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {

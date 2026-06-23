@@ -30,6 +30,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import com.ptpws.ikikasir.R
@@ -38,7 +40,7 @@ import com.ptpws.ikikasir.commond.interfamily
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ManajemenStokScreen(
-    onBack: () -> Unit = {},
+    navController: NavController,
     onTambah: () -> Unit = {}
 ) {
     val pagerState = rememberPagerState(pageCount = { 2 })
@@ -57,7 +59,9 @@ fun ManajemenStokScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {{if (navController.currentDestination?.route == "manajemen_stok") {
+                        navController.popBackStack()
+                    }} }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali"
@@ -164,6 +168,6 @@ fun ManajemenStokScreen(
 @Composable
 fun ManajemenStokScreenPreview() {
     MaterialTheme {
-        ManajemenStokScreen()
+        ManajemenStokScreen(navController = rememberNavController())
     }
 }

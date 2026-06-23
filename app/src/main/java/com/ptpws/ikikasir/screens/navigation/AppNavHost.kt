@@ -39,6 +39,7 @@ import com.ptpws.ikikasir.commond.interfamily
 import com.example.app.ui.screen.DashboardScreen
 import com.example.app.ui.screen.MenuFullScreen
 import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
+import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
 import com.ptpws.ikikasir.screens.pengaturan.ProfilScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
 import com.ptpws.ikikasir.ui.screens.kasir.KasirScreen
@@ -86,7 +87,7 @@ fun AppNavHost() {
                 DaftarKategoriScreen(navController)
             }
             composable(AppScreen.ManajemenStok.route) {
-                PlaceholderScreen("Manajemen Stok")
+                ManajemenStokScreen(navController)
             }
             composable(AppScreen.BarangRusakExp.route) {
                 PlaceholderScreen("Barang Rusak & Exp")
