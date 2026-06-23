@@ -17,6 +17,7 @@ import com.example.app.ui.screen.MenuFullScreen
 import com.example.app.ui.screen.TambahProdukScreen
 import com.ikikasir.app.ui.screen.LoginScreen
 import com.ptpws.ikikasir.screens.SplashScreen
+import com.ptpws.ikikasir.screens.barangrusak.BarangRusakExpScreen
 import com.ptpws.ikikasir.screens.keuangan.AuditLogScreen
 import com.ptpws.ikikasir.screens.keuangan.ManajemenHutangScreen
 import com.ptpws.ikikasir.screens.keuangan.MetodePembayaranScreen
@@ -45,7 +46,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             IKIKASIRTheme {
 //                AppNavHost()
-                ProfilScreen()
+                BarangRusakExpScreen()
             }
         }
     }
