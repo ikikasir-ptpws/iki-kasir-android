@@ -30,6 +30,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+fun formatEpochMillis(epochMillis: Long?): String {
+    if (epochMillis == null) return ""
+    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    return formatter.format(Date(epochMillis))
+}
 
 data class ProdukTerpilih(
     val nama: String,
@@ -49,6 +58,10 @@ fun TambahPromoScreen(
     var nilaiDiskon by remember { mutableStateOf("0") }
     var tanggalMulai by remember { mutableStateOf("") }
     var tanggalBerakhir by remember { mutableStateOf("") }
+    var showDatePickerMulai by remember { mutableStateOf(false) }
+    var showDatePickerBerakhir by remember { mutableStateOf(false) }
+    val datePickerStateMulai = rememberDatePickerState()
+    val datePickerStateBerakhir = rememberDatePickerState()
     var deskripsiPromo by remember { mutableStateOf("") }
     var produkTerpilih by remember {
         mutableStateOf(
@@ -88,6 +101,48 @@ fun TambahPromoScreen(
             )
         }
     ) { paddingValues ->
+
+        if (showDatePickerMulai) {
+            DatePickerDialog(
+                onDismissRequest = { showDatePickerMulai = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        tanggalMulai = formatEpochMillis(datePickerStateMulai.selectedDateMillis)
+                        showDatePickerMulai = false
+                    }) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePickerMulai = false }) {
+                        Text("Batal")
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerStateMulai)
+            }
+        }
+
+        if (showDatePickerBerakhir) {
+            DatePickerDialog(
+                onDismissRequest = { showDatePickerBerakhir = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        tanggalBerakhir = formatEpochMillis(datePickerStateBerakhir.selectedDateMillis)
+                        showDatePickerBerakhir = false
+                    }) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePickerBerakhir = false }) {
+                        Text("Batal")
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerStateBerakhir)
+            }
+        }
 
         LazyColumn(
             modifier = Modifier
@@ -474,7 +529,8 @@ fun TambahPromoScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp),
+                                .height(48.dp)
+                                .clickable { showDatePickerMulai = true },
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -493,7 +549,9 @@ fun TambahPromoScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 BasicTextField(
                                     value = tanggalMulai,
-                                    onValueChange = { tanggalMulai = it },
+                                    onValueChange = { },
+                                    readOnly = true,
+                                    enabled = false,
                                     singleLine = true,
                                     textStyle = TextStyle(
                                         color = Color.Black,
@@ -519,7 +577,8 @@ fun TambahPromoScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp),
+                                .height(48.dp)
+                                .clickable { showDatePickerBerakhir = true },
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -538,7 +597,9 @@ fun TambahPromoScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 BasicTextField(
                                     value = tanggalBerakhir,
-                                    onValueChange = { tanggalBerakhir = it },
+                                    onValueChange = { },
+                                    readOnly = true,
+                                    enabled = false,
                                     singleLine = true,
                                     textStyle = TextStyle(
                                         color = Color.Black,
