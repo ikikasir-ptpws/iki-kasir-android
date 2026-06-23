@@ -248,7 +248,13 @@ fun TambahKategoriScreen(
 
                 // ── Tip Kategori
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(
+                            width = 1.dp,
+                            color = Color(0xffC0C1FF),
+                            shape = RoundedCornerShape(12.dp)
+                        ),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFEEF2FF)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
