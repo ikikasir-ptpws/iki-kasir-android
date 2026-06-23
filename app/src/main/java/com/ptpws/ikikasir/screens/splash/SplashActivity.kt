@@ -1,17 +1,14 @@
 package com.ptpws.ikikasir.screens.splash
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.LaunchedEffect
+import com.ptpws.ikikasir.screens.auth.AuthActivity
 import com.ptpws.ikikasir.screens.splash.ui.theme.IKIKASIRTheme
+import kotlinx.coroutines.delay
 
 class SplashActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,29 +16,14 @@ class SplashActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             IKIKASIRTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                SplashScreen()
+                
+                LaunchedEffect(key1 = true) {
+                    delay(2000L) // Wait for 2 seconds
+                    startActivity(Intent(this@SplashActivity, AuthActivity::class.java))
+                    finish()
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    IKIKASIRTheme {
-        Greeting("Android")
     }
 }

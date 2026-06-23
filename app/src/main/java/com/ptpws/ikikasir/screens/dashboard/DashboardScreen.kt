@@ -43,7 +43,7 @@ fun DashboardScreen() {
                 .fillMaxSize()
                 .background(Color(0xFFF0F4FF))
                 .padding(paddingValues),
-            contentPadding = PaddingValues(bottom = 24.dp)
+            contentPadding = PaddingValues(bottom = 120.dp)
         ) {
             item { HeaderSection() }
             item { StatCardsSection() }

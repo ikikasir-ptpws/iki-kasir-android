@@ -3,11 +3,11 @@
 
     <string name="screen_splash">Splash</string>
     <string name="screen_login">Login</string>
-    <string name="screen_dashboard">Dashboard</string>
+    <string name="screen_dashboard">Beranda</string>
 
     <!-- Bottom Navigation -->
     <string name="screen_kasir">Kasir</string>
-    <string name="screen_produk">Produk</string>
+    <string name="screen_produk">PRODUK</string>
     <string name="screen_riwayat">Riwayat</string>
     <string name="screen_profil">Profil</string>
 
@@ -29,4 +29,5 @@
     <!-- Pengguna -->
     <string name="screen_pengguna">Pengguna</string>
     <string name="screen_pengaturan">Pengaturan Menu</string>
+    <string name="title_activity_splash">SplashActivity</string>
 </resources>
