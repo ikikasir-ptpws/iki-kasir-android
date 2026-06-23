@@ -30,6 +30,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.screens.penjualan.component.BottomSheetPembayaran
@@ -37,7 +39,7 @@ import com.ptpws.ikikasir.screens.penjualan.component.BottomSheetPembayaran
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KasirScreen(
-    onBack: () -> Unit = {},
+    navController: NavController,
     onScanProduk: () -> Unit = {},
     onTambahProdukBaru: () -> Unit = {},
     onBayar: () -> Unit = {}
@@ -69,7 +71,7 @@ fun KasirScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { navController.popBackStack()}) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali"
@@ -304,6 +306,7 @@ fun KasirScreen(
             }
 
             item {
+                Spacer(Modifier.height(100.dp))
                 Button(
                     onClick = { showBottomSheetBayar = true },
                     modifier = Modifier
@@ -484,6 +487,6 @@ fun KasirProdukCard(
 @Composable
 fun KasirScreenPreview() {
     MaterialTheme {
-        KasirScreen()
+        KasirScreen(navController = rememberNavController())
     }
 }

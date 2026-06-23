@@ -36,6 +36,8 @@ import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.example.app.ui.screen.DashboardScreen
+import com.ptpws.ikikasir.ui.screens.kasir.KasirScreen
+
 // Daftar item bottom navigation
 
 
@@ -46,7 +48,7 @@ fun AppNavHost() {
     val currentRoute = navBackStackEntry?.destination?.route
 
     // Rute-rute yang menampilkan bottom bar
-    val showBottomBar = currentRoute in bottomNavItems.map { it.route }
+    val showBottomBar = currentRoute in bottomNavItems.map { it.route } && currentRoute != AppScreen.Kasir.route
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -60,7 +62,7 @@ fun AppNavHost() {
                 DashboardScreen()
             }
             composable(AppScreen.Kasir.route) {
-                PlaceholderScreen("Kasir")
+                KasirScreen(navController)
             }
             composable(AppScreen.Produk.route) {
                 PlaceholderScreen("Produk")
