@@ -1,6 +1,10 @@
 package com.ptpws.ikikasir.screens.produk
 
 import androidx.compose.ui.tooling.preview.Preview
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -336,5 +340,19 @@ fun TambahKategoriScreen(
 fun TambahKategoriScreenPreview() {
     MaterialTheme {
         TambahKategoriScreen()
+    }
+}
+
+class TambahKategoriActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            MaterialTheme {
+                TambahKategoriScreen(
+                    onBack = { finish() }
+                )
+            }
+        }
     }
 }
