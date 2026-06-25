@@ -37,11 +37,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.commond.interfamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManajemenHutangScreen(
+    navController: NavController,
     onBack: () -> Unit = {},
     onTambahHutang: () -> Unit = {}
 )
@@ -63,7 +66,9 @@ fun ManajemenHutangScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { if (navController.currentDestination?.route == "hutang") {
+                        navController.popBackStack()
+                    } }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
@@ -598,6 +603,6 @@ fun HutangCardItem(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun ManajemenHutangPreview() {
-    ManajemenHutangScreen()
+    ManajemenHutangScreen(navController = rememberNavController())
 
 }

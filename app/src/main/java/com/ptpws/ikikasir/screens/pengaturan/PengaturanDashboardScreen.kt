@@ -22,12 +22,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PengaturanDashboardScreen(
+    navController: NavController,
     onBack: () -> Unit = {},
     onSimpanPengaturan: () -> Unit = {}
 ) {
@@ -59,7 +62,9 @@ fun PengaturanDashboardScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { if (navController.currentDestination?.route == "pengaturan_menu") {
+                        navController.popBackStack()
+                    } }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
@@ -412,6 +417,6 @@ fun AksesCepatCard(
 @Composable
 fun PengaturanDashboardScreenPreview() {
     MaterialTheme {
-        PengaturanDashboardScreen()
+        PengaturanDashboardScreen(navController = rememberNavController())
     }
 }

@@ -28,6 +28,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
@@ -46,6 +48,7 @@ import com.ptpws.ikikasir.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LaporanKeuanganScreen(
+    navController: NavController,
     onBack: () -> Unit = {},
     onLihatSemuaProduk: () -> Unit = {}
 ) {
@@ -95,7 +98,9 @@ fun LaporanKeuanganScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { if (navController.currentDestination?.route == "laporan_keuangan") {
+                        navController.popBackStack()
+                    } }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
@@ -549,6 +554,6 @@ fun ProdukTerlarisItem(
 @Preview(showSystemUi = true, showBackground = true)
 @Composable
 private fun LaporanKeuanganScreenPreview() {
-    LaporanKeuanganScreen ()
+    LaporanKeuanganScreen (navController = rememberNavController())
     
 }

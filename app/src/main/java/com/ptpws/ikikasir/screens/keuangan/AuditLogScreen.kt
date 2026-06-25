@@ -28,11 +28,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.commond.interfamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuditLogScreen(
+    navController: NavController,
     onBack: () -> Unit = {}
 ) {
     var cariAktivitas by remember { mutableStateOf("") }
@@ -53,7 +56,9 @@ fun AuditLogScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { if (navController.currentDestination?.route == "audit_log") {
+                        navController.popBackStack()
+                    } }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
@@ -469,6 +474,6 @@ fun AuditlogItem(
 @Composable
 fun AuditlogScreenPreview() {
     MaterialTheme {
-        AuditLogScreen()
+        AuditLogScreen(navController = rememberNavController())
     }
 }

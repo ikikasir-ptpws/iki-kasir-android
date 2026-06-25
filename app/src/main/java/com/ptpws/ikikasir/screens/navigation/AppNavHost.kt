@@ -45,9 +45,14 @@ import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
 import com.ptpws.ikikasir.screens.pengaturan.ProfilScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
 import com.ptpws.ikikasir.screens.kategori.TambahKategoriActivity
+import com.ptpws.ikikasir.screens.keuangan.AuditLogScreen
 import com.ptpws.ikikasir.screens.keuangan.LaporanKeuanganScreen
+import com.ptpws.ikikasir.screens.keuangan.ManajemenHutangScreen
+import com.ptpws.ikikasir.screens.manajemenpengguna.ManajemenPenggunaScreen
+import com.ptpws.ikikasir.screens.pengaturan.PengaturanDashboardScreen
 import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiActivity
 import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiScreen
+import com.ptpws.ikikasir.screens.penjualan.LaporanPenjualanScreen
 import com.ptpws.ikikasir.screens.produk.TambahProdukActivity
 import com.ptpws.ikikasir.ui.screens.kasir.KasirScreen
 
@@ -114,23 +119,23 @@ fun AppNavHost() {
                 DetailTransaksiScreen()
             }
             composable(AppScreen.LaporanKeuangan.route) {
-                LaporanKeuanganScreen()
+                LaporanKeuanganScreen(navController
+                )
             }
             composable(AppScreen.Hutang.route) {
-                PlaceholderScreen("Hutang")
+                ManajemenHutangScreen(navController)
             }
             composable(AppScreen.AuditLog.route) {
-                PlaceholderScreen("Audit Log")
+                AuditLogScreen(navController)
             }
             composable(AppScreen.LaporanPenjualan.route) {
-                PlaceholderScreen("Laporan Penjualan")
+                LaporanPenjualanScreen(navController)
             }
             composable(AppScreen.Pengguna.route) {
-
-                PlaceholderScreen("Pengguna")
+                ManajemenPenggunaScreen(navController)
             }
             composable(AppScreen.PengaturanMenu.route) {
-                PlaceholderScreen("Pengaturan Menu")
+                PengaturanDashboardScreen(navController)
             }
         }
 

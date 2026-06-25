@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.ptpws.ikikasir.R
 import kotlinx.coroutines.launch
 import com.ptpws.ikikasir.commond.interfamily
@@ -46,6 +47,7 @@ import com.ptpws.ikikasir.commond.interfamily
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ManajemenPenggunaScreen(
+    navController: NavController,
     onBack: () -> Unit = {},
     onTambahUser: () -> Unit = {}
 ) {
@@ -68,7 +70,9 @@ fun ManajemenPenggunaScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { if (navController.currentDestination?.route == "pengguna") {
+                        navController.popBackStack()
+                    } }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
