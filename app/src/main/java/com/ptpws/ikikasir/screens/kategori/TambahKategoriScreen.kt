@@ -1,4 +1,4 @@
-package com.ptpws.ikikasir.screens.produk
+package com.ptpws.ikikasir.screens.kategori
 
 import androidx.compose.ui.tooling.preview.Preview
 import android.os.Bundle
@@ -343,16 +343,3 @@ fun TambahKategoriScreenPreview() {
     }
 }
 
-class TambahKategoriActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            MaterialTheme {
-                TambahKategoriScreen(
-                    onBack = { finish() }
-                )
-            }
-        }
-    }
-}

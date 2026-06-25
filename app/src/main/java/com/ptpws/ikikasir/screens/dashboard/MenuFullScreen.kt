@@ -24,121 +24,113 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.screens.navigation.AppScreen
 
 @Composable
 fun MenuFullScreen(
-    navController: NavController,
-    onItemClick: (String) -> Unit = {}
+    navController: NavController
 ) {
     val queryState = remember { mutableStateOf("") }
-
-    val sections = linkedMapOf(
-        "Produk" to listOf(
-            Triple(R.drawable.produk, "Produk", Color(0xFFF0FDF4)),
-            Triple(R.drawable.kategori, "Kategori Produk", Color(0xFFFAF5FF)),
-            Triple(R.drawable.manajemenstok, "Manajemen Stok", Color(0xFFFFF7ED)),
-            Triple(R.drawable.barangrusak, "Barang Rusak Exp", Color(0xFFFDF2F8))
-        ),
-        "Penjualan" to listOf(
-            Triple(R.drawable.kasirmenu, "Kasir", Color(0xFFEFF6FF)),
-            Triple(R.drawable.transaksi, "Transaksi", Color(0xFFECFEFF))
-        ),
-        "Keuangan" to listOf(
-            Triple(R.drawable.laporankeuangan, "Laporan Keuangan", Color(0xFFFFF0F6)),
-            Triple(R.drawable.hutang, "Hutang", Color(0xFFFFF7ED)),
-            Triple(R.drawable.auditlog, "Auditlog", Color(0xFFFFF6F0)),
-            Triple(R.drawable.laporanpenjualan, "Laporan Penjualan", Color(0xFFEFFCF8))
-        ),
-        "Pengguna" to listOf(
-            Triple(R.drawable.pengguna, "Pengguna", Color(0xFFEFF1FF)),
-            Triple(R.drawable.pengaturanmenu, "Pengaturan Menu", Color(0xFFF4F7FF))
-        )
-    )
 
     Scaffold(
         containerColor = Color(0xFFF0F4FF)
     ) { paddingValues ->
-
-        val query = queryState.value.trim()
-
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFF0F4FF))
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-
             item {
                 TopBar(
                     title = "Semua Menu",
                     navController = navController
                 )
-
                 Spacer(modifier = Modifier.height(12.dp))
 
                 SearchField(
                     query = queryState.value,
                     onQueryChange = { queryState.value = it }
                 )
-
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            if (query.isEmpty()) {
+            item { SectionTitle(title = "Produk") }
+            item { ProdukMenuSection(navController) }
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
-                sections.forEach { entry ->
+            item { SectionTitle(title = "Penjualan") }
+            item { PenjualanMenuSection(navController) }
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
-                    item {
-                        SectionTitle(title = entry.key)
+            item { SectionTitle(title = "Keuangan") }
+            item { KeuanganMenuSection(navController) }
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
-                        MenuRowsTriple(
-                            items = entry.value,
-                            onItemClick = onItemClick
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-                }
-
-            } else {
-
-                val filtered = sections
-                    .flatMap { it.value }
-                    .filter {
-                        it.second.contains(query, ignoreCase = true)
-                    }
-
-                item {
-                    SectionTitle(title = "Hasil")
-                }
-
-                if (filtered.isEmpty()) {
-
-                    item {
-                        Text(
-                            text = "Tidak ada hasil untuk \"$query\"",
-                            fontSize = 14.sp,
-                            fontFamily = interfamily,
-                            color = Color(0xFF8A8FA8),
-                            modifier = Modifier.padding(24.dp)
-                        )
-                    }
-
-                } else {
-
-                    item {
-                        MenuRowsTriple(
-                            items = filtered,
-                            onItemClick = onItemClick
-                        )
-                    }
-                }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+            item { SectionTitle(title = "Pengguna") }
+            item { PenggunaMenuSection(navController) }
+            item { Spacer(modifier = Modifier.height(12.dp)) }
         }
+    }
+}
+
+@Composable
+fun KeuanganMenuSection(navController: NavController) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        MenuIconItem(
+            iconRes = R.drawable.laporankeuangan,
+            label = "Laporan\nKeuangan",
+            bgColor = Color(0xFFFFF0F6),
+            onClick = { navController.navigate(AppScreen.LaporanKeuangan.route) }
+        )
+        MenuIconItem(
+            iconRes = R.drawable.hutang,
+            label = "Hutang",
+            bgColor = Color(0xFFFFF7ED),
+            onClick = { navController.navigate(AppScreen.Hutang.route) }
+        )
+        MenuIconItem(
+            iconRes = R.drawable.auditlog,
+            label = "Auditlog",
+            bgColor = Color(0xFFFFF6F0),
+            onClick = { navController.navigate(AppScreen.AuditLog.route) }
+        )
+        MenuIconItem(
+            iconRes = R.drawable.laporanpenjualan,
+            label = "Laporan\nPenjualan",
+            bgColor = Color(0xFFEFFCF8),
+            onClick = { navController.navigate(AppScreen.LaporanPenjualan.route) }
+        )
+    }
+}
+
+@Composable
+fun PenggunaMenuSection(navController: NavController) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.Start
+    ) {
+        MenuIconItem(
+            iconRes = R.drawable.pengguna,
+            label = "Pengguna",
+            bgColor = Color(0xFFEFF1FF),
+            onClick = { navController.navigate(AppScreen.Pengguna.route) }
+        )
+        Spacer(modifier = Modifier.width(28.dp))
+        MenuIconItem(
+            iconRes = R.drawable.pengaturanmenu,
+            label = "Pengaturan\nMenu",
+            bgColor = Color(0xFFF4F7FF),
+            onClick = { navController.navigate(AppScreen.PengaturanMenu.route) }
+        )
     }
 }
 
@@ -150,9 +142,11 @@ fun TopBar(title: String, navController: NavController) {
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = {if (navController.currentDestination?.route == "semuamenu") {
-            navController.popBackStack()
-        }}) {
+        IconButton(onClick = {
+            if (navController.currentDestination?.route == AppScreen.Semuamenu.route || navController.currentDestination?.route == "semuamenu") {
+                navController.popBackStack()
+            }
+        }) {
             Icon(
                 imageVector = Icons.Filled.ArrowBack,
                 contentDescription = "Kembali",
@@ -183,7 +177,6 @@ fun SectionTitle(title: String) {
 
 @Composable
 fun SearchField(query: String, onQueryChange: (String) -> Unit) {
-    // Replicate LoginScreen textfield style: Card with light gray background and inner BasicTextField
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -239,40 +232,10 @@ fun SearchField(query: String, onQueryChange: (String) -> Unit) {
     }
 }
 
-@Composable
-fun MenuRowsTriple(items: List<Triple<Int, String, Color>>, onItemClick: (String) -> Unit) {
-    val chunked = items.chunked(4)
-    Column(modifier = Modifier.fillMaxWidth()) {
-        chunked.forEach { rowItems ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                rowItems.forEach { (iconRes, label, bgColor) ->
-                    MenuIconItem(
-                        iconRes = iconRes,
-                        label = label,
-                        bgColor = bgColor,
-                        onClick = { onItemClick(label) }
-                    )
-                }
-                // Fill remaining space in row with empty Boxes to keep spacing consistent
-                if (rowItems.size < 4) {
-                    repeat(4 - rowItems.size) {
-                        Spacer(modifier = Modifier.width(80.dp))
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-    }
-}
-
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun MenuFullScreenPreview() {
-    MenuFullScreen(navController = rememberNavController())
+    MaterialTheme {
+        MenuFullScreen(navController = rememberNavController())
+    }
 }

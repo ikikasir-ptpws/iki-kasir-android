@@ -22,11 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -34,15 +35,20 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.app.ui.screen.DaftarProdukScreen
-import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.example.app.ui.screen.DashboardScreen
 import com.example.app.ui.screen.MenuFullScreen
 import com.ptpws.ikikasir.screens.barangrusak.BarangRusakExpScreen
+import com.ptpws.ikikasir.screens.barangrusak.TambahRusakExpActivity
 import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
 import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
 import com.ptpws.ikikasir.screens.pengaturan.ProfilScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
+import com.ptpws.ikikasir.screens.kategori.TambahKategoriActivity
+import com.ptpws.ikikasir.screens.keuangan.LaporanKeuanganScreen
+import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiActivity
+import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiScreen
+import com.ptpws.ikikasir.screens.produk.TambahProdukActivity
 import com.ptpws.ikikasir.ui.screens.kasir.KasirScreen
 
 // Daftar item bottom navigation
@@ -76,28 +82,39 @@ fun AppNavHost() {
                 KasirScreen(navController)
             }
             composable(AppScreen.Produk.route) {
-                DaftarProdukScreen(navController)
+                val context = LocalContext.current
+                DaftarProdukScreen(
+                    navController = navController,
+                    onTambah = {
+                        context.startActivity(Intent(context, TambahProdukActivity::class.java))
+                    }
+                )
             }
             composable(AppScreen.Riwayat.route) {
-                RiwayatTransaksiScreen(navController)
+                val context = LocalContext.current
+                RiwayatTransaksiScreen(navController, onDetailTransaksi = { context.startActivity(Intent(context, DetailTransaksiActivity::class.java)) })
             }
             composable(AppScreen.Profil.route) {
                 ProfilScreen(navController)
             }
             composable(AppScreen.KategoriProduk.route) {
-                DaftarKategoriScreen(navController)
+                val context = LocalContext.current
+                DaftarKategoriScreen(navController,
+                    onTambahPromo = { context.startActivity(Intent(context, TambahKategoriActivity::class.java)) } )
             }
             composable(AppScreen.ManajemenStok.route) {
                 ManajemenStokScreen(navController)
             }
             composable(AppScreen.BarangRusakExp.route) {
-                BarangRusakExpScreen(navController)
+                val context = LocalContext.current
+                BarangRusakExpScreen(navController, onTambahBarang = { context.startActivity(Intent(context,
+                    TambahRusakExpActivity::class.java)) })
             }
-            composable(AppScreen.Transaksi.route) {
-                PlaceholderScreen("Transaksi")
+            composable(AppScreen.DetailTransaksi.route) {
+                DetailTransaksiScreen()
             }
             composable(AppScreen.LaporanKeuangan.route) {
-                PlaceholderScreen("Laporan Keuangan")
+                LaporanKeuanganScreen()
             }
             composable(AppScreen.Hutang.route) {
                 PlaceholderScreen("Hutang")
@@ -109,6 +126,7 @@ fun AppNavHost() {
                 PlaceholderScreen("Laporan Penjualan")
             }
             composable(AppScreen.Pengguna.route) {
+
                 PlaceholderScreen("Pengguna")
             }
             composable(AppScreen.PengaturanMenu.route) {

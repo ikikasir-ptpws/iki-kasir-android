@@ -38,7 +38,7 @@ import com.ptpws.ikikasir.R
 @Composable
 fun DaftarKategoriScreen(
     navController: NavController,
-    onTambah: () -> Unit = {}
+    onTambahPromo: () -> Unit = {}
 ) {
     var carikategori by remember { mutableStateOf("") }
 
@@ -74,7 +74,7 @@ fun DaftarKategoriScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onTambah,
+                onClick = onTambahPromo,
                 containerColor = Color(0xFF4F46E5),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),

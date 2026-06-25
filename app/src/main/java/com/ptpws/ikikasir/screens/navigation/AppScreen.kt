@@ -88,6 +88,12 @@ sealed class AppScreen(
         "transaksi"
     )
 
+    object DetailTransaksi : AppScreen(
+        R.string.screen_transaksi,
+        R.drawable.iconapk,
+        "detailtransaksi"
+    )
+
     object LaporanKeuangan : AppScreen(
         R.string.screen_laporan_keuangan,
         R.drawable.iconapk,

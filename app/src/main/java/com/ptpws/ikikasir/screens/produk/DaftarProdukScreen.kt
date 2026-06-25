@@ -39,7 +39,7 @@ import com.ptpws.ikikasir.commond.interfamily
 fun DaftarProdukScreen(
     navController: NavController,
     onBack: () -> Unit = {},
-    onTambah: () -> Unit = {}
+    onTambah: () -> Unit = { }
 ) {
     var cariproduk by remember { mutableStateOf("") }
     var selectedKategori by remember { mutableStateOf("Semua") }

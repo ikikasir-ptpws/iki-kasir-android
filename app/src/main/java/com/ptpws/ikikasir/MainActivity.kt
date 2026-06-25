@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.ptpws.ikikasir.screens.barangrusak.TambahRusakExpScreen
+import com.ptpws.ikikasir.screens.manajemenpengguna.DaftarUserScreen
 import com.ptpws.ikikasir.screens.navigation.AppNavHost
 import com.ptpws.ikikasir.ui.theme.IKIKASIRTheme
 
@@ -19,7 +20,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             IKIKASIRTheme {
                 AppNavHost()
-//                TambahRusakExpScreen()
+//                DaftarUserScreen()
             }
         }
     }

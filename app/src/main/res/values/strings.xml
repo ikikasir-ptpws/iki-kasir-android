@@ -29,5 +29,7 @@
     <!-- Pengguna -->
     <string name="screen_pengguna">Pengguna</string>
     <string name="screen_pengaturan">Pengaturan Menu</string>
-    <string name="title_activity_splash">SplashActivity</string>
+    <string name="title_activity_splash">IkiKasir</string>
+    <string name="title_activity_tambah_produk">TambahProdukActivity</string>
+    <string name="title_activity_detail_transaksi">DetailTransaksiActivity</string>
 </resources>
