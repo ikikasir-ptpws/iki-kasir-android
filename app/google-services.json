@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "696624781300",
+    "project_id": "ikikasir-dd8c2",
+    "storage_bucket": "ikikasir-dd8c2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:696624781300:android:7535ac242a5e5ee5698ba1",
+        "android_client_info": {
+          "package_name": "com.ptpws.ikikasir"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaBU4qTszk_tZ9O3UGCr78ZiuVfu0IYLM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
