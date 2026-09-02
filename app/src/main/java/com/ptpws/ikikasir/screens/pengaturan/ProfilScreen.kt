@@ -268,10 +268,97 @@ fun ProfilScreen(
 
             // ── Tombol Keluar
             item {
+                var showLogoutDialog by remember { mutableStateOf(false) }
+
+                if (showLogoutDialog) {
+                    androidx.compose.ui.window.Dialog(onDismissRequest = { showLogoutDialog = false }) {
+                        Card(
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFFEE2E2)), // Red 100
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Logout,
+                                        contentDescription = "Logout",
+                                        tint = Color(0xFFDC2626), // Red 600
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "Konfirmasi Keluar",
+                                    fontFamily = interfamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp,
+                                    color = Color(0xFF111827)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Apakah Anda yakin ingin keluar dari akun ini? Anda harus login kembali untuk masuk.",
+                                    fontFamily = interfamily,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF6B7280),
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Button(
+                                        onClick = { showLogoutDialog = false },
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF3F4F6)),
+                                        shape = RoundedCornerShape(12.dp),
+                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                                    ) {
+                                        Text(
+                                            text = "Batal",
+                                            fontFamily = interfamily,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color(0xFF4B5563)
+                                        )
+                                    }
+                                    Button(
+                                        onClick = {
+                                            showLogoutDialog = false
+                                            onKeluar()
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                                        shape = RoundedCornerShape(12.dp),
+                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                                    ) {
+                                        Text(
+                                            text = "Ya, Keluar",
+                                            fontFamily = interfamily,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.White
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable(onClick = onKeluar),
+                        .clickable(onClick = { showLogoutDialog = true }),
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
