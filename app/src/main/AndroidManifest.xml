@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
+        android:name=".BaseApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -28,7 +29,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".screens.auth.AuthActivity"
+            android:name=".feature.auth.presentation.screen.AuthActivity"
             android:exported="false"
             android:theme="@style/Theme.IKIKASIR" />
         <activity
