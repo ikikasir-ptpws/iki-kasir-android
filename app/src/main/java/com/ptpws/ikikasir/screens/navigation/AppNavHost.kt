@@ -101,14 +101,21 @@ fun AppNavHost() {
             }
             composable(AppScreen.Profil.route) {
                 val context = LocalContext.current
-                ProfilScreen(
-                    navController = navController,
-                    onKeluar = {
-                        val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
-                        auth.signOut()
+                val authViewModel: com.ptpws.ikikasir.feature.auth.presentation.viewmodel.AuthViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+                val authState by authViewModel.authState.collectAsState()
+
+                LaunchedEffect(authState) {
+                    if (authState is com.ptpws.ikikasir.feature.auth.presentation.viewmodel.AuthState.LoggedOut) {
                         context.startActivity(Intent(context, com.ptpws.ikikasir.feature.auth.presentation.screen.AuthActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                         })
+                    }
+                }
+
+                ProfilScreen(
+                    navController = navController,
+                    onKeluar = {
+                        authViewModel.logout()
                     }
                 )
             }
