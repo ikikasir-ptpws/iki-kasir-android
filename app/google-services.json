@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "696624781300",
+    "project_id": "ikikasir-dd8c2",
+    "storage_bucket": "ikikasir-dd8c2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:696624781300:android:7535ac242a5e5ee5698ba1",
+        "android_client_info": {
+          "package_name": "com.ptpws.ikikasir"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "696624781300-b6t3orip4d2a6hms3g5tsd1kkfogl5a3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ptpws.ikikasir",
+            "certificate_hash": "18538090caf161ae34ae0719f9f93c55735ff50e"
+          }
+        },
+        {
+          "client_id": "696624781300-jr1cun865fa0cft14sn2dp4t0n6mhui0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaBU4qTszk_tZ9O3UGCr78ZiuVfu0IYLM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "696624781300-jr1cun865fa0cft14sn2dp4t0n6mhui0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
