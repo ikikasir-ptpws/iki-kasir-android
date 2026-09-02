@@ -14,6 +14,7 @@ sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()
     object Success : AuthState()
+    object LoggedOut : AuthState()
     data class Error(val message: String) : AuthState()
 }
 
@@ -45,10 +46,16 @@ class AuthViewModel @Inject constructor(
                 } else {
                     val errorMsg = result.exceptionOrNull()?.message ?: "Login gagal"
                     android.util.Log.e("AuthStatus", "Firebase Auth error: $errorMsg")
-                    _authState.value = AuthState.Error(errorMsg)
+                    _authState.value = AuthState.Error("Email atau sandi salah") // Custom user friendly error
                 }
             }
         }
+    }
+
+    fun logout() {
+        android.util.Log.d("AuthStatus", "Proses Logout...")
+        repository.signOut()
+        _authState.value = AuthState.LoggedOut
     }
 
     fun resetState() {
