@@ -12,7 +12,9 @@ import com.ptpws.ikikasir.screens.barangrusak.TambahRusakExpScreen
 import com.ptpws.ikikasir.screens.manajemenpengguna.DaftarUserScreen
 import com.ptpws.ikikasir.screens.navigation.AppNavHost
 import com.ptpws.ikikasir.ui.theme.IKIKASIRTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
