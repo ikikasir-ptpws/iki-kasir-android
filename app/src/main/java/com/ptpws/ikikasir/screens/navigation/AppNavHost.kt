@@ -100,7 +100,17 @@ fun AppNavHost() {
                 RiwayatTransaksiScreen(navController, onDetailTransaksi = { context.startActivity(Intent(context, DetailTransaksiActivity::class.java)) })
             }
             composable(AppScreen.Profil.route) {
-                ProfilScreen(navController)
+                val context = LocalContext.current
+                ProfilScreen(
+                    navController = navController,
+                    onKeluar = {
+                        val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+                        auth.signOut()
+                        context.startActivity(Intent(context, com.ptpws.ikikasir.feature.auth.presentation.screen.AuthActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        })
+                    }
+                )
             }
             composable(AppScreen.KategoriProduk.route) {
                 val context = LocalContext.current
