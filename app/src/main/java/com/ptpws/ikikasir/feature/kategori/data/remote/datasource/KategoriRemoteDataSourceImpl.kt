@@ -14,7 +14,7 @@ class KategoriRemoteDataSourceImpl @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : KategoriRemoteDataSource {
 
-    private val collection = firestore.collection("kategori")
+    private val collection = firestore.collection("categories")
 
     override fun getKategoriFlow(): Flow<List<KategoriDto>> = callbackFlow {
         val listener = collection.addSnapshotListener { snapshot, error ->
@@ -23,7 +23,11 @@ class KategoriRemoteDataSourceImpl @Inject constructor(
                 return@addSnapshotListener
             }
             if (snapshot != null) {
-                val list = snapshot.documents.mapNotNull { it.toObject(KategoriDto::class.java) }
+                val list = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(KategoriDto::class.java)?.apply {
+                        if (id.isBlank()) id = doc.id
+                    }
+                }
                 trySend(list)
             }
         }
@@ -34,12 +38,18 @@ class KategoriRemoteDataSourceImpl @Inject constructor(
 
     override suspend fun getAllKategori(): List<KategoriDto> {
         val snapshot = collection.get().await()
-        return snapshot.documents.mapNotNull { it.toObject(KategoriDto::class.java) }
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(KategoriDto::class.java)?.apply {
+                if (id.isBlank()) id = doc.id
+            }
+        }
     }
 
     override suspend fun getKategoriById(id: String): KategoriDto? {
         val doc = collection.document(id).get().await()
-        return doc.toObject(KategoriDto::class.java)
+        return doc.toObject(KategoriDto::class.java)?.apply {
+            if (this.id.isBlank()) this.id = doc.id
+        }
     }
 
     override suspend fun saveKategori(kategoriDto: KategoriDto) {
