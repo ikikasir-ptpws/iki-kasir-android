@@ -75,7 +75,7 @@ class KategoriRepositoryImpl @Inject constructor(
 
         if (isOnline) {
             try {
-                Log.d(TAG, "Online: Mengirim data ke Firestore collection 'kategori' with ID '${kategori.id}'...")
+                Log.d(TAG, "Online: Mengirim data ke Firestore collection 'categories' with ID '${kategori.id}'...")
                 remoteDataSource.saveKategori(kategori.toDto())
                 Log.d(TAG, "Online: Sukses simpan ke Firestore! Menyimpan ke Room DB (isSynced = true)")
                 localDao.insertOrUpdate(kategori.toEntity(isSynced = true))
