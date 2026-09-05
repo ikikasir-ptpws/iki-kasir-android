@@ -78,8 +78,8 @@ class KategoriViewModel @Inject constructor(
     private fun filterList(list: List<Kategori>, query: String): List<Kategori> {
         if (query.isBlank()) return list
         return list.filter {
-            it.nama.contains(query, ignoreCase = true) ||
-                    it.deskripsi.contains(query, ignoreCase = true)
+            it.name.contains(query, ignoreCase = true) ||
+                    it.description.contains(query, ignoreCase = true)
         }
     }
 
