@@ -86,10 +86,9 @@ class TambahKategoriViewModel @Inject constructor(
 
             val kategori = Kategori(
                 id = currentState.id,
-                nama = namaTrimmed,
-                deskripsi = currentState.deskripsi.trim(),
-                iconName = currentState.iconName,
-                colorHex = currentState.colorHex,
+                name = namaTrimmed,
+                description = currentState.deskripsi.trim(),
+                icon = currentState.iconName,
                 updatedAt = System.currentTimeMillis()
             )
 
