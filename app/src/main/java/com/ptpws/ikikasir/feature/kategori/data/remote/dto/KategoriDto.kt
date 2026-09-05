@@ -1,27 +1,22 @@
 package com.ptpws.ikikasir.feature.kategori.data.remote.dto
 
+import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.PropertyName
 import com.ptpws.ikikasir.feature.kategori.data.local.entity.KategoriEntity
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 
 data class KategoriDto(
-    @get:PropertyName("id") @set:PropertyName("id")
+    @get:Exclude @set:Exclude
     var id: String = "",
 
-    @get:PropertyName("nama") @set:PropertyName("nama")
-    var nama: String = "",
+    @get:PropertyName("name") @set:PropertyName("name")
+    var name: String = "",
 
-    @get:PropertyName("deskripsi") @set:PropertyName("deskripsi")
-    var deskripsi: String = "",
+    @get:PropertyName("description") @set:PropertyName("description")
+    var description: String = "",
 
-    @get:PropertyName("iconName") @set:PropertyName("iconName")
-    var iconName: String = "Category",
-
-    @get:PropertyName("colorHex") @set:PropertyName("colorHex")
-    var colorHex: String = "#4F46E5",
-
-    @get:PropertyName("jumlahProduk") @set:PropertyName("jumlahProduk")
-    var jumlahProduk: Int = 0,
+    @get:PropertyName("icon") @set:PropertyName("icon")
+    var icon: String = "Restaurant",
 
     @get:PropertyName("createdAt") @set:PropertyName("createdAt")
     var createdAt: Long = 0L,
@@ -32,11 +27,9 @@ data class KategoriDto(
     fun toDomain(): Kategori {
         return Kategori(
             id = id,
-            nama = nama,
-            deskripsi = deskripsi,
-            iconName = iconName,
-            colorHex = colorHex,
-            jumlahProduk = jumlahProduk,
+            name = name,
+            description = description,
+            icon = icon,
             createdAt = createdAt,
             updatedAt = updatedAt,
             isSynced = true
@@ -46,11 +39,9 @@ data class KategoriDto(
     fun toEntity(): KategoriEntity {
         return KategoriEntity(
             id = id,
-            nama = nama,
-            deskripsi = deskripsi,
-            iconName = iconName,
-            colorHex = colorHex,
-            jumlahProduk = jumlahProduk,
+            name = name,
+            description = description,
+            icon = icon,
             createdAt = createdAt,
             updatedAt = updatedAt,
             isSynced = true,
@@ -62,11 +53,9 @@ data class KategoriDto(
 fun Kategori.toDto(): KategoriDto {
     return KategoriDto(
         id = id,
-        nama = nama,
-        deskripsi = deskripsi,
-        iconName = iconName,
-        colorHex = colorHex,
-        jumlahProduk = jumlahProduk,
+        name = name,
+        description = description,
+        icon = icon,
         createdAt = createdAt,
         updatedAt = updatedAt
     )
