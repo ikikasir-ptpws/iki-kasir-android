@@ -1,0 +1,140 @@
+package com.ptpws.ikikasir.feature.produk.presentation.viewmodel
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.feature.produk.domain.model.Produk
+import com.ptpws.ikikasir.feature.produk.domain.usecase.InsertProdukUseCase
+import com.ptpws.ikikasir.feature.produk.domain.usecase.UpdateProdukUseCase
+import com.ptpws.ikikasir.feature.produk.presentation.state.ProdukFormState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class TambahProdukViewModel @Inject constructor(
+    private val insertProdukUseCase: InsertProdukUseCase,
+    private val updateProdukUseCase: UpdateProdukUseCase,
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    private val _formState = MutableStateFlow(ProdukFormState())
+    val formState: StateFlow<ProdukFormState> = _formState.asStateFlow()
+
+    init {
+        val produkId = savedStateHandle.get<String>("produkId")
+        if (!produkId.isNullOrBlank()) {
+            _formState.update {
+                it.copy(
+                    id = produkId,
+                    name = savedStateHandle.get<String>("produkName") ?: "",
+                    price = savedStateHandle.get<String>("produkPrice") ?: "",
+                    stock = savedStateHandle.get<String>("produkStock") ?: "",
+                    categoryId = savedStateHandle.get<String>("produkCategoryId") ?: "",
+                    imageUrl = savedStateHandle.get<String>("produkImageUrl") ?: "",
+                    discount = savedStateHandle.get<String>("produkDiscount") ?: "",
+                    discountType = savedStateHandle.get<String>("produkDiscountType") ?: "PERCENT",
+                    barcode = savedStateHandle.get<String>("produkBarcode") ?: "",
+                    isEditMode = true
+                )
+            }
+        }
+    }
+
+    fun initFromProduk(produk: Produk) {
+        _formState.update {
+            it.copy(
+                id = produk.id,
+                name = produk.name,
+                price = produk.price.toString(),
+                stock = produk.stock.toString(),
+                categoryId = produk.categoryId,
+                imageUrl = produk.imageUrl,
+                discount = produk.discount.toString(),
+                discountType = produk.discountType,
+                barcode = produk.barcode,
+                isEditMode = true
+            )
+        }
+    }
+
+    fun onNameChange(name: String) {
+        _formState.update { it.copy(name = name, errorMessage = null) }
+    }
+
+    fun onPriceChange(price: String) {
+        _formState.update { it.copy(price = price, errorMessage = null) }
+    }
+
+    fun onStockChange(stock: String) {
+        _formState.update { it.copy(stock = stock) }
+    }
+
+    fun onCategoryIdChange(categoryId: String) {
+        _formState.update { it.copy(categoryId = categoryId) }
+    }
+
+    fun onImageUrlChange(imageUrl: String) {
+        _formState.update { it.copy(imageUrl = imageUrl) }
+    }
+
+    fun onDiscountChange(discount: String) {
+        _formState.update { it.copy(discount = discount) }
+    }
+
+    fun onDiscountTypeChange(discountType: String) {
+        _formState.update { it.copy(discountType = discountType) }
+    }
+
+    fun onBarcodeChange(barcode: String) {
+        _formState.update { it.copy(barcode = barcode) }
+    }
+
+    fun simpanProduk() {
+        val currentState = _formState.value
+        val nameTrimmed = currentState.name.trim()
+
+        if (nameTrimmed.isBlank()) {
+            _formState.update { it.copy(errorMessage = "Nama produk tidak boleh kosong") }
+            return
+        }
+
+        viewModelScope.launch {
+            _formState.update { it.copy(isLoading = true, errorMessage = null) }
+
+            val produk = currentState.toProduk()
+
+            val flow = if (currentState.isEditMode) {
+                updateProdukUseCase(produk)
+            } else {
+                insertProdukUseCase(produk)
+            }
+
+            flow.collect { result ->
+                if (result.isSuccess) {
+                    _formState.update {
+                        it.copy(
+                            isLoading = false,
+                            isSuccess = true
+                        )
+                    }
+                } else {
+                    _formState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = result.exceptionOrNull()?.message ?: "Gagal menyimpan produk"
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun resetSuccess() {
+        _formState.update { it.copy(isSuccess = false) }
+    }
+}
