@@ -1,63 +1,126 @@
-package com.example.app.ui.screen
+package com.ptpws.ikikasir.screens.produk
 
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
+
+
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Sell
-import androidx.compose.material.icons.filled.Storefront
-import androidx.compose.material.icons.filled.Warehouse
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
+import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.TambahProdukViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TambahProdukScreen(
     onBack: () -> Unit = {},
-    onSimpanDraft: () -> Unit = {},
-    onSimpanProduk: () -> Unit = {}
+    viewModel: TambahProdukViewModel = hiltViewModel(),
+    kategoriViewModel: KategoriViewModel = hiltViewModel()
 ) {
-    var namaProduk by remember { mutableStateOf("") }
-    var hargaJual by remember { mutableStateOf("0") }
-    var stok by remember { mutableStateOf("0") }
-    var selectedKategori by remember { mutableStateOf("Makanan") }
-    var diskonProduk by remember { mutableStateOf("0") }
-    var diskonProdukMode by remember { mutableStateOf("%") }
-    var diskonMember by remember { mutableStateOf("0") }
-    var diskonMemberMode by remember { mutableStateOf("%") }
-    var lokasiPenempatan by remember { mutableStateOf("Gudang") }
+    val formState by viewModel.formState.collectAsState()
+    val kategoriState by kategoriViewModel.state.collectAsState()
+    val context = LocalContext.current
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val fileSizeInBytes = inputStream?.available() ?: 0
+                inputStream?.close()
+
+                val maxSizeBytes = 2 * 1024 * 1024 // 2MB
+                if (fileSizeInBytes > maxSizeBytes) {
+                    Toast.makeText(context, "Ukuran foto terlalu besar. Maksimal 2MB!", Toast.LENGTH_LONG).show()
+                } else {
+                    imageUri = uri
+                    viewModel.onImageUrlChange(uri.toString())
+                }
+            } catch (e: Exception) {
+                imageUri = uri
+                viewModel.onImageUrlChange(uri.toString())
+            }
+        }
+    }
+
+    val barcodeScanLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val scannedCode = result.data?.getStringExtra("SCAN_RESULT")
+            if (!scannedCode.isNullOrBlank()) {
+                viewModel.onBarcodeChange(scannedCode)
+            }
+        }
+    }
+
+    LaunchedEffect(formState.isSuccess) {
+        if (formState.isSuccess) {
+            Toast.makeText(context, "Produk berhasil disimpan", Toast.LENGTH_SHORT).show()
+            viewModel.resetSuccess()
+            onBack()
+        }
+    }
+
+    LaunchedEffect(formState.errorMessage) {
+        formState.errorMessage?.let { error ->
+            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+        }
+    }
 
     Scaffold(
-        containerColor = Color(0xFFF3F4F6),
+        containerColor = Color(0xFFF9FAFB),
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Tambah Produk",
-                        fontWeight = FontWeight.SemiBold,
+                        text = if (formState.isEditMode) "Edit Produk" else "Tambah Produk",
+                        fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
-                        fontSize = 20.sp, color = Color.Black
+                        fontSize = 18.sp,
+                        color = Color(0xFF111827)
                     )
                 },
                 navigationIcon = {
@@ -65,187 +128,240 @@ fun TambahProdukScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
-                            tint = Color(0xFF4F46E5)
+                            tint = Color(0xFF111827)
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFF3F4F6),
-                    titleContentColor = Color(0xFF111827),
-                    navigationIconContentColor = Color(0xFF4F46E5)
+                    containerColor = Color.White
                 )
             )
-        },
-
+        }
     ) { paddingValues ->
 
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = 8.dp,
-                bottom = 24.dp
-            ),
+            contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            // ── Upload Foto Produk
+            // Dotted Container Upload Foto Produk
             item {
-                Box(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(260.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFFF9FAFB))
-                        .border(
-                            width = 1.5.dp,
-                            color = Color(0xFFD1D5DB),
-                            shape = RoundedCornerShape(16.dp)
-                        ),
-                    contentAlignment = Alignment.Center
+                        .height(150.dp)
+                        .clickable { imagePickerLauncher.launch("image/*") },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6)),
+                    border = BorderStroke(1.dp, Color(0xFFC7D2FE))
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(50)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CameraAlt,
-                                contentDescription = "Tambah Foto",
-                                tint = Color(0xFF9CA3AF),
-                                modifier = Modifier.size(40.dp)
+                        if (imageUri != null || formState.imageUrl.isNotBlank()) {
+                            AsyncImage(
+                                model = imageUri ?: formState.imageUrl,
+                                contentDescription = "Foto Produk",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
                             )
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(Color.White, RoundedCornerShape(24.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CameraAlt,
+                                        contentDescription = "Upload",
+                                        tint = Color(0xFF6366F1),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                Text(
+                                    text = "Tambah Foto Produk (opsional)",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    fontFamily = interfamily,
+                                    color = Color(0xFF374151)
+                                )
+                            }
                         }
-                        Text(
-                            text = "Tambah Foto Produk (opsional)",
-                            fontFamily = interfamily,
-                            fontSize = 14.sp,
-                            color = Color(0xFF6B7280)
-                        )
                     }
                 }
-            }
-
-            // ── Format Info
-            item {
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Format JPG, PNG atau HEIC. Maks 5MB.",
-                    modifier = Modifier.fillMaxWidth(),
+                    text = "Format JPG, PNG atau HEIC. Maks 2MB.",
+                    fontSize = 11.sp,
                     fontFamily = interfamily,
-                    fontSize = 12.sp,
                     color = Color(0xFF9CA3AF),
-                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
                 )
             }
 
-            // ── Nama Produk
+            // Nama Produk
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = "Nama Produk",
-                        fontFamily = interfamily,
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = interfamily,
                         color = Color(0xFF374151)
                     )
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
+                    OutlinedTextField(
+                        value = formState.name,
+                        onValueChange = { viewModel.onNameChange(it) },
+                        placeholder = { Text("Contoh: Kopi Susu Gula Aren", fontSize = 13.sp, color = Color(0xFF9CA3AF)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        border = BorderStroke(1.dp, Color(0xFFE5E7EB))
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            BasicTextField(
-                                value = namaProduk,
-                                onValueChange = { namaProduk = it },
-                                singleLine = true,
-                                textStyle = TextStyle(
-                                    color = Color.Black,
-                                    fontSize = 14.sp,
-                                    fontFamily = interfamily
-                                ),
-                                modifier = Modifier.fillMaxWidth(),
-                                decorationBox = { innerTextField ->
-                                    if (namaProduk.isEmpty()) {
-                                        Text(
-                                            text = "Contoh: Kopi Susu Gula Aren",
-                                            fontSize = 14.sp,
-                                            fontFamily = interfamily,
-                                            color = Color(0xFF9CA3AF)
-                                        )
-                                    }
-                                    innerTextField()
-                                }
-                            )
-                        }
-                    }
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Color.White,
+                            unfocusedBorderColor = Color(0xFFE5E7EB),
+                            focusedBorderColor = Color(0xFF4F46E5)
+                        )
+                    )
                 }
             }
 
-            // ── Harga Jual & Stok
+            // Barcode / Kode Produk (opsional) + Scan + Generate Otomatis
             item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Barcode / Kode Produk ",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = interfamily,
+                                color = Color(0xFF374151)
+                            )
+                            Text(
+                                text = "(opsional)",
+                                fontSize = 12.sp,
+                                fontFamily = interfamily,
+                                color = Color(0xFF9CA3AF)
+                            )
+                        }
+                        Text(
+                            text = "Generate Otomatis",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = interfamily,
+                            color = Color(0xFF4F46E5),
+                            modifier = Modifier.clickable {
+                                val randomBarcode = "899" + (100000000..999999999).random()
+                                viewModel.onBarcodeChange(randomBarcode)
+                            }
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = formState.barcode,
+                        onValueChange = { viewModel.onBarcodeChange(it) },
+                        placeholder = { Text("Contoh: 8992753210123", fontSize = 13.sp, color = Color(0xFF9CA3AF)) },
+                        singleLine = true,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.QrCode,
+                                contentDescription = null,
+                                tint = Color(0xFF9CA3AF),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        trailingIcon = {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color(0xFFEEF2FF),
+                                modifier = Modifier
+                                    .padding(end = 4.dp)
+                                    .clickable {
+                                        triggerBarcodeScanner(context, barcodeScanLauncher) { code ->
+                                            viewModel.onBarcodeChange(code)
+                                        }
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.QrCodeScanner,
+                                        contentDescription = "Scan",
+                                        tint = Color(0xFF4F46E5),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "Scan",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = interfamily,
+                                        color = Color(0xFF4F46E5)
+                                    )
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Color.White,
+                            unfocusedBorderColor = Color(0xFFE5E7EB),
+                            focusedBorderColor = Color(0xFF4F46E5)
+                        )
+                    )
+                }
+            }
+
+            // Harga Jual & Stok
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Column(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
                             text = "Harga Jual",
-                            fontFamily = interfamily,
                             fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = interfamily,
                             color = Color(0xFF374151)
                         )
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
+                        OutlinedTextField(
+                            value = formState.price,
+                            onValueChange = { viewModel.onPriceChange(it) },
+                            leadingIcon = {
+                                Text("Rp", fontSize = 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
+                            },
+                            placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                            border = BorderStroke(1.dp, Color(0xFFE5E7EB))
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Rp",
-                                    fontFamily = interfamily,
-                                    fontSize = 15.sp,
-                                    color = Color(0xFF9CA3AF)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                BasicTextField(
-                                    value = hargaJual,
-                                    onValueChange = { hargaJual = it },
-                                    singleLine = true,
-                                    textStyle = TextStyle(
-                                        color = Color.Black,
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontFamily = interfamily
-                                    ),
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                        }
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = Color.White,
+                                focusedContainerColor = Color.White,
+                                unfocusedBorderColor = Color(0xFFE5E7EB),
+                                focusedBorderColor = Color(0xFF4F46E5)
+                            )
+                        )
                     }
 
                     Column(
@@ -254,68 +370,62 @@ fun TambahProdukScreen(
                     ) {
                         Text(
                             text = "Stok",
-                            fontFamily = interfamily,
                             fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = interfamily,
                             color = Color(0xFF374151)
                         )
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
+                        OutlinedTextField(
+                            value = formState.stock,
+                            onValueChange = { viewModel.onStockChange(it) },
+                            placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                            border = BorderStroke(1.dp, Color(0xFFE5E7EB))
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp),
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                BasicTextField(
-                                    value = stok,
-                                    onValueChange = { stok = it },
-                                    singleLine = true,
-                                    textStyle = TextStyle(
-                                        color = Color.Black,
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontFamily = interfamily
-                                    ),
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                        }
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = Color.White,
+                                focusedContainerColor = Color.White,
+                                unfocusedBorderColor = Color(0xFFE5E7EB),
+                                focusedBorderColor = Color(0xFF4F46E5)
+                            )
+                        )
                     }
                 }
             }
 
-            // ── Pilih Kategori Produk
+            // Pilih Kategori Produk
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = "Pilih Kategori Produk",
-                        fontFamily = interfamily,
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = interfamily,
                         color = Color(0xFF374151)
                     )
+                    val categories = if (kategoriState.kategoriList.isNotEmpty()) {
+                        kategoriState.kategoriList.map { it.id to it.name }
+                    } else {
+                        listOf("makanan" to "Makanan", "minuman" to "Minuman", "snack" to "Snack", "dessert" to "Dessert", "buah" to "Buah")
+                    }
+
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(vertical = 2.dp)
+                        contentPadding = PaddingValues(vertical = 4.dp)
                     ) {
-                        items(4) { index ->
-                            val label = listOf("Makanan", "Minuman", "Snack", "Dessert")[index]
-                            val isSelected = label == selectedKategori
+                        items(categories.size) { idx ->
+                            val (catId, catName) = categories[idx]
+                            val isSelected = catId == formState.categoryId || (formState.categoryId.isBlank() && idx == 0)
                             FilterChip(
                                 selected = isSelected,
-                                onClick = { selectedKategori = label },
+                                onClick = { viewModel.onCategoryIdChange(catId) },
                                 label = {
                                     Text(
-                                        text = label,
-                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                        text = catName,
+                                        fontSize = 13.sp,
                                         fontFamily = interfamily,
-                                        fontSize = 14.sp
+                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                                     )
                                 },
                                 colors = FilterChipDefaults.filterChipColors(
@@ -324,43 +434,6 @@ fun TambahProdukScreen(
                                     containerColor = Color.White,
                                     labelColor = Color(0xFF374151)
                                 ),
-                                border = FilterChipDefaults.filterChipBorder(
-                                    enabled = true,
-                                    selected = isSelected,
-                                    selectedBorderColor = Color.Transparent,
-                                    borderColor = Color(0xFFE5E7EB),
-                                    borderWidth = 1.dp,
-                                    selectedBorderWidth = 0.dp
-                                ),
-                                shape = RoundedCornerShape(20.dp)
-                            )
-                        }
-                        item {
-                            AssistChip(
-                                onClick = { },
-                                label = {
-                                    Text(
-                                        text = "Tambah Kategori",
-                                        fontFamily = interfamily,
-                                        fontSize = 14.sp,
-                                        color = Color(0xFF374151)
-                                    )
-                                },
-                                trailingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = "Tambah Kategori",
-                                        modifier = Modifier.size(16.dp),
-                                        tint = Color(0xFF374151)
-                                    )
-                                },
-                                colors = AssistChipDefaults.assistChipColors(
-                                    containerColor = Color.White
-                                ),
-                                border = AssistChipDefaults.assistChipBorder(
-                                    enabled = true,
-                                    borderColor = Color(0xFFE5E7EB)
-                                ),
                                 shape = RoundedCornerShape(20.dp)
                             )
                         }
@@ -368,345 +441,156 @@ fun TambahProdukScreen(
                 }
             }
 
-            // ── Pengaturan Diskon
+            // Pengaturan Diskon Card
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    border = BorderStroke(1.dp, Color(0xFFF3F4F6))
                 ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Sell,
+                                imageVector = Icons.Default.LocalOffer,
                                 contentDescription = null,
                                 tint = Color(0xFF4F46E5),
                                 modifier = Modifier.size(18.dp)
                             )
                             Text(
                                 text = "Pengaturan Diskon",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
                                 fontFamily = interfamily,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF111827)
                             )
                         }
 
-                        // Diskon Produk
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     text = "Diskon Produk ",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
                                     fontFamily = interfamily,
-                                    fontSize = 13.sp,
                                     color = Color(0xFF374151)
                                 )
                                 Text(
                                     text = "*opsional",
-                                    fontFamily = interfamily,
                                     fontSize = 12.sp,
+                                    fontFamily = interfamily,
                                     color = Color(0xFFEF4444)
                                 )
                             }
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Card(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(44.dp),
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        BasicTextField(
-                                            value = diskonProduk,
-                                            onValueChange = { diskonProduk = it },
-                                            singleLine = true,
-                                            textStyle = TextStyle(
-                                                color = Color.Black,
-                                                fontSize = 14.sp,
-                                                fontFamily = interfamily
-                                            ),
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    }
-                                }
 
-                                Row(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(Color.White),
-                                    horizontalArrangement = Arrangement.spacedBy(0.dp)
-                                ) {
-                                    Box(
+                            OutlinedTextField(
+                                value = formState.discount,
+                                onValueChange = { viewModel.onDiscountChange(it) },
+                                placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                trailingIcon = {
+                                    Row(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(
-                                                if (diskonProdukMode == "%") Color(0xFF4F46E5) else Color.Transparent
-                                            )
-                                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                                        contentAlignment = Alignment.Center
+                                            .padding(end = 4.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color(0xFFF3F4F6))
+                                            .padding(2.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
                                     ) {
-                                        Text(
-                                            text = "%",
-                                            fontFamily = interfamily,
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = if (diskonProdukMode == "%") Color.White else Color(0xFF374151),
-                                            modifier = Modifier.clickable { diskonProdukMode = "%" }
-                                        )
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(
-                                                if (diskonProdukMode == "Rp") Color(0xFF4F46E5) else Color.Transparent
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = if (formState.discountType == "PERCENT") Color(0xFF4F46E5) else Color.Transparent,
+                                            modifier = Modifier.clickable { viewModel.onDiscountTypeChange("PERCENT") }
+                                        ) {
+                                            Text(
+                                                text = "%",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (formState.discountType == "PERCENT") Color.White else Color(0xFF6B7280),
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                             )
-                                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "Rp",
-                                            fontFamily = interfamily,
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = if (diskonProdukMode == "Rp") Color.White else Color(0xFF374151),
-                                            modifier = Modifier.clickable { diskonProdukMode = "Rp" }
-                                        )
+                                        }
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = if (formState.discountType == "FIXED") Color(0xFF4F46E5) else Color.Transparent,
+                                            modifier = Modifier.clickable { viewModel.onDiscountTypeChange("FIXED") }
+                                        ) {
+                                            Text(
+                                                text = "Rp",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (formState.discountType == "FIXED") Color.White else Color(0xFF6B7280),
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
+                                        }
                                     }
-                                }
-                            }
-                        }
-
-                        // Diskon Member
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row {
-                                Text(
-                                    text = "Diskon Member ",
-                                    fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    color = Color(0xFF374151)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedContainerColor = Color.White,
+                                    focusedContainerColor = Color.White,
+                                    unfocusedBorderColor = Color(0xFFE5E7EB),
+                                    focusedBorderColor = Color(0xFF4F46E5)
                                 )
-                                Text(
-                                    text = "*opsional",
-                                    fontFamily = interfamily,
-                                    fontSize = 12.sp,
-                                    color = Color(0xFFEF4444)
-                                )
-                            }
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Card(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(44.dp),
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        BasicTextField(
-                                            value = diskonMember,
-                                            onValueChange = { diskonMember = it },
-                                            singleLine = true,
-                                            textStyle = TextStyle(
-                                                color = Color.Black,
-                                                fontSize = 14.sp,
-                                                fontFamily = interfamily
-                                            ),
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    }
-                                }
-
-                                Row(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(Color.White),
-                                    horizontalArrangement = Arrangement.spacedBy(0.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(
-                                                if (diskonMemberMode == "%") Color(0xFF4F46E5) else Color.Transparent
-                                            )
-                                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "%",
-                                            fontFamily = interfamily,
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = if (diskonMemberMode == "%") Color.White else Color(0xFF374151),
-                                            modifier = Modifier.clickable { diskonMemberMode = "%" }
-                                        )
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(
-                                                if (diskonMemberMode == "Rp") Color(0xFF4F46E5) else Color.Transparent
-                                            )
-                                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "Rp",
-                                            fontFamily = interfamily,
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = if (diskonMemberMode == "Rp") Color.White else Color(0xFF374151),
-                                            modifier = Modifier.clickable { diskonMemberMode = "Rp" }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        // Lokasi Penempatan
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                text = "Lokasi Penempatan",
-                                fontFamily = interfamily,
-                                fontSize = 13.sp,
-                                color = Color(0xFF374151)
                             )
-                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Row(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(
-                                            if (lokasiPenempatan == "Gudang") Color(0xFF4F46E5) else Color(0xffEFF4FF)
-                                        )
-                                        .clickable { lokasiPenempatan = "Gudang" }
-                                        .padding(vertical = 12.dp),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Warehouse,
-                                        contentDescription = "Gudang",
-                                        tint = if (lokasiPenempatan == "Gudang") Color.White else Color(0xFF374151),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Gudang",
-                                        fontFamily = interfamily,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (lokasiPenempatan == "Gudang") Color.White else Color(0xFF374151)
-                                    )
-                                }
-
-
-
-                                Row(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(
-                                            if (lokasiPenempatan == "Etalase") Color(0xFF4F46E5) else Color(0xffEFF4FF)
-                                        )
-                                        .clickable { lokasiPenempatan = "Etalase" }
-                                        .padding(vertical = 12.dp),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Storefront,
-                                        contentDescription = "Etalase",
-                                        tint = if (lokasiPenempatan == "Etalase") Color.White else Color(0xFF374151),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Etalase",
-                                        fontFamily = interfamily,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (lokasiPenempatan == "Etalase") Color.White else Color(0xFF374151)
-                                    )
-                                }
-                            }
                         }
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(54.dp))
-
+            // Bottom Buttons
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     OutlinedButton(
-                        onClick = onSimpanDraft,
+                        onClick = onBack,
                         modifier = Modifier
                             .weight(1f)
                             .height(48.dp),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, Color(0xFFE5E7EB)),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFF374151)
-                        )
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF374151))
                     ) {
-                        Text(
-                            text = "Batal",
-                            fontFamily = interfamily,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
+                        Text("Batal", fontFamily = interfamily, fontWeight = FontWeight.Medium)
                     }
+
                     Button(
-                        onClick = onSimpanProduk,
+                        onClick = { viewModel.simpanProduk() },
+                        enabled = !formState.isLoading,
                         modifier = Modifier
                             .weight(1f)
                             .height(48.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4F46E5)
-                        )
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Save,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Simpan Produk",
-                            fontFamily = interfamily,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White
-                        )
+                        if (formState.isLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Download,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Simpan Produk",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                        }
                     }
                 }
             }
@@ -714,12 +598,48 @@ fun TambahProdukScreen(
     }
 }
 
-// ── Preview
+// Camera Barcode Scanner Launcher using GmsBarcodeScanning (ML Kit Code Scanner)
+private fun triggerBarcodeScanner(
+    context: Context,
+    launcher: androidx.activity.result.ActivityResultLauncher<Intent>,
+    onResult: (String) -> Unit
+) {
+    try {
+        val options = GmsBarcodeScannerOptions.Builder()
+            .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
+            .enableAutoZoom()
+            .build()
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun TambahProdukScreenPreview() {
-    MaterialTheme {
-        TambahProdukScreen()
+        val scanner = GmsBarcodeScanning.getClient(context, options)
+        scanner.startScan()
+            .addOnSuccessListener { barcode ->
+                val rawValue = barcode.rawValue
+                if (!rawValue.isNullOrBlank()) {
+                    onResult(rawValue)
+                    Toast.makeText(context, "Barcode berhasil discan: " + rawValue, Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnCanceledListener {
+                // Scan dibatalkan pengguna
+            }
+            .addOnFailureListener { e ->
+                val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
+                    putExtra("SCAN_MODE", "PRODUCT_MODE")
+                }
+                if (scanIntent.resolveActivity(context.packageManager) != null) {
+                    launcher.launch(scanIntent)
+                } else {
+                    Toast.makeText(context, "Gagal membuka kamera scanner: " + e.message, Toast.LENGTH_LONG).show()
+                }
+            }
+    } catch (e: Exception) {
+        val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
+            putExtra("SCAN_MODE", "PRODUCT_MODE")
+        }
+        if (scanIntent.resolveActivity(context.packageManager) != null) {
+            launcher.launch(scanIntent)
+        } else {
+            Toast.makeText(context, "Gagal membuka kamera scanner: " + e.message, Toast.LENGTH_LONG).show()
+        }
     }
 }
