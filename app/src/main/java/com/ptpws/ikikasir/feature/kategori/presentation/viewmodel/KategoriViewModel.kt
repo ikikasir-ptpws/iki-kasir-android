@@ -7,6 +7,7 @@ import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.DeleteKategoriUseCase
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.GetKategoriUseCase
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.SyncKategoriUseCase
+import com.ptpws.ikikasir.feature.kategori.domain.usecase.UpdateKategoriUseCase
 import com.ptpws.ikikasir.feature.kategori.presentation.state.KategoriListState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +23,7 @@ class KategoriViewModel @Inject constructor(
     private val getKategoriUseCase: GetKategoriUseCase,
     private val deleteKategoriUseCase: DeleteKategoriUseCase,
     private val syncKategoriUseCase: SyncKategoriUseCase,
+    private val updateKategoriUseCase: UpdateKategoriUseCase,
     private val networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
@@ -137,6 +139,23 @@ class KategoriViewModel @Inject constructor(
         }
     }
 
+
+    fun toggleCashierVisibility(kategori: Kategori) {
+        viewModelScope.launch {
+            val updated = kategori.copy(isVisibleInCashier = !kategori.isVisibleInCashier)
+            updateKategoriUseCase(updated).collect { result ->
+                if (result.isSuccess) {
+                    _state.update {
+                        it.copy(userMessage = if (updated.isVisibleInCashier) "Kasir diaktifkan" else "Kasir dinonaktifkan")
+                    }
+                } else {
+                    _state.update {
+                        it.copy(errorMessage = result.exceptionOrNull()?.message ?: "Gagal update visibilitas")
+                    }
+                }
+            }
+        }
+    }
     fun clearUserMessage() {
         _state.update { it.copy(userMessage = null, errorMessage = null) }
     }
