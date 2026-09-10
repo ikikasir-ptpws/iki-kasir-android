@@ -1,5 +1,6 @@
 package com.ptpws.ikikasir.feature.kategori.domain.usecase
 
+import com.google.firebase.Timestamp
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.kategori.domain.repository.KategoriRepository
 import kotlinx.coroutines.flow.Flow
@@ -9,7 +10,7 @@ class UpdateKategoriUseCase @Inject constructor(
     private val repository: KategoriRepository
 ) {
     suspend operator fun invoke(kategori: Kategori): Flow<Result<Unit>> {
-        val updatedKategori = kategori.copy(updatedAt = System.currentTimeMillis())
+        val updatedKategori = kategori.copy(updatedAt = Timestamp.now())
         return repository.updateKategori(updatedKategori)
     }
 }
