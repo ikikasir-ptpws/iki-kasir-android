@@ -7,34 +7,27 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.PointOfSale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.commond.interfamily
-import com.ptpws.ikikasir.feature.kategori.presentation.util.KategoriIconHelper
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.TambahKategoriViewModel
+
+data class IconItem(val name: String, val icon: ImageVector)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,17 +38,12 @@ fun TambahKategoriScreen(
 ) {
     val formState by viewModel.formState.collectAsState()
     val context = LocalContext.current
-    var showIconPicker by remember { mutableStateOf(false) }
-
-    val selectedIconOption = remember(formState.iconName) {
-        KategoriIconHelper.getIconOption(formState.iconName)
-    }
 
     LaunchedEffect(formState.isSuccess) {
         if (formState.isSuccess) {
-            Toast.makeText(context, "Kategori berhasil disimpan", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, if (formState.isEditMode) "Kategori berhasil diperbarui" else "Kategori berhasil disimpan", Toast.LENGTH_SHORT).show()
             viewModel.resetSuccess()
-            onSimpanKategori()
+            onSimpanKategori(); onBack()
         }
     }
 
@@ -65,17 +53,46 @@ fun TambahKategoriScreen(
         }
     }
 
+    val iconList = listOf(
+        IconItem("LocalCafe", Icons.Default.LocalCafe),
+        IconItem("Restaurant", Icons.Default.Restaurant),
+        IconItem("LocalBar", Icons.Default.LocalBar),
+        IconItem("Cookie", Icons.Default.Cookie),
+        IconItem("Cake", Icons.Default.Cake),
+        IconItem("BakeryDining", Icons.Default.BakeryDining),
+        IconItem("LunchDining", Icons.Default.LunchDining),
+        IconItem("Icecream", Icons.Default.Icecream)
+    )
+
+    val colorOptions = listOf(
+        "#4F46E5", // Indigo / Purple
+        "#059669", // Dark Green
+        "#854D0E", // Golden / Brown
+        "#DC2626", // Red
+        "#334155", // Slate Dark
+        "#8B5CF6"  // Light Purple
+    )
+
+    val activeColor = try {
+        Color(android.graphics.Color.parseColor(formState.colorHex))
+    } catch (e: Exception) {
+        Color(0xFF4F46E5)
+    }
+
+    val activeIcon = iconList.find { it.name.equals(formState.iconName, ignoreCase = true) }?.icon
+        ?: Icons.Default.BakeryDining
+
     Scaffold(
-        containerColor = Color(0xFFF3F4F6),
+        containerColor = Color(0xFFF9FAFB),
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = if (formState.isEditMode) "Edit Kategori" else "Tambah Kategori Baru",
-                        fontWeight = FontWeight.SemiBold,
+                        text = if (formState.isEditMode) "Edit Kategori" else "Tambah Kategori",
                         fontFamily = interfamily,
-                        fontSize = 20.sp,
-                        color = Color.Black
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color(0xFF1F2937)
                     )
                 },
                 navigationIcon = {
@@ -83,380 +100,536 @@ fun TambahKategoriScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
-                            tint = Color(0xFF4F46E5)
+                            tint = Color(0xFF1F2937)
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFF3F4F6),
-                    titleContentColor = Color(0xFF111827),
-                    navigationIconContentColor = Color(0xFF4F46E5)
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF9FAFB))
             )
         }
     ) { paddingValues ->
-
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-
+            // Header Info & Step Badge
             item {
-                // Card Utama: Icon Kategori + Form
-                Card(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp),
-                    shape = RoundedCornerShape(20.dp),
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFEEF2FF),
+                                modifier = Modifier.padding(end = 6.dp)
+                            ) {
+                                Text(
+                                    text = "KATALOG POS",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = interfamily,
+                                    color = Color(0xFF4F46E5),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                            Text(
+                                text = "• Langkah 1 dari 2",
+                                fontSize = 12.sp,
+                                fontFamily = interfamily,
+                                color = Color(0xFF6B7280)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Konfigurasikan detail dan visibilitas kategori menu",
+                            fontSize = 12.sp,
+                            fontFamily = interfamily,
+                            color = Color(0xFF6B7280)
+                        )
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFEEF2FF),
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Category,
+                                contentDescription = null,
+                                tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Live Preview Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    border = BorderStroke(1.dp, Color(0xFFE5E7EB))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = activeColor.copy(alpha = 0.15f),
+                            modifier = Modifier.size(52.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = activeIcon,
+                                    contentDescription = null,
+                                    tint = activeColor,
+                                    modifier = Modifier.size(26.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = if (formState.nama.isBlank()) "Pastry & Bakery" else formState.nama,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = interfamily,
+                                    color = Color(0xFF1F2937),
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (formState.isVisibleInCashier) Color(0xFFDCFCE7) else Color(0xFFF3F4F6)
+                                ) {
+                                    Text(
+                                        text = if (formState.isVisibleInCashier) "• Kasir Aktif" else "• Non-Aktif",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        fontFamily = interfamily,
+                                        color = if (formState.isVisibleInCashier) Color(0xFF16A34A) else Color(0xFF6B7280),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (formState.deskripsi.isBlank()) "Aneka roti lembut, croissant, dan puff hangat" else formState.deskripsi,
+                                fontSize = 12.sp,
+                                fontFamily = interfamily,
+                                color = Color(0xFF6B7280),
+                                maxLines = 2
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Section 1: Informasi Kategori
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
                     border = BorderStroke(1.dp, Color(0xFFE5E7EB))
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-
-                        // Icon Kategori + Badge Edit
-                        Box(
-                            modifier = Modifier
-                                .padding(bottom = 4.dp)
-                                .clickable { showIconPicker = true }
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clip(CircleShape)
-                                    .background(selectedIconOption.bgColor),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = selectedIconOption.icon,
-                                    contentDescription = selectedIconOption.label,
-                                    tint = selectedIconOption.tintColor,
-                                    modifier = Modifier.size(36.dp)
-                                )
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .size(28.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF4F46E5))
-                                    .border(2.dp, Color.White, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Ubah Icon",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                            }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Tune,
+                                contentDescription = null,
+                                tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Informasi Kategori",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = interfamily,
+                                color = Color(0xFF1F2937)
+                            )
                         }
 
-                        Text(
-                            text = "Klik untuk memilih icon",
-                            fontFamily = interfamily,
-                            fontSize = 12.sp,
-                            color = Color(0xFF6B7280)
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Input Nama Kategori
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = "Nama Kategori *",
-                                fontFamily = interfamily,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF374151)
-                            )
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                                border = BorderStroke(
-                                    1.dp,
-                                    if (formState.errorMessage != null && formState.nama.isBlank())
-                                        Color(0xFFEF4444)
-                                    else Color(0xFFE5E7EB)
+                        // Field 1: Nama Kategori *
+                        Column {
+                            Row {
+                                Text(
+                                    text = "Nama Kategori ",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    fontFamily = interfamily,
+                                    color = Color(0xFF374151)
                                 )
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 14.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    BasicTextField(
-                                        value = formState.nama,
-                                        onValueChange = { viewModel.onNamaChange(it) },
-                                        singleLine = true,
-                                        textStyle = TextStyle(
-                                            color = Color.Black,
-                                            fontSize = 14.sp,
-                                            fontFamily = interfamily
-                                        ),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        decorationBox = { innerTextField ->
-                                            if (formState.nama.isEmpty()) {
-                                                Text(
-                                                    text = "Contoh: Minuman Dingin",
-                                                    fontSize = 14.sp,
-                                                    fontFamily = interfamily,
-                                                    color = Color(0xFF9CA3AF)
-                                                )
-                                            }
-                                            innerTextField()
-                                        }
-                                    )
-                                }
+                                Text(
+                                    text = "*",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = interfamily,
+                                    color = Color(0xFFEF4444)
+                                )
                             }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            OutlinedTextField(
+                                value = formState.nama,
+                                onValueChange = { viewModel.onNamaChange(it) },
+                                placeholder = { Text("Contoh: Pastry & Bakery", fontSize = 13.sp, color = Color(0xFF9CA3AF)) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedContainerColor = Color(0xFFF8FAFC),
+                                    focusedContainerColor = Color.White,
+                                    unfocusedBorderColor = Color(0xFFE5E7EB),
+                                    focusedBorderColor = Color(0xFF4F46E5)
+                                )
+                            )
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        // Input Deskripsi Kategori
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = "Deskripsi Kategori (Opsional)",
-                                fontFamily = interfamily,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF374151)
-                            )
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(90.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                                border = BorderStroke(1.dp, Color(0xFFE5E7EB))
+                        // Field 2: Deskripsi Singkat
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 14.dp, vertical = 12.dp)
-                                ) {
-                                    BasicTextField(
-                                        value = formState.deskripsi,
-                                        onValueChange = { viewModel.onDeskripsiChange(it) },
-                                        textStyle = TextStyle(
-                                            color = Color.Black,
-                                            fontSize = 14.sp,
-                                            fontFamily = interfamily
-                                        ),
-                                        modifier = Modifier.fillMaxSize(),
-                                        decorationBox = { innerTextField ->
-                                            if (formState.deskripsi.isEmpty()) {
-                                                Text(
-                                                    text = "Berikan penjelasan singkat mengenai kategori ini...",
-                                                    fontSize = 14.sp,
-                                                    fontFamily = interfamily,
-                                                    color = Color(0xFF9CA3AF)
-                                                )
-                                            }
-                                            innerTextField()
-                                        }
-                                    )
-                                }
+                                Text(
+                                    text = "Deskripsi Singkat",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    fontFamily = interfamily,
+                                    color = Color(0xFF374151)
+                                )
+                                Text(
+                                    text = "Opsional",
+                                    fontSize = 12.sp,
+                                    fontFamily = interfamily,
+                                    color = Color(0xFF9CA3AF)
+                                )
                             }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            OutlinedTextField(
+                                value = formState.deskripsi,
+                                onValueChange = { viewModel.onDeskripsiChange(it) },
+                                placeholder = { Text("Aneka roti lembut, croissant, dan puff hangat", fontSize = 13.sp, color = Color(0xFF9CA3AF)) },
+                                minLines = 2,
+                                maxLines = 3,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedContainerColor = Color(0xFFF8FAFC),
+                                    focusedContainerColor = Color.White,
+                                    unfocusedBorderColor = Color(0xFFE5E7EB),
+                                    focusedBorderColor = Color(0xFF4F46E5)
+                                )
+                            )
                         }
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Tip Kategori
+            // Section 2: Pilih Ikon Visual & Warna Aksen
+            item {
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(
-                            width = 1.dp,
-                            color = Color(0xFFC0C1FF),
-                            shape = RoundedCornerShape(12.dp)
-                        ),
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFEEF2FF)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, Color(0xFFE5E7EB))
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(14.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "Tip",
-                            tint = Color(0xFF4F46E5),
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Palette,
+                                    contentDescription = null,
+                                    tint = Color(0xFF4F46E5),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Pilih Ikon Visual",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = interfamily,
+                                    color = Color(0xFF1F2937)
+                                )
+                            }
                             Text(
-                                text = "Tip Kategori",
-                                fontFamily = interfamily,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF111827)
-                            )
-                            Text(
-                                text = "Gunakan nama kategori yang singkat dan mudah diingat oleh kasir untuk mempercepat proses transaksi.",
-                                fontFamily = interfamily,
+                                text = "8 Pilihan",
                                 fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = interfamily,
                                 color = Color(0xFF4F46E5)
                             )
                         }
+
+                        // Grid 8 Icons (2 Rows of 4 Columns)
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                iconList.take(4).forEach { item ->
+                                    val isSelected = formState.iconName.equals(item.name, ignoreCase = true)
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = if (isSelected) activeColor else Color(0xFFF3F4F6),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(56.dp)
+                                            .clickable { viewModel.onIconChange(item.name) }
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = item.icon,
+                                                contentDescription = item.name,
+                                                tint = if (isSelected) Color.White else Color(0xFF4B5563),
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                iconList.drop(4).forEach { item ->
+                                    val isSelected = formState.iconName.equals(item.name, ignoreCase = true)
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = if (isSelected) activeColor else Color(0xFFF3F4F6),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(56.dp)
+                                            .clickable { viewModel.onIconChange(item.name) }
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = item.icon,
+                                                contentDescription = item.name,
+                                                tint = if (isSelected) Color.White else Color(0xFF4B5563),
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Warna Aksen Kategori
+                        Text(
+                            text = "Warna Aksen Kategori",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = interfamily,
+                            color = Color(0xFF374151)
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            colorOptions.forEach { hex ->
+                                val color = Color(android.graphics.Color.parseColor(hex))
+                                val isSelected = formState.colorHex.equals(hex, ignoreCase = true)
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(color)
+                                        .border(
+                                            width = if (isSelected) 3.dp else 0.dp,
+                                            color = if (isSelected) Color(0xFFC7D2FE) else Color.Transparent,
+                                            shape = CircleShape
+                                        )
+                                        .clickable { viewModel.onColorChange(hex) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Section 3: Visibilitas
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, Color(0xFFE5E7EB))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Tune,
+                                contentDescription = null,
+                                tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Visibilitas",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = interfamily,
+                                color = Color(0xFF1F2937)
+                            )
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFFF8FAFC),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.PointOfSale,
+                                    contentDescription = null,
+                                    tint = Color(0xFF059669),
+                                    modifier = Modifier
+                                        .size(26.dp)
+                                        .padding(top = 2.dp)
+                                )
+
+                                Spacer(modifier = Modifier.width(10.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Tampilkan di Kasir",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = interfamily,
+                                        color = Color(0xFF1F2937)
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Langsung muncul pada layar pemesanan kasir",
+                                        fontSize = 11.sp,
+                                        fontFamily = interfamily,
+                                        color = Color(0xFF6B7280)
+                                    )
+                                }
+
+                                Switch(
+                                    checked = formState.isVisibleInCashier,
+                                    onCheckedChange = { viewModel.onVisibilityChange(it) },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = Color(0xFF059669),
+                                        uncheckedThumbColor = Color.White,
+                                        uncheckedTrackColor = Color(0xFFE5E7EB)
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Bottom Actions
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { viewModel.simpanKategori() },
+                    enabled = !formState.isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(26.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                ) {
+                    if (formState.isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (formState.isEditMode) "Simpan Perubahan" else "Simpan Kategori Baru",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = Color.White
+                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // Tombol Simpan
-                Button(
-                    onClick = { viewModel.simpanKategori() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    enabled = !formState.isLoading,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4F46E5),
-                        disabledContainerColor = Color(0xFFA5B4FC)
-                    )
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    if (formState.isLoading) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(onClick = onBack) {
                         Text(
-                            text = "Menyimpan...",
+                            text = "Batal & Kembali",
                             fontFamily = interfamily,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Save,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (formState.isEditMode) "Perbarui Kategori" else "Simpan Kategori",
-                            fontFamily = interfamily,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 13.sp,
+                            color = Color(0xFF6B7280)
                         )
                     }
                 }
             }
         }
-    }
-
-    // Modal Dialog Pemilihan Icon Kategori
-    if (showIconPicker) {
-        AlertDialog(
-            onDismissRequest = { showIconPicker = false },
-            title = {
-                Text(
-                    text = "Pilih Icon Kategori",
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = interfamily,
-                    fontSize = 18.sp
-                )
-            },
-            text = {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(4),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(240.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(KategoriIconHelper.availableIcons) { option ->
-                        val isSelected = option.name == formState.iconName
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSelected) Color(0xFFEEF2FF) else Color(0xFFF9FAFB))
-                                .border(
-                                    width = if (isSelected) 2.dp else 1.dp,
-                                    color = if (isSelected) Color(0xFF4F46E5) else Color(0xFFE5E7EB),
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                                .clickable {
-                                    viewModel.onIconChange(option.name, option.colorHex)
-                                    showIconPicker = false
-                                }
-                                .padding(8.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(option.bgColor),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = option.icon,
-                                    contentDescription = option.label,
-                                    tint = option.tintColor,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = option.label,
-                                fontSize = 11.sp,
-                                fontFamily = interfamily,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) Color(0xFF4F46E5) else Color(0xFF374151)
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showIconPicker = false }) {
-                    Text("Tutup", color = Color(0xFF4F46E5))
-                }
-            }
-        )
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun TambahKategoriScreenPreview() {
-    MaterialTheme {
-        TambahKategoriScreen()
     }
 }
