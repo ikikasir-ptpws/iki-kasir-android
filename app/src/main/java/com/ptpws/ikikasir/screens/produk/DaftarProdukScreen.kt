@@ -12,6 +12,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
@@ -437,29 +439,32 @@ fun ProdukCardItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                // Gambar Produk
+                                // Gambar Produk
                 if (produk.imageUrl.isNotBlank()) {
                     AsyncImage(
                         model = produk.imageUrl,
                         contentDescription = produk.name,
                         contentScale = ContentScale.Crop,
-                        error = painterResource(R.drawable.kopi),
-                        placeholder = painterResource(R.drawable.kopi),
                         modifier = Modifier
                             .size(72.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFE5E7EB))
+                            .background(Color(0xFFF3F4F6))
                     )
                 } else {
-                    Image(
-                        painter = painterResource(R.drawable.kopi),
-                        contentDescription = produk.name,
-                        contentScale = ContentScale.Crop,
+                    Box(
                         modifier = Modifier
                             .size(72.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFE5E7EB))
-                    )
+                            .background(Color(0xFFF3F4F6)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocalOffer,
+                            contentDescription = null,
+                            tint = Color(0xFF9CA3AF),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
