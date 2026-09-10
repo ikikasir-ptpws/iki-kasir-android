@@ -1,5 +1,8 @@
 package com.ptpws.ikikasir.screens.produk
 
+import java.io.File
+import java.io.FileOutputStream
+
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -62,7 +65,7 @@ fun TambahProdukScreen(
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
+        val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
@@ -75,12 +78,16 @@ fun TambahProdukScreen(
                 if (fileSizeInBytes > maxSizeBytes) {
                     Toast.makeText(context, "Ukuran foto terlalu besar. Maksimal 2MB!", Toast.LENGTH_LONG).show()
                 } else {
-                    imageUri = uri
-                    viewModel.onImageUrlChange(uri.toString())
+                    val permanentUriString = saveImageToInternalStorage(context, uri)
+                    val permanentUri = Uri.parse(permanentUriString)
+                    imageUri = permanentUri
+                    viewModel.onImageUrlChange(permanentUriString)
                 }
             } catch (e: Exception) {
-                imageUri = uri
-                viewModel.onImageUrlChange(uri.toString())
+                val permanentUriString = saveImageToInternalStorage(context, uri)
+                val permanentUri = Uri.parse(permanentUriString)
+                imageUri = permanentUri
+                viewModel.onImageUrlChange(permanentUriString)
             }
         }
     }
@@ -641,5 +648,26 @@ private fun triggerBarcodeScanner(
         } else {
             Toast.makeText(context, "Gagal membuka kamera scanner: " + e.message, Toast.LENGTH_LONG).show()
         }
+    }
+}
+// Save uploaded image permanently to internal storage so it persists across emulator restarts
+private fun saveImageToInternalStorage(context: Context, uri: Uri): String {
+    return try {
+        val inputStream = context.contentResolver.openInputStream(uri) ?: return uri.toString()
+        val imagesDir = File(context.filesDir, "product_images")
+        if (!imagesDir.exists()) {
+            imagesDir.mkdirs()
+        }
+        val fileName = "img_" + System.currentTimeMillis() + ".jpg"
+        val destinationFile = File(imagesDir, fileName)
+        val outputStream = FileOutputStream(destinationFile)
+        inputStream.use { input ->
+            outputStream.use { output ->
+                input.copyTo(output)
+            }
+        }
+        Uri.fromFile(destinationFile).toString()
+    } catch (e: Exception) {
+        uri.toString()
     }
 }
