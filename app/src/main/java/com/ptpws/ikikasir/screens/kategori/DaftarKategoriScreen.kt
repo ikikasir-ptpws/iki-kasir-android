@@ -2,9 +2,7 @@ package com.ptpws.ikikasir.screens.kategori
 
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,34 +10,28 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.CloudQueue
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.PointOfSale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.kategori.presentation.util.KategoriIconHelper
@@ -61,7 +53,6 @@ fun DaftarKategoriScreen(
             viewModel.clearUserMessage()
         }
     }
-
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
@@ -69,415 +60,508 @@ fun DaftarKategoriScreen(
         }
     }
 
-    Scaffold(
-        containerColor = Color(0xFFF3F4F6),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "Kategori Produk",
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = interfamily,
-                            color = Color.Black,
-                            fontSize = 20.sp
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (navController.currentDestination?.route == "kategori_produk") {
-                            navController.popBackStack()
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Kembali"
-                        )
-                    }
-                },
-                actions = {
-                    // Network & Sync Indicator
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(end = 4.dp)
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (state.isOnline) Color(0xFFDCFCE7) else Color(0xFFFEF3C7),
-                            modifier = Modifier.padding(end = 6.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (state.isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
-                                    contentDescription = if (state.isOnline) "Online" else "Offline",
-                                    tint = if (state.isOnline) Color(0xFF16A34A) else Color(0xFFD97706),
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Text(
-                                    text = if (state.isOnline) "Online" else "Offline",
-                                    fontSize = 11.sp,
-                                    fontFamily = interfamily,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (state.isOnline) Color(0xFF16A34A) else Color(0xFFD97706)
-                                )
-                            }
-                        }
+    val totalMenu = state.filteredList.sumOf { it.productCount }
+    val menuMenipis = state.filteredList.sumOf { it.lowStockCount + it.outOfStockCount }
 
-                        IconButton(
-                            onClick = { viewModel.syncData() },
-                            enabled = !state.isSyncing
+    Scaffold(
+        containerColor = Color(0xFFF1F5F9),
+        topBar = {
+            Column(modifier = Modifier.background(Color.White)) {
+                // ── AppBar row ───────────────────────────────────────────────
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 4.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali", tint = Color(0xFF0F172A))
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Kategori Produk", fontWeight = FontWeight.Bold, fontFamily = interfamily, fontSize = 20.sp, color = Color(0xFF0F172A))
+                        Text("Katalog POS & Manajemen Stok", fontFamily = interfamily, fontSize = 12.sp, color = Color(0xFF64748B))
+                    }
+                    // Green dot + count badge
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color(0xFFDCFCE7),
+                        modifier = Modifier.padding(end = 12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
                         ) {
-                            if (state.isSyncing) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(18.dp),
-                                    strokeWidth = 2.dp,
-                                    color = Color(0xFF4F46E5)
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Sync,
-                                    contentDescription = "Sinkronisasi",
-                                    tint = Color(0xFF4F46E5)
-                                )
-                            }
+                            Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(Color(0xFF16A34A)))
+                            Text(
+                                text = "${state.kategoriList.size} Kategori",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp,
+                                color = Color(0xFF16A34A)
+                            )
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFF3F4F6),
-                    titleContentColor = Color(0xFF111827),
-                    navigationIconContentColor = Color(0xFF4F46E5)
-                )
-            )
+                }
+
+                // ── Search bar row ───────────────────────────────────────────
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Search field
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFF1F5F9),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(18.dp))
+                            BasicTextField(
+                                value = state.searchQuery,
+                                onValueChange = viewModel::onSearchQueryChange,
+                                modifier = Modifier.weight(1f),
+                                textStyle = TextStyle(fontFamily = interfamily, fontSize = 13.sp, color = Color(0xFF0F172A)),
+                                cursorBrush = SolidColor(Color(0xFF4F46E5)),
+                                singleLine = true,
+                                decorationBox = { inner ->
+                                    if (state.searchQuery.isEmpty()) {
+                                        Text("Cari kategori atau menu...", fontFamily = interfamily, fontSize = 13.sp, color = Color(0xFF94A3B8))
+                                    }
+                                    inner()
+                                }
+                            )
+                        }
+                    }
+                    // Filter icon button
+                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF1F5F9)) {
+                        Box(modifier = Modifier.padding(11.dp)) {
+                            Icon(Icons.Default.Tune, contentDescription = "Filter", tint = Color(0xFF475569), modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onTambahPromo,
+                onClick = { context.startActivity(Intent(context, TambahKategoriActivity::class.java)) },
                 containerColor = Color(0xFF4F46E5),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
-                elevation = FloatingActionButtonDefaults.elevation(8.dp)
+                modifier = Modifier.wrapContentWidth().height(50.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Tambah Kategori"
-                )
-            }
-        }
-    ) { paddingValues ->
-
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = 8.dp,
-                bottom = 80.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-
-            // Search Bar
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp),
-                    shape = RoundedCornerShape(15.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFF2F3F5)
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    BasicTextField(
-                        value = state.searchQuery,
-                        onValueChange = { viewModel.onSearchQueryChange(it) },
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            color = Color.Black,
-                            fontSize = 13.sp,
-                            fontFamily = interfamily
-                        ),
-                        modifier = Modifier.fillMaxSize(),
-                        decorationBox = { innerTextField ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(start = 16.dp, end = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Search,
-                                    contentDescription = "Cari",
-                                    tint = Color(0x80474747)
-                                )
-
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                Box(
-                                    modifier = Modifier.weight(1f),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    if (state.searchQuery.isEmpty()) {
-                                        Text(
-                                            text = "Cari Kategori...",
-                                            fontFamily = interfamily,
-                                            fontSize = 13.sp,
-                                            color = Color(0x80474747)
-                                        )
-                                    }
-                                    innerTextField()
-                                }
-                            }
-                        }
-                    )
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text("Tambah Kategori", fontFamily = interfamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 }
             }
-
-            // Loading state
-            if (state.isLoading && state.kategoriList.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 40.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFF4F46E5))
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 110.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            // ── Summary banner ───────────────────────────────────────────────
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF16A34A), modifier = Modifier.size(16.dp))
+                        Text(
+                            text = "$totalMenu Total Menu Siap Jual",
+                            fontFamily = interfamily,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF374151)
+                        )
+                    }
+                    if (menuMenipis > 0) {
+                        Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF7ED)) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFEA580C), modifier = Modifier.size(13.dp))
+                                Text(
+                                    text = "$menuMenipis Menu Menipis",
+                                    fontFamily = interfamily,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFFEA580C)
+                                )
+                            }
+                        }
                     }
                 }
             }
 
-            // Empty state
-            if (!state.isLoading && state.filteredList.isEmpty()) {
+            // ── Empty state ──────────────────────────────────────────────────
+            if (state.filteredList.isEmpty() && !state.isLoading) {
                 item {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 48.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 60.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        Icon(Icons.Default.Category, contentDescription = null, tint = Color(0xFFD1D5DB), modifier = Modifier.size(56.dp))
                         Text(
-                            text = if (state.searchQuery.isNotEmpty())
-                                "Kategori \"${state.searchQuery}\" tidak ditemukan"
-                            else
-                                "Belum ada kategori",
-                            fontFamily = interfamily,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp,
-                            color = Color(0xFF374151)
+                            text = if (state.searchQuery.isNotEmpty()) "Kategori tidak ditemukan" else "Belum ada kategori",
+                            fontFamily = interfamily, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF374151)
                         )
                         Text(
-                            text = if (state.searchQuery.isNotEmpty())
-                                "Coba cari dengan kata kunci lain"
-                            else
-                                "Ketuk tombol + di bawah untuk menambahkan kategori baru",
-                            fontFamily = interfamily,
-                            fontSize = 13.sp,
-                            color = Color(0xFF6B7280),
-                            textAlign = TextAlign.Center
+                            text = if (state.searchQuery.isNotEmpty()) "Coba kata kunci lain" else "Ketuk Tambah Kategori untuk memulai",
+                            fontFamily = interfamily, fontSize = 12.sp, color = Color(0xFF6B7280), textAlign = TextAlign.Center
                         )
                     }
                 }
             }
 
-            // Dynamic Category Cards
-            items(
-                items = state.filteredList,
-                key = { it.id }
-            ) { item ->
-                val iconOption = KategoriIconHelper.getIconOption(item.iconName)
+            // Loading
+            if (state.isLoading) {
+                item {
+                    Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color(0xFF4F46E5), modifier = Modifier.size(32.dp))
+                    }
+                }
+            }
+
+            // ── Category cards ───────────────────────────────────────────────
+            items(items = state.filteredList, key = { it.id }) { kategori ->
+                val iconOption = KategoriIconHelper.getIconOption(kategori.iconName)
+                val accentColor = try {
+                    Color(android.graphics.Color.parseColor(kategori.colorHex))
+                } catch (e: Exception) { Color(0xFF4F46E5) }
 
                 KategoriCardItem(
-                    kategori = item,
+                    kategori = kategori,
                     icon = iconOption.icon,
-                    iconBgColor = iconOption.bgColor,
-                    iconTintColor = iconOption.tintColor,
+                    accentColor = accentColor,
                     onEdit = {
                         val intent = Intent(context, TambahKategoriActivity::class.java).apply {
-                            putExtra("kategoriId", item.id)
-                            putExtra("kategoriNama", item.nama)
-                            putExtra("kategoriDeskripsi", item.deskripsi)
-                            putExtra("kategoriIcon", item.iconName)
-                            putExtra("kategoriColor", item.colorHex)
+                            putExtra("kategoriId", kategori.id)
+                            putExtra("kategoriNama", kategori.nama)
+                            putExtra("kategoriDeskripsi", kategori.deskripsi)
+                            putExtra("kategoriIcon", kategori.iconName)
+                            putExtra("kategoriColor", kategori.colorHex)
                         }
                         context.startActivity(intent)
                     },
-                    onDelete = {
-                        viewModel.requestDeleteKategori(item)
-                    }
+                    onDelete = { viewModel.requestDeleteKategori(kategori) },
+                    onToggleCashier = { viewModel.toggleCashierVisibility(kategori) }
                 )
+                Spacer(modifier = Modifier.height(12.dp))
             }
         }
     }
 
-    // Confirmation Delete Dialog
+    // ── Delete dialog ────────────────────────────────────────────────────────
     state.kategoriToDelete?.let { kategori ->
         AlertDialog(
             onDismissRequest = { viewModel.dismissDeleteDialog() },
+            shape = RoundedCornerShape(20.dp),
             title = {
-                Text(
-                    text = "Hapus Kategori",
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = interfamily
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
+                    Text("Hapus Kategori", fontWeight = FontWeight.Bold, fontFamily = interfamily, fontSize = 16.sp)
+                }
             },
             text = {
                 Text(
-                    text = "Apakah Anda yakin ingin menghapus kategori \"${kategori.nama}\"?",
-                    fontFamily = interfamily,
-                    fontSize = 14.sp
+                    "Hapus kategori \"${kategori.nama}\"?\nData terkait akan dihapus permanen.",
+                    fontFamily = interfamily, fontSize = 14.sp, color = Color(0xFF4B5563)
                 )
             },
             confirmButton = {
                 Button(
                     onClick = { viewModel.deleteKategori(kategori.id) },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
-                ) {
-                    Text("Hapus", color = Color.White)
-                }
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                    shape = RoundedCornerShape(10.dp)
+                ) { Text("Hapus", color = Color.White, fontFamily = interfamily, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.dismissDeleteDialog() }) {
-                    Text("Batal", color = Color(0xFF6B7280))
+                OutlinedButton(onClick = { viewModel.dismissDeleteDialog() }, shape = RoundedCornerShape(10.dp)) {
+                    Text("Batal", fontFamily = interfamily, color = Color(0xFF6B7280))
                 }
             }
         )
     }
 }
 
-// Kategori Card Item
+// ─── Kategori Card ─────────────────────────────────────────────────────────────
 @Composable
 fun KategoriCardItem(
     kategori: Kategori,
     icon: ImageVector,
-    iconBgColor: Color,
-    iconTintColor: Color,
+    accentColor: Color,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onToggleCashier: () -> Unit
 ) {
+    val isHabis = kategori.outOfStockCount > 0 && kategori.outOfStockCount >= kategori.productCount
+    val isStokKurang = kategori.outOfStockCount > 0 || kategori.lowStockCount > 0
+    val isTerlaris = kategori.productCount >= 20 && !isHabis && !isStokKurang
+
+    // Dimmed jika habis
+    val iconBgColor = if (isHabis) Color(0xFFF1F5F9) else accentColor.copy(alpha = 0.13f)
+    val iconTint = if (isHabis) Color(0xFFCBD5E1) else accentColor
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
-            pressedElevation = 6.dp
-        )
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
 
-            // Icon Kategori
-            Box(
+            // ── Section 1: Icon + Nama + Badge + Deskripsi + Stok ────────────
+            Row(
                 modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        color = iconBgColor,
-                        shape = RoundedCornerShape(12.dp)
-                    ),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.Top
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = kategori.nama,
-                    tint = iconTintColor,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            // Nama & Deskripsi / Jumlah Produk
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                // Icon box
+                Box(
+                    modifier = Modifier
+                        .size(54.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(iconBgColor),
+                    contentAlignment = Alignment.Center
                 ) {
+                    Icon(imageVector = icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(28.dp))
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    // Name + badge row
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = kategori.nama,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = interfamily,
+                            fontSize = 16.sp,
+                            color = if (isHabis) Color(0xFF94A3B8) else Color(0xFF0F172A),
+                            modifier = Modifier.weight(1f, fill = false),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        when {
+                            isHabis -> BadgePill(label = "HABIS TERJUAL", color = Color(0xFFEF4444), withIcon = true)
+                            isTerlaris -> BadgePill(label = "TERLARIS", color = Color(0xFF6B7280), withIcon = false)
+                            isStokKurang -> BadgePill(label = "${kategori.lowStockCount + kategori.outOfStockCount} Stok Menipis", color = Color(0xFFEA580C), withIcon = false)
+                        }
+                        if (!kategori.isSynced) {
+                            BadgePill(label = "Pending", color = Color(0xFFD97706), withIcon = false)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(3.dp))
+
+                    // Description
                     Text(
-                        text = kategori.nama,
-                        fontWeight = FontWeight.SemiBold,
+                        text = if (kategori.deskripsi.isNotBlank()) kategori.deskripsi else "Tidak ada deskripsi",
+                        fontSize = 12.sp,
                         fontFamily = interfamily,
-                        fontSize = 15.sp,
-                        color = Color(0xFF111827)
+                        color = if (isHabis) Color(0xFFCBD5E1) else Color(0xFF64748B),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
-                    // Offline pending sync tag
-                    if (!kategori.isSynced) {
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = Color(0xFFFEF3C7)
-                        ) {
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Stats chips row
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Menu count chip
+                        Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF1F5F9)) {
                             Text(
-                                text = "Pending",
-                                fontSize = 10.sp,
+                                text = "${kategori.productCount} Menu",
                                 fontFamily = interfamily,
-                                color = Color(0xFFD97706),
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 11.sp,
+                                color = Color(0xFF374151),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
+                        }
+                        // Stock status chip
+                        if (isHabis || isStokKurang) {
+                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF1F2)) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFFEF4444)))
+                                    Text(
+                                        text = if (isHabis) "Habis Terjual / Stok Kosong" else "${kategori.outOfStockCount + kategori.lowStockCount} Stok Kurang",
+                                        fontSize = 11.sp,
+                                        fontFamily = interfamily,
+                                        color = Color(0xFFEF4444)
+                                    )
+                                }
+                            }
+                        } else {
+                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF0FDF4)) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF16A34A)))
+                                    Text("Semua Tersedia", fontSize = 11.sp, fontFamily = interfamily, color = Color(0xFF16A34A))
+                                }
+                            }
                         }
                     }
                 }
 
-                Text(
-                    text = if (kategori.deskripsi.isNotBlank())
-                        kategori.deskripsi
-                    else
-                        "${kategori.jumlahProduk} Produk",
-                    fontSize = 12.sp,
-                    fontFamily = interfamily,
-                    fontWeight = FontWeight.Normal,
-                    color = Color(0xFF6B7280),
-                    maxLines = 1
-                )
+                // Drag handle dots (top right)
+                Icon(Icons.Default.DragIndicator, contentDescription = null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(20.dp))
             }
 
-            // Tombol Edit & Hapus
+            // ── Divider ──────────────────────────────────────────────────────
+            HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+
+            // ── Section 2: Status stok + Kelola Menu ─────────────────────────
             Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(
-                    onClick = onEdit,
-                    modifier = Modifier.size(36.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit",
-                        tint = Color(0xFF4F46E5),
-                        modifier = Modifier.size(18.dp)
+                    Icon(Icons.Default.Layers, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(16.dp))
+                    Text(
+                        text = "Status stok & visibilitas\nitem",
+                        fontSize = 11.sp,
+                        fontFamily = interfamily,
+                        color = Color(0xFF94A3B8)
                     )
                 }
-                IconButton(
-                    onClick = onDelete,
-                    modifier = Modifier.size(36.dp)
+                // Kelola Menu button
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFF8FAFF),
+                    modifier = Modifier.wrapContentWidth()
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Hapus",
-                        tint = Color(0xFFEF4444),
-                        modifier = Modifier.size(18.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Kelola Menu (${kategori.productCount}\nProduk)",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = Color(0xFF4F46E5)
+                        )
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF4F46E5), modifier = Modifier.size(16.dp))
+                    }
                 }
             }
+
+            // ── Divider ──────────────────────────────────────────────────────
+            HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+
+            // ── Section 3: Toggle + Kasir label + Edit + Delete ──────────────
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 14.dp, end = 10.dp, top = 8.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Switch(
+                    checked = kategori.isVisibleInCashier,
+                    onCheckedChange = { onToggleCashier() },
+                    modifier = Modifier.height(26.dp),
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = Color(0xFF059669),
+                        uncheckedThumbColor = Color.White,
+                        uncheckedTrackColor = Color(0xFFCBD5E1)
+                    )
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Kasir: ",
+                    fontFamily = interfamily,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF374151)
+                )
+                Text(
+                    text = if (kategori.isVisibleInCashier) "Aktif" else "Nonaktif",
+                    fontFamily = interfamily,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (kategori.isVisibleInCashier) Color(0xFF059669) else Color(0xFF94A3B8),
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Edit button
+                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFF8FAFC)) {
+                    IconButton(onClick = onEdit, modifier = Modifier.size(38.dp)) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF374151), modifier = Modifier.size(17.dp))
+                    }
+                }
+                Spacer(modifier = Modifier.width(6.dp))
+                // Delete button
+                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(38.dp)) {
+                        Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = Color(0xFFEF4444), modifier = Modifier.size(17.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─── Badge Pill ────────────────────────────────────────────────────────────────
+@Composable
+fun BadgePill(label: String, color: Color, withIcon: Boolean) {
+    Surface(shape = RoundedCornerShape(8.dp), color = color.copy(alpha = 0.12f)) {
+        Row(
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            if (withIcon) {
+                Icon(Icons.Default.Cancel, contentDescription = null, tint = color, modifier = Modifier.size(10.dp))
+            }
+            Text(
+                text = label,
+                fontSize = 9.sp,
+                fontFamily = interfamily,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
         }
     }
 }
