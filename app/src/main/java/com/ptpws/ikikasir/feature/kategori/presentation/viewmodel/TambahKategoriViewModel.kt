@@ -3,8 +3,8 @@ package com.ptpws.ikikasir.feature.kategori.presentation.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.Timestamp
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
-import com.ptpws.ikikasir.feature.kategori.domain.usecase.GetKategoriUseCase
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.InsertKategoriUseCase
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.UpdateKategoriUseCase
 import com.ptpws.ikikasir.feature.kategori.presentation.state.KategoriFormState
@@ -39,7 +39,7 @@ class TambahKategoriViewModel @Inject constructor(
                     id = kategoriId,
                     nama = kategoriNama ?: "",
                     deskripsi = kategoriDeskripsi ?: "",
-                    iconName = kategoriIcon ?: "LocalCafe",
+                    iconName = kategoriIcon ?: "BakeryDining",
                     colorHex = kategoriColor ?: "#4F46E5",
                     isEditMode = true
                 )
@@ -55,6 +55,10 @@ class TambahKategoriViewModel @Inject constructor(
                 deskripsi = kategori.deskripsi,
                 iconName = kategori.iconName,
                 colorHex = kategori.colorHex,
+                isVisibleInCashier = kategori.isVisibleInCashier,
+                productCount = kategori.productCount,
+                lowStockCount = kategori.lowStockCount,
+                outOfStockCount = kategori.outOfStockCount,
                 isEditMode = true
             )
         }
@@ -68,8 +72,16 @@ class TambahKategoriViewModel @Inject constructor(
         _formState.update { it.copy(deskripsi = deskripsi) }
     }
 
-    fun onIconChange(iconName: String, colorHex: String) {
-        _formState.update { it.copy(iconName = iconName, colorHex = colorHex) }
+    fun onIconChange(iconName: String) {
+        _formState.update { it.copy(iconName = iconName) }
+    }
+
+    fun onColorChange(colorHex: String) {
+        _formState.update { it.copy(colorHex = colorHex) }
+    }
+
+    fun onVisibilityChange(isVisible: Boolean) {
+        _formState.update { it.copy(isVisibleInCashier = isVisible) }
     }
 
     fun simpanKategori() {
@@ -84,12 +96,18 @@ class TambahKategoriViewModel @Inject constructor(
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, errorMessage = null) }
 
+            val combinedIconUrl = currentState.iconName + "|" + currentState.colorHex
+
             val kategori = Kategori(
                 id = currentState.id,
                 name = namaTrimmed,
                 description = currentState.deskripsi.trim(),
-                icon = currentState.iconName,
-                updatedAt = System.currentTimeMillis()
+                iconUrl = combinedIconUrl,
+                isVisibleInCashier = currentState.isVisibleInCashier,
+                productCount = currentState.productCount,
+                lowStockCount = currentState.lowStockCount,
+                outOfStockCount = currentState.outOfStockCount,
+                updatedAt = Timestamp.now()
             )
 
             val flow = if (currentState.isEditMode) {
