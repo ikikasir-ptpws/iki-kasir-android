@@ -32,6 +32,9 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.outlined.PointOfSale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -337,23 +340,26 @@ fun TambahProdukScreen(
                 }
             }
 
-            // Harga Jual & Stok
+            // Harga Beli & Harga Jual
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Column(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = "Harga Jual",
+                            text = "Harga Beli",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = interfamily,
                             color = Color(0xFF374151)
                         )
                         OutlinedTextField(
-                            value = formState.price,
-                            onValueChange = { viewModel.onPriceChange(it) },
+                            value = formState.costPrice,
+                            onValueChange = { viewModel.onCostPriceChange(it) },
                             leadingIcon = {
                                 Text("Rp", fontSize = 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
                             },
@@ -376,6 +382,45 @@ fun TambahProdukScreen(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
+                            text = "Harga Jual",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = interfamily,
+                            color = Color(0xFF374151)
+                        )
+                        OutlinedTextField(
+                            value = formState.sellingPrice,
+                            onValueChange = { viewModel.onSellingPriceChange(it) },
+                            leadingIcon = {
+                                Text("Rp", fontSize = 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
+                            },
+                            placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = Color.White,
+                                focusedContainerColor = Color.White,
+                                unfocusedBorderColor = Color(0xFFE5E7EB),
+                                focusedBorderColor = Color(0xFF4F46E5)
+                            )
+                        )
+                    }
+                }
+            }
+
+            // Stok & Batas Stok (Default 5)
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
                             text = "Stok",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -386,6 +431,42 @@ fun TambahProdukScreen(
                             value = formState.stock,
                             onValueChange = { viewModel.onStockChange(it) },
                             placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = Color.White,
+                                focusedContainerColor = Color.White,
+                                unfocusedBorderColor = Color(0xFFE5E7EB),
+                                focusedBorderColor = Color(0xFF4F46E5)
+                            )
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Batas Stok ",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = interfamily,
+                                color = Color(0xFF374151)
+                            )
+                            Text(
+                                text = "(Default 5)",
+                                fontSize = 12.sp,
+                                fontFamily = interfamily,
+                                color = Color(0xFF9CA3AF)
+                            )
+                        }
+                        OutlinedTextField(
+                            value = formState.lowStockThreshold,
+                            onValueChange = { viewModel.onLowStockThresholdChange(it) },
+                            placeholder = { Text("5", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
@@ -423,7 +504,7 @@ fun TambahProdukScreen(
                     ) {
                         items(categories.size) { idx ->
                             val (catId, catName) = categories[idx]
-                            val isSelected = catId == formState.categoryId || (formState.categoryId.isBlank() && idx == 0)
+                            val isSelected = catId == formState.categoryId && formState.categoryId.isNotBlank()
                             FilterChip(
                                 selected = isSelected,
                                 onClick = { viewModel.onCategoryIdChange(catId) },
@@ -440,6 +521,14 @@ fun TambahProdukScreen(
                                     selectedLabelColor = Color.White,
                                     containerColor = Color.White,
                                     labelColor = Color(0xFF374151)
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    enabled = true,
+                                    selected = isSelected,
+                                    selectedBorderColor = Color.Transparent,
+                                    borderColor = Color(0xFFE5E7EB),
+                                    borderWidth = 1.dp,
+                                    selectedBorderWidth = 0.dp
                                 ),
                                 shape = RoundedCornerShape(20.dp)
                             )
@@ -553,6 +642,91 @@ fun TambahProdukScreen(
                 }
             }
 
+
+            // Visibilitas Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, Color(0xFFF3F4F6))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Section header
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Tune,
+                                contentDescription = null,
+                                tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Visibilitas",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = interfamily,
+                                color = Color(0xFF1F2937)
+                            )
+                        }
+
+                        // Toggle row
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFFF8FAFC),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.PointOfSale,
+                                    contentDescription = null,
+                                    tint = Color(0xFF059669),
+                                    modifier = Modifier
+                                        .size(26.dp)
+                                        .padding(top = 2.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Tampilkan di Kasir",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = interfamily,
+                                        color = Color(0xFF1F2937)
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Langsung muncul pada layar pemesanan kasir",
+                                        fontSize = 11.sp,
+                                        fontFamily = interfamily,
+                                        color = Color(0xFF6B7280)
+                                    )
+                                }
+                                Switch(
+                                    checked = formState.isVisibleInCashier,
+                                    onCheckedChange = { viewModel.onVisibilityChange(it) },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = Color(0xFF059669),
+                                        uncheckedThumbColor = Color.White,
+                                        uncheckedTrackColor = Color(0xFFE5E7EB)
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             // Bottom Buttons
             item {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -584,15 +758,8 @@ fun TambahProdukScreen(
                         if (formState.isLoading) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         } else {
-                            Icon(
-                                imageVector = Icons.Default.Download,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Simpan Produk",
+                                text = if (formState.isEditMode) "Perbarui Produk" else "Tambah Produk",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White
