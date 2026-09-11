@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
@@ -76,9 +77,9 @@ fun DaftarProdukScreen(
     var selectedSortOption by remember { mutableStateOf("Terbaru") }
     var showSortDropdown by remember { mutableStateOf(false) }
 
-    // Map Kategori ID to Name
-    val categoryNameMap = remember(kategoriState.kategoriList) {
-        kategoriState.kategoriList.associate { it.id to it.name }
+    // Map Kategori ID to Kategori
+    val categoryMap = remember(kategoriState.kategoriList) {
+        kategoriState.kategoriList.associateBy { it.id }
     }
 
     // Map Kategori ID to Product Count
@@ -86,14 +87,25 @@ fun DaftarProdukScreen(
         state.produkList.groupingBy { it.categoryId }.eachCount()
     }
 
+    // Filtered Product List by search and category filter (shows ALL products in management screen)
+    val filteredList = remember(state.produkList, state.searchQuery, state.selectedCategoryId) {
+        state.produkList.filter { produk ->
+            val matchesQuery = state.searchQuery.isBlank() ||
+                    produk.name.contains(state.searchQuery, ignoreCase = true) ||
+                    produk.barcode.contains(state.searchQuery, ignoreCase = true)
+            val matchesCategory = state.selectedCategoryId == null || produk.categoryId == state.selectedCategoryId
+            matchesQuery && matchesCategory
+        }
+    }
+
     // Sorted Product List
-    val sortedList = remember(state.filteredList, selectedSortOption) {
+    val sortedList = remember(filteredList, selectedSortOption) {
         when (selectedSortOption) {
-            "Nama (A-Z)" -> state.filteredList.sortedBy { it.name.lowercase() }
-            "Stok (Terdikit)" -> state.filteredList.sortedBy { it.stock }
-            "Harga (Termurah)" -> state.filteredList.sortedBy { it.sellingPrice }
-            "Harga (Termahal)" -> state.filteredList.sortedByDescending { it.sellingPrice }
-            else -> state.filteredList
+            "Nama (A-Z)" -> filteredList.sortedBy { it.name.lowercase() }
+            "Stok (Terdikit)" -> filteredList.sortedBy { it.stock }
+            "Harga (Termurah)" -> filteredList.sortedBy { it.sellingPrice }
+            "Harga (Termahal)" -> filteredList.sortedByDescending { it.sellingPrice }
+            else -> filteredList
         }
     }
 
@@ -460,17 +472,26 @@ fun DaftarProdukScreen(
                     items(kategoriState.kategoriList) { kategori ->
                         val count = productCountMap[kategori.id] ?: 0
                         val isSelected = state.selectedCategoryId == kategori.id
+                        val isCatOff = !kategori.isVisibleInCashier
                         Surface(
                             onClick = { viewModel.onCategoryFilterChange(kategori.id) },
                             shape = RoundedCornerShape(20.dp),
-                            color = if (isSelected) Color(0xFF4F46E5) else Color.White,
+                            color = when {
+                                isSelected -> Color(0xFF4F46E5)
+                                isCatOff -> Color(0xFFF1F5F9)
+                                else -> Color.White
+                            },
                             border = if (isSelected) null else BorderStroke(1.dp, Color(0xFFE2E8F0))
                         ) {
                             Text(
-                                text = "${kategori.name} ($count)",
+                                text = if (isCatOff) "${kategori.name} ($count • Off)" else "${kategori.name} ($count)",
                                 fontSize = 13.sp,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) Color.White else Color(0xFF475569),
+                                color = when {
+                                    isSelected -> Color.White
+                                    isCatOff -> Color(0xFF94A3B8)
+                                    else -> Color(0xFF475569)
+                                },
                                 fontFamily = interfamily,
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
                             )
@@ -610,10 +631,13 @@ fun DaftarProdukScreen(
                 items = sortedList,
                 key = { it.id }
             ) { produk ->
-                val categoryName = categoryNameMap[produk.categoryId] ?: "Umum"
+                val category = categoryMap[produk.categoryId]
+                val categoryName = category?.name ?: "Umum"
+                val isCategoryActive = category?.isVisibleInCashier ?: true
                 ProdukCardItem(
                     produk = produk,
                     categoryName = categoryName,
+                    isCategoryActive = isCategoryActive,
                     onEdit = {
                         val intent = Intent(context, TambahProdukActivity::class.java).apply {
                             putExtra("produkId", produk.id)
@@ -705,24 +729,36 @@ fun CategoryBadge(categoryName: String) {
 fun ProdukCardItem(
     produk: Produk,
     categoryName: String,
+    isCategoryActive: Boolean = true,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     val isStokRendah = produk.stock <= produk.lowStockThreshold
+    val isNonAktif = !produk.isVisibleInCashier || !isCategoryActive
+    val cardAlpha = if (isNonAktif) 0.55f else 1.0f
+
     val formattedHarga = remember(produk.price) {
         val numberFormat = NumberFormat.getNumberInstance(Locale("id", "ID"))
         "Rp " + numberFormat.format(produk.price.toLong())
     }
 
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { alpha = cardAlpha }
+    ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = if (isStokRendah) 6.dp else 0.dp),
+                .padding(top = if (isStokRendah || isNonAktif) 6.dp else 0.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = if (isNonAktif) Color(0xFFF8FAFC) else Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            border = if (isStokRendah) BorderStroke(1.dp, Color(0xFFFECDD3)) else BorderStroke(1.dp, Color(0xFFF1F5F9))
+            border = when {
+                isNonAktif -> BorderStroke(1.dp, Color(0xFFE2E8F0))
+                isStokRendah -> BorderStroke(1.dp, Color(0xFFFECDD3))
+                else -> BorderStroke(1.dp, Color(0xFFF1F5F9))
+            }
         ) {
             Row(
                 modifier = Modifier
@@ -765,14 +801,35 @@ fun ProdukCardItem(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
-                    CategoryBadge(categoryName = categoryName)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        CategoryBadge(categoryName = categoryName)
+
+                        if (isNonAktif) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0xFFF1F5F9)
+                            ) {
+                                Text(
+                                    text = if (!produk.isVisibleInCashier) "Off" else "Kategori Off",
+                                    fontSize = 10.sp,
+                                    fontFamily = interfamily,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF64748B),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
 
                     Text(
                         text = produk.name,
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
                         fontSize = 14.sp,
-                        color = Color(0xFF0F172A),
+                        color = if (isNonAktif) Color(0xFF64748B) else Color(0xFF0F172A),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
