@@ -28,17 +28,24 @@ class TambahProdukViewModel @Inject constructor(
     init {
         val produkId = savedStateHandle.get<String>("produkId")
         if (!produkId.isNullOrBlank()) {
+            val costPriceStr = savedStateHandle.get<String>("produkCostPrice") ?: ""
+            val sellingPriceStr = savedStateHandle.get<String>("produkSellingPrice") 
+                ?: savedStateHandle.get<String>("produkPrice") ?: ""
+
             _formState.update {
                 it.copy(
                     id = produkId,
                     name = savedStateHandle.get<String>("produkName") ?: "",
-                    price = savedStateHandle.get<String>("produkPrice") ?: "",
+                    costPrice = costPriceStr,
+                    sellingPrice = sellingPriceStr,
                     stock = savedStateHandle.get<String>("produkStock") ?: "",
+                    lowStockThreshold = savedStateHandle.get<String>("produkLowStockThreshold") ?: "5",
                     categoryId = savedStateHandle.get<String>("produkCategoryId") ?: "",
                     imageUrl = savedStateHandle.get<String>("produkImageUrl") ?: "",
                     discount = savedStateHandle.get<String>("produkDiscount") ?: "",
                     discountType = savedStateHandle.get<String>("produkDiscountType") ?: "PERCENT",
                     barcode = savedStateHandle.get<String>("produkBarcode") ?: "",
+                    isVisibleInCashier = savedStateHandle.get<Boolean>("produkIsVisibleInCashier") ?: true,
                     isEditMode = true
                 )
             }
@@ -50,13 +57,16 @@ class TambahProdukViewModel @Inject constructor(
             it.copy(
                 id = produk.id,
                 name = produk.name,
-                price = produk.price.toString(),
+                costPrice = produk.costPrice.toString(),
+                sellingPrice = produk.sellingPrice.toString(),
                 stock = produk.stock.toString(),
+                lowStockThreshold = produk.lowStockThreshold.toString(),
                 categoryId = produk.categoryId,
                 imageUrl = produk.imageUrl,
                 discount = produk.discount.toString(),
                 discountType = produk.discountType,
                 barcode = produk.barcode,
+                isVisibleInCashier = produk.isVisibleInCashier,
                 isEditMode = true
             )
         }
@@ -66,12 +76,24 @@ class TambahProdukViewModel @Inject constructor(
         _formState.update { it.copy(name = name, errorMessage = null) }
     }
 
+    fun onCostPriceChange(costPrice: String) {
+        _formState.update { it.copy(costPrice = costPrice, errorMessage = null) }
+    }
+
+    fun onSellingPriceChange(sellingPrice: String) {
+        _formState.update { it.copy(sellingPrice = sellingPrice, errorMessage = null) }
+    }
+
     fun onPriceChange(price: String) {
-        _formState.update { it.copy(price = price, errorMessage = null) }
+        onSellingPriceChange(price)
     }
 
     fun onStockChange(stock: String) {
         _formState.update { it.copy(stock = stock) }
+    }
+
+    fun onLowStockThresholdChange(lowStockThreshold: String) {
+        _formState.update { it.copy(lowStockThreshold = lowStockThreshold) }
     }
 
     fun onCategoryIdChange(categoryId: String) {
@@ -92,6 +114,10 @@ class TambahProdukViewModel @Inject constructor(
 
     fun onBarcodeChange(barcode: String) {
         _formState.update { it.copy(barcode = barcode) }
+    }
+
+    fun onVisibilityChange(isVisible: Boolean) {
+        _formState.update { it.copy(isVisibleInCashier = isVisible) }
     }
 
     fun simpanProduk() {
