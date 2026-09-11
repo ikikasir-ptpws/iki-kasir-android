@@ -40,6 +40,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -715,6 +716,7 @@ fun TambahProdukScreen(
                                 Switch(
                                     checked = formState.isVisibleInCashier,
                                     onCheckedChange = { viewModel.onVisibilityChange(it) },
+                                    modifier = Modifier.scale(scale = 0.7f),
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = Color.White,
                                         checkedTrackColor = Color(0xFF059669),
