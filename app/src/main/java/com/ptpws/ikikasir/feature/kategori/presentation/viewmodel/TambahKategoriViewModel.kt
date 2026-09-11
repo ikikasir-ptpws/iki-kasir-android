@@ -32,6 +32,7 @@ class TambahKategoriViewModel @Inject constructor(
         val kategoriDeskripsi = savedStateHandle.get<String>("kategoriDeskripsi")
         val kategoriIcon = savedStateHandle.get<String>("kategoriIcon")
         val kategoriColor = savedStateHandle.get<String>("kategoriColor")
+        val kategoriIsVisible = savedStateHandle.get<Boolean>("kategoriIsVisible") ?: true
 
         if (!kategoriId.isNullOrBlank()) {
             _formState.update {
@@ -41,6 +42,7 @@ class TambahKategoriViewModel @Inject constructor(
                     deskripsi = kategoriDeskripsi ?: "",
                     iconName = kategoriIcon ?: "BakeryDining",
                     colorHex = kategoriColor ?: "#4F46E5",
+                    isVisibleInCashier = kategoriIsVisible,
                     isEditMode = true
                 )
             }
