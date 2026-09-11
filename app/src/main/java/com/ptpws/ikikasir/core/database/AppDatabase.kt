@@ -13,7 +13,7 @@ import com.ptpws.ikikasir.feature.produk.data.local.entity.ProdukEntity
         KategoriEntity::class,
         ProdukEntity::class
     ],
-    version = 5,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class)
