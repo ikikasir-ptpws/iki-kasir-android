@@ -2,7 +2,9 @@ package com.ptpws.ikikasir.screens.kategori
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,12 +14,12 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.PointOfSale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
@@ -37,15 +39,19 @@ import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.kategori.presentation.util.KategoriIconHelper
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
+import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.ProdukViewModel
+import com.ptpws.ikikasir.screens.navigation.AppScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DaftarKategoriScreen(
     navController: NavController,
     onTambahPromo: () -> Unit = {},
-    viewModel: KategoriViewModel = hiltViewModel()
+    viewModel: KategoriViewModel = hiltViewModel(),
+    produkViewModel: ProdukViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val produkState by produkViewModel.state.collectAsState()
     val context = LocalContext.current
 
     LaunchedEffect(state.userMessage) {
@@ -61,8 +67,15 @@ fun DaftarKategoriScreen(
         }
     }
 
-    val totalMenu = state.filteredList.sumOf { it.productCount }
-    val menuMenipis = state.filteredList.sumOf { it.lowStockCount + it.outOfStockCount }
+    // Map Produk to Category ID for Real Data Calculation
+    val categoryProductMap = remember(produkState.produkList) {
+        produkState.produkList.groupBy { it.categoryId }
+    }
+
+    val totalMenu = produkState.produkList.size
+    val menuMenipis = remember(produkState.produkList) {
+        produkState.produkList.count { it.stock <= it.lowStockThreshold }
+    }
 
     Scaffold(
         containerColor = Color(0xFFF1F5F9),
@@ -106,20 +119,19 @@ fun DaftarKategoriScreen(
                     }
                 }
 
-                // ── Search bar row ───────────────────────────────────────────
+                // ── Search bar row (Full Width, Filter Icon Removed) ────────
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .padding(bottom = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Search field
+                    // Search field full width
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = Color(0xFFF1F5F9),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
@@ -141,12 +153,6 @@ fun DaftarKategoriScreen(
                                     inner()
                                 }
                             )
-                        }
-                    }
-                    // Filter icon button
-                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF1F5F9)) {
-                        Box(modifier = Modifier.padding(11.dp)) {
-                            Icon(Icons.Default.Tune, contentDescription = "Filter", tint = Color(0xFF475569), modifier = Modifier.size(20.dp))
                         }
                     }
                 }
@@ -251,10 +257,26 @@ fun DaftarKategoriScreen(
                     Color(android.graphics.Color.parseColor(kategori.colorHex))
                 } catch (e: Exception) { Color(0xFF4F46E5) }
 
+                val categoryProducts = categoryProductMap[kategori.id] ?: emptyList()
+                val productCount = categoryProducts.size
+                val lowStockCount = categoryProducts.count { it.stock <= it.lowStockThreshold && it.stock > 0 }
+                val outOfStockCount = categoryProducts.count { it.stock <= 0 }
+
                 KategoriCardItem(
                     kategori = kategori,
                     icon = iconOption.icon,
                     accentColor = accentColor,
+                    productCount = productCount,
+                    lowStockCount = lowStockCount,
+                    outOfStockCount = outOfStockCount,
+                    onKelolaMenu = {
+                        produkViewModel.onCategoryFilterChange(kategori.id)
+                        navController.navigate(AppScreen.Produk.route) {
+                            popUpTo(AppScreen.Dashboard.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                     onEdit = {
                         val intent = Intent(context, TambahKategoriActivity::class.java).apply {
                             putExtra("kategoriId", kategori.id)
@@ -313,13 +335,17 @@ fun KategoriCardItem(
     kategori: Kategori,
     icon: ImageVector,
     accentColor: Color,
+    productCount: Int,
+    lowStockCount: Int,
+    outOfStockCount: Int,
+    onKelolaMenu: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onToggleCashier: () -> Unit
 ) {
-    val isHabis = kategori.outOfStockCount > 0 && kategori.outOfStockCount >= kategori.productCount
-    val isStokKurang = kategori.outOfStockCount > 0 || kategori.lowStockCount > 0
-    val isTerlaris = kategori.productCount >= 20 && !isHabis && !isStokKurang
+    val isHabis = productCount > 0 && outOfStockCount >= productCount
+    val isStokKurang = outOfStockCount > 0 || lowStockCount > 0
+    val isTerlaris = productCount >= 20 && !isHabis && !isStokKurang
     val isNonAktif = !kategori.isVisibleInCashier
 
     // Dimmed jika habis atau non-aktif
@@ -373,7 +399,7 @@ fun KategoriCardItem(
                             isNonAktif -> BadgePill(label = "KASIR OFF", color = Color(0xFF6B7280), withIcon = false)
                             isHabis -> BadgePill(label = "HABIS TERJUAL", color = Color(0xFFEF4444), withIcon = true)
                             isTerlaris -> BadgePill(label = "TERLARIS", color = Color(0xFF6B7280), withIcon = false)
-                            isStokKurang -> BadgePill(label = "${kategori.lowStockCount + kategori.outOfStockCount} Stok Menipis", color = Color(0xFFEA580C), withIcon = false)
+                            isStokKurang -> BadgePill(label = "${lowStockCount + outOfStockCount} Stok Menipis", color = Color(0xFFEA580C), withIcon = false)
                         }
                         if (!kategori.isSynced) {
                             BadgePill(label = "Pending", color = Color(0xFFD97706), withIcon = false)
@@ -387,7 +413,7 @@ fun KategoriCardItem(
                         text = if (kategori.deskripsi.isNotBlank()) kategori.deskripsi else "Tidak ada deskripsi",
                         fontSize = 12.sp,
                         fontFamily = interfamily,
-                        color = if (isHabis) Color(0xFFCBD5E1) else Color(0xFF64748B),
+                        color = if (isHabis || isNonAktif) Color(0xFFCBD5E1) else Color(0xFF64748B),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -402,7 +428,7 @@ fun KategoriCardItem(
                         // Menu count chip
                         Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF1F5F9)) {
                             Text(
-                                text = "${kategori.productCount} Menu",
+                                text = "$productCount Menu",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 11.sp,
@@ -420,7 +446,7 @@ fun KategoriCardItem(
                                 ) {
                                     Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFFEF4444)))
                                     Text(
-                                        text = if (isHabis) "Habis Terjual / Stok Kosong" else "${kategori.outOfStockCount + kategori.lowStockCount} Stok Kurang",
+                                        text = if (isHabis) "Habis Terjual / Stok Kosong" else "${outOfStockCount + lowStockCount} Stok Kurang",
                                         fontSize = 11.sp,
                                         fontFamily = interfamily,
                                         color = Color(0xFFEF4444)
@@ -474,7 +500,10 @@ fun KategoriCardItem(
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = Color(0xFFF8FAFF),
-                    modifier = Modifier.wrapContentWidth()
+                    border = BorderStroke(1.dp, Color(0xFFEEF2FF)),
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .clickable { onKelolaMenu() }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
@@ -482,7 +511,7 @@ fun KategoriCardItem(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = "Kelola Menu (${kategori.productCount}\nProduk)",
+                            text = "Kelola Menu ($productCount\nProduk)",
                             fontFamily = interfamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
@@ -506,7 +535,7 @@ fun KategoriCardItem(
                 Switch(
                     checked = kategori.isVisibleInCashier,
                     onCheckedChange = { onToggleCashier() },
-                    modifier = Modifier.height(26.dp),
+                    modifier = Modifier.scale(0.7f),
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
                         checkedTrackColor = Color(0xFF059669),
