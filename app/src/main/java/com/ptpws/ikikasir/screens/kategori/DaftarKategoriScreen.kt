@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -261,6 +262,7 @@ fun DaftarKategoriScreen(
                             putExtra("kategoriDeskripsi", kategori.deskripsi)
                             putExtra("kategoriIcon", kategori.iconName)
                             putExtra("kategoriColor", kategori.colorHex)
+                            putExtra("kategoriIsVisible", kategori.isVisibleInCashier)
                         }
                         context.startActivity(intent)
                     },
@@ -318,15 +320,18 @@ fun KategoriCardItem(
     val isHabis = kategori.outOfStockCount > 0 && kategori.outOfStockCount >= kategori.productCount
     val isStokKurang = kategori.outOfStockCount > 0 || kategori.lowStockCount > 0
     val isTerlaris = kategori.productCount >= 20 && !isHabis && !isStokKurang
+    val isNonAktif = !kategori.isVisibleInCashier
 
-    // Dimmed jika habis
-    val iconBgColor = if (isHabis) Color(0xFFF1F5F9) else accentColor.copy(alpha = 0.13f)
-    val iconTint = if (isHabis) Color(0xFFCBD5E1) else accentColor
+    // Dimmed jika habis atau non-aktif
+    val iconBgColor = if (isHabis || isNonAktif) Color(0xFFF1F5F9) else accentColor.copy(alpha = 0.13f)
+    val iconTint = if (isHabis || isNonAktif) Color(0xFFCBD5E1) else accentColor
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { alpha = if (isNonAktif) 0.55f else 1.0f },
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = if (isNonAktif) Color(0xFFF8FAFC) else Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -359,12 +364,13 @@ fun KategoriCardItem(
                             fontWeight = FontWeight.Bold,
                             fontFamily = interfamily,
                             fontSize = 16.sp,
-                            color = if (isHabis) Color(0xFF94A3B8) else Color(0xFF0F172A),
+                            color = if (isHabis || isNonAktif) Color(0xFF94A3B8) else Color(0xFF0F172A),
                             modifier = Modifier.weight(1f, fill = false),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         when {
+                            isNonAktif -> BadgePill(label = "KASIR OFF", color = Color(0xFF6B7280), withIcon = false)
                             isHabis -> BadgePill(label = "HABIS TERJUAL", color = Color(0xFFEF4444), withIcon = true)
                             isTerlaris -> BadgePill(label = "TERLARIS", color = Color(0xFF6B7280), withIcon = false)
                             isStokKurang -> BadgePill(label = "${kategori.lowStockCount + kategori.outOfStockCount} Stok Menipis", color = Color(0xFFEA580C), withIcon = false)
