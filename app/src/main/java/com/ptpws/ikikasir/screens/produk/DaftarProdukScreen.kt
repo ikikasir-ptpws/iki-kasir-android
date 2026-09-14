@@ -66,12 +66,20 @@ fun DaftarProdukScreen(
     navController: NavController,
     onBack: () -> Unit = {},
     onTambah: () -> Unit = {},
+    initialCategoryId: String? = null,
     viewModel: ProdukViewModel = hiltViewModel(),
     kategoriViewModel: KategoriViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val kategoriState by kategoriViewModel.state.collectAsState()
     val context = LocalContext.current
+
+    // Apply initial category filter dari navigasi Kelola Menu
+    // Jika initialCategoryId null/blank/"{categoryId}" → reset ke "Semua", jika ada ID valid → filter kategori tersebut
+    LaunchedEffect(initialCategoryId) {
+        val validCategoryId = if (initialCategoryId.isNullOrBlank() || initialCategoryId == "{categoryId}") null else initialCategoryId
+        viewModel.onCategoryFilterChange(validCategoryId)
+    }
 
     // Sorting State
     var selectedSortOption by remember { mutableStateOf("Terbaru") }
@@ -216,9 +224,7 @@ fun DaftarProdukScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (navController.currentDestination?.route == "produk") {
-                            navController.popBackStack()
-                        } else {
+                        if (!navController.popBackStack()) {
                             onBack()
                         }
                     }) {
