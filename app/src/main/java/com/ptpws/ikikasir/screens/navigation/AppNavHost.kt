@@ -35,6 +35,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.screens.produk.DaftarProdukScreen
+import com.ptpws.ikikasir.screens.produk.DetailProdukScreen
 import com.ptpws.ikikasir.commond.interfamily
 import com.example.app.ui.screen.DashboardScreen
 import com.example.app.ui.screen.MenuFullScreen
@@ -42,6 +43,8 @@ import com.ptpws.ikikasir.screens.barangrusak.BarangRusakExpScreen
 import com.ptpws.ikikasir.screens.barangrusak.TambahRusakExpActivity
 import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
 import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
+import com.ptpws.ikikasir.screens.manajemenstok.UpdateStokScreen
+
 import com.ptpws.ikikasir.screens.pengaturan.ProfilScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
 import com.ptpws.ikikasir.screens.kategori.TambahKategoriActivity
@@ -102,6 +105,16 @@ fun AppNavHost() {
                     }
                 )
             }
+            composable(
+                route = AppScreen.DetailProduk.route,
+                arguments = listOf(androidx.navigation.navArgument("produkId") { type = androidx.navigation.NavType.StringType })
+            ) { backStackEntry ->
+                val produkId = backStackEntry.arguments?.getString("produkId")
+                DetailProdukScreen(
+                    onBack = { navController.popBackStack() },
+                    produkId = produkId
+                )
+            }
             composable(AppScreen.Riwayat.route) {
                 val context = LocalContext.current
                 RiwayatTransaksiScreen(navController, onDetailTransaksi = { context.startActivity(Intent(context, DetailTransaksiActivity::class.java)) })
@@ -134,6 +147,16 @@ fun AppNavHost() {
             composable(AppScreen.ManajemenStok.route) {
                 ManajemenStokScreen(navController)
             }
+            composable(
+                route = AppScreen.UpdateStok.route,
+                arguments = AppScreen.UpdateStok.navArguments
+            ) {
+                UpdateStokScreen(
+                    onBack = { navController.popBackStack() },
+                    onSuccessUpdate = { navController.popBackStack() }
+                )
+            }
+
             composable(AppScreen.BarangRusakExp.route) {
                 val context = LocalContext.current
                 BarangRusakExpScreen(navController, onTambahBarang = { context.startActivity(Intent(context,
