@@ -2,6 +2,8 @@ package com.ptpws.ikikasir.screens.produk
 
 import java.io.File
 import java.io.FileOutputStream
+import java.text.NumberFormat
+import java.util.Locale
 
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
@@ -341,72 +343,174 @@ fun TambahProdukScreen(
                 }
             }
 
-            // Harga Beli & Harga Jual
+            // Harga Beli & Harga Jual + Card HPP & Estimasi Laba Kotor
             item {
-                Row(
+                Card(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, Color(0xFFF3F4F6))
                 ) {
                     Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            text = "Harga Beli",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = interfamily,
-                            color = Color(0xFF374151)
-                        )
-                        OutlinedTextField(
-                            value = formState.costPrice,
-                            onValueChange = { viewModel.onCostPriceChange(it) },
-                            leadingIcon = {
-                                Text("Rp", fontSize = 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
-                            },
-                            placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedContainerColor = Color.White,
-                                focusedContainerColor = Color.White,
-                                unfocusedBorderColor = Color(0xFFE5E7EB),
-                                focusedBorderColor = Color(0xFF4F46E5)
-                            )
-                        )
-                    }
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "Harga Beli",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontFamily = interfamily,
+                                    color = Color(0xFF374151)
+                                )
+                                OutlinedTextField(
+                                    value = formState.costPrice,
+                                    onValueChange = { viewModel.onCostPriceChange(it) },
+                                    leadingIcon = {
+                                        Text("Rp", fontSize = 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
+                                    },
+                                    placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        unfocusedContainerColor = Color.White,
+                                        focusedContainerColor = Color.White,
+                                        unfocusedBorderColor = Color(0xFFE5E7EB),
+                                        focusedBorderColor = Color(0xFF4F46E5)
+                                    )
+                                )
+                            }
 
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = "Harga Jual",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = interfamily,
-                            color = Color(0xFF374151)
-                        )
-                        OutlinedTextField(
-                            value = formState.sellingPrice,
-                            onValueChange = { viewModel.onSellingPriceChange(it) },
-                            leadingIcon = {
-                                Text("Rp", fontSize = 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
-                            },
-                            placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "Harga Jual",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontFamily = interfamily,
+                                    color = Color(0xFF374151)
+                                )
+                                OutlinedTextField(
+                                    value = formState.sellingPrice,
+                                    onValueChange = { viewModel.onSellingPriceChange(it) },
+                                    leadingIcon = {
+                                        Text("Rp", fontSize = 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
+                                    },
+                                    placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        unfocusedContainerColor = Color.White,
+                                        focusedContainerColor = Color.White,
+                                        unfocusedBorderColor = Color(0xFFE5E7EB),
+                                        focusedBorderColor = Color(0xFF4F46E5)
+                                    )
+                                )
+                            }
+                        }
+
+                        // Box Estimasi Laba Kotor & HPP
+                        val costPriceDouble = formState.costPrice.toDoubleOrNull() ?: 0.0
+                        val sellingPriceDouble = formState.sellingPrice.toDoubleOrNull() ?: 0.0
+                        val labaKotor = sellingPriceDouble - costPriceDouble
+                        val marginPercent = if (sellingPriceDouble > 0) (labaKotor / sellingPriceDouble * 100) else 0.0
+                        val isProfitable = labaKotor >= 0
+
+                        val formattedCostPrice = try {
+                            NumberFormat.getNumberInstance(Locale("id", "ID")).format(costPriceDouble.toLong())
+                        } catch (e: Exception) {
+                            "0"
+                        }
+                        val formattedLabaKotor = try {
+                            NumberFormat.getNumberInstance(Locale("id", "ID")).format(kotlin.math.abs(labaKotor).toLong())
+                        } catch (e: Exception) {
+                            "0"
+                        }
+
+                        Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedContainerColor = Color.White,
-                                focusedContainerColor = Color.White,
-                                unfocusedBorderColor = Color(0xFFE5E7EB),
-                                focusedBorderColor = Color(0xFF4F46E5)
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isProfitable) Color(0xFFF0FDF4) else Color(0xFFFEF2F2)
+                            ),
+                            border = BorderStroke(
+                                1.dp,
+                                if (isProfitable) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)
                             )
-                        )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Harga Modal (HPP)",
+                                        fontSize = 11.sp,
+                                        fontFamily = interfamily,
+                                        color = Color(0xFF6B7280)
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Rp $formattedCostPrice",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = interfamily,
+                                        color = Color(0xFF111827)
+                                    )
+                                }
+
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = "Estimasi Laba Kotor",
+                                            fontSize = 11.sp,
+                                            fontFamily = interfamily,
+                                            color = Color(0xFF6B7280)
+                                        )
+                                        Surface(
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = if (isProfitable) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)
+                                        ) {
+                                            Text(
+                                                text = if (isProfitable) String.format(Locale.US, "+%.1f%%", marginPercent) else String.format(Locale.US, "%.1f%%", marginPercent),
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                fontFamily = interfamily,
+                                                color = if (isProfitable) Color(0xFF16A34A) else Color(0xFFDC2626),
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = if (isProfitable) "+Rp $formattedLabaKotor / unit" else "-Rp $formattedLabaKotor / unit",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = interfamily,
+                                        color = if (isProfitable) Color(0xFF16A34A) else Color(0xFFDC2626)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -538,110 +642,7 @@ fun TambahProdukScreen(
                 }
             }
 
-            // Pengaturan Diskon Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, Color(0xFFF3F4F6))
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.LocalOffer,
-                                contentDescription = null,
-                                tint = Color(0xFF4F46E5),
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(
-                                text = "Pengaturan Diskon",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = interfamily,
-                                color = Color(0xFF111827)
-                            )
-                        }
 
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "Diskon Produk ",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    fontFamily = interfamily,
-                                    color = Color(0xFF374151)
-                                )
-                                Text(
-                                    text = "*opsional",
-                                    fontSize = 12.sp,
-                                    fontFamily = interfamily,
-                                    color = Color(0xFFEF4444)
-                                )
-                            }
-
-                            OutlinedTextField(
-                                value = formState.discount,
-                                onValueChange = { viewModel.onDiscountChange(it) },
-                                placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                trailingIcon = {
-                                    Row(
-                                        modifier = Modifier
-                                            .padding(end = 4.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(Color(0xFFF3F4F6))
-                                            .padding(2.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        Surface(
-                                            shape = RoundedCornerShape(6.dp),
-                                            color = if (formState.discountType == "PERCENT") Color(0xFF4F46E5) else Color.Transparent,
-                                            modifier = Modifier.clickable { viewModel.onDiscountTypeChange("PERCENT") }
-                                        ) {
-                                            Text(
-                                                text = "%",
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (formState.discountType == "PERCENT") Color.White else Color(0xFF6B7280),
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                            )
-                                        }
-                                        Surface(
-                                            shape = RoundedCornerShape(6.dp),
-                                            color = if (formState.discountType == "FIXED") Color(0xFF4F46E5) else Color.Transparent,
-                                            modifier = Modifier.clickable { viewModel.onDiscountTypeChange("FIXED") }
-                                        ) {
-                                            Text(
-                                                text = "Rp",
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (formState.discountType == "FIXED") Color.White else Color(0xFF6B7280),
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                            )
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedContainerColor = Color.White,
-                                    focusedContainerColor = Color.White,
-                                    unfocusedBorderColor = Color(0xFFE5E7EB),
-                                    focusedBorderColor = Color(0xFF4F46E5)
-                                )
-                            )
-                        }
-                    }
-                }
-            }
 
 
             // Visibilitas Card
