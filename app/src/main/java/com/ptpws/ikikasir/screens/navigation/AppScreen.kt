@@ -2,6 +2,8 @@ package com.ptpws.ikikasir.screens.navigation
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.ptpws.ikikasir.R
 
 sealed class AppScreen(
@@ -43,8 +45,19 @@ sealed class AppScreen(
     object Produk : AppScreen(
         R.string.screen_produk,
         R.drawable.iconapk,
-        "produk"
-    )
+        "produk?categoryId={categoryId}"
+    ) {
+        val baseRoute = "produk"
+        fun routeWith(categoryId: String?) =
+            if (categoryId != null) "produk?categoryId=$categoryId" else "produk"
+        val navArguments = listOf(
+            navArgument("categoryId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    }
 
     object Riwayat : AppScreen(
         R.string.screen_riwayat,
