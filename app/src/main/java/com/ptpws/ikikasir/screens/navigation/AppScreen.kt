@@ -89,6 +89,23 @@ sealed class AppScreen(
         "manajemen_stok"
     )
 
+    object UpdateStok : AppScreen(
+        R.string.screen_manajemen_stok,
+        R.drawable.logoikikasir,
+        "update_stok?produkId={produkId}"
+    ) {
+        val baseRoute = "update_stok"
+        fun routeWith(produkId: String? = null) = if (produkId != null) "update_stok?produkId=$produkId" else "update_stok"
+        val navArguments = listOf(
+            navArgument("produkId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    }
+
+
     object BarangRusakExp : AppScreen(
         R.string.screen_barang_rusak,
         R.drawable.logoikikasir,
@@ -142,4 +159,12 @@ sealed class AppScreen(
         R.drawable.logoikikasir,
         "pengaturan_menu"
     )
+
+    object DetailProduk : AppScreen(
+        R.string.screen_produk,
+        R.drawable.iconapk,
+        "detail_produk/{produkId}"
+    ) {
+        fun routeWith(produkId: String) = "detail_produk/$produkId"
+    }
 }
