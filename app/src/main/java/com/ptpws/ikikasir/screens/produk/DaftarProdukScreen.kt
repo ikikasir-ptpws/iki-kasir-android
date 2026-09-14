@@ -644,6 +644,12 @@ fun DaftarProdukScreen(
                     produk = produk,
                     categoryName = categoryName,
                     isCategoryActive = isCategoryActive,
+                    onClick = {
+                        val intent = Intent(context, DetailProdukActivity::class.java).apply {
+                            putExtra("produkId", produk.id)
+                        }
+                        context.startActivity(intent)
+                    },
                     onEdit = {
                         val intent = Intent(context, TambahProdukActivity::class.java).apply {
                             putExtra("produkId", produk.id)
@@ -736,6 +742,7 @@ fun ProdukCardItem(
     produk: Produk,
     categoryName: String,
     isCategoryActive: Boolean = true,
+    onClick: () -> Unit = {},
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -756,7 +763,8 @@ fun ProdukCardItem(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = if (isStokRendah || isNonAktif) 6.dp else 0.dp),
+                .padding(top = if (isStokRendah || isNonAktif) 6.dp else 0.dp)
+                .clickable { onClick() },
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = if (isNonAktif) Color(0xFFF8FAFC) else Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
