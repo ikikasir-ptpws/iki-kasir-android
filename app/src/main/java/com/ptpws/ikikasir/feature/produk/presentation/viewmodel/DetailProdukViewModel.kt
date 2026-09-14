@@ -1,0 +1,104 @@
+package com.ptpws.ikikasir.feature.produk.presentation.viewmodel
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.feature.kategori.domain.usecase.GetKategoriUseCase
+import com.ptpws.ikikasir.feature.produk.domain.model.Produk
+import com.ptpws.ikikasir.feature.produk.domain.usecase.DeleteProdukUseCase
+import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
+import com.ptpws.ikikasir.feature.produk.domain.usecase.UpdateProdukUseCase
+import com.ptpws.ikikasir.feature.produk.presentation.state.DetailProdukState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class DetailProdukViewModel @Inject constructor(
+    private val getProdukUseCase: GetProdukUseCase,
+    private val updateProdukUseCase: UpdateProdukUseCase,
+    private val deleteProdukUseCase: DeleteProdukUseCase,
+    private val getKategoriUseCase: GetKategoriUseCase,
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(DetailProdukState())
+    val state: StateFlow<DetailProdukState> = _state.asStateFlow()
+
+    init {
+        val produkId = savedStateHandle.get<String>("produkId")
+        if (!produkId.isNullOrBlank()) {
+            loadProduk(produkId)
+        }
+    }
+
+    fun loadProduk(produkId: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            getProdukUseCase.getById(produkId).collect { produk ->
+                if (produk != null) {
+                    _state.update { current ->
+                        current.copy(
+                            produk = produk,
+                            isLoading = false
+                        )
+                    }
+                    loadCategoryName(produk.categoryId)
+                } else {
+                    _state.update { current ->
+                        current.copy(isLoading = false)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun loadCategoryName(categoryId: String) {
+        viewModelScope.launch {
+            getKategoriUseCase().collect { list ->
+                val catName = list.find { it.id == categoryId }?.name ?: "Umum"
+                _state.update { it.copy(categoryName = catName) }
+            }
+        }
+    }
+
+    fun onVisibilityToggle(isVisible: Boolean) {
+        val currentProduk = _state.value.produk ?: return
+        val updated = currentProduk.copy(isVisibleInCashier = isVisible)
+        viewModelScope.launch {
+            updateProdukUseCase(updated).collect { result ->
+                if (result.isSuccess) {
+                    _state.update { it.copy(produk = updated) }
+                } else {
+                    _state.update { it.copy(errorMessage = result.exceptionOrNull()?.message ?: "Gagal memperbarui visibilitas") }
+                }
+            }
+        }
+    }
+
+    fun requestDeleteDialog(show: Boolean) {
+        _state.update { it.copy(showDeleteDialog = show) }
+    }
+
+    fun deleteProduk() {
+        val currentProduk = _state.value.produk ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, showDeleteDialog = false) }
+            deleteProdukUseCase(currentProduk.id).collect { result ->
+                if (result.isSuccess) {
+                    _state.update { it.copy(isLoading = false, isDeleted = true) }
+                } else {
+                    _state.update { it.copy(isLoading = false, errorMessage = result.exceptionOrNull()?.message ?: "Gagal menghapus produk") }
+                }
+            }
+        }
+    }
+
+    fun clearError() {
+        _state.update { it.copy(errorMessage = null) }
+    }
+}
