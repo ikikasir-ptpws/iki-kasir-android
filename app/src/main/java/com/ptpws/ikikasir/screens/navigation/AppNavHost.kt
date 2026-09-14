@@ -66,7 +66,9 @@ fun AppNavHost() {
     val currentRoute = navBackStackEntry?.destination?.route
 
     // Rute-rute yang menampilkan bottom bar
-    val showBottomBar = currentRoute in bottomNavItems.map { it.route } && currentRoute != AppScreen.Kasir.route
+    val showBottomBar = (currentRoute in bottomNavItems.map { it.route } ||
+            currentRoute?.startsWith(AppScreen.Produk.baseRoute) == true) &&
+            currentRoute != AppScreen.Kasir.route
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -86,10 +88,15 @@ fun AppNavHost() {
             composable(AppScreen.Kasir.route) {
                 KasirScreen(navController)
             }
-            composable(AppScreen.Produk.route) {
+            composable(
+                route = AppScreen.Produk.route,
+                arguments = AppScreen.Produk.navArguments
+            ) { backStackEntry ->
                 val context = LocalContext.current
+                val categoryIdArg = backStackEntry.arguments?.getString("categoryId")
                 DaftarProdukScreen(
                     navController = navController,
+                    initialCategoryId = categoryIdArg,
                     onTambah = {
                         context.startActivity(Intent(context, TambahProdukActivity::class.java))
                     }
@@ -205,7 +212,12 @@ fun IkiKasirBottomBar(navController: NavController, currentRoute: String?) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             bottomNavItems.forEach { screen ->
-                val isSelected = currentRoute == screen.route
+                // Untuk Produk, isSelected jika currentRoute diawali dengan "produk"
+                val isSelected = if (screen == AppScreen.Produk) {
+                    currentRoute?.startsWith(AppScreen.Produk.baseRoute) == true
+                } else {
+                    currentRoute == screen.route
+                }
                 val isCenter = screen == AppScreen.Kasir
 
                 BottomNavItem(
@@ -213,10 +225,22 @@ fun IkiKasirBottomBar(navController: NavController, currentRoute: String?) {
                     isSelected = isSelected,
                     isCenter = isCenter,
                     onClick = {
-                        if (currentRoute == screen.route) return@BottomNavItem
+                        if (isSelected && screen != AppScreen.Kasir) return@BottomNavItem
                         
                         if (screen.route == AppScreen.Dashboard.route) {
                             navController.popBackStack(AppScreen.Dashboard.route, inclusive = false)
+                        } else if (screen == AppScreen.Produk) {
+                            // Navigate ke produk tanpa filter categoryId
+                            navController.navigate(AppScreen.Produk.baseRoute) {
+                                val startRoute = navController.graph.findStartDestination().route
+                                if (startRoute != null) {
+                                    popUpTo(startRoute) {
+                                        saveState = true
+                                    }
+                                }
+                                launchSingleTop = true
+                                restoreState = false
+                            }
                         } else {
                             navController.navigate(screen.route) {
                                 val startRoute = navController.graph.findStartDestination().route
