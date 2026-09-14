@@ -332,7 +332,7 @@ fun ProdukMenuSection(navController: NavController) {
             iconRes = R.drawable.produk,
             label = "Produk",
             bgColor = Color(0xFFF0FDF4),
-            onClick = { navController.navigate(AppScreen.Produk.route) }
+            onClick = { navController.navigate(AppScreen.Produk.baseRoute) }
         )
         MenuIconItem(
             iconRes = R.drawable.kategori,
