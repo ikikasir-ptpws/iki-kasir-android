@@ -270,11 +270,9 @@ fun DaftarKategoriScreen(
                     lowStockCount = lowStockCount,
                     outOfStockCount = outOfStockCount,
                     onKelolaMenu = {
-                        produkViewModel.onCategoryFilterChange(kategori.id)
-                        navController.navigate(AppScreen.Produk.route) {
-                            popUpTo(AppScreen.Dashboard.route) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+                        navController.navigate(AppScreen.Produk.routeWith(kategori.id)) {
+                            popUpTo(AppScreen.Dashboard.route) { saveState = false }
+                            launchSingleTop = false
                         }
                     },
                     onEdit = {
