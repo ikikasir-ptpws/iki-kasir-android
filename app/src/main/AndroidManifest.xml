@@ -46,6 +46,10 @@
             android:label="@string/title_activity_tambah_produk"
             android:theme="@style/Theme.IKIKASIR" />
         <activity
+            android:name=".screens.produk.DetailProdukActivity"
+            android:exported="false"
+            android:theme="@style/Theme.IKIKASIR" />
+        <activity
             android:name=".screens.kategori.TambahKategoriActivity"
             android:exported="false"
             android:theme="@style/Theme.IKIKASIR" />
