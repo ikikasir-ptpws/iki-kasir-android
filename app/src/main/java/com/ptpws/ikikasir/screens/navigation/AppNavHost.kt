@@ -57,7 +57,7 @@ import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiActivity
 import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiScreen
 import com.ptpws.ikikasir.screens.penjualan.LaporanPenjualanScreen
 import com.ptpws.ikikasir.screens.produk.TambahProdukActivity
-import com.ptpws.ikikasir.ui.screens.kasir.KasirScreen
+import com.ptpws.ikikasir.screens.penjualan.KasirScreen
 
 // Daftar item bottom navigation
 
