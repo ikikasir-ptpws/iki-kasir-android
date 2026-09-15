@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+  <!-- Outer Bag -->
+  <path
+      android:pathData="M6,8h12l1,12H5L6,8z"
+      android:strokeColor="#94A3B8"
+      android:strokeWidth="1.6"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"/>
+  <!-- Bag Handles -->
+  <path
+      android:pathData="M9,9V6a3,3 0 0,1 6,0v3"
+      android:strokeColor="#94A3B8"
+      android:strokeWidth="1.6"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"/>
+</vector>
