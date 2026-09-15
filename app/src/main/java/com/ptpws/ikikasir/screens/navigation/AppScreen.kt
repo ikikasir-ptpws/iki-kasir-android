@@ -167,4 +167,10 @@ sealed class AppScreen(
     ) {
         fun routeWith(produkId: String) = "detail_produk/$produkId"
     }
+
+    object Pembayaran : AppScreen(
+        R.string.screen_kasir,
+        R.drawable.iconapk,
+        "pembayaran"
+    )
 }
