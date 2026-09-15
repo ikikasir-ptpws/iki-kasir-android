@@ -58,6 +58,7 @@ import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiScreen
 import com.ptpws.ikikasir.screens.penjualan.LaporanPenjualanScreen
 import com.ptpws.ikikasir.screens.produk.TambahProdukActivity
 import com.ptpws.ikikasir.screens.penjualan.KasirScreen
+import com.ptpws.ikikasir.screens.penjualan.PembayaranScreen
 
 // Daftar item bottom navigation
 
@@ -71,7 +72,8 @@ fun AppNavHost() {
     // Rute-rute yang menampilkan bottom bar
     val showBottomBar = (currentRoute in bottomNavItems.map { it.route } ||
             currentRoute?.startsWith(AppScreen.Produk.baseRoute) == true) &&
-            currentRoute != AppScreen.Kasir.route
+            currentRoute != AppScreen.Kasir.route &&
+            currentRoute != AppScreen.Pembayaran.route
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -89,7 +91,13 @@ fun AppNavHost() {
                 MenuFullScreen(navController)
             }
             composable(AppScreen.Kasir.route) {
-                KasirScreen(navController)
+                KasirScreen(
+                    navController = navController,
+                    onBayar = { navController.navigate(AppScreen.Pembayaran.route) }
+                )
+            }
+            composable(AppScreen.Pembayaran.route) {
+                PembayaranScreen(navController = navController)
             }
             composable(
                 route = AppScreen.Produk.route,
