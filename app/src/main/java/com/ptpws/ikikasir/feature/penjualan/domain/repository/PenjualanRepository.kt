@@ -13,6 +13,7 @@ interface PenjualanRepository {
     suspend fun clearCart()
 
     fun getAllTransaksi(): Flow<List<PenjualanTransaksi>>
+    fun getTransaksiById(transactionId: String): Flow<PenjualanTransaksi?>
     suspend fun simpanTransaksi(transaksi: PenjualanTransaksi): Flow<Result<Unit>>
     suspend fun syncPendingTransaksi(): Flow<Result<Unit>>
 }
