@@ -13,6 +13,8 @@ data class PenjualanTransaksi(
     val paymentAmount: Double = 0.0,
     val change: Double = 0.0,
     val status: String = "COMPLETED",
+    val notes: String = "",               // Catatan pesanan kasir/user
+    val createdBy: String = "",           // Nama kasir/user
     val createdAt: Timestamp = Timestamp.now(),
     val updatedAt: Timestamp = Timestamp.now(),
     val isSynced: Boolean = false
