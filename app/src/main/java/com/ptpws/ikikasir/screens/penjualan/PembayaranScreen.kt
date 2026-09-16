@@ -374,6 +374,69 @@ fun PembayaranScreen(
                 }
             }
 
+            // ── 2.5 Catatan Pesanan Input Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Assignment,
+                                contentDescription = null,
+                                tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = "Catatan Pesanan (Opsional)",
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F172A)
+                            )
+                        }
+
+                        BasicTextField(
+                            value = state.notes,
+                            onValueChange = viewModel::onNotesChange,
+                            textStyle = TextStyle(
+                                color = Color(0xFF0F172A),
+                                fontSize = 13.sp,
+                                fontFamily = interfamily
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFF8FAFC), RoundedCornerShape(12.dp))
+                                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                .padding(12.dp),
+                            decorationBox = { inner ->
+                                if (state.notes.isEmpty()) {
+                                    Text(
+                                        text = "Tambah catatan khusus pesanan...",
+                                        fontFamily = interfamily,
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF94A3B8)
+                                    )
+                                }
+                                inner()
+                            }
+                        )
+                    }
+                }
+            }
+
             // ── 3. METODE PEMBAYARAN Grid Header & Cards (Gambar)
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
