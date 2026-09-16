@@ -19,7 +19,7 @@ import com.ptpws.ikikasir.feature.produk.data.local.entity.ProdukEntity
         StockMovementEntity::class,
         TransactionEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class)
