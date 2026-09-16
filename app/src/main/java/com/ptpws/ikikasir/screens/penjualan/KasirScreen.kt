@@ -167,50 +167,7 @@ fun KasirScreen(
         )
     }
 
-    // Dialog Tambah Catatan Pesanan
-    if (state.showOrderNoteDialog) {
-        var tempNote by remember { mutableStateOf(state.orderNote) }
 
-        AlertDialog(
-            onDismissRequest = { viewModel.openOrderNoteDialog(false) },
-            title = {
-                Text(
-                    text = "Catatan Pesanan",
-                    fontFamily = interfamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color(0xFF0F172A)
-                )
-            },
-            text = {
-                OutlinedTextField(
-                    value = tempNote,
-                    onValueChange = { tempNote = it },
-                    placeholder = {
-                        Text("Masukkan catatan pesanan (misal: Cokelat Keju, Less Sugar)...", fontSize = 13.sp)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.onOrderNoteChange(tempNote)
-                        viewModel.openOrderNoteDialog(false)
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryRoyalBlue)
-                ) {
-                    Text("Simpan", fontFamily = interfamily)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.openOrderNoteDialog(false) }) {
-                    Text("Batal", fontFamily = interfamily, color = Color(0xFF64748B))
-                }
-            }
-        )
-    }
 
     Scaffold(
         containerColor = Color.White,
@@ -637,53 +594,7 @@ fun KasirScreen(
                                     )
                                 }
 
-                                // Catatan Pesanan Card
-                                item {
-                                    Surface(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable { viewModel.openOrderNoteDialog(true) },
-                                        shape = RoundedCornerShape(14.dp),
-                                        color = Color(0xFFF8FAFC),
-                                        border = BorderStroke(1.dp, Color(0xFFF1F5F9))
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Outlined.Edit,
-                                                    contentDescription = null,
-                                                    tint = Color(0xFF64748B),
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                                Text(
-                                                    text = if (state.orderNote.isBlank()) "Catatan Pesanan" else state.orderNote,
-                                                    fontFamily = interfamily,
-                                                    fontSize = 13.sp,
-                                                    color = if (state.orderNote.isBlank()) Color(0xFF64748B) else Color(0xFF0F172A),
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
 
-                                            Text(
-                                                text = if (state.orderNote.isBlank()) "Tambah Catatan" else "Ubah",
-                                                fontFamily = interfamily,
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = PrimaryRoyalBlue
-                                            )
-                                        }
-                                    }
-                                }
                             }
                         }
 
