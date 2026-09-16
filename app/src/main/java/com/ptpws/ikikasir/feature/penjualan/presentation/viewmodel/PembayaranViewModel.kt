@@ -105,6 +105,10 @@ class PembayaranViewModel @Inject constructor(
         }
     }
 
+    fun onNotesChange(notes: String) {
+        _state.update { it.copy(notes = notes) }
+    }
+
     fun toggleRincianExpanded() {
         _state.update { it.copy(isRincianExpanded = !it.isRincianExpanded) }
     }
@@ -138,7 +142,8 @@ class PembayaranViewModel @Inject constructor(
                 items = currentState.cartItems,
                 subtotal = currentState.subtotal,
                 totalBayar = totalBayar,
-                metodePembayaran = currentState.metodePembayaran
+                metodePembayaran = currentState.metodePembayaran,
+                notes = currentState.notes
             ).collect { result ->
                 _state.update { it.copy(isLoading = false) }
                 result.fold(
