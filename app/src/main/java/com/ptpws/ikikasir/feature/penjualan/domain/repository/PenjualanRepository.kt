@@ -11,5 +11,8 @@ interface PenjualanRepository {
     suspend fun removeFromCart(produkId: String)
     suspend fun updateQuantity(produkId: String, quantity: Int)
     suspend fun clearCart()
+
+    fun getAllTransaksi(): Flow<List<PenjualanTransaksi>>
     suspend fun simpanTransaksi(transaksi: PenjualanTransaksi): Flow<Result<Unit>>
+    suspend fun syncPendingTransaksi(): Flow<Result<Unit>>
 }
