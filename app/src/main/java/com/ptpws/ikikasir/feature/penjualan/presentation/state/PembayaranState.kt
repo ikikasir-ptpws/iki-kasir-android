@@ -9,10 +9,11 @@ data class PembayaranState(
     val subtotal: Double = 0.0,
     val totalItemCount: Int = 0,
     val totalPcsCount: Int = 0,
-    val metodePembayaran: String = "Tunai", // "Tunai", "QRIS", "Kartu Debit", "Transfer"
+    val metodePembayaran: String = "Tunai",
     val uangDiterimaText: String = "",
     val uangDiterima: Double = 0.0,
     val kembalian: Double = 0.0,
+    val notes: String = "", // Catatan pesanan kasir/user
     val isCetakStrukOtomatis: Boolean = true,
     val isPrinterSiap: Boolean = true,
     val isRincianExpanded: Boolean = false,
