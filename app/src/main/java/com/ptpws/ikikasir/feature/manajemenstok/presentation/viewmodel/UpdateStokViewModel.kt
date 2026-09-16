@@ -3,6 +3,11 @@ package com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
+import com.ptpws.ikikasir.feature.manajemenstok.domain.model.MovementType
+import com.ptpws.ikikasir.feature.manajemenstok.domain.model.StockMovement
+import com.ptpws.ikikasir.feature.manajemenstok.domain.usecase.SaveStokAdjustmentUseCase
 import com.ptpws.ikikasir.feature.manajemenstok.presentation.state.UpdateStokState
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
@@ -13,12 +18,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class UpdateStokViewModel @Inject constructor(
     private val getProdukUseCase: GetProdukUseCase,
     private val updateProdukUseCase: UpdateProdukUseCase,
+    private val saveStokAdjustmentUseCase: SaveStokAdjustmentUseCase,
+    private val firebaseAuth: FirebaseAuth,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -91,16 +99,43 @@ class UpdateStokViewModel @Inject constructor(
             _state.update { it.copy(errorMessage = "Pilih produk terlebih dahulu") }
             return
         }
+        val stokSebelum = currentProduk.stock
         val targetStock = _state.value.newStock.coerceAtLeast(0)
 
-        val updatedProduk = currentProduk.copy(
-            stock = targetStock
-        )
+        val updatedProduk = currentProduk.copy(stock = targetStock)
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             updateProdukUseCase(updatedProduk).collect { result ->
                 if (result.isSuccess) {
+                    val userUid = firebaseAuth.currentUser?.uid ?: ""
+                    val kasirNama = firebaseAuth.currentUser?.displayName?.takeIf { it.isNotBlank() }
+                        ?: firebaseAuth.currentUser?.email?.substringBefore("@")
+                        ?: "Kasir"
+
+                    val (tipe, amount) = when {
+                        targetStock >= stokSebelum -> MovementType.IN to (targetStock - stokSebelum)
+                        else -> MovementType.OUT to (stokSebelum - targetStock)
+                    }
+
+                    // Save movement history according to stock_movements schema (using productId as movementId to update existing document)
+                    val movement = StockMovement(
+                        movementId = currentProduk.id,
+                        productId = currentProduk.id,
+                        productName = currentProduk.name,
+                        barcode = currentProduk.barcode,
+                        type = tipe,
+                        quantity = amount,
+                        stockBefore = stokSebelum,
+                        stockAfter = targetStock,
+                        source = "MANUAL_UPDATE",
+                        userId = userUid,
+                        createdBy = kasirNama,
+                        createdAt = Timestamp.now(),
+                        updatedAt = Timestamp.now()
+                    )
+                    saveStokAdjustmentUseCase(movement).collect { /* fire and forget */ }
+
                     _state.update {
                         it.copy(
                             isLoading = false,
