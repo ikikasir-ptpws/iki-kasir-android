@@ -57,6 +57,20 @@ class KasirViewModel @Inject constructor(
         }
     }
 
+    fun onBarcodeScanned(scannedCode: String) {
+        val matchingProduct = _state.value.produkKatalog.find {
+            it.barcode.equals(scannedCode, ignoreCase = true) || it.id.equals(scannedCode, ignoreCase = true)
+        }
+        if (matchingProduct != null) {
+            viewModelScope.launch {
+                manageCartUseCase.addToCart(matchingProduct, 1)
+                _state.update { it.copy(userMessage = "Produk \"${matchingProduct.name}\" berhasil ditambahkan ke keranjang") }
+            }
+        } else {
+            _state.update { it.copy(errorMessage = "Produk dengan barcode \"$scannedCode\" tidak ditemukan") }
+        }
+    }
+
     fun onSearchQueryChange(query: String) {
         _state.update { it.copy(searchQuery = query) }
     }
@@ -120,6 +134,10 @@ class KasirViewModel @Inject constructor(
 
     fun onOrderNoteChange(note: String) {
         _state.update { it.copy(orderNote = note) }
+    }
+
+    fun clearUserMessage() {
+        _state.update { it.copy(userMessage = null) }
     }
 
     fun clearError() {
