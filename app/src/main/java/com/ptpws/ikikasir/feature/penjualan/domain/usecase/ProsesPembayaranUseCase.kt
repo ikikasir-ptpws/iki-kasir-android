@@ -25,7 +25,8 @@ class ProsesPembayaranUseCase @Inject constructor(
         subtotal: Double,
         totalBayar: Double,
         metodePembayaran: String,
-        discount: Double = 0.0
+        discount: Double = 0.0,
+        notes: String = ""
     ): Flow<Result<PenjualanTransaksi>> = flow {
         if (items.isEmpty()) {
             emit(Result.failure(IllegalArgumentException("Tidak ada produk dalam keranjang pesanan.")))
@@ -76,8 +77,8 @@ class ProsesPembayaranUseCase @Inject constructor(
         }
 
         val transaksi = PenjualanTransaksi(
-            transactionId = invoiceId,           // Gunakan invoice number sebagai ID transaksi
-            transactionNumber = invoiceId,       // Invoice number
+            transactionId = invoiceId,
+            transactionNumber = invoiceId,
             items = items,
             subtotal = subtotal,
             discount = discount,
@@ -86,6 +87,8 @@ class ProsesPembayaranUseCase @Inject constructor(
             paymentAmount = if (isTunai) totalBayar else totalTagihan,
             change = kembalian,
             status = "COMPLETED",
+            notes = notes,
+            createdBy = kasirNama,
             createdAt = Timestamp.now(),
             updatedAt = Timestamp.now()
         )
