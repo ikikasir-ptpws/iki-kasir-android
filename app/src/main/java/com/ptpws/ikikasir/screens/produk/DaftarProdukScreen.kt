@@ -821,6 +821,22 @@ fun ProdukCardItem(
                     ) {
                         CategoryBadge(categoryName = categoryName)
 
+                        if (!produk.isSynced) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0xFFFEF3C7)
+                            ) {
+                                Text(
+                                    text = "Pending",
+                                    fontSize = 10.sp,
+                                    fontFamily = interfamily,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFD97706),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
                         if (isNonAktif) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
