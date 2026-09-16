@@ -43,6 +43,12 @@ data class TransactionEntity(
     @ColumnInfo(name = "status")
     val status: String,
 
+    @ColumnInfo(name = "notes")
+    val notes: String = "",
+
+    @ColumnInfo(name = "createdBy")
+    val createdBy: String = "",
+
     @ColumnInfo(name = "createdAt")
     val createdAt: Timestamp = Timestamp.now(),
 
@@ -62,9 +68,15 @@ data class TransactionEntity(
                 val pName = obj.optString("productName", "")
                 val price = obj.optDouble("price", 0.0)
                 val qty = obj.optInt("quantity", 1)
+                val imgUrl = obj.optString("imageUrl", "")
                 cartItems.add(
                     CartItem(
-                        produk = Produk(id = pId, name = pName, sellingPrice = price),
+                        produk = Produk(
+                            id = pId,
+                            name = pName,
+                            sellingPrice = price,
+                            imageUrl = imgUrl
+                        ),
                         quantity = qty
                     )
                 )
@@ -84,6 +96,8 @@ data class TransactionEntity(
             paymentAmount = paymentAmount,
             change = change,
             status = status,
+            notes = notes,
+            createdBy = createdBy,
             createdAt = createdAt,
             updatedAt = updatedAt,
             isSynced = isSynced
@@ -100,6 +114,7 @@ fun PenjualanTransaksi.toEntity(isSynced: Boolean = false): TransactionEntity {
             put("price", cartItem.produk.sellingPrice)
             put("quantity", cartItem.quantity)
             put("totalPrice", cartItem.totalPrice)
+            put("imageUrl", cartItem.produk.imageUrl)
         }
         jsonArray.put(obj)
     }
@@ -115,6 +130,8 @@ fun PenjualanTransaksi.toEntity(isSynced: Boolean = false): TransactionEntity {
         paymentAmount = paymentAmount,
         change = change,
         status = status,
+        notes = notes,
+        createdBy = createdBy,
         createdAt = createdAt,
         updatedAt = updatedAt,
         isSynced = isSynced
