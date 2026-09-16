@@ -47,6 +47,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import android.content.Intent
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
@@ -73,6 +77,65 @@ fun KasirScreen(
     val totalItemCount = state.totalItemCount
     val subtotal = state.subtotal
 
+    // Barcode scanner launcher
+    val barcodeScanLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val code = result.data?.getStringExtra("SCAN_RESULT")
+            if (!code.isNullOrBlank()) {
+                viewModel.onBarcodeScanned(code)
+            }
+        }
+    }
+
+    fun triggerBarcodeScanner() {
+        try {
+            val options = GmsBarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
+                .enableAutoZoom()
+                .build()
+
+            val scanner = GmsBarcodeScanning.getClient(context, options)
+            scanner.startScan()
+                .addOnSuccessListener { barcode ->
+                    val rawValue = barcode.rawValue
+                    if (!rawValue.isNullOrBlank()) {
+                        viewModel.onBarcodeScanned(rawValue)
+                    }
+                }
+                .addOnFailureListener {
+                    val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
+                        putExtra("SCAN_MODE", "PRODUCT_MODE")
+                    }
+                    if (scanIntent.resolveActivity(context.packageManager) != null) {
+                        barcodeScanLauncher.launch(scanIntent)
+                    }
+                }
+        } catch (e: Exception) {
+            val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
+                putExtra("SCAN_MODE", "PRODUCT_MODE")
+            }
+            if (scanIntent.resolveActivity(context.packageManager) != null) {
+                barcodeScanLauncher.launch(scanIntent)
+            }
+        }
+    }
+
+    LaunchedEffect(state.userMessage) {
+        state.userMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearUserMessage()
+        }
+    }
+
+    LaunchedEffect(state.errorMessage) {
+        state.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearError()
+        }
+    }
+
     // Filter item keranjang berdasarkan searchQuery (Hanya mencari produk yang SUDAH DIPILIH di keranjang)
     val filteredCartItems = remember(cartItems, state.searchQuery) {
         if (state.searchQuery.isBlank()) {
@@ -87,7 +150,7 @@ fun KasirScreen(
 
     val formatRupiah = remember {
         { amount: Double ->
-            NumberFormat.getNumberInstance(Locale("id", "ID")).format(amount.toLong())
+            NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID")).format(amount.toLong())
         }
     }
 
@@ -331,7 +394,7 @@ fun KasirScreen(
                 Surface(
                     modifier = Modifier
                         .size(48.dp)
-                        .clickable { onScanProduk() },
+                        .clickable { triggerBarcodeScanner() },
                     shape = RoundedCornerShape(14.dp),
                     color = PrimaryRoyalBlue
                 ) {
@@ -457,7 +520,7 @@ fun KasirScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Button(
-                            onClick = { onScanProduk() },
+                            onClick = { triggerBarcodeScanner() },
                             modifier = Modifier
                                 .fillMaxWidth(0.85f)
                                 .height(48.dp),
