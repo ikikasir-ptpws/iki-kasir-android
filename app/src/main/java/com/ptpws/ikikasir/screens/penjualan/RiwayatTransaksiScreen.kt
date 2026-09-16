@@ -1,10 +1,10 @@
 package com.ptpws.ikikasir.screens.penjualan
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -26,18 +26,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
+import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.RiwayatTransaksiViewModel
+import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RiwayatTransaksiScreen(
     navController: NavController,
+    viewModel: RiwayatTransaksiViewModel = hiltViewModel(),
     onDetailTransaksi: (String) -> Unit = {}
 ) {
-    var cariTransaksi by remember { mutableStateOf("") }
-    var filterAktif by remember { mutableStateOf("Hari Ini") }
+    val state by viewModel.state.collectAsState()
 
     Scaffold(
         containerColor = Color(0xFFF3F4F6),
@@ -53,9 +60,11 @@ fun RiwayatTransaksiScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { if (navController.currentDestination?.route == "riwayat") {
-                        navController.popBackStack()
-                    } }) {
+                    IconButton(onClick = {
+                        if (navController.currentDestination?.route == "riwayat") {
+                            navController.popBackStack()
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
@@ -100,8 +109,8 @@ fun RiwayatTransaksiScreen(
                         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
                         BasicTextField(
-                            value = cariTransaksi,
-                            onValueChange = { cariTransaksi = it },
+                            value = state.searchQuery,
+                            onValueChange = viewModel::onSearchQueryChange,
                             singleLine = true,
                             textStyle = TextStyle(
                                 color = Color.Black,
@@ -127,7 +136,7 @@ fun RiwayatTransaksiScreen(
                                         modifier = Modifier.weight(1f),
                                         contentAlignment = Alignment.CenterStart
                                     ) {
-                                        if (cariTransaksi.isEmpty()) {
+                                        if (state.searchQuery.isEmpty()) {
                                             Text(
                                                 text = "Cari kode transaksi...",
                                                 fontFamily = interfamily,
@@ -164,21 +173,21 @@ fun RiwayatTransaksiScreen(
                 }
             }
 
-            // Filter Chip: Hari Ini
+            // Filter Chips
             item {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 2.dp)
                 ) {
-                    // Chip: Hari Ini
-                    item {
-                        val isSelected = filterAktif == "Hari Ini"
+                    val filterOptions = listOf("Hari Ini", "7 Hari Terakhir", "Semua")
+                    items(filterOptions) { filter ->
+                        val isSelected = state.selectedFilter == filter
                         FilterChip(
                             selected = isSelected,
-                            onClick = { filterAktif = "Hari Ini" },
+                            onClick = { viewModel.onFilterSelect(filter) },
                             label = {
                                 Text(
-                                    text = "Hari Ini",
+                                    text = filter,
                                     fontFamily = interfamily,
                                     fontSize = 13.sp,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
@@ -189,79 +198,6 @@ fun RiwayatTransaksiScreen(
                                 selectedLabelColor = Color.White,
                                 containerColor = Color.White,
                                 labelColor = Color(0xFF374151)
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = isSelected,
-                                selectedBorderColor = Color.Transparent,
-                                borderColor = Color(0xFFE5E7EB),
-                                borderWidth = 1.dp,
-                                selectedBorderWidth = 0.dp
-                            ),
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                    }
-
-                    // Chip: 7 Hari Terakhir
-                    item {
-                        val isSelected = filterAktif == "7 Hari Terakhir"
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { filterAktif = "7 Hari Terakhir" },
-                            label = {
-                                Text(
-                                    text = "7 Hari Terakhir",
-                                    fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFF4F46E5),
-                                selectedLabelColor = Color.White,
-                                containerColor = Color.White,
-                                labelColor = Color(0xFF374151)
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = isSelected,
-                                selectedBorderColor = Color.Transparent,
-                                borderColor = Color(0xFFE5E7EB),
-                                borderWidth = 1.dp,
-                                selectedBorderWidth = 0.dp
-                            ),
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                    }
-
-                    // Chip: Pilih Tanggal (dengan icon kalender)
-                    item {
-                        val isSelected = filterAktif == "Pilih Tanggal"
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { filterAktif = "Pilih Tanggal" },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.CalendarMonth,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                            },
-                            label = {
-                                Text(
-                                    text = "Pilih Tanggal",
-                                    fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFF4F46E5),
-                                selectedLabelColor = Color.White,
-                                selectedLeadingIconColor = Color.White,
-                                containerColor = Color.White,
-                                labelColor = Color(0xFF374151),
-                                iconColor = Color(0xFF374151)
                             ),
                             border = FilterChipDefaults.filterChipBorder(
                                 enabled = true,
@@ -277,97 +213,59 @@ fun RiwayatTransaksiScreen(
                 }
             }
 
+            if (state.isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFF4F46E5))
+                    }
+                }
+            } else if (state.filteredList.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Belum ada riwayat transaksi",
+                            fontFamily = interfamily,
+                            color = Color(0xFF6B7280),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            } else {
+                items(state.filteredList, key = { it.transactionId }) { transaksi ->
+                    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+                    val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                    val dateObj = transaksi.createdAt.toDate()
+                    val jamText = timeFormat.format(dateObj)
+                    val formattedPrice = "Rp " + NumberFormat.getInstance(Locale("id", "ID")).format(transaksi.total.toLong())
 
-            item {
-                Text(
-                    text = "25 Okt 2026",
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = interfamily,
-                    fontSize = 14.sp,
-                    color = Color(0xFF111827)
-                )
-            }
+                    val iconMetode = when (transaksi.paymentMethod.lowercase()) {
+                        "qris" -> Icons.Default.QrCode
+                        "debit card", "debit" -> Icons.Default.CreditCard
+                        else -> Icons.Default.Wallet
+                    }
 
-            // Transaksi #TRX-2023-042
-            item {
-                TransaksiCardItem(
-                    kodeTransaksi = "#TRX-2023-042",
-                    jam = "14:30",
-                    metodePembayaran = "Cash",
-                    iconMetode = Icons.Default.Wallet,
-                    iconTint = Color(0xFF4F46E5),
-                    totalHarga = "Rp 150.000",
-                    statusBayar = "LUNAS",
-                    onDetail = { onDetailTransaksi("#TRX-2023-042") }
-                )
-            }
-
-            // Transaksi #TRX-2023-042
-            item {
-                TransaksiCardItem(
-                    kodeTransaksi = "#TRX-2023-042",
-                    jam = "14:30",
-                    metodePembayaran = "Cash",
-                    iconMetode = Icons.Default.Wallet,
-                    iconTint = Color(0xFF4F46E5),
-                    totalHarga = "Rp 150.000",
-                    statusBayar = "LUNAS",
-                    onDetail = { onDetailTransaksi("#TRX-2023-042") }
-                )
-            }
-
-            // Transaksi #TRX-2023-041
-            item {
-                TransaksiCardItem(
-                    kodeTransaksi = "#TRX-2023-041",
-                    jam = "12:15",
-                    metodePembayaran = "QRIS",
-                    iconMetode = Icons.Default.QrCode,
-                    iconTint = Color(0xFF4F46E5),
-                    totalHarga = "Rp 42.500",
-                    statusBayar = "LUNAS",
-                    onDetail = { onDetailTransaksi("#TRX-2023-041") }
-                )
-            }
-
-
-            item {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "24 Okt 2026",
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = interfamily,
-                    fontSize = 14.sp,
-                    color = Color(0xFF111827)
-                )
-            }
-
-            // Transaksi #TRX-2023-040
-            item {
-                TransaksiCardItem(
-                    kodeTransaksi = "#TRX-2023-040",
-                    jam = "18:45",
-                    metodePembayaran = "Debit Card",
-                    iconMetode = Icons.Default.CreditCard,
-                    iconTint = Color(0xFF4F46E5),
-                    totalHarga = "Rp 1.250.000",
-                    statusBayar = "HUTANG",
-                    onDetail = { onDetailTransaksi("#TRX-2023-040") }
-                )
-            }
-
-            // Transaksi #TRX-2023-039
-            item {
-                TransaksiCardItem(
-                    kodeTransaksi = "#TRX-2023-039",
-                    jam = "09:10",
-                    metodePembayaran = "Cash",
-                    iconMetode = Icons.Default.Wallet,
-                    iconTint = Color(0xFF4F46E5),
-                    totalHarga = "Rp 8.000",
-                    statusBayar = "LUNAS",
-                    onDetail = { onDetailTransaksi("#TRX-2023-039") }
-                )
+                    TransaksiCardItem(
+                        kodeTransaksi = transaksi.transactionNumber,
+                        jam = "$jamText - ${dateFormat.format(dateObj)}",
+                        metodePembayaran = transaksi.paymentMethod,
+                        iconMetode = iconMetode,
+                        iconTint = Color(0xFF4F46E5),
+                        totalHarga = formattedPrice,
+                        statusBayar = transaksi.status,
+                        isSynced = transaksi.isSynced,
+                        onDetail = { onDetailTransaksi(transaksi.transactionId) }
+                    )
+                }
             }
         }
     }
@@ -382,9 +280,10 @@ fun TransaksiCardItem(
     iconTint: Color,
     totalHarga: String,
     statusBayar: String,
+    isSynced: Boolean = true,
     onDetail: () -> Unit
 ) {
-    val isLunas = statusBayar == "LUNAS"
+    val isLunas = statusBayar.equals("COMPLETED", ignoreCase = true) || statusBayar.equals("LUNAS", ignoreCase = true)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -416,29 +315,50 @@ fun TransaksiCardItem(
                     color = Color(0xFF4F46E5)
                 )
 
-                // Jam
+                // Jam / Tanggal
                 Text(
                     text = "  $jam",
                     fontFamily = interfamily,
                     fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     color = Color(0xFF9CA3AF)
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Badge Status
+                // Pending Badge jika belum tersinkron ke Firestore
+                if (!isSynced) {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = Color(0xFFFEF3C7),
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "Pending",
+                            fontSize = 10.sp,
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD97706)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+
+                // Badge Status LUNAS / COMPLETED
                 Box(
                     modifier = Modifier
                         .background(
                             color = if (isLunas) Color(0xFFD1FAE5) else Color(0xFFFEF3C7),
                             shape = RoundedCornerShape(20.dp)
                         )
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = statusBayar,
-                        fontSize = 11.sp,
+                        text = if (isLunas) "LUNAS" else statusBayar,
+                        fontSize = 10.sp,
                         fontFamily = interfamily,
                         fontWeight = FontWeight.Bold,
                         color = if (isLunas) Color(0xFF059669) else Color(0xFFD97706)
