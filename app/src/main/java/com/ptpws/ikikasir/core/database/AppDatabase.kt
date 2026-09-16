@@ -7,6 +7,8 @@ import com.ptpws.ikikasir.feature.kategori.data.local.dao.KategoriDao
 import com.ptpws.ikikasir.feature.kategori.data.local.entity.KategoriEntity
 import com.ptpws.ikikasir.feature.manajemenstok.data.local.dao.StokAdjustmentDao
 import com.ptpws.ikikasir.feature.manajemenstok.data.local.entity.StockMovementEntity
+import com.ptpws.ikikasir.feature.penjualan.data.local.dao.TransactionDao
+import com.ptpws.ikikasir.feature.penjualan.data.local.entity.TransactionEntity
 import com.ptpws.ikikasir.feature.produk.data.local.dao.ProdukDao
 import com.ptpws.ikikasir.feature.produk.data.local.entity.ProdukEntity
 
@@ -14,9 +16,10 @@ import com.ptpws.ikikasir.feature.produk.data.local.entity.ProdukEntity
     entities = [
         KategoriEntity::class,
         ProdukEntity::class,
-        StockMovementEntity::class
+        StockMovementEntity::class,
+        TransactionEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class)
@@ -24,6 +27,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val kategoriDao: KategoriDao
     abstract val produkDao: ProdukDao
     abstract val stokAdjustmentDao: StokAdjustmentDao
+    abstract val transactionDao: TransactionDao
 
     companion object {
         const val DATABASE_NAME = "ikikasir_db"
