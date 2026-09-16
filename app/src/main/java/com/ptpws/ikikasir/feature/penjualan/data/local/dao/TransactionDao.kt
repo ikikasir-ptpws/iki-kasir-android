@@ -12,6 +12,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY createdAt DESC")
     fun getAllTransactionsFlow(): Flow<List<TransactionEntity>>
 
+    @Query("SELECT * FROM transactions WHERE transactionId = :transactionId LIMIT 1")
+    fun getTransactionByIdFlow(transactionId: String): Flow<TransactionEntity?>
+
     @Upsert
     suspend fun insertOrUpdate(transaction: TransactionEntity)
 
