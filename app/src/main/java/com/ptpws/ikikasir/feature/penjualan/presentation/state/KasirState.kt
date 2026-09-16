@@ -15,6 +15,7 @@ data class KasirState(
     val orderNote: String = "",
     val showOrderNoteDialog: Boolean = false,
     val isLoading: Boolean = false,
+    val userMessage: String? = null,
     val errorMessage: String? = null
 ) {
     val totalItemCount: Int
