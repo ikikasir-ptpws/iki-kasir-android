@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.ptpws.ikikasir.core.database.AppDatabase
 import com.ptpws.ikikasir.feature.kategori.data.local.dao.KategoriDao
 import com.ptpws.ikikasir.feature.manajemenstok.data.local.dao.StokAdjustmentDao
+import com.ptpws.ikikasir.feature.penjualan.data.local.dao.TransactionDao
 import com.ptpws.ikikasir.feature.produk.data.local.dao.ProdukDao
 import dagger.Module
 import dagger.Provides
@@ -53,5 +54,13 @@ object DatabaseModule {
         database: AppDatabase
     ): StokAdjustmentDao {
         return database.stokAdjustmentDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideTransactionDao(
+        database: AppDatabase
+    ): TransactionDao {
+        return database.transactionDao
     }
 }
