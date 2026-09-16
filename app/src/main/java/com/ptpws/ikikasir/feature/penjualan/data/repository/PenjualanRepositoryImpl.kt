@@ -111,6 +111,12 @@ class PenjualanRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getTransaksiById(transactionId: String): Flow<PenjualanTransaksi?> {
+        return localDao.getTransactionByIdFlow(transactionId).map { entity ->
+            entity?.toDomain()
+        }
+    }
+
     override suspend fun simpanTransaksi(transaksi: PenjualanTransaksi): Flow<Result<Unit>> = flow {
         val isOnline = networkMonitor.isConnected()
         Log.d(TAG, "simpanTransaksi: id='${transaksi.transactionId}', number='${transaksi.transactionNumber}', isOnline=$isOnline")
