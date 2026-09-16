@@ -22,6 +22,8 @@ import com.ptpws.ikikasir.feature.produk.domain.model.Produk
  *  - paymentAmount: Number
  *  - change: Number
  *  - status: String
+ *  - notes: String
+ *  - createdBy: String
  *  - createdAt: Timestamp
  *  - updatedAt: Timestamp
  */
@@ -56,6 +58,12 @@ data class TransactionDto(
     @get:PropertyName("status") @set:PropertyName("status")
     var status: String = "COMPLETED",
 
+    @get:PropertyName("notes") @set:PropertyName("notes")
+    var notes: String = "",
+
+    @get:PropertyName("createdBy") @set:PropertyName("createdBy")
+    var createdBy: String = "",
+
     @get:PropertyName("createdAt") @set:PropertyName("createdAt")
     @get:ServerTimestamp
     var createdAt: Timestamp? = null,
@@ -70,8 +78,14 @@ data class TransactionDto(
             val pName = map["productName"]?.toString() ?: ""
             val price = (map["price"] as? Number)?.toDouble() ?: 0.0
             val qty = (map["quantity"] as? Number)?.toInt() ?: 1
+            val imgUrl = map["imageUrl"]?.toString() ?: map["image"]?.toString() ?: ""
             CartItem(
-                produk = Produk(id = pId, name = pName, sellingPrice = price),
+                produk = Produk(
+                    id = pId,
+                    name = pName,
+                    sellingPrice = price,
+                    imageUrl = imgUrl
+                ),
                 quantity = qty
             )
         }
@@ -87,6 +101,8 @@ data class TransactionDto(
             paymentAmount = paymentAmount,
             change = change,
             status = status,
+            notes = notes,
+            createdBy = createdBy,
             createdAt = createdAt ?: Timestamp.now(),
             updatedAt = updatedAt ?: Timestamp.now(),
             isSynced = true
@@ -101,7 +117,8 @@ fun PenjualanTransaksi.toDto(): TransactionDto {
             "productName" to cartItem.produk.name,
             "price" to cartItem.produk.sellingPrice,
             "quantity" to cartItem.quantity,
-            "totalPrice" to cartItem.totalPrice
+            "totalPrice" to cartItem.totalPrice,
+            "imageUrl" to cartItem.produk.imageUrl
         )
     }
 
@@ -116,6 +133,8 @@ fun PenjualanTransaksi.toDto(): TransactionDto {
         paymentAmount = paymentAmount,
         change = change,
         status = status,
+        notes = notes,
+        createdBy = createdBy,
         createdAt = null,
         updatedAt = null
     )
