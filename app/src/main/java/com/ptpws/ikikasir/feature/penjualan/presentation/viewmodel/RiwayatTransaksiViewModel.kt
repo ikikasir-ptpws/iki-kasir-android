@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetAllTransaksiUseCase
+import com.ptpws.ikikasir.feature.penjualan.presentation.state.GroupedTransaksi
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.RiwayatTransaksiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,7 +12,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -31,10 +35,17 @@ class RiwayatTransaksiViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true) }
             getAllTransaksiUseCase().collect { list ->
                 _state.update { current ->
-                    val filtered = filterTransactions(list, current.searchQuery, current.selectedFilter)
+                    val filtered = filterTransactions(
+                        list = list,
+                        query = current.searchQuery,
+                        filter = current.selectedFilter,
+                        customDateMillis = current.selectedCustomDateMillis
+                    )
+                    val grouped = groupTransactions(filtered)
                     current.copy(
                         transaksiList = list,
                         filteredList = filtered,
+                        groupedTransactions = grouped,
                         isLoading = false
                     )
                 }
@@ -44,25 +55,67 @@ class RiwayatTransaksiViewModel @Inject constructor(
 
     fun onSearchQueryChange(query: String) {
         _state.update { current ->
-            val filtered = filterTransactions(current.transaksiList, query, current.selectedFilter)
-            current.copy(searchQuery = query, filteredList = filtered)
+            val filtered = filterTransactions(
+                list = current.transaksiList,
+                query = query,
+                filter = current.selectedFilter,
+                customDateMillis = current.selectedCustomDateMillis
+            )
+            val grouped = groupTransactions(filtered)
+            current.copy(
+                searchQuery = query,
+                filteredList = filtered,
+                groupedTransactions = grouped
+            )
         }
     }
 
     fun onFilterSelect(filter: String) {
         _state.update { current ->
-            val filtered = filterTransactions(current.transaksiList, current.searchQuery, filter)
-            current.copy(selectedFilter = filter, filteredList = filtered)
+            val filtered = filterTransactions(
+                list = current.transaksiList,
+                query = current.searchQuery,
+                filter = filter,
+                customDateMillis = current.selectedCustomDateMillis
+            )
+            val grouped = groupTransactions(filtered)
+            current.copy(
+                selectedFilter = filter,
+                filteredList = filtered,
+                groupedTransactions = grouped
+            )
+        }
+    }
+
+    fun onCustomDateSelect(timeInMillis: Long) {
+        val dateLabel = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).format(Date(timeInMillis))
+        _state.update { current ->
+            val filtered = filterTransactions(
+                list = current.transaksiList,
+                query = current.searchQuery,
+                filter = "Filter Tanggal",
+                customDateMillis = timeInMillis
+            )
+            val grouped = groupTransactions(filtered)
+            current.copy(
+                selectedFilter = "Filter Tanggal",
+                selectedCustomDateMillis = timeInMillis,
+                customDateLabel = dateLabel,
+                filteredList = filtered,
+                groupedTransactions = grouped
+            )
         }
     }
 
     private fun filterTransactions(
         list: List<PenjualanTransaksi>,
         query: String,
-        filter: String
+        filter: String,
+        customDateMillis: Long?
     ): List<PenjualanTransaksi> {
         var filtered = list
 
+        // Search query filter (by transaction number or ID)
         if (query.isNotBlank()) {
             filtered = filtered.filter {
                 it.transactionNumber.contains(query, ignoreCase = true) ||
@@ -70,8 +123,11 @@ class RiwayatTransaksiViewModel @Inject constructor(
             }
         }
 
-        val now = Calendar.getInstance()
+        // Date filter
         when (filter) {
+            "Semua" -> {
+                // Show all transactions
+            }
             "Hari Ini" -> {
                 val startOfDay = Calendar.getInstance().apply {
                     set(Calendar.HOUR_OF_DAY, 0)
@@ -97,8 +153,74 @@ class RiwayatTransaksiViewModel @Inject constructor(
                     it.createdAt.seconds >= startOf7Days
                 }
             }
+            "Filter Tanggal" -> {
+                if (customDateMillis != null) {
+                    val selCal = Calendar.getInstance().apply {
+                        timeInMillis = customDateMillis
+                    }
+                    val startOfSelDay = Calendar.getInstance().apply {
+                        timeInMillis = customDateMillis
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis / 1000
+
+                    val endOfSelDay = Calendar.getInstance().apply {
+                        timeInMillis = customDateMillis
+                        set(Calendar.HOUR_OF_DAY, 23)
+                        set(Calendar.MINUTE, 59)
+                        set(Calendar.SECOND, 59)
+                        set(Calendar.MILLISECOND, 999)
+                    }.timeInMillis / 1000
+
+                    filtered = filtered.filter {
+                        it.createdAt.seconds in startOfSelDay..endOfSelDay
+                    }
+                }
+            }
         }
 
         return filtered.sortedByDescending { it.createdAt.seconds }
+    }
+
+    private fun groupTransactions(filteredList: List<PenjualanTransaksi>): List<GroupedTransaksi> {
+        if (filteredList.isEmpty()) return emptyList()
+
+        val map = LinkedHashMap<String, MutableList<PenjualanTransaksi>>()
+
+        for (tx in filteredList) {
+            val dateObj = tx.createdAt.toDate()
+            val headerText = formatGroupHeaderDate(dateObj)
+            map.getOrPut(headerText) { mutableListOf() }.add(tx)
+        }
+
+        return map.map { (header, list) ->
+            GroupedTransaksi(
+                dateHeader = header,
+                countText = "${list.size} Transaksi",
+                transactions = list
+            )
+        }
+    }
+
+    private fun formatGroupHeaderDate(date: Date): String {
+        val txCal = Calendar.getInstance().apply { time = date }
+        val todayCal = Calendar.getInstance()
+        val yesterdayCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+
+        val dateFormat = SimpleDateFormat("d MMM yyyy", Locale("id", "ID"))
+        val dayNameFormat = SimpleDateFormat("EEEE, d MMM yyyy", Locale("id", "ID"))
+
+        return when {
+            isSameDay(txCal, todayCal) -> "Hari Ini, ${dateFormat.format(date)}"
+            isSameDay(txCal, yesterdayCal) -> "Kemarin, ${dateFormat.format(date)}"
+            else -> dayNameFormat.format(date)
+        }
+    }
+
+    private fun isSameDay(c1: Calendar, c2: Calendar): Boolean {
+        return c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR) &&
+                c1.get(Calendar.DAY_OF_YEAR) == c2.get(Calendar.DAY_OF_YEAR)
     }
 }
