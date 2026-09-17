@@ -26,7 +26,8 @@ class ProsesPembayaranUseCase @Inject constructor(
         totalBayar: Double,
         metodePembayaran: String,
         discount: Double = 0.0,
-        notes: String = ""
+        notes: String = "",
+        customerName: String = ""
     ): Flow<Result<PenjualanTransaksi>> = flow {
         if (items.isEmpty()) {
             emit(Result.failure(IllegalArgumentException("Tidak ada produk dalam keranjang pesanan.")))
@@ -89,6 +90,7 @@ class ProsesPembayaranUseCase @Inject constructor(
             status = "COMPLETED",
             notes = notes,
             createdBy = kasirNama,
+            customerName = customerName,
             createdAt = Timestamp.now(),
             updatedAt = Timestamp.now()
         )
