@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.GetKategoriUseCase
+import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetAllTransaksiUseCase
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.DeleteProdukUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import javax.inject.Inject
 
 @HiltViewModel
@@ -23,11 +25,14 @@ class DetailProdukViewModel @Inject constructor(
     private val updateProdukUseCase: UpdateProdukUseCase,
     private val deleteProdukUseCase: DeleteProdukUseCase,
     private val getKategoriUseCase: GetKategoriUseCase,
+    private val getAllTransaksiUseCase: GetAllTransaksiUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DetailProdukState())
     val state: StateFlow<DetailProdukState> = _state.asStateFlow()
+
+    private var activeProdukId: String? = null
 
     init {
         val produkId = savedStateHandle.get<String>("produkId")
@@ -37,6 +42,9 @@ class DetailProdukViewModel @Inject constructor(
     }
 
     fun loadProduk(produkId: String) {
+        if (activeProdukId == produkId) return
+        activeProdukId = produkId
+
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             getProdukUseCase.getById(produkId).collect { produk ->
@@ -52,6 +60,51 @@ class DetailProdukViewModel @Inject constructor(
                     _state.update { current ->
                         current.copy(isLoading = false)
                     }
+                }
+            }
+        }
+
+        observeSalesSummary(produkId)
+    }
+
+    private fun observeSalesSummary(produkId: String) {
+        viewModelScope.launch {
+            getAllTransaksiUseCase().collect { transactions ->
+                val startOfTodayMillis = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis
+
+                val thirtyDaysAgoMillis = Calendar.getInstance().apply {
+                    add(Calendar.DAY_OF_YEAR, -30)
+                }.timeInMillis
+
+                var todayQty = 0
+                var thirtyDaysQty = 0
+
+                transactions.forEach { tx ->
+                    if (!tx.status.equals("CANCELLED", ignoreCase = true) && !tx.status.equals("BATAL", ignoreCase = true)) {
+                        val txMillis = tx.createdAt.toDate().time
+                        tx.items.forEach { cartItem ->
+                            if (cartItem.produk.id == produkId) {
+                                if (txMillis >= startOfTodayMillis) {
+                                    todayQty += cartItem.quantity
+                                }
+                                if (txMillis >= thirtyDaysAgoMillis) {
+                                    thirtyDaysQty += cartItem.quantity
+                                }
+                            }
+                        }
+                    }
+                }
+
+                _state.update { current ->
+                    current.copy(
+                        terjualHariIni = todayQty,
+                        total30HariTerakhir = thirtyDaysQty
+                    )
                 }
             }
         }
