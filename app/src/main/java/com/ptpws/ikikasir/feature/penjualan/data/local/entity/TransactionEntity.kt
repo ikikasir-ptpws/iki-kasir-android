@@ -49,6 +49,9 @@ data class TransactionEntity(
     @ColumnInfo(name = "createdBy")
     val createdBy: String = "",
 
+    @ColumnInfo(name = "customerName")
+    val customerName: String = "",
+
     @ColumnInfo(name = "createdAt")
     val createdAt: Timestamp = Timestamp.now(),
 
@@ -98,6 +101,7 @@ data class TransactionEntity(
             status = status,
             notes = notes,
             createdBy = createdBy,
+            customerName = customerName,
             createdAt = createdAt,
             updatedAt = updatedAt,
             isSynced = isSynced
@@ -132,6 +136,7 @@ fun PenjualanTransaksi.toEntity(isSynced: Boolean = false): TransactionEntity {
         status = status,
         notes = notes,
         createdBy = createdBy,
+        customerName = customerName,
         createdAt = createdAt,
         updatedAt = updatedAt,
         isSynced = isSynced
