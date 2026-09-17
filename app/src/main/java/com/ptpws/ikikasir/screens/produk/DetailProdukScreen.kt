@@ -936,7 +936,7 @@ fun DetailProdukScreen(
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Row(verticalAlignment = Alignment.Bottom) {
                                                 Text(
-                                                    text = "14",
+                                                    text = "${state.terjualHariIni}",
                                                     fontSize = 20.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     fontFamily = interfamily,
@@ -944,7 +944,7 @@ fun DetailProdukScreen(
                                                 )
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Text(
-                                                    text = "cup",
+                                                    text = "unit",
                                                     fontSize = 12.sp,
                                                     fontFamily = interfamily,
                                                     color = Color(0xFF64748B)
@@ -976,7 +976,7 @@ fun DetailProdukScreen(
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Row(verticalAlignment = Alignment.Bottom) {
                                                 Text(
-                                                    text = "320",
+                                                    text = "${state.total30HariTerakhir}",
                                                     fontSize = 20.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     fontFamily = interfamily,
@@ -984,7 +984,7 @@ fun DetailProdukScreen(
                                                 )
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Text(
-                                                    text = "cup",
+                                                    text = "unit",
                                                     fontSize = 12.sp,
                                                     fontFamily = interfamily,
                                                     color = Color(0xFF64748B)
