@@ -14,6 +14,7 @@ data class PembayaranState(
     val uangDiterima: Double = 0.0,
     val kembalian: Double = 0.0,
     val notes: String = "", // Catatan pesanan kasir/user
+    val customerName: String = "", // Nama Pelanggan (Opsional)
     val isCetakStrukOtomatis: Boolean = true,
     val isPrinterSiap: Boolean = true,
     val isRincianExpanded: Boolean = false,
