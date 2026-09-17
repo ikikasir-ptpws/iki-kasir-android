@@ -109,6 +109,10 @@ class PembayaranViewModel @Inject constructor(
         _state.update { it.copy(notes = notes) }
     }
 
+    fun onCustomerNameChange(name: String) {
+        _state.update { it.copy(customerName = name) }
+    }
+
     fun toggleRincianExpanded() {
         _state.update { it.copy(isRincianExpanded = !it.isRincianExpanded) }
     }
@@ -143,7 +147,8 @@ class PembayaranViewModel @Inject constructor(
                 subtotal = currentState.subtotal,
                 totalBayar = totalBayar,
                 metodePembayaran = currentState.metodePembayaran,
-                notes = currentState.notes
+                notes = currentState.notes,
+                customerName = currentState.customerName
             ).collect { result ->
                 _state.update { it.copy(isLoading = false) }
                 result.fold(
