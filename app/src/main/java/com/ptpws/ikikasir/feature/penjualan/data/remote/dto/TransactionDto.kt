@@ -64,6 +64,9 @@ data class TransactionDto(
     @get:PropertyName("createdBy") @set:PropertyName("createdBy")
     var createdBy: String = "",
 
+    @get:PropertyName("customerName") @set:PropertyName("customerName")
+    var customerName: String = "",
+
     @get:PropertyName("createdAt") @set:PropertyName("createdAt")
     @get:ServerTimestamp
     var createdAt: Timestamp? = null,
@@ -103,6 +106,7 @@ data class TransactionDto(
             status = status,
             notes = notes,
             createdBy = createdBy,
+            customerName = customerName,
             createdAt = createdAt ?: Timestamp.now(),
             updatedAt = updatedAt ?: Timestamp.now(),
             isSynced = true
@@ -135,6 +139,7 @@ fun PenjualanTransaksi.toDto(): TransactionDto {
         status = status,
         notes = notes,
         createdBy = createdBy,
+        customerName = customerName,
         createdAt = null,
         updatedAt = null
     )
