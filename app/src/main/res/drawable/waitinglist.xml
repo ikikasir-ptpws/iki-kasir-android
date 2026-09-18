@@ -1,0 +1,41 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Head: top semicircle then bottom semicircle (radius=3.2, center=11,8) -->
+    <path
+        android:pathData="M7.8,8 A3.2,3.2 0 0 1 14.2,8 A3.2,3.2 0 0 1 7.8,8 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#111827"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- Shoulders arc -->
+    <path
+        android:pathData="M3.5,20.5 C3.5,16.9 6.85,14 11,14"
+        android:fillColor="#00000000"
+        android:strokeColor="#111827"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- Clock: white fill circle (radius=3.8, center=17,18) -->
+    <path
+        android:pathData="M13.2,18 A3.8,3.8 0 0 1 20.8,18 A3.8,3.8 0 0 1 13.2,18 Z"
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#111827"
+        android:strokeWidth="1.6"/>
+
+    <!-- Clock hands (12→center→3) -->
+    <path
+        android:pathData="M17,15.8 L17,18 L19,18"
+        android:fillColor="#00000000"
+        android:strokeColor="#111827"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+</vector>
