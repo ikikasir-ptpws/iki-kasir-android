@@ -3,6 +3,8 @@ package com.ptpws.ikikasir.core.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.ptpws.ikikasir.feature.antrean.data.local.dao.AntreanDao
+import com.ptpws.ikikasir.feature.antrean.data.local.entity.AntreanEntity
 import com.ptpws.ikikasir.feature.kategori.data.local.dao.KategoriDao
 import com.ptpws.ikikasir.feature.kategori.data.local.entity.KategoriEntity
 import com.ptpws.ikikasir.feature.manajemenstok.data.local.dao.StokAdjustmentDao
@@ -17,9 +19,10 @@ import com.ptpws.ikikasir.feature.produk.data.local.entity.ProdukEntity
         KategoriEntity::class,
         ProdukEntity::class,
         StockMovementEntity::class,
-        TransactionEntity::class
+        TransactionEntity::class,
+        AntreanEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class)
@@ -28,6 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val produkDao: ProdukDao
     abstract val stokAdjustmentDao: StokAdjustmentDao
     abstract val transactionDao: TransactionDao
+    abstract val antreanDao: AntreanDao
 
     companion object {
         const val DATABASE_NAME = "ikikasir_db"
