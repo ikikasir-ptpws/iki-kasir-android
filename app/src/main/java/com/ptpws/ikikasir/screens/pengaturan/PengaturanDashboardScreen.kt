@@ -43,7 +43,6 @@ fun PengaturanDashboardScreen(
     var aksesKasir by remember { mutableStateOf(true) }
     var aksesProduk by remember { mutableStateOf(true) }
     var aksesTransaksi by remember { mutableStateOf(true) }
-    var aksesHutang by remember { mutableStateOf(false) }
     var aksesDatabase by remember { mutableStateOf(true) }
     var aksesManajemenStok by remember { mutableStateOf(true) }
     var aksesSupplier by remember { mutableStateOf(true) }
@@ -198,22 +197,13 @@ fun PengaturanDashboardScreen(
 
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             AksesCepatCard(
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.fillMaxWidth(),
                                 icon = rememberVectorPainter(Icons.Outlined.History),
                                 iconBackground = Color(0xFFEEF2FF),
                                 iconTint = Color(0xFF4F46E5),
                                 label = "Transaksi",
                                 checked = aksesTransaksi,
                                 onCheckedChange = { aksesTransaksi = it }
-                            )
-                            AksesCepatCard(
-                                modifier = Modifier.weight(1f),
-                                icon = rememberVectorPainter(Icons.Outlined.AccountBalanceWallet),
-                                iconBackground = Color(0xFFEEF2FF),
-                                iconTint = Color(0xFF4F46E5),
-                                label = "Hutang",
-                                checked = aksesHutang,
-                                onCheckedChange = { aksesHutang = it }
                             )
                         }
 
