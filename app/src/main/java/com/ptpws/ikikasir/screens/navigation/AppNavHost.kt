@@ -39,8 +39,6 @@ import com.ptpws.ikikasir.screens.produk.DetailProdukScreen
 import com.ptpws.ikikasir.commond.interfamily
 import com.example.app.ui.screen.DashboardScreen
 import com.example.app.ui.screen.MenuFullScreen
-import com.ptpws.ikikasir.screens.barangrusak.BarangRusakExpScreen
-import com.ptpws.ikikasir.screens.barangrusak.TambahRusakExpActivity
 import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
 import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
 import com.ptpws.ikikasir.screens.manajemenstok.UpdateStokScreen
@@ -165,11 +163,6 @@ fun AppNavHost() {
                 )
             }
 
-            composable(AppScreen.BarangRusakExp.route) {
-                val context = LocalContext.current
-                BarangRusakExpScreen(navController, onTambahBarang = { context.startActivity(Intent(context,
-                    TambahRusakExpActivity::class.java)) })
-            }
             composable(AppScreen.DetailTransaksi.route) {
                 DetailTransaksiScreen()
             }
