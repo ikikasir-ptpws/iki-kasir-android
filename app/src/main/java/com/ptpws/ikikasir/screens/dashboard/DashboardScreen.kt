@@ -326,7 +326,7 @@ fun ProdukMenuSection(navController: NavController) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.Start
     ) {
         MenuIconItem(
             iconRes = R.drawable.produk,
@@ -334,23 +334,19 @@ fun ProdukMenuSection(navController: NavController) {
             bgColor = Color(0xFFF0FDF4),
             onClick = { navController.navigate(AppScreen.Produk.baseRoute) }
         )
+        Spacer(modifier = Modifier.width(28.dp))
         MenuIconItem(
             iconRes = R.drawable.kategori,
             label = "Kategori\nProduk",
             bgColor = Color(0xFFFAF5FF),
             onClick = { navController.navigate(AppScreen.KategoriProduk.route) }
         )
+        Spacer(modifier = Modifier.width(28.dp))
         MenuIconItem(
             iconRes = R.drawable.manajemenstok,
             label = "Manajemen\nStok",
             bgColor = Color(0xFFFFF7ED),
             onClick = { navController.navigate(AppScreen.ManajemenStok.route) }
-        )
-        MenuIconItem(
-            iconRes = R.drawable.barangrusak,
-            label = "Barang Rusak\nExp",
-            bgColor = Color(0xFFFDF2F8),
-            onClick = { navController.navigate(AppScreen.BarangRusakExp.route) }
         )
     }
 }
