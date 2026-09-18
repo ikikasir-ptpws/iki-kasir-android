@@ -129,6 +129,12 @@ sealed class AppScreen(
         "audit_log"
     )
 
+    object WaitingList : AppScreen(
+        R.string.screen_waiting_list,
+        R.drawable.waitinglist,
+        "waiting_list"
+    )
+
 
 
     object Pengguna : AppScreen(
