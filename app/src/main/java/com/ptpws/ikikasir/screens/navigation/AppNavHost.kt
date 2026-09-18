@@ -52,7 +52,6 @@ import com.ptpws.ikikasir.screens.manajemenpengguna.ManajemenPenggunaScreen
 import com.ptpws.ikikasir.screens.pengaturan.PengaturanDashboardScreen
 import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiActivity
 import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiScreen
-import com.ptpws.ikikasir.screens.penjualan.LaporanPenjualanScreen
 import com.ptpws.ikikasir.screens.produk.TambahProdukActivity
 import com.ptpws.ikikasir.screens.penjualan.KasirScreen
 import com.ptpws.ikikasir.screens.penjualan.PembayaranScreen
@@ -171,9 +170,6 @@ fun AppNavHost() {
             }
             composable(AppScreen.AuditLog.route) {
                 AuditLogScreen(navController)
-            }
-            composable(AppScreen.LaporanPenjualan.route) {
-                LaporanPenjualanScreen(navController)
             }
             composable(AppScreen.Pengguna.route) {
                 ManajemenPenggunaScreen(navController)
