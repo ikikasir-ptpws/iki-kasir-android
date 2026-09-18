@@ -57,11 +57,11 @@ fun RoleIzinScreen() {
     val aksesState = remember {
         mutableStateListOf(
             // Admin
-            mutableStateListOf(true, true, true, false, false, false),
+            mutableStateListOf(true, true, true, false, false),
             // Kasir
-            mutableStateListOf(true, true, false, false, false, false),
+            mutableStateListOf(true, true, false, false, false),
             // Inventory
-            mutableStateListOf(false, false, true, false, false, false),
+            mutableStateListOf(false, false, true, false, false),
         )
     }
 
@@ -72,7 +72,6 @@ fun RoleIzinScreen() {
             "Transaksi"  to "Kelola penjualan & kasir",
             "Produk"     to "Manajemen stok & katalog",
             "Laporan"    to "Analisis laba & rugi",
-            "Hutang"     to "Piutang pelanggan & supplier",
             "Pengaturan" to "Konfigurasi sistem & profil",
         )
     }
@@ -195,7 +194,6 @@ fun RoleIzinScreen() {
                     "Transaksi"  -> Icons.Outlined.PointOfSale
                     "Produk"     -> Icons.Outlined.Inventory2
                     "Laporan"    -> Icons.Outlined.Assessment
-                    "Hutang"     -> Icons.Outlined.AccountBalanceWallet
                     else         -> Icons.Outlined.Settings
                 }
 
