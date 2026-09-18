@@ -81,7 +81,7 @@ fun KeuanganMenuSection(navController: NavController) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.Start
     ) {
         MenuIconItem(
             iconRes = R.drawable.laporankeuangan,
@@ -89,18 +89,14 @@ fun KeuanganMenuSection(navController: NavController) {
             bgColor = Color(0xFFFFF0F6),
             onClick = { navController.navigate(AppScreen.LaporanKeuangan.route) }
         )
-        MenuIconItem(
-            iconRes = R.drawable.hutang,
-            label = "Hutang",
-            bgColor = Color(0xFFFFF7ED),
-            onClick = { navController.navigate(AppScreen.Hutang.route) }
-        )
+        Spacer(modifier = Modifier.width(28.dp))
         MenuIconItem(
             iconRes = R.drawable.auditlog,
             label = "Auditlog",
             bgColor = Color(0xFFFFF6F0),
             onClick = { navController.navigate(AppScreen.AuditLog.route) }
         )
+        Spacer(modifier = Modifier.width(28.dp))
         MenuIconItem(
             iconRes = R.drawable.laporanpenjualan,
             label = "Laporan\nPenjualan",
