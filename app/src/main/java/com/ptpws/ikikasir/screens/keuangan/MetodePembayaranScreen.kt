@@ -34,10 +34,9 @@ fun MetodePembayaranScreen(
     var cashAktif by remember { mutableStateOf(true) }
     var qrisAktif by remember { mutableStateOf(true) }
     var transferAktif by remember { mutableStateOf(false) }
-    var hutangAktif by remember { mutableStateOf(false) }
 
     // Hitung berapa yang aktif
-    val totalAktif = listOf(cashAktif, qrisAktif, transferAktif, hutangAktif).count { it }
+    val totalAktif = listOf(cashAktif, qrisAktif, transferAktif).count { it }
 
     Scaffold(
         containerColor = Color(0xFFF3F4F6),
@@ -109,7 +108,7 @@ fun MetodePembayaranScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "dari 4 tersedia",
+                                text = "dari 3 tersedia",
                                 fontFamily = interfamily,
                                 fontSize = 14.sp,
                                 color = Color(0xFFBFBFFF),
@@ -181,26 +180,7 @@ fun MetodePembayaranScreen(
                                     }
                                 }
                             }
-                            if (hutangAktif) {
-                                item {
-                                    Box(
-                                        modifier = Modifier
-                                            .background(
-                                                color = Color(0x33FFFFFF),
-                                                shape = RoundedCornerShape(20.dp)
-                                            )
-                                            .padding(horizontal = 12.dp, vertical = 4.dp)
-                                    ) {
-                                        Text(
-                                            text = "HUTANG",
-                                            fontFamily = interfamily,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
-                                        )
-                                    }
-                                }
-                            }
+
                         }
                     }
                 }
@@ -257,18 +237,7 @@ fun MetodePembayaranScreen(
                 )
             }
 
-            // Toggle Card: Hutang
-            item {
-                MetodeToggleCard(
-                    icon = Icons.Default.CreditCard,
-                    iconBgColor = Color(0xFFEDE9FE),
-                    iconTint = Color(0xFF4F46E5),
-                    namaMetode = "Hutang",
-                    subLabel = "KREDIT",
-                    isAktif = hutangAktif,
-                    onToggle = { hutangAktif = it }
-                )
-            }
+
 
             // Info Box Pemberitahuan
             item {
