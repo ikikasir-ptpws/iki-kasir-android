@@ -372,6 +372,13 @@ fun PenjualanMenuSection(navController: NavController) {
             bgColor = Color(0xFFECFEFF),
             onClick = { navController.navigate(AppScreen.Riwayat.route) }
         )
+        Spacer(modifier = Modifier.width(28.dp))
+        MenuIconItem(
+            iconRes = R.drawable.waitinglist,
+            label = "Waiting List",
+            bgColor = Color(0xFFECFEFF),
+            onClick = { navController.navigate(AppScreen.WaitingList.route) }
+        )
     }
 }
 
