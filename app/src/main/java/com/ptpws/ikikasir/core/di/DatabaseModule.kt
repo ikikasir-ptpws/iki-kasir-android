@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.core.di
 import android.content.Context
 import androidx.room.Room
 import com.ptpws.ikikasir.core.database.AppDatabase
+import com.ptpws.ikikasir.feature.antrean.data.local.dao.AntreanDao
 import com.ptpws.ikikasir.feature.kategori.data.local.dao.KategoriDao
 import com.ptpws.ikikasir.feature.manajemenstok.data.local.dao.StokAdjustmentDao
 import com.ptpws.ikikasir.feature.penjualan.data.local.dao.TransactionDao
@@ -62,5 +63,13 @@ object DatabaseModule {
         database: AppDatabase
     ): TransactionDao {
         return database.transactionDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideAntreanDao(
+        database: AppDatabase
+    ): AntreanDao {
+        return database.antreanDao
     }
 }
