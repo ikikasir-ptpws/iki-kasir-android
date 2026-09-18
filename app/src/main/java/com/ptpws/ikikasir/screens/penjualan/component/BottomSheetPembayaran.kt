@@ -94,13 +94,6 @@ fun BottomSheetPembayaran(
                         isSelected = selectedMethod == "TRF",
                         onClick = { selectedMethod = "TRF" }
                     )
-                    PaymentMethodItem(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Default.Receipt,
-                        label = "HUTANG",
-                        isSelected = selectedMethod == "HUTANG",
-                        onClick = { selectedMethod = "HUTANG" }
-                    )
                 }
             }
 
