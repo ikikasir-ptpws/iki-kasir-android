@@ -96,13 +96,6 @@ fun KeuanganMenuSection(navController: NavController) {
             bgColor = Color(0xFFFFF6F0),
             onClick = { navController.navigate(AppScreen.AuditLog.route) }
         )
-        Spacer(modifier = Modifier.width(28.dp))
-        MenuIconItem(
-            iconRes = R.drawable.laporanpenjualan,
-            label = "Laporan\nPenjualan",
-            bgColor = Color(0xFFEFFCF8),
-            onClick = { navController.navigate(AppScreen.LaporanPenjualan.route) }
-        )
     }
 }
 
