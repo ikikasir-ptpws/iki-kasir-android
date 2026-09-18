@@ -129,11 +129,7 @@ sealed class AppScreen(
         "audit_log"
     )
 
-    object LaporanPenjualan : AppScreen(
-        R.string.screen_laporan_penjualan,
-        R.drawable.iconapk,
-        "laporan_penjualan"
-    )
+
 
     object Pengguna : AppScreen(
         R.string.screen_pengguna,
