@@ -48,7 +48,6 @@ import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
 import com.ptpws.ikikasir.screens.kategori.TambahKategoriActivity
 import com.ptpws.ikikasir.screens.keuangan.AuditLogScreen
 import com.ptpws.ikikasir.screens.keuangan.LaporanKeuanganScreen
-import com.ptpws.ikikasir.screens.keuangan.ManajemenHutangScreen
 import com.ptpws.ikikasir.screens.manajemenpengguna.ManajemenPenggunaScreen
 import com.ptpws.ikikasir.screens.pengaturan.PengaturanDashboardScreen
 import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiActivity
@@ -169,9 +168,6 @@ fun AppNavHost() {
             composable(AppScreen.LaporanKeuangan.route) {
                 LaporanKeuanganScreen(navController
                 )
-            }
-            composable(AppScreen.Hutang.route) {
-                ManajemenHutangScreen(navController)
             }
             composable(AppScreen.AuditLog.route) {
                 AuditLogScreen(navController)
