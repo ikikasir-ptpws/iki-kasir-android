@@ -54,10 +54,6 @@
             android:exported="false"
             android:theme="@style/Theme.IKIKASIR" />
         <activity
-            android:name=".screens.barangrusak.TambahRusakExpActivity"
-            android:exported="false"
-            android:theme="@style/Theme.IKIKASIR" />
-        <activity
             android:name=".screens.manajemenpengguna.TambahPenggunaActivity"
             android:exported="false"
             android:theme="@style/Theme.IKIKASIR" />
