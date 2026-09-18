@@ -123,12 +123,6 @@ sealed class AppScreen(
         "laporan_keuangan"
     )
 
-    object Hutang : AppScreen(
-        R.string.screen_hutang,
-        R.drawable.logoikikasir,
-        "hutang"
-    )
-
     object AuditLog : AppScreen(
         R.string.screen_auditlog,
         R.drawable.logoikikasir,
