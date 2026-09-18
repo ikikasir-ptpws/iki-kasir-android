@@ -15,7 +15,6 @@
     <string name="screen_cari_menu">Cari Menu</string>
     <string name="screen_kategori_produk">Kategori Produk</string>
     <string name="screen_manajemen_stok">Manajemen Stok</string>
-    <string name="screen_barang_rusak">Barang Rusak &amp; Expired</string>
 
     <!-- Penjualan -->
     <string name="screen_transaksi">Transaksi</string>
