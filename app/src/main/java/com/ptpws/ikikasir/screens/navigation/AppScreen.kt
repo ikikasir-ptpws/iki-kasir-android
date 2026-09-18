@@ -105,13 +105,6 @@ sealed class AppScreen(
         )
     }
 
-
-    object BarangRusakExp : AppScreen(
-        R.string.screen_barang_rusak,
-        R.drawable.logoikikasir,
-        "barang_rusak_exp"
-    )
-
     object Transaksi : AppScreen(
         R.string.screen_transaksi,
         R.drawable.iconapk,
