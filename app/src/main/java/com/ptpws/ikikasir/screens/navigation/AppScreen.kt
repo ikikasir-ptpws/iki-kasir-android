@@ -135,6 +135,12 @@ sealed class AppScreen(
         "waiting_list"
     )
 
+    object RiwayatAntrean : AppScreen(
+        R.string.screen_riwayat_antrean,
+        R.drawable.riwayatantrean,
+        "riwayat_antrean"
+    )
+
 
 
     object Pengguna : AppScreen(
