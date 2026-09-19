@@ -2,6 +2,9 @@ package com.ptpws.ikikasir.feature.penjualan.domain.usecase
 
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.ptpws.ikikasir.feature.antrean.domain.model.Antrean
+import com.ptpws.ikikasir.feature.antrean.domain.model.AntreanStatus
+import com.ptpws.ikikasir.feature.antrean.domain.repository.AntreanRepository
 import com.ptpws.ikikasir.feature.manajemenstok.domain.model.MovementType
 import com.ptpws.ikikasir.feature.manajemenstok.domain.model.StockMovement
 import com.ptpws.ikikasir.feature.manajemenstok.domain.usecase.SaveStokAdjustmentUseCase
@@ -11,12 +14,14 @@ import com.ptpws.ikikasir.feature.penjualan.domain.repository.PenjualanRepositor
 import com.ptpws.ikikasir.feature.produk.domain.usecase.UpdateProdukUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import java.util.UUID
 import javax.inject.Inject
 
 class ProsesPembayaranUseCase @Inject constructor(
     private val repository: PenjualanRepository,
     private val updateProdukUseCase: UpdateProdukUseCase,
     private val saveStokAdjustmentUseCase: SaveStokAdjustmentUseCase,
+    private val antreanRepository: AntreanRepository,
     private val firebaseAuth: FirebaseAuth
 ) {
     suspend operator fun invoke(
@@ -97,7 +102,26 @@ class ProsesPembayaranUseCase @Inject constructor(
 
         repository.simpanTransaksi(transaksi).collect { result ->
             result.fold(
-                onSuccess = { emit(Result.success(transaksi)) },
+                onSuccess = {
+                    // Otomatis buat data Antrean baru saat transaksi berhasil
+                    try {
+                        val nextSeq = antreanRepository.getNextQueueSequence()
+                        val antrean = Antrean(
+                            id = UUID.randomUUID().toString(),
+                            transactionId = invoiceId,
+                            queueSequence = nextSeq,
+                            status = AntreanStatus.WAITING,
+                            customerName = customerName,
+                            createdAt = Timestamp.now(),
+                            updatedAt = Timestamp.now()
+                        )
+                        antreanRepository.insertAntrean(antrean).collect { /* save antrean */ }
+                    } catch (e: Exception) {
+                        android.util.Log.e("ProsesPembayaranUseCase", "Failed auto-creating antrean: ${e.message}", e)
+                    }
+
+                    emit(Result.success(transaksi))
+                },
                 onFailure = { emit(Result.failure(it)) }
             )
         }
