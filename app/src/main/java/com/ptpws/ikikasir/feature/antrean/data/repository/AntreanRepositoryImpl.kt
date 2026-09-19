@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.firebase.Timestamp
 import com.ptpws.ikikasir.core.network.NetworkMonitor
 import com.ptpws.ikikasir.feature.antrean.data.local.dao.AntreanDao
+import com.ptpws.ikikasir.feature.antrean.data.local.dao.QueueHistoryDao
 import com.ptpws.ikikasir.feature.antrean.data.local.entity.toEntity
 import com.ptpws.ikikasir.feature.antrean.data.remote.datasource.AntreanRemoteDataSource
 import com.ptpws.ikikasir.feature.antrean.data.remote.dto.toDto
@@ -23,6 +24,7 @@ private const val TAG = "AntreanRepository"
 @Singleton
 class AntreanRepositoryImpl @Inject constructor(
     private val localDao: AntreanDao,
+    private val queueHistoryDao: QueueHistoryDao,
     private val remoteDataSource: AntreanRemoteDataSource,
     private val networkMonitor: NetworkMonitor
 ) : AntreanRepository {
@@ -173,5 +175,11 @@ class AntreanRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Failed to pull remote antrean during sync: ${e.message}")
         }
+    }
+
+    override suspend fun getNextQueueSequence(): Int {
+        val maxQueues = localDao.getMaxQueueSequence()
+        val maxHistory = queueHistoryDao.getMaxQueueSequence()
+        return maxOf(maxQueues, maxHistory) + 1
     }
 }
