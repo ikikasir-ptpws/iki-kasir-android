@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.ptpws.ikikasir.core.database.AppDatabase
 import com.ptpws.ikikasir.feature.antrean.data.local.dao.AntreanDao
+import com.ptpws.ikikasir.feature.antrean.data.local.dao.QueueHistoryDao
 import com.ptpws.ikikasir.feature.kategori.data.local.dao.KategoriDao
 import com.ptpws.ikikasir.feature.manajemenstok.data.local.dao.StokAdjustmentDao
 import com.ptpws.ikikasir.feature.penjualan.data.local.dao.TransactionDao
@@ -71,5 +72,13 @@ object DatabaseModule {
         database: AppDatabase
     ): AntreanDao {
         return database.antreanDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideQueueHistoryDao(
+        database: AppDatabase
+    ): QueueHistoryDao {
+        return database.queueHistoryDao
     }
 }
