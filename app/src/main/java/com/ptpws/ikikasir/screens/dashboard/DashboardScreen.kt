@@ -375,9 +375,16 @@ fun PenjualanMenuSection(navController: NavController) {
         Spacer(modifier = Modifier.width(28.dp))
         MenuIconItem(
             iconRes = R.drawable.waitinglist,
-            label = "Waiting List",
+            label = "Antrean",
             bgColor = Color(0xFFECFEFF),
             onClick = { navController.navigate(AppScreen.WaitingList.route) }
+        )
+        Spacer(modifier = Modifier.width(28.dp))
+        MenuIconItem(
+            iconRes = R.drawable.riwayatantrean,
+            label = "Riwayat\nAntrean",
+            bgColor = Color(0xFFEFF6FF),
+            onClick = { navController.navigate(AppScreen.RiwayatAntrean.route) }
         )
     }
 }
