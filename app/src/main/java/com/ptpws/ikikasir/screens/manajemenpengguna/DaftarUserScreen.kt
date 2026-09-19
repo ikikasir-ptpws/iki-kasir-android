@@ -117,9 +117,6 @@ fun DaftarUserScreen() {
             val (nama, email, detail) = filtered[index]
             val (inisial, role, aktif) = detail
 
-            val roleBg   = when (role) { "ADMIN" -> Color(0xFFE1E2E4); "KASIR" -> Color(0xFFE1E2E4); else -> Color(0xFFE1E2E4) }
-            val roleText = when (role) { "ADMIN" -> Color(0xFF464555); "KASIR" -> Color(0xFF464555); else -> Color(0xFF464555) }
-
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
@@ -127,24 +124,25 @@ fun DaftarUserScreen() {
                     containerColor = Color.White
                 ),
                 elevation = CardDefaults.cardElevation(
-                    defaultElevation = 3.dp
+                    defaultElevation = 2.dp
                 )
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(horizontal = 14.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
 
-                    // Avatar
+                    // Avatar circular
                     Box(
                         modifier = Modifier
-                            .size(56.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .size(48.dp)
+                            .clip(CircleShape)
                             .background(
                                 when (inisial) {
-                                    "A", "B" -> Color(0xFFE7E3FF)
+                                    "A" -> Color(0xFFE7E3FF)
+                                    "B" -> Color(0xFFE7E3FF)
                                     "R" -> Color(0xFFFFE6DC)
                                     else -> Color(0xFFE5E7EB)
                                 }
@@ -154,7 +152,7 @@ fun DaftarUserScreen() {
                         Text(
                             text = inisial,
                             fontFamily = interfamily,
-                            fontSize = 24.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = when (inisial) {
                                 "R" -> Color(0xFF92400E)
@@ -169,32 +167,26 @@ fun DaftarUserScreen() {
                     Column(
                         modifier = Modifier.weight(1f)
                     ) {
-
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-
                             Text(
                                 text = nama,
                                 fontFamily = interfamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp,
                                 color = Color(0xFF111827),
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
-
                             Box(
                                 modifier = Modifier
                                     .background(
                                         Color(0xFFE5E7EB),
                                         RoundedCornerShape(6.dp)
                                     )
-                                    .padding(
-                                        horizontal = 8.dp,
-                                    )
+                                    .padding(horizontal = 7.dp, vertical = 2.dp)
                             ) {
                                 Text(
                                     text = role,
@@ -210,7 +202,7 @@ fun DaftarUserScreen() {
                         Text(
                             text = email,
                             fontFamily = interfamily,
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
                             color = Color(0xFF6B7280)
                         )
                     }
@@ -218,38 +210,27 @@ fun DaftarUserScreen() {
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Column(
-                        horizontalAlignment = Alignment.End
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-
                         Box(
                             modifier = Modifier
                                 .background(
-                                    if (aktif)
-                                        Color(0xFFDDF7E5)
-                                    else
-                                        Color(0xFFF3F4F6),
+                                    if (aktif) Color(0xFFDDF7E5) else Color(0xFFF3F4F6),
                                     RoundedCornerShape(8.dp)
                                 )
-                                .padding(
-                                    horizontal = 10.dp,
-                                )
+                                .padding(horizontal = 10.dp, vertical = 3.dp)
                         ) {
                             Text(
                                 text = if (aktif) "AKTIF" else "NONAKTIF",
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = interfamily,
-                                color = if (aktif)
-                                    Color(0xFF16A34A)
-                                else
-                                    Color(0xFF6B7280)
+                                color = if (aktif) Color(0xFF16A34A) else Color(0xFF6B7280)
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Row {
-
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             IconButton(
                                 onClick = {},
                                 modifier = Modifier.size(24.dp)
@@ -261,8 +242,6 @@ fun DaftarUserScreen() {
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
-                            Spacer(Modifier.width(12.dp))
-
                             IconButton(
                                 onClick = {},
                                 modifier = Modifier.size(24.dp)
