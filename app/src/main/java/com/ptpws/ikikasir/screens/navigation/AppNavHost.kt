@@ -56,6 +56,7 @@ import com.ptpws.ikikasir.screens.produk.TambahProdukActivity
 import com.ptpws.ikikasir.screens.penjualan.KasirScreen
 import com.ptpws.ikikasir.screens.penjualan.PembayaranScreen
 import com.ptpws.ikikasir.screens.penjualan.WaitingListScreen
+import com.ptpws.ikikasir.screens.penjualan.RiwayatAntreanScreen
 
 // Daftar item bottom navigation
 
@@ -174,6 +175,9 @@ fun AppNavHost() {
             }
             composable(AppScreen.WaitingList.route) {
                 WaitingListScreen(navController)
+            }
+            composable(AppScreen.RiwayatAntrean.route) {
+                RiwayatAntreanScreen(navController)
             }
             composable(AppScreen.Pengguna.route) {
                 ManajemenPenggunaScreen(navController)
