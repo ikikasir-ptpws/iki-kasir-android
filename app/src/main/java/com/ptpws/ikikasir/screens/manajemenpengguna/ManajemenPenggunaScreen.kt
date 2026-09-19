@@ -1,48 +1,27 @@
 package com.ptpws.ikikasir.screens.manajemenpengguna
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
-import androidx.compose.material.icons.outlined.AdminPanelSettings
-import androidx.compose.material.icons.outlined.Assessment
-import androidx.compose.material.icons.outlined.Inventory2
-import androidx.compose.material.icons.outlined.PointOfSale
-import androidx.compose.material.icons.outlined.Save
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.SpaceDashboard
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.ptpws.ikikasir.R
-import kotlinx.coroutines.launch
 import com.ptpws.ikikasir.commond.interfamily
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
@@ -59,20 +38,20 @@ fun ManajemenPenggunaScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = "Manajemen pengguna",
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = interfamily,
-                            color = Color(0xFF111827),
-                            fontSize = 22.sp
-                        )
-                    }
+                    Text(
+                        text = "Manajemen Pengguna",
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = interfamily,
+                        color = Color(0xFF111827),
+                        fontSize = 16.sp
+                    )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { if (navController.currentDestination?.route == "pengguna") {
-                        navController.popBackStack()
-                    } }) {
+                    IconButton(onClick = {
+                        if (navController.currentDestination?.route == "pengguna") {
+                            navController.popBackStack()
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
@@ -105,44 +84,62 @@ fun ManajemenPenggunaScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Tab Row
-            TabRow(
-                selectedTabIndex = pagerState.currentPage,
-                containerColor = Color(0xFFF3F4F6),
-                contentColor = Color(0xFF4F46E5),
-                indicator = { tabPositions ->
-                    Box(
-                        modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                        contentAlignment = Alignment.BottomCenter
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .width(95.dp)
-                                .height(3.dp)
-                                .background(
-                                    Color(0xFF4F46E5),
-                                    RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp)
-                                )
-                        )
-                    }
-                },
-                divider = {}
+            // Header section: big title + subtitle
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 16.dp)
+            ) {
+                Text(
+                    text = "Manajemen pengguna",
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = interfamily,
+                    color = Color(0xFF111827),
+                    fontSize = 24.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Kelola pengguna dan role secara realtime",
+                    fontFamily = interfamily,
+                    color = Color(0xFF6B7280),
+                    fontSize = 13.sp
+                )
+            }
+
+            // Custom pill/toggle tab buttons
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 16.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFE5E7EB))
+                    .padding(4.dp)
             ) {
                 listOf("DAFTAR USER", "ROLE & IZIN").forEachIndexed { index, title ->
-                    Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
-                        text = {
-                            Text(
-                                text = title,
-                                fontFamily = interfamily,
-                                fontWeight = if (pagerState.currentPage == index) FontWeight.SemiBold else FontWeight.Normal,
-                                fontSize = 13.sp
+                    val selected = pagerState.currentPage == index
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (selected) Color(0xFF4F46E5) else Color.Transparent
                             )
-                        },
-                        selectedContentColor = Color(0xFF4F46E5),
-                        unselectedContentColor = Color(0xFF6B7280)
-                    )
+                            .clickable {
+                                coroutineScope.launch { pagerState.animateScrollToPage(index) }
+                            }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = title,
+                            fontFamily = interfamily,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 13.sp,
+                            color = if (selected) Color.White else Color(0xFF6B7280)
+                        )
+                    }
                 }
             }
 
