@@ -5,6 +5,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -35,9 +36,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.antrean.domain.model.Antrean
-import com.ptpws.ikikasir.feature.antrean.domain.model.AntreanStatus
 import com.ptpws.ikikasir.feature.antrean.presentation.state.AntreanUiState
 import com.ptpws.ikikasir.feature.antrean.presentation.viewmodel.AntreanViewModel
+import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
+import java.text.NumberFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +50,7 @@ fun WaitingListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val transaksiMap by viewModel.transaksiMap.collectAsState()
 
     val filteredList = when (val state = uiState) {
         is AntreanUiState.Success -> state.data.filter { antrean ->
@@ -99,21 +103,20 @@ fun WaitingListScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Search field
                 Card(
                     modifier = Modifier
                         .weight(1f)
-                        .height(46.dp),
+                        .height(48.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     BasicTextField(
                         value = searchQuery,
-                        onValueChange = viewModel::onSearchQueryChanged,
+                        onValueChange = { viewModel.onSearchQueryChanged(it) },
                         singleLine = true,
                         textStyle = TextStyle(
-                            color = Color(0xFF111827),
+                            color = Color.Black,
                             fontSize = 13.sp,
                             fontFamily = interfamily
                         ),
@@ -123,22 +126,22 @@ fun WaitingListScreen(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .padding(horizontal = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Search,
-                                    contentDescription = null,
-                                    tint = Color(0xFFB0B8C1),
-                                    modifier = Modifier.size(18.dp)
+                                    contentDescription = "Cari",
+                                    tint = Color(0xFF9CA3AF),
+                                    modifier = Modifier.size(20.dp)
                                 )
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Box(modifier = Modifier.weight(1f)) {
                                     if (searchQuery.isEmpty()) {
                                         Text(
                                             text = "Cari antrean, nama, atau invoice...",
-                                            fontSize = 12.sp,
-                                            fontFamily = interfamily,
-                                            color = Color(0xFFB0B8C1)
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF9CA3AF),
+                                            fontFamily = interfamily
                                         )
                                     }
                                     innerTextField()
@@ -148,13 +151,13 @@ fun WaitingListScreen(
                     )
                 }
 
-                // QR scan button
                 Card(
-                    modifier = Modifier.size(46.dp),
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clickable { /* QR Scan action */ },
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                    onClick = { /* TODO: QR scanner */ }
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -163,86 +166,87 @@ fun WaitingListScreen(
                         Icon(
                             imageVector = Icons.Default.QrCodeScanner,
                             contentDescription = "Scan QR",
-                            tint = Color(0xFF4F46E5),
+                            tint = Color(0xFF3D5AF1),
                             modifier = Modifier.size(22.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // ── Content ────────────────────────────────────────────
-            when (val state = uiState) {
-                is AntreanUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color(0xFF4F46E5))
-                    }
-                }
-
-                is AntreanUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = state.message,
-                            fontFamily = interfamily,
-                            color = Color(0xFF9CA3AF)
+            // ── Main Content ────────────────────────────────────────
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+            ) {
+                when (val state = uiState) {
+                    is AntreanUiState.Loading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center),
+                            color = Color(0xFF3D5AF1)
                         )
                     }
-                }
 
-                is AntreanUiState.Success -> {
-                    if (filteredList.isEmpty()) {
-                        // Empty state
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+                    is AntreanUiState.Error -> {
+                        Column(
+                            modifier = Modifier.align(Alignment.Center),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
+                            Text(
+                                text = "Gagal memuat antrean",
+                                fontSize = 14.sp,
+                                color = Color.Red,
+                                fontFamily = interfamily
+                            )
+                            Text(
+                                text = state.message,
+                                fontSize = 12.sp,
+                                color = Color.Gray,
+                                fontFamily = interfamily
+                            )
+                        }
+                    }
+
+                    is AntreanUiState.Success -> {
+                        if (filteredList.isEmpty()) {
                             Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                modifier = Modifier.align(Alignment.Center),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.HourglassEmpty,
                                     contentDescription = null,
-                                    tint = Color(0xFFD1D5DB),
-                                    modifier = Modifier.size(64.dp)
+                                    tint = Color(0xFF9CA3AF),
+                                    modifier = Modifier.size(56.dp)
                                 )
-                                Text(
-                                    text = "Antrean Kosong",
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontFamily = interfamily,
-                                    fontSize = 18.sp,
-                                    color = Color(0xFF6B7280)
-                                )
+                                Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = "Belum ada pesanan dalam daftar antrean.",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF6B7280),
                                     fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    color = Color(0xFF9CA3AF)
+                                    fontWeight = FontWeight.Medium
                                 )
                             }
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(
-                                start = 16.dp,
-                                end = 16.dp,
-                                top = 4.dp,
-                                bottom = 24.dp
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            itemsIndexed(
-                                items = filteredList,
-                                key = { _, item -> item.id }
-                            ) { index, antrean ->
-                                AntreanCard(
-                                    nomor = index + 1,
-                                    antrean = antrean,
-                                    onSelesai = { viewModel.selesaikan(antrean.id) },
-                                    onBatal = { viewModel.batalkan(antrean.id) }
-                                )
+                        } else {
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                contentPadding = PaddingValues(bottom = 24.dp)
+                            ) {
+                                itemsIndexed(filteredList) { index, antrean ->
+                                    val matchedTransaksi = transaksiMap[antrean.transactionId]
+                                        ?: transaksiMap.values.find { it.transactionNumber == antrean.transactionId }
+
+                                    AntreanCard(
+                                        nomor = index + 1,
+                                        antrean = antrean,
+                                        transaksi = matchedTransaksi,
+                                        onSelesai = { viewModel.selesaikan(antrean.id) },
+                                        onBatal = { viewModel.batalkan(antrean.id) }
+                                    )
+                                }
                             }
                         }
                     }
@@ -256,18 +260,16 @@ fun WaitingListScreen(
 private fun AntreanCard(
     nomor: Int,
     antrean: Antrean,
+    transaksi: PenjualanTransaksi?,
     onSelesai: () -> Unit,
     onBatal: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    val isDone = antrean.status == AntreanStatus.DONE
-    val isCancelled = antrean.status == AntreanStatus.CANCELLED
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 4.dp, shape = RoundedCornerShape(16.dp)),
+            .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -276,13 +278,12 @@ private fun AntreanCard(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
-            // ── Row utama ──────────────────────────────────────────
+            // ── Header Row: Sequence Number, Invoice ID, Action Buttons (✓ and ✗) ──
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Nomor urut
+                // Queue Sequence Number
                 Box(
                     modifier = Modifier
                         .size(36.dp)
@@ -295,17 +296,19 @@ private fun AntreanCard(
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
                         fontSize = 13.sp,
-                        color = Color(0xFF4F46E5)
+                        color = Color(0xFF3D5AF1)
                     )
                 }
 
-                // Transaction ID + Customer Name
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Invoice ID & Customer Name
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = antrean.transactionId,
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
-                        fontSize = 14.sp,
+                        fontSize = 15.sp,
                         color = Color(0xFF111827)
                     )
                     if (antrean.customerName.isNotBlank()) {
@@ -318,94 +321,78 @@ private fun AntreanCard(
                     }
                 }
 
-                // Action buttons (only for WAITING status)
-                if (!isDone && !isCancelled) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // Selesai (✓)
-                        IconButton(
-                            onClick = onSelesai,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .border(1.5.dp, Color(0xFF22C55E), CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Selesai",
-                                tint = Color(0xFF22C55E),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                        // Batal (✗)
-                        IconButton(
-                            onClick = onBatal,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .border(1.5.dp, Color(0xFFEF4444), CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Batal",
-                                tint = Color(0xFFEF4444),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                } else {
-                    // Status badge
+                // Action Buttons: Selesai (✓) & Batal (✗) neatly styled side-by-side
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Tombol Centang (✓) - Selesai
                     Box(
                         modifier = Modifier
-                            .background(
-                                color = if (isDone) Color(0xFFDCFCE7) else Color(0xFFFEE2E2),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFDCFCE7))
+                            .border(1.dp, Color(0xFF86EFAC), CircleShape)
+                            .clickable { onSelesai() },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = if (isDone) "Selesai" else "Batal",
-                            fontFamily = interfamily,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 11.sp,
-                            color = if (isDone) Color(0xFF16A34A) else Color(0xFFDC2626)
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Selesai",
+                            tint = Color(0xFF166534),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    // Tombol Silang (✗) - Batal
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFFEE2E2))
+                            .border(1.dp, Color(0xFFFCA5A5), CircleShape)
+                            .clickable { onBatal() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Batal",
+                            tint = Color(0xFF991B1B),
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
-            Divider(color = Color(0xFFF3F4F6), thickness = 1.dp)
+            HorizontalDivider(color = Color(0xFFF3F4F6), thickness = 1.dp)
             Spacer(modifier = Modifier.height(6.dp))
 
-            // ── Detail Pesanan toggle row ──────────────────────────
+            // ── Detail Pesanan Trigger Row ─────────────────────────
             Row(
                 modifier = Modifier
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                TextButton(
-                    onClick = { expanded = !expanded },
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Text(
-                        text = "Detail Pesanan",
-                        fontFamily = interfamily,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp,
-                        color = Color(0xFF4F46E5)
-                    )
-                }
+                Text(
+                    text = "Detail Pesanan",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    color = Color(0xFF3D5AF1)
+                )
                 Icon(
-                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp
-                    else Icons.Default.KeyboardArrowDown,
+                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    tint = Color(0xFF4F46E5),
+                    tint = Color(0xFF3D5AF1),
                     modifier = Modifier.size(20.dp)
                 )
             }
 
-            // ── Expanded content ───────────────────────────────────
+            // ── Collapsible Product List Details ───────────────────
             AnimatedVisibility(
                 visible = expanded,
                 enter = expandVertically(),
@@ -414,46 +401,116 @@ private fun AntreanCard(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                        .padding(top = 8.dp)
+                        .background(Color(0xFFF8FAFC), RoundedCornerShape(12.dp))
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    DetailRow(label = "ID Antrean", value = antrean.id)
-                    DetailRow(label = "Nomor Urut", value = "#${antrean.queueSequence}")
-                    DetailRow(label = "Status", value = antrean.status)
-                    DetailRow(
-                        label = "Waktu",
-                        value = try {
-                            val sdf = java.text.SimpleDateFormat(
-                                "dd MMM yyyy HH:mm",
-                                java.util.Locale("id", "ID")
+                    val rupiahFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+
+                    if (transaksi != null && transaksi.items.isNotEmpty()) {
+                        Text(
+                            text = "Item Pesanan:",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF475569),
+                            fontFamily = interfamily
+                        )
+
+                        transaksi.items.forEach { cartItem ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = cartItem.produk.name,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF0F172A),
+                                        fontFamily = interfamily
+                                    )
+                                    Text(
+                                        text = "${cartItem.quantity}x @ ${rupiahFormat.format(cartItem.produk.price)}",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF64748B),
+                                        fontFamily = interfamily
+                                    )
+                                    if (cartItem.note.isNotBlank()) {
+                                        Text(
+                                            text = "Catatan: ${cartItem.note}",
+                                            fontSize = 11.sp,
+                                            color = Color(0xFFE11D48),
+                                            fontFamily = interfamily
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = rupiahFormat.format(cartItem.totalPrice),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A),
+                                    fontFamily = interfamily
+                                )
+                            }
+                        }
+
+                        if (transaksi.notes.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color(0xFFFEF3C7), RoundedCornerShape(6.dp))
+                                    .padding(8.dp)
+                            ) {
+                                Text(
+                                    text = "Catatan Pesanan: ${transaksi.notes}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF92400E),
+                                    fontFamily = interfamily
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp)
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Total Tagihan",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF475569),
+                                fontFamily = interfamily
                             )
-                            sdf.format(antrean.createdAt.toDate())
-                        } catch (e: Exception) { "-" }
-                    )
+                            Text(
+                                text = rupiahFormat.format(transaksi.total),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF3D5AF1),
+                                fontFamily = interfamily
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "Nomor Urut: #${antrean.queueSequence}",
+                            fontSize = 12.sp,
+                            color = Color(0xFF64748B),
+                            fontFamily = interfamily
+                        )
+                        Text(
+                            text = "Status: ${antrean.status}",
+                            fontSize = 12.sp,
+                            color = Color(0xFF64748B),
+                            fontFamily = interfamily
+                        )
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun DetailRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            fontFamily = interfamily,
-            fontSize = 12.sp,
-            color = Color(0xFF9CA3AF)
-        )
-        Text(
-            text = value,
-            fontFamily = interfamily,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color(0xFF374151)
-        )
     }
 }
