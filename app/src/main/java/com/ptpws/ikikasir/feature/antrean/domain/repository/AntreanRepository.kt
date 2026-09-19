@@ -10,4 +10,5 @@ interface AntreanRepository {
     suspend fun updateAntreanStatus(id: String, status: String): Flow<Result<Unit>>
     suspend fun deleteAntrean(id: String): Flow<Result<Unit>>
     suspend fun syncPendingAntrean(): Flow<Result<Unit>>
+    suspend fun getNextQueueSequence(): Int
 }
