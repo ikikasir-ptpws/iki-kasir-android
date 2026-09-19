@@ -18,7 +18,8 @@
 
     <!-- Penjualan -->
     <string name="screen_transaksi">Transaksi</string>
-    <string name="screen_waiting_list">Waiting List</string>
+    <string name="screen_waiting_list">Antrean</string>
+    <string name="screen_riwayat_antrean">Riwayat Antrean</string>
 
     <!-- Keuangan -->
     <string name="screen_laporan_keuangan">Laporan Keuangan</string>
