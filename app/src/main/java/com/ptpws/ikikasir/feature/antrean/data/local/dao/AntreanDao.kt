@@ -24,6 +24,9 @@ interface AntreanDao {
     @Upsert
     suspend fun insertOrUpdateAll(antreanList: List<AntreanEntity>)
 
+    @Query("SELECT COALESCE(MAX(queueSequence), 0) FROM queues WHERE isDeleted = 0")
+    suspend fun getMaxQueueSequence(): Int
+
     @Query("UPDATE queues SET status = :status, isSynced = 0, updatedAt = :updatedAt WHERE id = :id")
     suspend fun updateStatus(id: String, status: String, updatedAt: Long = System.currentTimeMillis())
 
