@@ -17,9 +17,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -95,7 +95,7 @@ fun DaftarUserScreen() {
                         tint = Color(0xFF6B7280), modifier = Modifier.size(20.dp))
                 },
                 trailingIcon = {
-                    Icon(Icons.Default.FilterList, contentDescription = "Filter",
+                    Icon(Icons.Default.Tune, contentDescription = "Filter",
                         tint = Color(0xFF4F46E5), modifier = Modifier.size(20.dp))
                 },
                 singleLine = true,
