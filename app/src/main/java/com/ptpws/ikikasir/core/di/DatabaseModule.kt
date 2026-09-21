@@ -6,6 +6,7 @@ import com.ptpws.ikikasir.core.database.AppDatabase
 import com.ptpws.ikikasir.feature.antrean.data.local.dao.AntreanDao
 import com.ptpws.ikikasir.feature.antrean.data.local.dao.QueueHistoryDao
 import com.ptpws.ikikasir.feature.kategori.data.local.dao.KategoriDao
+import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.dao.UserDao
 import com.ptpws.ikikasir.feature.manajemenstok.data.local.dao.StokAdjustmentDao
 import com.ptpws.ikikasir.feature.penjualan.data.local.dao.TransactionDao
 import com.ptpws.ikikasir.feature.produk.data.local.dao.ProdukDao
@@ -80,5 +81,13 @@ object DatabaseModule {
         database: AppDatabase
     ): QueueHistoryDao {
         return database.queueHistoryDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserDao(
+        database: AppDatabase
+    ): UserDao {
+        return database.userDao
     }
 }
