@@ -13,17 +13,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.outlined.AdminPanelSettings
-import androidx.compose.material.icons.outlined.PointOfSale
-import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAddAlt
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.PointOfSale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,26 +33,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TambahPenggunaScreen(
     onBack: () -> Unit = {},
-    onSimpanPengguna: () -> Unit = {}
+    onSimpanPengguna: () -> Unit = {},
+    viewModel: UserViewModel = hiltViewModel()
 ) {
-    var namaLengkap by remember { mutableStateOf("") }
-    var alamatEmail by remember { mutableStateOf("") }
-    var peranDipilih by remember { mutableStateOf("Kasir") }
-    var kataSandi by remember { mutableStateOf("") }
+    val formState by viewModel.formState.collectAsState()
     var kataSandiTerlihat by remember { mutableStateOf(false) }
-    var statusAkunAktif by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = Color(0xFFF3F4F6),
@@ -62,7 +55,7 @@ fun TambahPenggunaScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Tambah Pengguna",
+                        text = if (formState.id.isBlank()) "Tambah Pengguna" else "Edit Pengguna",
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = interfamily,
                         fontSize = 20.sp, color = Color.Black
@@ -83,9 +76,8 @@ fun TambahPenggunaScreen(
                     navigationIconContentColor = Color(0xFF4F46E5)
                 )
             )
-        },
-
-        ) { paddingValues ->
+        }
+    ) { paddingValues ->
 
         LazyColumn(
             modifier = Modifier
@@ -149,6 +141,25 @@ fun TambahPenggunaScreen(
                 }
             }
 
+            // ── Error Message Banner
+            if (formState.error != null) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = formState.error ?: "",
+                            color = Color(0xFFDC2626),
+                            fontFamily = interfamily,
+                            fontSize = 13.sp,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+            }
+
             // ── Card Form
             item {
                 Card(
@@ -195,8 +206,8 @@ fun TambahPenggunaScreen(
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     BasicTextField(
-                                        value = namaLengkap,
-                                        onValueChange = { namaLengkap = it },
+                                        value = formState.fullName,
+                                        onValueChange = { viewModel.onFullNameChange(it) },
                                         singleLine = true,
                                         textStyle = TextStyle(
                                             color = Color.Black,
@@ -205,7 +216,7 @@ fun TambahPenggunaScreen(
                                         ),
                                         modifier = Modifier.fillMaxWidth(),
                                         decorationBox = { innerTextField ->
-                                            if (namaLengkap.isEmpty()) {
+                                            if (formState.fullName.isEmpty()) {
                                                 Text(
                                                     text = "Contoh: Budi Santoso",
                                                     fontSize = 14.sp,
@@ -250,8 +261,8 @@ fun TambahPenggunaScreen(
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     BasicTextField(
-                                        value = alamatEmail,
-                                        onValueChange = { alamatEmail = it },
+                                        value = formState.email,
+                                        onValueChange = { viewModel.onEmailChange(it) },
                                         singleLine = true,
                                         textStyle = TextStyle(
                                             color = Color.Black,
@@ -260,7 +271,7 @@ fun TambahPenggunaScreen(
                                         ),
                                         modifier = Modifier.fillMaxWidth(),
                                         decorationBox = { innerTextField ->
-                                            if (alamatEmail.isEmpty()) {
+                                            if (formState.email.isEmpty()) {
                                                 Text(
                                                     text = "email@domain.com",
                                                     fontSize = 14.sp,
@@ -286,97 +297,43 @@ fun TambahPenggunaScreen(
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
 
-                                // Owner
-                                Column(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(if (peranDipilih == "Owner") Color(0xFFEEF2FF) else Color(0xFFF9FAFB))
-                                        .border(
-                                            width = if (peranDipilih == "Owner") 1.5.dp else 1.dp,
-                                            color = if (peranDipilih == "Owner") Color(0xFF4F46E5) else Color(0xFFE5E7EB),
-                                            shape = RoundedCornerShape(12.dp)
-                                        )
-                                        .clickable { peranDipilih = "Owner" }
-                                        .padding(vertical = 12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.AdminPanelSettings,
-                                        contentDescription = "Owner",
-                                        tint = if (peranDipilih == "Owner") Color(0xFF4F46E5) else Color(0xFF6B7280),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Text(
-                                        text = "Owner",
-                                        fontFamily = interfamily,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (peranDipilih == "Owner") Color(0xFF4F46E5) else Color(0xFF374151)
-                                    )
-                                }
+                                val roles = listOf(
+                                    Triple("Owner", Icons.Outlined.AdminPanelSettings, "Owner"),
+                                    Triple("Kasir", Icons.Outlined.PointOfSale, "Kasir"),
+                                    Triple("Gudang", Icons.Outlined.Inventory2, "Gudang")
+                                )
 
-                                // Kasir
-                                Column(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(if (peranDipilih == "Kasir") Color(0xFFEEF2FF) else Color(0xFFF9FAFB))
-                                        .border(
-                                            width = if (peranDipilih == "Kasir") 1.5.dp else 1.dp,
-                                            color = if (peranDipilih == "Kasir") Color(0xFF4F46E5) else Color(0xFFE5E7EB),
-                                            shape = RoundedCornerShape(12.dp)
+                                roles.forEach { (label, icon, value) ->
+                                    val isSelected = formState.roleId.equals(value, ignoreCase = true)
+                                    Column(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(if (isSelected) Color(0xFFEEF2FF) else Color(0xFFF9FAFB))
+                                            .border(
+                                                width = if (isSelected) 1.5.dp else 1.dp,
+                                                color = if (isSelected) Color(0xFF4F46E5) else Color(0xFFE5E7EB),
+                                                shape = RoundedCornerShape(12.dp)
+                                            )
+                                            .clickable { viewModel.onRoleChange(value) }
+                                            .padding(vertical = 12.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = label,
+                                            tint = if (isSelected) Color(0xFF4F46E5) else Color(0xFF6B7280),
+                                            modifier = Modifier.size(24.dp)
                                         )
-                                        .clickable { peranDipilih = "Kasir" }
-                                        .padding(vertical = 12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.PointOfSale,
-                                        contentDescription = "Kasir",
-                                        tint = if (peranDipilih == "Kasir") Color(0xFF4F46E5) else Color(0xFF6B7280),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Text(
-                                        text = "Kasir",
-                                        fontFamily = interfamily,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (peranDipilih == "Kasir") Color(0xFF4F46E5) else Color(0xFF374151)
-                                    )
-                                }
-
-                                // Gudang
-                                Column(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(if (peranDipilih == "Gudang") Color(0xFFEEF2FF) else Color(0xFFF9FAFB))
-                                        .border(
-                                            width = if (peranDipilih == "Gudang") 1.5.dp else 1.dp,
-                                            color = if (peranDipilih == "Gudang") Color(0xFF4F46E5) else Color(0xFFE5E7EB),
-                                            shape = RoundedCornerShape(12.dp)
+                                        Text(
+                                            text = label,
+                                            fontFamily = interfamily,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = if (isSelected) Color(0xFF4F46E5) else Color(0xFF374151)
                                         )
-                                        .clickable { peranDipilih = "Gudang" }
-                                        .padding(vertical = 12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Inventory2,
-                                        contentDescription = "Gudang",
-                                        tint = if (peranDipilih == "Gudang") Color(0xFF4F46E5) else Color(0xFF6B7280),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Text(
-                                        text = "Gudang",
-                                        fontFamily = interfamily,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (peranDipilih == "Gudang") Color(0xFF4F46E5) else Color(0xFF374151)
-                                    )
+                                    }
                                 }
                             }
                         }
@@ -411,8 +368,8 @@ fun TambahPenggunaScreen(
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     BasicTextField(
-                                        value = kataSandi,
-                                        onValueChange = { kataSandi = it },
+                                        value = formState.password,
+                                        onValueChange = { viewModel.onPasswordChange(it) },
                                         singleLine = true,
                                         textStyle = TextStyle(
                                             color = Color.Black,
@@ -422,7 +379,7 @@ fun TambahPenggunaScreen(
                                         visualTransformation = if (kataSandiTerlihat) VisualTransformation.None else PasswordVisualTransformation(),
                                         modifier = Modifier.weight(1f),
                                         decorationBox = { innerTextField ->
-                                            if (kataSandi.isEmpty()) {
+                                            if (formState.password.isEmpty()) {
                                                 Text(
                                                     text = "Min. 8 karakter",
                                                     fontSize = 14.sp,
@@ -470,8 +427,8 @@ fun TambahPenggunaScreen(
                                 )
                             }
                             Switch(
-                                checked = statusAkunAktif,
-                                onCheckedChange = { statusAkunAktif = it },
+                                checked = formState.isActive,
+                                onCheckedChange = { viewModel.onActiveChange(it) },
                                 colors = SwitchDefaults.colors(
                                     checkedTrackColor = Color(0xFF4F46E5),
                                     checkedThumbColor = Color.White
@@ -487,7 +444,7 @@ fun TambahPenggunaScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 28.dp),
+                        .padding(top = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
@@ -508,30 +465,39 @@ fun TambahPenggunaScreen(
             // ── Tombol Simpan Pengguna
             item {
                 Button(
-                    onClick = onSimpanPengguna,
+                    onClick = {
+                        viewModel.saveUser {
+                            onSimpanPengguna()
+                        }
+                    },
+                    enabled = !formState.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 102.dp)
+                        .padding(top = 40.dp)
                         .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4F46E5)
                     )
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Save,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Simpan Pengguna",
-                        fontFamily = interfamily,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
-                    )
+                    if (formState.isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Simpan Pengguna",
+                            fontFamily = interfamily,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }
@@ -547,4 +513,3 @@ fun TambahPenggunaScreenPreview() {
         TambahPenggunaScreen()
     }
 }
-
