@@ -56,14 +56,24 @@ fun PilihProdukTersediaDialog(
         }
     }
 
-    val filteredList = remember(state.produkKatalog, state.catalogSearchQuery, state.selectedCategoryId) {
-        state.produkKatalog.filter { produk ->
-            val matchesQuery = state.catalogSearchQuery.isBlank() ||
-                    produk.name.contains(state.catalogSearchQuery, ignoreCase = true) ||
-                    produk.barcode.contains(state.catalogSearchQuery, ignoreCase = true)
-            val matchesCategory = state.selectedCategoryId == null || produk.categoryId == state.selectedCategoryId
-            matchesQuery && matchesCategory
-        }
+    val filteredList = remember(state.produkKatalog, state.catalogSearchQuery, state.selectedCategoryId, state.cartItems) {
+        state.produkKatalog
+            .filter { produk ->
+                // Sembunyikan produk stok habis atau yang tidak aktif di kasir
+                val hasStock = produk.stock > 0
+                val isVisible = produk.isVisibleInCashier
+                val matchesQuery = state.catalogSearchQuery.isBlank() ||
+                        produk.name.contains(state.catalogSearchQuery, ignoreCase = true) ||
+                        produk.barcode.contains(state.catalogSearchQuery, ignoreCase = true)
+                val matchesCategory = state.selectedCategoryId == null || produk.categoryId == state.selectedCategoryId
+                hasStock && isVisible && matchesQuery && matchesCategory
+            }
+            .sortedWith(
+                // Produk yang sudah dipilih (qty > 0) otomatis naik ke paling atas
+                compareByDescending<Produk> { state.getItemQuantity(it.id) > 0 }
+                    .thenByDescending { state.getItemQuantity(it.id) }
+                    .thenBy { it.name }
+            )
     }
 
     Dialog(
