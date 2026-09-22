@@ -31,7 +31,7 @@ import com.ptpws.ikikasir.feature.role.data.local.entity.RoleEntity
         UserEntity::class,
         RoleEntity::class
     ],
-    version = 17,
+    version = 18,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class, MapConverter::class)

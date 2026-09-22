@@ -1,6 +1,9 @@
 package com.ptpws.ikikasir.screens.manajemenpengguna
 
+import android.content.Context
 import android.net.Uri
+import java.io.File
+import java.io.FileOutputStream
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -132,11 +135,18 @@ fun TambahPenggunaScreen(
                 if (fileSizeInBytes > maxSizeBytes) {
                     localError = "Ukuran gambar maksimal 2MB"
                 } else {
-                    profileImageUri = uri
+                    val permanentUriString = saveUserImageToInternalStorage(context, uri)
+                    val permanentUri = Uri.parse(permanentUriString)
+                    profileImageUri = permanentUri
+                    viewModel.onPhotoUrlChange(permanentUriString)
                     localError = null
                 }
             } catch (e: Exception) {
-                localError = "Gagal membaca berkas gambar"
+                val permanentUriString = saveUserImageToInternalStorage(context, uri)
+                val permanentUri = Uri.parse(permanentUriString)
+                profileImageUri = permanentUri
+                viewModel.onPhotoUrlChange(permanentUriString)
+                localError = null
             }
         }
     }
@@ -205,9 +215,10 @@ fun TambahPenggunaScreen(
                                 .border(1.5.dp, Color(0xFFBFDBFE), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (profileImageUri != null) {
+                            val photoModel = profileImageUri ?: formState.photoUrl.ifBlank { null }
+                            if (photoModel != null) {
                                 AsyncImage(
-                                    model = profileImageUri,
+                                    model = photoModel,
                                     contentDescription = "Foto Profil",
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize()
@@ -723,6 +734,10 @@ fun TambahPenggunaScreen(
             item {
                 Button(
                     onClick = {
+                        if (formState.password.isNotBlank() && formState.password.length < 6) {
+                            localError = "Kata sandi minimal 6 karakter"
+                            return@Button
+                        }
                         if (formState.password.isNotBlank() && konfirmasiKataSandi.isNotBlank() && formState.password != konfirmasiKataSandi) {
                             localError = "Konfirmasi kata sandi tidak cocok"
                             return@Button
@@ -773,5 +788,26 @@ fun TambahPenggunaScreen(
 fun TambahPenggunaScreenPreview() {
     MaterialTheme {
         TambahPenggunaScreen()
+    }
+}
+
+private fun saveUserImageToInternalStorage(context: Context, uri: Uri): String {
+    return try {
+        val inputStream = context.contentResolver.openInputStream(uri) ?: return uri.toString()
+        val imagesDir = File(context.filesDir, "user_images")
+        if (!imagesDir.exists()) {
+            imagesDir.mkdirs()
+        }
+        val fileName = "user_img_" + System.currentTimeMillis() + ".jpg"
+        val destinationFile = File(imagesDir, fileName)
+        val outputStream = FileOutputStream(destinationFile)
+        inputStream.use { input ->
+            outputStream.use { output ->
+                input.copyTo(output)
+            }
+        }
+        Uri.fromFile(destinationFile).toString()
+    } catch (e: Exception) {
+        uri.toString()
     }
 }

@@ -9,6 +9,7 @@ data class User(
     val password: String = "",
     val roleId: String = "Kasir",
     val isActive: Boolean = true,
+    val photoUrl: String = "",
     val createdAt: Timestamp = Timestamp.now(),
     val updatedAt: Timestamp = Timestamp.now(),
     val isSynced: Boolean = true

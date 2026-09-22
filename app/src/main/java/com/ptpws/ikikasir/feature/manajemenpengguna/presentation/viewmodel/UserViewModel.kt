@@ -123,6 +123,10 @@ class UserViewModel @Inject constructor(
         _formState.update { it.copy(isActive = value) }
     }
 
+    fun onPhotoUrlChange(value: String) {
+        _formState.update { it.copy(photoUrl = value) }
+    }
+
     fun loadUserById(userId: String) {
         if (userId.isBlank()) return
         viewModelScope.launch {
@@ -135,7 +139,8 @@ class UserViewModel @Inject constructor(
                         email = existing.email,
                         password = existing.password,
                         roleId = existing.roleId,
-                        isActive = existing.isActive
+                        isActive = existing.isActive,
+                        photoUrl = existing.photoUrl
                     )
                 }
             }
@@ -156,6 +161,14 @@ class UserViewModel @Inject constructor(
             _formState.update { it.copy(error = "Alamat email tidak boleh kosong") }
             return
         }
+        if (current.password.isBlank()) {
+            _formState.update { it.copy(error = "Kata sandi tidak boleh kosong") }
+            return
+        }
+        if (current.password.length < 6) {
+            _formState.update { it.copy(error = "Kata sandi minimal 6 karakter") }
+            return
+        }
         if (current.roleId.isBlank()) {
             _formState.update { it.copy(error = "Pilih role terlebih dahulu") }
             return
@@ -171,6 +184,7 @@ class UserViewModel @Inject constructor(
                 password = current.password,
                 roleId = current.roleId,
                 isActive = current.isActive,
+                photoUrl = current.photoUrl,
                 createdAt = Timestamp.now(),
                 updatedAt = Timestamp.now()
             )

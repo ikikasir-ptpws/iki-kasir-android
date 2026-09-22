@@ -18,6 +18,9 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE id = :id LIMIT 1")
     suspend fun getUserById(id: String): UserEntity?
 
+    @Query("SELECT * FROM users WHERE LOWER(email) = LOWER(:email) AND isDeleted = 0 LIMIT 1")
+    suspend fun getUserByEmail(email: String): UserEntity?
+
     @Upsert
     suspend fun insertOrUpdate(user: UserEntity)
 

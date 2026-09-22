@@ -32,16 +32,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserViewModel
@@ -182,6 +187,8 @@ fun DaftarUserScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
 
+                            var imageLoadFailed by remember(user.photoUrl) { mutableStateOf(false) }
+
                             // Avatar circular
                             Box(
                                 modifier = Modifier
@@ -197,16 +204,26 @@ fun DaftarUserScreen(
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = inisial,
-                                    fontFamily = interfamily,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = when (inisial.firstOrNull()?.toString()?.uppercase()) {
-                                        "R" -> Color(0xFF92400E)
-                                        else -> Color(0xFF4F46E5)
-                                    }
-                                )
+                                if (user.photoUrl.isNotBlank() && !imageLoadFailed) {
+                                    AsyncImage(
+                                        model = user.photoUrl,
+                                        contentDescription = user.fullName,
+                                        contentScale = ContentScale.Crop,
+                                        onError = { imageLoadFailed = true },
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    Text(
+                                        text = inisial,
+                                        fontFamily = interfamily,
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = when (inisial.firstOrNull()?.toString()?.uppercase()) {
+                                            "R" -> Color(0xFF92400E)
+                                            else -> Color(0xFF4F46E5)
+                                        }
+                                    )
+                                }
                             }
 
                             Spacer(modifier = Modifier.width(14.dp))

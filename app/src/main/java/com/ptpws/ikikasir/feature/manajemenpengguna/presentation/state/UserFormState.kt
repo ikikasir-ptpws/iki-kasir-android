@@ -7,6 +7,7 @@ data class UserFormState(
     val password: String = "",
     val roleId: String = "",
     val isActive: Boolean = true,
+    val photoUrl: String = "",
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val error: String? = null

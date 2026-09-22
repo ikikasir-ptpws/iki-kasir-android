@@ -26,6 +26,9 @@ data class UserDto(
     @get:PropertyName("isActive") @set:PropertyName("isActive")
     var isActive: Boolean = true,
 
+    @get:PropertyName("photoUrl") @set:PropertyName("photoUrl")
+    var photoUrl: String = "",
+
     @get:PropertyName("createdAt") @set:PropertyName("createdAt")
     @get:ServerTimestamp
     var createdAt: Timestamp? = null,
@@ -42,6 +45,7 @@ data class UserDto(
             password = password,
             roleId = roleId,
             isActive = isActive,
+            photoUrl = photoUrl,
             createdAt = createdAt ?: Timestamp.now(),
             updatedAt = updatedAt ?: Timestamp.now(),
             isSynced = true
@@ -56,6 +60,7 @@ data class UserDto(
             password = password,
             roleId = roleId,
             isActive = isActive,
+            photoUrl = photoUrl,
             createdAt = createdAt ?: Timestamp.now(),
             updatedAt = updatedAt ?: Timestamp.now(),
             isSynced = true,
@@ -72,6 +77,7 @@ fun User.toDto(): UserDto {
         password = password,
         roleId = roleId,
         isActive = isActive,
+        photoUrl = photoUrl,
         createdAt = null,
         updatedAt = null
     )

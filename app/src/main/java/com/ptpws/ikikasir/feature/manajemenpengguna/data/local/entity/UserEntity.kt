@@ -27,6 +27,9 @@ data class UserEntity(
     @ColumnInfo(name = "isActive")
     val isActive: Boolean = true,
 
+    @ColumnInfo(name = "photoUrl")
+    val photoUrl: String = "",
+
     @ColumnInfo(name = "createdAt")
     val createdAt: Timestamp = Timestamp.now(),
 
@@ -47,6 +50,7 @@ data class UserEntity(
             password = password,
             roleId = roleId,
             isActive = isActive,
+            photoUrl = photoUrl,
             createdAt = createdAt,
             updatedAt = updatedAt,
             isSynced = isSynced
@@ -62,6 +66,7 @@ fun User.toEntity(isSynced: Boolean = true, isDeleted: Boolean = false): UserEnt
         password = password,
         roleId = roleId,
         isActive = isActive,
+        photoUrl = photoUrl,
         createdAt = createdAt,
         updatedAt = updatedAt,
         isSynced = isSynced,
