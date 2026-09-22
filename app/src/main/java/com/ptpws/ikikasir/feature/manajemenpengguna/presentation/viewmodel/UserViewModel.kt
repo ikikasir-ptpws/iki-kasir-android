@@ -123,6 +123,25 @@ class UserViewModel @Inject constructor(
         _formState.update { it.copy(isActive = value) }
     }
 
+    fun loadUserById(userId: String) {
+        if (userId.isBlank()) return
+        viewModelScope.launch {
+            getUsersUseCase().collect { userList ->
+                val existing = userList.find { it.id == userId }
+                if (existing != null) {
+                    _formState.value = UserFormState(
+                        id = existing.id,
+                        fullName = existing.fullName,
+                        email = existing.email,
+                        password = existing.password,
+                        roleId = existing.roleId,
+                        isActive = existing.isActive
+                    )
+                }
+            }
+        }
+    }
+
     fun resetForm() {
         _formState.value = UserFormState()
     }
