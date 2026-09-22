@@ -83,12 +83,20 @@ import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TambahPenggunaScreen(
+    userId: String? = null,
     onBack: () -> Unit = {},
     onSimpanPengguna: () -> Unit = {},
     viewModel: UserViewModel = hiltViewModel(),
     roleViewModel: RoleViewModel = hiltViewModel()
 ) {
     val formState by viewModel.formState.collectAsState()
+
+    androidx.compose.runtime.LaunchedEffect(userId) {
+        if (!userId.isNullOrEmpty()) {
+            viewModel.loadUserById(userId)
+        }
+    }
+
     val roleListState by roleViewModel.listState.collectAsState()
     val availableRoles = roleListState.roles
     val context = LocalContext.current
@@ -99,6 +107,12 @@ fun TambahPenggunaScreen(
     var konfirmasiKataSandi by remember { mutableStateOf("") }
     var konfirmasiKataSandiTerlihat by remember { mutableStateOf(false) }
     var localError by remember { mutableStateOf<String?>(null) }
+
+    androidx.compose.runtime.LaunchedEffect(formState.password) {
+        if (konfirmasiKataSandi.isEmpty() && formState.password.isNotEmpty()) {
+            konfirmasiKataSandi = formState.password
+        }
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
