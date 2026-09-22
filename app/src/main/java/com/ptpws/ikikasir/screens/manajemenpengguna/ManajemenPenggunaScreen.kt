@@ -1,5 +1,6 @@
 package com.ptpws.ikikasir.screens.manajemenpengguna
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -30,7 +32,8 @@ fun ManajemenPenggunaScreen(
     onBack: () -> Unit = {},
     onTambahUser: () -> Unit = {}
 ) {
-    val pagerState     = rememberPagerState(pageCount = { 2 })
+    val context = LocalContext.current
+    val pagerState = rememberPagerState(pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
@@ -68,7 +71,9 @@ fun ManajemenPenggunaScreen(
         floatingActionButton = {
             if (pagerState.currentPage == 0) {
                 FloatingActionButton(
-                    onClick = onTambahUser,
+                    onClick = {
+                        context.startActivity(Intent(context, TambahPenggunaActivity::class.java))
+                    },
                     containerColor = Color(0xFF4F46E5),
                     contentColor = Color.White,
                     shape = RoundedCornerShape(16.dp),
@@ -149,20 +154,24 @@ fun ManajemenPenggunaScreen(
                 modifier = Modifier.fillMaxSize()
             ) { page ->
                 when (page) {
-                    0 -> DaftarUserScreen()
-                    1 -> RoleIzinScreen()
+                    0 -> DaftarUserScreen(
+                        onEditUser = {
+                            context.startActivity(Intent(context, TambahPenggunaActivity::class.java))
+                        }
+                    )
+                    1 -> RoleIzinScreen(
+                        onAddRoleClick = {
+                            context.startActivity(Intent(context, TambahRoleActivity::class.java))
+                        },
+                        onEditRoleClick = { role ->
+                            val intent = Intent(context, TambahRoleActivity::class.java).apply {
+                                putExtra("ROLE_ID", role.id)
+                            }
+                            context.startActivity(intent)
+                        }
+                    )
                 }
             }
         }
-    }
-}
-
-
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PreviewManajemenPenggunaScreen() {
-    MaterialTheme {
-        RoleIzinScreen()
     }
 }

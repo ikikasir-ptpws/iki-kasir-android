@@ -17,6 +17,8 @@ import com.ptpws.ikikasir.feature.penjualan.data.local.dao.TransactionDao
 import com.ptpws.ikikasir.feature.penjualan.data.local.entity.TransactionEntity
 import com.ptpws.ikikasir.feature.produk.data.local.dao.ProdukDao
 import com.ptpws.ikikasir.feature.produk.data.local.entity.ProdukEntity
+import com.ptpws.ikikasir.feature.role.data.local.dao.RoleDao
+import com.ptpws.ikikasir.feature.role.data.local.entity.RoleEntity
 
 @Database(
     entities = [
@@ -26,12 +28,13 @@ import com.ptpws.ikikasir.feature.produk.data.local.entity.ProdukEntity
         TransactionEntity::class,
         AntreanEntity::class,
         QueueHistoryEntity::class,
-        UserEntity::class
+        UserEntity::class,
+        RoleEntity::class
     ],
-    version = 16,
+    version = 17,
     exportSchema = false
 )
-@TypeConverters(TimestampConverter::class)
+@TypeConverters(TimestampConverter::class, MapConverter::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract val kategoriDao: KategoriDao
     abstract val produkDao: ProdukDao
@@ -40,6 +43,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val antreanDao: AntreanDao
     abstract val queueHistoryDao: QueueHistoryDao
     abstract val userDao: UserDao
+    abstract val roleDao: RoleDao
 
     companion object {
         const val DATABASE_NAME = "ikikasir_db"

@@ -49,6 +49,7 @@ import com.ptpws.ikikasir.screens.kategori.TambahKategoriActivity
 import com.ptpws.ikikasir.screens.keuangan.AuditLogScreen
 import com.ptpws.ikikasir.screens.keuangan.LaporanKeuanganScreen
 import com.ptpws.ikikasir.screens.manajemenpengguna.ManajemenPenggunaScreen
+import com.ptpws.ikikasir.screens.manajemenpengguna.TambahPenggunaActivity
 import com.ptpws.ikikasir.screens.pengaturan.PengaturanDashboardScreen
 import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiActivity
 import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiScreen
@@ -180,7 +181,13 @@ fun AppNavHost() {
                 RiwayatAntreanScreen(navController)
             }
             composable(AppScreen.Pengguna.route) {
-                ManajemenPenggunaScreen(navController)
+                val context = LocalContext.current
+                ManajemenPenggunaScreen(
+                    navController = navController,
+                    onTambahUser = {
+                        context.startActivity(Intent(context, TambahPenggunaActivity::class.java))
+                    }
+                )
             }
             composable(AppScreen.PengaturanMenu.route) {
                 PengaturanDashboardScreen(navController)

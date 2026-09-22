@@ -137,6 +137,10 @@ class UserViewModel @Inject constructor(
             _formState.update { it.copy(error = "Alamat email tidak boleh kosong") }
             return
         }
+        if (current.roleId.isBlank()) {
+            _formState.update { it.copy(error = "Pilih role terlebih dahulu") }
+            return
+        }
 
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, error = null) }

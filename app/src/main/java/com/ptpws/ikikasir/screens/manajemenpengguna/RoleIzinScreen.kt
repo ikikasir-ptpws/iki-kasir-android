@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -27,50 +26,76 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.commond.interfamily
-
-data class RoleItem(
-    val nama: String,
-    val jumlahPengguna: Int,
-    val aktif: Boolean
-)
+import com.ptpws.ikikasir.feature.role.domain.model.Role
+import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
 
 @Composable
-fun RoleIzinScreen() {
-    val roles = listOf(
-        RoleItem("Owner / Super", 1, true),
-        RoleItem("Kasir", 4, true),
-        RoleItem("Gudang / Inventory", 2, true),
-        RoleItem("Manajer Toko", 1, true),
-        RoleItem("Staf Magang", 0, false),
-    )
+fun RoleIzinScreen(
+    viewModel: RoleViewModel = hiltViewModel(),
+    onAddRoleClick: () -> Unit = {},
+    onEditRoleClick: (Role) -> Unit = {}
+) {
+    val state by viewModel.listState.collectAsState()
+    val roles = state.roles
 
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = 12.dp,
-                bottom = 100.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            items(roles.size) { index ->
-                val role = roles[index]
-                RoleCard(role = role)
+        if (state.isLoading && roles.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF4F46E5))
+            }
+        } else if (roles.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 80.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Belum ada data role",
+                    fontFamily = interfamily,
+                    color = Color(0xFF6B7280),
+                    fontSize = 14.sp
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 12.dp,
+                    bottom = 100.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(roles.size) { index ->
+                    val role = roles[index]
+                    RoleCard(
+                        role = role,
+                        onEdit = { onEditRoleClick(role) },
+                        onDelete = { viewModel.deleteRole(role.id) }
+                    )
+                }
             }
         }
 
@@ -82,7 +107,7 @@ fun RoleIzinScreen() {
                 .padding(horizontal = 16.dp, vertical = 16.dp)
         ) {
             Button(
-                onClick = { /* tambah role */ },
+                onClick = onAddRoleClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),
@@ -107,7 +132,11 @@ fun RoleIzinScreen() {
 }
 
 @Composable
-fun RoleCard(role: RoleItem) {
+fun RoleCard(
+    role: Role,
+    onEdit: () -> Unit = {},
+    onDelete: () -> Unit = {}
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -140,7 +169,7 @@ fun RoleCard(role: RoleItem) {
             // Nama dan jumlah pengguna
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = role.nama,
+                    text = role.name,
                     fontFamily = interfamily,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp,
@@ -156,7 +185,7 @@ fun RoleCard(role: RoleItem) {
                     )
                     Spacer(Modifier.width(3.dp))
                     Text(
-                        text = "${role.jumlahPengguna} Pengguna",
+                        text = "${role.userCount} Pengguna",
                         fontFamily = interfamily,
                         fontSize = 12.sp,
                         color = Color(0xFF9CA3AF)
@@ -170,17 +199,17 @@ fun RoleCard(role: RoleItem) {
             Box(
                 modifier = Modifier
                     .background(
-                        if (role.aktif) Color(0xFFDDF7E5) else Color(0xFFF3F4F6),
+                        if (role.isActive) Color(0xFFDDF7E5) else Color(0xFFF3F4F6),
                         RoundedCornerShape(8.dp)
                     )
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 Text(
-                    text = if (role.aktif) "AKTIF" else "NONAKTIF",
+                    text = if (role.isActive) "AKTIF" else "NONAKTIF",
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = interfamily,
-                    color = if (role.aktif) Color(0xFF16A34A) else Color(0xFF6B7280)
+                    color = if (role.isActive) Color(0xFF16A34A) else Color(0xFF6B7280)
                 )
             }
 
@@ -190,7 +219,7 @@ fun RoleCard(role: RoleItem) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Edit
                 IconButton(
-                    onClick = {},
+                    onClick = onEdit,
                     modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
@@ -202,7 +231,7 @@ fun RoleCard(role: RoleItem) {
                 }
                 // Izin/Permissions
                 IconButton(
-                    onClick = {},
+                    onClick = onEdit,
                     modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
@@ -214,7 +243,7 @@ fun RoleCard(role: RoleItem) {
                 }
                 // Hapus
                 IconButton(
-                    onClick = {},
+                    onClick = onDelete,
                     modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
@@ -228,4 +257,3 @@ fun RoleCard(role: RoleItem) {
         }
     }
 }
-

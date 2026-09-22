@@ -10,6 +10,7 @@ import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.dao.UserDao
 import com.ptpws.ikikasir.feature.manajemenstok.data.local.dao.StokAdjustmentDao
 import com.ptpws.ikikasir.feature.penjualan.data.local.dao.TransactionDao
 import com.ptpws.ikikasir.feature.produk.data.local.dao.ProdukDao
+import com.ptpws.ikikasir.feature.role.data.local.dao.RoleDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -89,5 +90,13 @@ object DatabaseModule {
         database: AppDatabase
     ): UserDao {
         return database.userDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideRoleDao(
+        database: AppDatabase
+    ): RoleDao {
+        return database.roleDao
     }
 }

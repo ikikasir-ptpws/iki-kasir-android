@@ -61,6 +61,10 @@
             android:name=".screens.promo.TambahPromoActivity"
             android:exported="false"
             android:theme="@style/Theme.IKIKASIR" />
+        <activity
+            android:name=".screens.manajemenpengguna.TambahRoleActivity"
+            android:exported="false"
+            android:theme="@style/Theme.IKIKASIR" />
     </application>
 
 </manifest>

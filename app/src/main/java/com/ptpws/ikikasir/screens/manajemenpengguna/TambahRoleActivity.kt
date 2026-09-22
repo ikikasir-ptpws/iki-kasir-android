@@ -8,15 +8,17 @@ import androidx.compose.material3.MaterialTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class TambahPenggunaActivity : ComponentActivity() {
+class TambahRoleActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val roleId = intent.getStringExtra("ROLE_ID")
         enableEdgeToEdge()
         setContent {
             MaterialTheme {
-                TambahPenggunaScreen(
+                TambahRoleScreen(
+                    roleId = roleId,
                     onBack = { finish() },
-                    onSimpanPengguna = { finish() }
+                    onSimpanRole = { finish() }
                 )
             }
         }
