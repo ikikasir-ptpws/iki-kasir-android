@@ -11,10 +11,12 @@ import dagger.hilt.android.AndroidEntryPoint
 class TambahPenggunaActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val userId = intent.getStringExtra("USER_ID")
         enableEdgeToEdge()
         setContent {
             MaterialTheme {
                 TambahPenggunaScreen(
+                    userId = userId,
                     onBack = { finish() },
                     onSimpanPengguna = { finish() }
                 )
