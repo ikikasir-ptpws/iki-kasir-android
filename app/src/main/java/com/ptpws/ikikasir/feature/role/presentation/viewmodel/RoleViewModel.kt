@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.role.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
+import com.ptpws.ikikasir.feature.manajemenpengguna.domain.usecase.GetUsersUseCase
 import com.ptpws.ikikasir.feature.role.domain.model.Role
 import com.ptpws.ikikasir.feature.role.domain.usecase.DeleteRoleUseCase
 import com.ptpws.ikikasir.feature.role.domain.usecase.GetRolesUseCase
@@ -15,6 +16,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -26,7 +28,8 @@ class RoleViewModel @Inject constructor(
     private val insertRoleUseCase: InsertRoleUseCase,
     private val updateRoleUseCase: UpdateRoleUseCase,
     private val deleteRoleUseCase: DeleteRoleUseCase,
-    private val syncRolesUseCase: SyncRolesUseCase
+    private val syncRolesUseCase: SyncRolesUseCase,
+    private val getUsersUseCase: GetUsersUseCase
 ) : ViewModel() {
 
     private val _listState = MutableStateFlow(RoleListState())
@@ -42,11 +45,19 @@ class RoleViewModel @Inject constructor(
     fun loadRoles() {
         viewModelScope.launch {
             _listState.update { it.copy(isLoading = true) }
-            getRolesUseCase().collect { roleList ->
+            combine(getRolesUseCase(), getUsersUseCase()) { roleList, userList ->
+                roleList.map { role ->
+                    val count = userList.count { user ->
+                        user.roleId.equals(role.name, ignoreCase = true) ||
+                        user.roleId.equals(role.id, ignoreCase = true)
+                    }
+                    role.copy(userCount = count)
+                }
+            }.collect { updatedRoles ->
                 _listState.update {
                     it.copy(
                         isLoading = false,
-                        roles = roleList
+                        roles = updatedRoles
                     )
                 }
             }
