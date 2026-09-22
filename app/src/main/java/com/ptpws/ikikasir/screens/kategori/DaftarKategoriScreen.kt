@@ -72,6 +72,16 @@ fun DaftarKategoriScreen(
         produkState.produkList.groupBy { it.categoryId }
     }
 
+    // Sort categories so those with low stock warnings appear at the very top automatically
+    val sortedFilteredList = remember(state.filteredList, categoryProductMap) {
+        state.filteredList.sortedWith(
+            compareByDescending<Kategori> { kategori ->
+                val products = categoryProductMap[kategori.id] ?: emptyList()
+                products.count { it.stock <= it.lowStockThreshold }
+            }
+        )
+    }
+
     val totalMenu = produkState.produkList.size
     val menuMenipis = remember(produkState.produkList) {
         produkState.produkList.count { it.stock <= it.lowStockThreshold }
@@ -221,7 +231,7 @@ fun DaftarKategoriScreen(
             }
 
             // ── Empty state ──────────────────────────────────────────────────
-            if (state.filteredList.isEmpty() && !state.isLoading) {
+            if (sortedFilteredList.isEmpty() && !state.isLoading) {
                 item {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(top = 60.dp),
@@ -251,7 +261,7 @@ fun DaftarKategoriScreen(
             }
 
             // ── Category cards ───────────────────────────────────────────────
-            items(items = state.filteredList, key = { it.id }) { kategori ->
+            items(items = sortedFilteredList, key = { it.id }) { kategori ->
                 val iconOption = KategoriIconHelper.getIconOption(kategori.iconName)
                 val accentColor = try {
                     Color(android.graphics.Color.parseColor(kategori.colorHex))
