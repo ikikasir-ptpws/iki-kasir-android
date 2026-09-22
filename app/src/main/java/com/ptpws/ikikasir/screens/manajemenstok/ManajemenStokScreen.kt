@@ -168,7 +168,7 @@ fun ManajemenStokScreen(
             val matchesKritis = !state.isFilterKritisOnly || (produk.stock <= produk.lowStockThreshold)
 
             matchesQuery && matchesCategory && matchesKritis
-        }
+        }.sortedByDescending { it.stock <= it.lowStockThreshold }
     }
 
     Scaffold(
@@ -283,10 +283,13 @@ fun ManajemenStokScreen(
             // 2. Card Peringatan Stok (Restock Warning)
             item {
                 Card(
+                    onClick = { viewModel.toggleFilterKritisOnly() },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFDF2)),
-                    border = BorderStroke(1.dp, Color(0xFFFDE68A)),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (state.isFilterKritisOnly) Color(0xFFFFE4E6) else Color(0xFFFFFDF2)
+                    ),
+                    border = BorderStroke(1.dp, if (state.isFilterKritisOnly) Color(0xFFE11D48) else Color(0xFFFDE68A)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(
