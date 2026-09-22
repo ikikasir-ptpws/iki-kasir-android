@@ -155,8 +155,11 @@ fun ManajemenPenggunaScreen(
             ) { page ->
                 when (page) {
                     0 -> DaftarUserScreen(
-                        onEditUser = {
-                            context.startActivity(Intent(context, TambahPenggunaActivity::class.java))
+                        onEditUser = { userId ->
+                            val intent = Intent(context, TambahPenggunaActivity::class.java).apply {
+                                putExtra("USER_ID", userId)
+                            }
+                            context.startActivity(intent)
                         }
                     )
                     1 -> RoleIzinScreen(
