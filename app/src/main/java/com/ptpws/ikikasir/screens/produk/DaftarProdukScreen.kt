@@ -95,26 +95,31 @@ fun DaftarProdukScreen(
         state.produkList.groupingBy { it.categoryId }.eachCount()
     }
 
-    // Filtered Product List by search and category filter (shows ALL products in management screen)
-    val filteredList = remember(state.produkList, state.searchQuery, state.selectedCategoryId) {
+    // Filter Stok Menipis state
+    var isLowStockFilterSelected by remember { mutableStateOf(false) }
+
+    // Filtered Product List by search, category filter, and low stock filter
+    val filteredList = remember(state.produkList, state.searchQuery, state.selectedCategoryId, isLowStockFilterSelected) {
         state.produkList.filter { produk ->
             val matchesQuery = state.searchQuery.isBlank() ||
                     produk.name.contains(state.searchQuery, ignoreCase = true) ||
                     produk.barcode.contains(state.searchQuery, ignoreCase = true)
             val matchesCategory = state.selectedCategoryId == null || produk.categoryId == state.selectedCategoryId
-            matchesQuery && matchesCategory
+            val matchesLowStock = !isLowStockFilterSelected || (produk.stock <= produk.lowStockThreshold)
+            matchesQuery && matchesCategory && matchesLowStock
         }
     }
 
-    // Sorted Product List
+    // Sorted Product List (low stock items automatically sorted to the top)
     val sortedList = remember(filteredList, selectedSortOption) {
-        when (selectedSortOption) {
+        val baseSorted = when (selectedSortOption) {
             "Nama (A-Z)" -> filteredList.sortedBy { it.name.lowercase() }
             "Stok (Terdikit)" -> filteredList.sortedBy { it.stock }
             "Harga (Termurah)" -> filteredList.sortedBy { it.sellingPrice }
             "Harga (Termahal)" -> filteredList.sortedByDescending { it.sellingPrice }
             else -> filteredList
         }
+        baseSorted.sortedByDescending { it.stock <= it.lowStockThreshold }
     }
 
     // Low stock count
@@ -360,8 +365,10 @@ fun DaftarProdukScreen(
 
                         // Stok Menipis Badge
                         Surface(
+                            onClick = { isLowStockFilterSelected = !isLowStockFilterSelected },
                             shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFFFEF2F2)
+                            color = if (isLowStockFilterSelected) Color(0xFFFEE2E2) else Color(0xFFFEF2F2),
+                            border = if (isLowStockFilterSelected) BorderStroke(1.dp, Color(0xFFEF4444)) else null
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -448,7 +455,7 @@ fun DaftarProdukScreen(
                 }
             }
 
-            // Filter Kategori Pills (Semua & Dynamic List with Counts)
+            // Filter Kategori Pills (Semua, Stok Menipis & Dynamic List with Counts)
             item {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -456,9 +463,12 @@ fun DaftarProdukScreen(
                 ) {
                     // "Semua" Pill
                     item {
-                        val isSelected = state.selectedCategoryId == null
+                        val isSelected = state.selectedCategoryId == null && !isLowStockFilterSelected
                         Surface(
-                            onClick = { viewModel.onCategoryFilterChange(null) },
+                            onClick = {
+                                isLowStockFilterSelected = false
+                                viewModel.onCategoryFilterChange(null)
+                            },
                             shape = RoundedCornerShape(20.dp),
                             color = if (isSelected) Color(0xFF4F46E5) else Color.White,
                             border = if (isSelected) null else BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -471,6 +481,38 @@ fun DaftarProdukScreen(
                                 fontFamily = interfamily,
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
                             )
+                        }
+                    }
+
+                    // "Stok Menipis" Filter Pill
+                    item {
+                        Surface(
+                            onClick = {
+                                isLowStockFilterSelected = !isLowStockFilterSelected
+                            },
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (isLowStockFilterSelected) Color(0xFFEF4444) else Color(0xFFFEF2F2),
+                            border = if (isLowStockFilterSelected) null else BorderStroke(1.dp, Color(0xFFFCA5A5))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = if (isLowStockFilterSelected) Color.White else Color(0xFFEF4444),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Stok Menipis ($lowStockCount)",
+                                    fontSize = 13.sp,
+                                    fontWeight = if (isLowStockFilterSelected) FontWeight.SemiBold else FontWeight.Medium,
+                                    color = if (isLowStockFilterSelected) Color.White else Color(0xFFEF4444),
+                                    fontFamily = interfamily
+                                )
+                            }
                         }
                     }
 
