@@ -95,27 +95,18 @@ fun RiwayatTransaksiScreen(
         }
     }
 
-    // Function to show native DatePickerDialog for custom date filter
-    fun showDatePicker() {
-        val cal = Calendar.getInstance()
-        if (state.selectedCustomDateMillis != null) {
-            cal.timeInMillis = state.selectedCustomDateMillis!!
-        }
+    var showDateRangePicker by remember { mutableStateOf(false) }
 
-        DatePickerDialog(
-            context,
-            { _, year, month, dayOfMonth ->
-                val selectedCal = Calendar.getInstance().apply {
-                    set(Calendar.YEAR, year)
-                    set(Calendar.MONTH, month)
-                    set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                }
-                viewModel.onCustomDateSelect(selectedCal.timeInMillis)
-            },
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH),
-            cal.get(Calendar.DAY_OF_MONTH)
-        ).show()
+    if (showDateRangePicker) {
+        com.ptpws.ikikasir.commond.CustomDateRangePickerDialog(
+            initialStartDateMillis = state.startDateMillis,
+            initialEndDateMillis = state.endDateMillis,
+            onDismissRequest = { showDateRangePicker = false },
+            onDateRangeSelected = { start, end ->
+                viewModel.onCustomDateRangeSelect(start, end)
+                showDateRangePicker = false
+            }
+        )
     }
 
     Scaffold(
@@ -360,7 +351,7 @@ fun RiwayatTransaksiScreen(
 
                         FilterChip(
                             selected = isSelected,
-                            onClick = { showDatePicker() },
+                            onClick = { showDateRangePicker = true },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.CalendarMonth,
