@@ -11,6 +11,8 @@ data class GroupedTransaksi(
 data class RiwayatTransaksiState(
     val searchQuery: String = "",
     val selectedFilter: String = "Hari Ini",
+    val startDateMillis: Long? = null,
+    val endDateMillis: Long? = null,
     val selectedCustomDateMillis: Long? = null,
     val customDateLabel: String? = null,
     val transaksiList: List<PenjualanTransaksi> = emptyList(),
