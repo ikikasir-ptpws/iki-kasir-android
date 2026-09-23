@@ -11,4 +11,8 @@ data class CartItem(
 
     val totalPrice: Double
         get() = produk.price * quantity
+
+    val name: String get() = produk.name
+    val price: Double get() = produk.price
+    val subtotal: Double get() = totalPrice
 }
