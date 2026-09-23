@@ -1,5 +1,9 @@
 package com.ptpws.ikikasir.screens.penjualan
 
+import android.app.Activity
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -7,16 +11,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,12 +30,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
+import com.ptpws.ikikasir.commond.getEndOfDayLocalSeconds
+import com.ptpws.ikikasir.commond.getStartOfDayLocalSeconds
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.antrean.domain.model.QueueHistory
 import com.ptpws.ikikasir.feature.antrean.presentation.state.QueueHistoryUiState
@@ -49,13 +61,57 @@ fun RiwayatAntreanScreen(
     navController: NavController,
     viewModel: QueueHistoryViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
-    val customDateMillis by viewModel.customDateMillis.collectAsState()
+    val startDateMillis by viewModel.startDateMillis.collectAsState()
+    val endDateMillis by viewModel.endDateMillis.collectAsState()
+    val customDateLabel by viewModel.customDateLabel.collectAsState()
     val transaksiMap by viewModel.transaksiMap.collectAsState()
 
-    var showDatePickerDialog by remember { mutableStateOf(false) }
+    var showDateRangePickerDialog by remember { mutableStateOf(false) }
+
+    // Launcher for legacy ZXing barcode scanner fallback
+    val barcodeScanLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val contents = result.data?.getStringExtra("SCAN_RESULT")
+            if (!contents.isNullOrBlank()) {
+                viewModel.onSearchQueryChanged(contents)
+            }
+        }
+    }
+
+    // Trigger ML Kit GMS Code Scanner
+    fun triggerBarcodeScanner() {
+        try {
+            val options = GmsBarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
+                .enableAutoZoom()
+                .build()
+
+            val scanner = GmsBarcodeScanning.getClient(context, options)
+            scanner.startScan()
+                .addOnSuccessListener { barcode ->
+                    val rawValue = barcode.rawValue
+                    if (!rawValue.isNullOrBlank()) {
+                        viewModel.onSearchQueryChanged(rawValue)
+                    }
+                }
+                .addOnFailureListener {
+                    val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
+                        putExtra("SCAN_MODE", "PRODUCT_MODE")
+                    }
+                    if (scanIntent.resolveActivity(context.packageManager) != null) {
+                        barcodeScanLauncher.launch(scanIntent)
+                    }
+                }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     // Filter items based on searchQuery & selectedFilter
     val filteredList = when (val state = uiState) {
@@ -73,12 +129,21 @@ fun RiwayatAntreanScreen(
                     itemCal.get(Calendar.YEAR) == todayCal.get(Calendar.YEAR) &&
                             itemCal.get(Calendar.DAY_OF_YEAR) == todayCal.get(Calendar.DAY_OF_YEAR)
                 }
+                "7_HARI_TERAKHIR" -> {
+                    val startOf7Days = Calendar.getInstance().apply {
+                        add(Calendar.DAY_OF_YEAR, -7)
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis / 1000
+                    item.completedAt.seconds >= startOf7Days
+                }
                 "FILTER_TANGGAL" -> {
-                    if (customDateMillis != null) {
-                        val itemCal = Calendar.getInstance().apply { time = item.completedAt.toDate() }
-                        val selCal = Calendar.getInstance().apply { timeInMillis = customDateMillis!! }
-                        itemCal.get(Calendar.YEAR) == selCal.get(Calendar.YEAR) &&
-                                itemCal.get(Calendar.DAY_OF_YEAR) == selCal.get(Calendar.DAY_OF_YEAR)
+                    if (startDateMillis != null && endDateMillis != null) {
+                        val startSec = getStartOfDayLocalSeconds(startDateMillis!!)
+                        val endSec = getEndOfDayLocalSeconds(endDateMillis!!)
+                        item.completedAt.seconds in startSec..endSec
                     } else true
                 }
                 else -> true // "SEMUA"
@@ -93,30 +158,16 @@ fun RiwayatAntreanScreen(
         viewModel.groupHistoryByDate(filteredList)
     }
 
-    if (showDatePickerDialog) {
-        val datePickerState = rememberDatePickerState()
-        DatePickerDialog(
-            onDismissRequest = { showDatePickerDialog = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        datePickerState.selectedDateMillis?.let { millis ->
-                            viewModel.setCustomDate(millis)
-                        }
-                        showDatePickerDialog = false
-                    }
-                ) {
-                    Text("Pilih", color = Color(0xFF3D5AF1), fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePickerDialog = false }) {
-                    Text("Batal", color = Color.Gray)
-                }
+    if (showDateRangePickerDialog) {
+        CustomDateRangePickerDialog(
+            initialStartDateMillis = startDateMillis,
+            initialEndDateMillis = endDateMillis,
+            onDismissRequest = { showDateRangePickerDialog = false },
+            onDateRangeSelected = { start, end ->
+                viewModel.setCustomDateRange(start, end)
+                showDateRangePickerDialog = false
             }
-        ) {
-            DatePicker(state = datePickerState)
-        }
+        )
     }
 
     Scaffold(
@@ -212,7 +263,7 @@ fun RiwayatAntreanScreen(
                 Card(
                     modifier = Modifier
                         .size(48.dp)
-                        .clickable { /* Action button */ },
+                        .clickable { triggerBarcodeScanner() },
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -222,9 +273,9 @@ fun RiwayatAntreanScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.GridView,
-                            contentDescription = "Grid",
-                            tint = Color(0xFF4B5563),
+                            imageVector = Icons.Default.QrCodeScanner,
+                            contentDescription = "Scan Barcode Antrean",
+                            tint = Color(0xFF4F46E5),
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -233,38 +284,48 @@ fun RiwayatAntreanScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // ── Filter Chips Row (Semua, Hari Ini, Filter Tanggal) ────
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            // ── Filter Chips Row (Semua, Hari Ini, 7 Hari Terakhir, Filter Tanggal) ────
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FilterPill(
-                    label = "Semua",
-                    isSelected = selectedFilter == "SEMUA",
-                    onClick = { viewModel.setFilter("SEMUA") }
-                )
-                FilterPill(
-                    label = "Hari Ini",
-                    isSelected = selectedFilter == "HARI_INI",
-                    onClick = { viewModel.setFilter("HARI_INI") }
-                )
-
-                val filterTanggalLabel = if (selectedFilter == "FILTER_TANGGAL" && customDateMillis != null) {
-                    val sdf = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID"))
-                    sdf.format(Date(customDateMillis!!))
-                } else {
-                    "Filter Tanggal"
+                item {
+                    FilterPill(
+                        label = "Semua",
+                        isSelected = selectedFilter == "SEMUA",
+                        onClick = { viewModel.setFilter("SEMUA") }
+                    )
                 }
-
-                FilterPill(
-                    label = filterTanggalLabel,
-                    isSelected = selectedFilter == "FILTER_TANGGAL",
-                    onClick = {
-                        showDatePickerDialog = true
+                item {
+                    FilterPill(
+                        label = "Hari Ini",
+                        isSelected = selectedFilter == "HARI_INI",
+                        onClick = { viewModel.setFilter("HARI_INI") }
+                    )
+                }
+                item {
+                    FilterPill(
+                        label = "7 Hari Terakhir",
+                        isSelected = selectedFilter == "7_HARI_TERAKHIR",
+                        onClick = { viewModel.setFilter("7_HARI_TERAKHIR") }
+                    )
+                }
+                item {
+                    val filterTanggalLabel = if (selectedFilter == "FILTER_TANGGAL" && !customDateLabel.isNullOrBlank()) {
+                        customDateLabel!!
+                    } else {
+                        "Filter Tanggal"
                     }
-                )
+
+                    FilterPill(
+                        label = filterTanggalLabel,
+                        isSelected = selectedFilter == "FILTER_TANGGAL",
+                        onClick = {
+                            showDateRangePickerDialog = true
+                        }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
