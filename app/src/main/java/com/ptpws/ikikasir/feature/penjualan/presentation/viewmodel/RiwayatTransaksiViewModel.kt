@@ -2,6 +2,9 @@ package com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.commond.formatDateRangeLabel
+import com.ptpws.ikikasir.commond.getEndOfDayLocalSeconds
+import com.ptpws.ikikasir.commond.getStartOfDayLocalSeconds
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetAllTransaksiUseCase
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.GroupedTransaksi
@@ -39,6 +42,8 @@ class RiwayatTransaksiViewModel @Inject constructor(
                         list = list,
                         query = current.searchQuery,
                         filter = current.selectedFilter,
+                        startMillis = current.startDateMillis,
+                        endMillis = current.endDateMillis,
                         customDateMillis = current.selectedCustomDateMillis
                     )
                     val grouped = groupTransactions(filtered)
@@ -59,6 +64,8 @@ class RiwayatTransaksiViewModel @Inject constructor(
                 list = current.transaksiList,
                 query = query,
                 filter = current.selectedFilter,
+                startMillis = current.startDateMillis,
+                endMillis = current.endDateMillis,
                 customDateMillis = current.selectedCustomDateMillis
             )
             val grouped = groupTransactions(filtered)
@@ -76,6 +83,8 @@ class RiwayatTransaksiViewModel @Inject constructor(
                 list = current.transaksiList,
                 query = current.searchQuery,
                 filter = filter,
+                startMillis = current.startDateMillis,
+                endMillis = current.endDateMillis,
                 customDateMillis = current.selectedCustomDateMillis
             )
             val grouped = groupTransactions(filtered)
@@ -87,19 +96,23 @@ class RiwayatTransaksiViewModel @Inject constructor(
         }
     }
 
-    fun onCustomDateSelect(timeInMillis: Long) {
-        val dateLabel = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).format(Date(timeInMillis))
+    fun onCustomDateRangeSelect(startMillis: Long, endMillis: Long) {
+        val dateLabel = formatDateRangeLabel(startMillis, endMillis)
         _state.update { current ->
             val filtered = filterTransactions(
                 list = current.transaksiList,
                 query = current.searchQuery,
                 filter = "Filter Tanggal",
-                customDateMillis = timeInMillis
+                startMillis = startMillis,
+                endMillis = endMillis,
+                customDateMillis = null
             )
             val grouped = groupTransactions(filtered)
             current.copy(
                 selectedFilter = "Filter Tanggal",
-                selectedCustomDateMillis = timeInMillis,
+                startDateMillis = startMillis,
+                endDateMillis = endMillis,
+                selectedCustomDateMillis = null,
                 customDateLabel = dateLabel,
                 filteredList = filtered,
                 groupedTransactions = grouped
@@ -111,6 +124,8 @@ class RiwayatTransaksiViewModel @Inject constructor(
         list: List<PenjualanTransaksi>,
         query: String,
         filter: String,
+        startMillis: Long?,
+        endMillis: Long?,
         customDateMillis: Long?
     ): List<PenjualanTransaksi> {
         var filtered = list
@@ -154,10 +169,13 @@ class RiwayatTransaksiViewModel @Inject constructor(
                 }
             }
             "Filter Tanggal" -> {
-                if (customDateMillis != null) {
-                    val selCal = Calendar.getInstance().apply {
-                        timeInMillis = customDateMillis
+                if (startMillis != null && endMillis != null) {
+                    val startSec = getStartOfDayLocalSeconds(startMillis)
+                    val endSec = getEndOfDayLocalSeconds(endMillis)
+                    filtered = filtered.filter {
+                        it.createdAt.seconds in startSec..endSec
                     }
+                } else if (customDateMillis != null) {
                     val startOfSelDay = Calendar.getInstance().apply {
                         timeInMillis = customDateMillis
                         set(Calendar.HOUR_OF_DAY, 0)
