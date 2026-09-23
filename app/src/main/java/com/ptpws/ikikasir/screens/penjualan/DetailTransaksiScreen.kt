@@ -52,6 +52,7 @@ fun DetailTransaksiScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    var showStrukPreviewDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(transactionId) {
         viewModel.loadTransaksi(transactionId)
@@ -493,7 +494,7 @@ fun DetailTransaksiScreen(
                 item {
                     Button(
                         onClick = {
-                            Toast.makeText(context, "Mencetak struk...", Toast.LENGTH_SHORT).show()
+                            showStrukPreviewDialog = true
                             onCetakStruk()
                         },
                         modifier = Modifier
@@ -518,6 +519,15 @@ fun DetailTransaksiScreen(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp,
                             color = Color.White
+                        )
+                    }
+                }
+
+                if (showStrukPreviewDialog && tx != null) {
+                    item {
+                        com.ptpws.ikikasir.feature.penjualan.presentation.component.StrukPreviewDialog(
+                            transaksi = tx,
+                            onDismissRequest = { showStrukPreviewDialog = false }
                         )
                     }
                 }
