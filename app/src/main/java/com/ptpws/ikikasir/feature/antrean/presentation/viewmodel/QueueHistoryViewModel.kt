@@ -22,6 +22,8 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+import com.ptpws.ikikasir.commond.formatDateRangeLabel
+
 private const val TAG = "QueueHistoryVM"
 
 @HiltViewModel
@@ -37,11 +39,17 @@ class QueueHistoryViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _selectedFilter = MutableStateFlow("SEMUA") // "SEMUA", "HARI_INI", "FILTER_TANGGAL"
+    private val _selectedFilter = MutableStateFlow("SEMUA") // "SEMUA", "HARI_INI", "7_HARI_TERAKHIR", "FILTER_TANGGAL"
     val selectedFilter: StateFlow<String> = _selectedFilter.asStateFlow()
 
-    private val _customDateMillis = MutableStateFlow<Long?>(null)
-    val customDateMillis: StateFlow<Long?> = _customDateMillis.asStateFlow()
+    private val _startDateMillis = MutableStateFlow<Long?>(null)
+    val startDateMillis: StateFlow<Long?> = _startDateMillis.asStateFlow()
+
+    private val _endDateMillis = MutableStateFlow<Long?>(null)
+    val endDateMillis: StateFlow<Long?> = _endDateMillis.asStateFlow()
+
+    private val _customDateLabel = MutableStateFlow<String?>(null)
+    val customDateLabel: StateFlow<String?> = _customDateLabel.asStateFlow()
 
     private val _transaksiMap = MutableStateFlow<Map<String, PenjualanTransaksi>>(emptyMap())
     val transaksiMap: StateFlow<Map<String, PenjualanTransaksi>> = _transaksiMap.asStateFlow()
@@ -82,12 +90,16 @@ class QueueHistoryViewModel @Inject constructor(
     fun setFilter(filter: String) {
         _selectedFilter.value = filter
         if (filter != "FILTER_TANGGAL") {
-            _customDateMillis.value = null
+            _startDateMillis.value = null
+            _endDateMillis.value = null
+            _customDateLabel.value = null
         }
     }
 
-    fun setCustomDate(millis: Long) {
-        _customDateMillis.value = millis
+    fun setCustomDateRange(startMillis: Long, endMillis: Long) {
+        _startDateMillis.value = startMillis
+        _endDateMillis.value = endMillis
+        _customDateLabel.value = formatDateRangeLabel(startMillis, endMillis)
         _selectedFilter.value = "FILTER_TANGGAL"
     }
 
