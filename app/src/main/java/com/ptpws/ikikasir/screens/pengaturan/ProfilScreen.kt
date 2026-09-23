@@ -1,5 +1,6 @@
 package com.ptpws.ikikasir.screens.pengaturan
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
@@ -21,11 +23,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.commond.interfamily
@@ -38,11 +43,28 @@ fun ProfilScreen(
     onKeamanan: () -> Unit = {},
     onAuditLog: () -> Unit = {},
     onMetodePembayaran: () -> Unit = {},
+    onSettingPpn: () -> Unit = {},
+    onSettingStruk: () -> Unit = {},
     onTentangAplikasi: () -> Unit = {},
-    onExportDatabase: () -> Unit = {},
-    onImportDatabase: () -> Unit = {},
     onKeluar: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    var showPpnDialog by remember { mutableStateOf(false) }
+    var showStrukDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
+    // State PPN / Pajak
+    var ppnPersen by remember { mutableStateOf("11") }
+    var isPpnAktif by remember { mutableStateOf(true) }
+    var isPpnInklusif by remember { mutableStateOf(false) }
+
+    // State Nota / Struk
+    var namaToko by remember { mutableStateOf("IKIKASIR STORE") }
+    var alamatToko by remember { mutableStateOf("Jl. Merdeka No. 45, Jakarta") }
+    var noTeleponToko by remember { mutableStateOf("0812-3456-7890") }
+    var catatanStruk by remember { mutableStateOf("Terima kasih telah berbelanja!\nBarang yang sudah dibeli tidak dapat ditukar/dikembalikan.") }
+    var ukuranKertas by remember { mutableStateOf("58mm") }
+
     Scaffold(
         containerColor = Color(0xFFF3F4F6),
         topBar = {
@@ -56,9 +78,11 @@ fun ProfilScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = {if (navController.currentDestination?.route == "profil") {
-                        navController.popBackStack()
-                    } }) {
+                    IconButton(onClick = {
+                        if (navController.currentDestination?.route == "profil") {
+                            navController.popBackStack()
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
@@ -216,6 +240,28 @@ fun ProfilScreen(
                                 label = "Metode Pembayaran",
                                 onClick = onMetodePembayaran
                             )
+                            HorizontalDivider(color = Color(0xFFF3F4F6))
+                            MenuAkunItem(
+                                icon = Icons.Outlined.Percent,
+                                iconBackground = Color(0xFFECFDF5),
+                                iconTint = Color(0xFF059669),
+                                label = "Setting PPN / Pajak",
+                                onClick = {
+                                    showPpnDialog = true
+                                    onSettingPpn()
+                                }
+                            )
+                            HorizontalDivider(color = Color(0xFFF3F4F6))
+                            MenuAkunItem(
+                                icon = Icons.Outlined.ReceiptLong,
+                                iconBackground = Color(0xFFF3E8FF),
+                                iconTint = Color(0xFF7E22CE),
+                                label = "Setting Nota / Struk Pembayaran",
+                                onClick = {
+                                    showStrukDialog = true
+                                    onSettingStruk()
+                                }
+                            )
                         }
                     }
                 }
@@ -245,22 +291,6 @@ fun ProfilScreen(
                                 label = "Tentang Aplikasi",
                                 onClick = onTentangAplikasi
                             )
-                            HorizontalDivider(color = Color(0xFFF3F4F6))
-                            MenuAkunItem(
-                                icon = Icons.Outlined.Download,
-                                iconBackground = Color(0xFFD1FAE5),
-                                iconTint = Color(0xFF059669),
-                                label = "Export Database",
-                                onClick = onExportDatabase
-                            )
-                            HorizontalDivider(color = Color(0xFFF3F4F6))
-                            MenuAkunItem(
-                                icon = Icons.Outlined.Upload,
-                                iconBackground = Color(0xFFFEF3C7),
-                                iconTint = Color(0xFFD97706),
-                                label = "Import Database",
-                                onClick = onImportDatabase
-                            )
                         }
                     }
                 }
@@ -268,93 +298,6 @@ fun ProfilScreen(
 
             // ── Tombol Keluar
             item {
-                var showLogoutDialog by remember { mutableStateOf(false) }
-
-                if (showLogoutDialog) {
-                    androidx.compose.ui.window.Dialog(onDismissRequest = { showLogoutDialog = false }) {
-                        Card(
-                            shape = RoundedCornerShape(24.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(24.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(64.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFFEE2E2)), // Red 100
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Logout,
-                                        contentDescription = "Logout",
-                                        tint = Color(0xFFDC2626), // Red 600
-                                        modifier = Modifier.size(32.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = "Konfirmasi Keluar",
-                                    fontFamily = interfamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
-                                    color = Color(0xFF111827)
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "Apakah Anda yakin ingin keluar dari akun ini? Anda harus login kembali untuk masuk.",
-                                    fontFamily = interfamily,
-                                    fontSize = 14.sp,
-                                    color = Color(0xFF6B7280),
-                                    textAlign = TextAlign.Center
-                                )
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Button(
-                                        onClick = { showLogoutDialog = false },
-                                        modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF3F4F6)),
-                                        shape = RoundedCornerShape(12.dp),
-                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-                                    ) {
-                                        Text(
-                                            text = "Batal",
-                                            fontFamily = interfamily,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Color(0xFF4B5563)
-                                        )
-                                    }
-                                    Button(
-                                        onClick = {
-                                            showLogoutDialog = false
-                                            onKeluar()
-                                        },
-                                        modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
-                                        shape = RoundedCornerShape(12.dp),
-                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-                                    ) {
-                                        Text(
-                                            text = "Ya, Keluar",
-                                            fontFamily = interfamily,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Color.White
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -398,6 +341,413 @@ fun ProfilScreen(
                     color = Color(0xFF9CA3AF),
                     textAlign = TextAlign.Center
                 )
+            }
+        }
+    }
+
+    // ── Dialog Setting PPN / Pajak
+    if (showPpnDialog) {
+        Dialog(onDismissRequest = { showPpnDialog = false }) {
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Setting PPN / Pajak",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color(0xFF111827)
+                        )
+                        IconButton(
+                            onClick = { showPpnDialog = false },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Close,
+                                contentDescription = "Tutup",
+                                tint = Color(0xFF9CA3AF)
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = Color(0xFFF3F4F6))
+
+                    // Switch Aktifkan PPN
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Status PPN / Pajak",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = Color(0xFF111827)
+                            )
+                            Text(
+                                text = if (isPpnAktif) "PPN aktif untuk setiap transaksi" else "PPN dinonaktifkan",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                color = Color(0xFF6B7280)
+                            )
+                        }
+                        Switch(
+                            checked = isPpnAktif,
+                            onCheckedChange = { isPpnAktif = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFF4F46E5)
+                            )
+                        )
+                    }
+
+                    if (isPpnAktif) {
+                        // Input Persentase PPN
+                        OutlinedTextField(
+                            value = ppnPersen,
+                            onValueChange = { ppnPersen = it },
+                            label = { Text("Persentase PPN (%)", fontFamily = interfamily) },
+                            trailingIcon = { Text("%", fontFamily = interfamily, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 12.dp)) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF4F46E5),
+                                unfocusedBorderColor = Color(0xFFE5E7EB)
+                            )
+                        )
+
+                        // Skema PPN (Inklusif vs Eksklusif)
+                        Text(
+                            text = "Tipe Perhitungan PPN",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp,
+                            color = Color(0xFF111827)
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilterChip(
+                                selected = !isPpnInklusif,
+                                onClick = { isPpnInklusif = false },
+                                label = { Text("Belum Termasuk (Eksklusif)", fontFamily = interfamily, fontSize = 12.sp) },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFFEEF2FF),
+                                    selectedLabelColor = Color(0xFF4F46E5)
+                                )
+                            )
+                            FilterChip(
+                                selected = isPpnInklusif,
+                                onClick = { isPpnInklusif = true },
+                                label = { Text("Sudah Termasuk (Inklusif)", fontFamily = interfamily, fontSize = 12.sp) },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFFEEF2FF),
+                                    selectedLabelColor = Color(0xFF4F46E5)
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Action buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showPpnDialog = false },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
+                        ) {
+                            Text("Batal", fontFamily = interfamily, color = Color(0xFF4B5563))
+                        }
+                        Button(
+                            onClick = {
+                                showPpnDialog = false
+                                Toast.makeText(context, "Pengaturan PPN berhasil disimpan", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                        ) {
+                            Text("Simpan", fontFamily = interfamily, color = Color.White)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Dialog Setting Nota / Struk Pembayaran
+    if (showStrukDialog) {
+        Dialog(onDismissRequest = { showStrukDialog = false }) {
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Setting Nota / Struk",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color(0xFF111827)
+                        )
+                        IconButton(
+                            onClick = { showStrukDialog = false },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Close,
+                                contentDescription = "Tutup",
+                                tint = Color(0xFF9CA3AF)
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = Color(0xFFF3F4F6))
+
+                    OutlinedTextField(
+                        value = namaToko,
+                        onValueChange = { namaToko = it },
+                        label = { Text("Nama Toko / Header", fontFamily = interfamily) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF4F46E5),
+                            unfocusedBorderColor = Color(0xFFE5E7EB)
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = alamatToko,
+                        onValueChange = { alamatToko = it },
+                        label = { Text("Alamat Toko", fontFamily = interfamily) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF4F46E5),
+                            unfocusedBorderColor = Color(0xFFE5E7EB)
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = noTeleponToko,
+                        onValueChange = { noTeleponToko = it },
+                        label = { Text("Nomor Telepon Toko", fontFamily = interfamily) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF4F46E5),
+                            unfocusedBorderColor = Color(0xFFE5E7EB)
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = catatanStruk,
+                        onValueChange = { catatanStruk = it },
+                        label = { Text("Catatan / Footer Struk", fontFamily = interfamily) },
+                        minLines = 2,
+                        maxLines = 3,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF4F46E5),
+                            unfocusedBorderColor = Color(0xFFE5E7EB)
+                        )
+                    )
+
+                    // Lebar Kertas Struk
+                    Text(
+                        text = "Lebar Kertas Thermal",
+                        fontFamily = interfamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp,
+                        color = Color(0xFF111827)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = ukuranKertas == "58mm",
+                            onClick = { ukuranKertas = "58mm" },
+                            label = { Text("58 mm", fontFamily = interfamily, fontSize = 12.sp) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFFEEF2FF),
+                                selectedLabelColor = Color(0xFF4F46E5)
+                            )
+                        )
+                        FilterChip(
+                            selected = ukuranKertas == "80mm",
+                            onClick = { ukuranKertas = "80mm" },
+                            label = { Text("80 mm", fontFamily = interfamily, fontSize = 12.sp) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFFEEF2FF),
+                                selectedLabelColor = Color(0xFF4F46E5)
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Action buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showStrukDialog = false },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
+                        ) {
+                            Text("Batal", fontFamily = interfamily, color = Color(0xFF4B5563))
+                        }
+                        Button(
+                            onClick = {
+                                showStrukDialog = false
+                                Toast.makeText(context, "Pengaturan Nota / Struk berhasil disimpan", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                        ) {
+                            Text("Simpan", fontFamily = interfamily, color = Color.White)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Dialog Logout
+    if (showLogoutDialog) {
+        Dialog(onDismissRequest = { showLogoutDialog = false }) {
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFFEE2E2)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Logout,
+                            contentDescription = "Logout",
+                            tint = Color(0xFFDC2626),
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Konfirmasi Keluar",
+                        fontFamily = interfamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color(0xFF111827)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Apakah Anda yakin ingin keluar dari akun ini? Anda harus login kembali untuk masuk.",
+                        fontFamily = interfamily,
+                        fontSize = 14.sp,
+                        color = Color(0xFF6B7280),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Button(
+                            onClick = { showLogoutDialog = false },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF3F4F6)),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                        ) {
+                            Text(
+                                text = "Batal",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF4B5563)
+                            )
+                        }
+                        Button(
+                            onClick = {
+                                showLogoutDialog = false
+                                onKeluar()
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                        ) {
+                            Text(
+                                text = "Ya, Keluar",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -460,4 +810,4 @@ fun ProfilScreenPreview() {
     MaterialTheme {
         ProfilScreen(navController = rememberNavController())
     }
-}
+}
