@@ -2,6 +2,8 @@ package com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.feature.antrean.data.local.dao.AntreanDao
+import com.ptpws.ikikasir.feature.antrean.data.local.dao.QueueHistoryDao
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetAllTransaksiUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetTransaksiByIdUseCase
@@ -19,7 +21,9 @@ import javax.inject.Inject
 class DetailTransaksiViewModel @Inject constructor(
     private val getTransaksiByIdUseCase: GetTransaksiByIdUseCase,
     private val getAllTransaksiUseCase: GetAllTransaksiUseCase,
-    private val produkDao: ProdukDao
+    private val produkDao: ProdukDao,
+    private val antreanDao: AntreanDao,
+    private val queueHistoryDao: QueueHistoryDao
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DetailTransaksiState())
@@ -32,13 +36,13 @@ class DetailTransaksiViewModel @Inject constructor(
             if (transactionId.isNotBlank()) {
                 getTransaksiByIdUseCase(transactionId).collect { tx ->
                     if (tx != null) {
-                        val enrichedTx = enrichTransactionWithImages(tx)
+                        val enrichedTx = enrichTransaction(tx)
                         _state.update { it.copy(transaksi = enrichedTx, isLoading = false) }
                     } else {
                         // Fallback to latest transaction if specific ID is not found in DB
                         getAllTransaksiUseCase().collect { list ->
                             val latest = list.firstOrNull()
-                            val enrichedTx = latest?.let { enrichTransactionWithImages(it) }
+                            val enrichedTx = latest?.let { enrichTransaction(it) }
                             _state.update {
                                 it.copy(
                                     transaksi = enrichedTx,
@@ -52,7 +56,7 @@ class DetailTransaksiViewModel @Inject constructor(
                 // Fallback to latest transaction if no transactionId argument was passed
                 getAllTransaksiUseCase().collect { list ->
                     val latest = list.firstOrNull()
-                    val enrichedTx = latest?.let { enrichTransactionWithImages(it) }
+                    val enrichedTx = latest?.let { enrichTransaction(it) }
                     _state.update {
                         it.copy(
                             transaksi = enrichedTx,
@@ -64,7 +68,7 @@ class DetailTransaksiViewModel @Inject constructor(
         }
     }
 
-    private suspend fun enrichTransactionWithImages(tx: PenjualanTransaksi): PenjualanTransaksi {
+    private suspend fun enrichTransaction(tx: PenjualanTransaksi): PenjualanTransaksi {
         val updatedItems = tx.items.map { item ->
             if (item.produk.imageUrl.isBlank() && item.produk.id.isNotBlank()) {
                 val dbProduk = produkDao.getProdukById(item.produk.id)
@@ -77,6 +81,15 @@ class DetailTransaksiViewModel @Inject constructor(
                 item
             }
         }
-        return tx.copy(items = updatedItems)
+
+        val queueSeq = if (tx.queueSequence > 0) {
+            tx.queueSequence
+        } else {
+            val antrean = antreanDao.getAntreanByTransactionId(tx.transactionId)
+            val history = queueHistoryDao.getHistoryByTransactionId(tx.transactionId)
+            antrean?.queueSequence ?: history?.queueSequence ?: tx.queueSequence
+        }
+
+        return tx.copy(items = updatedItems, queueSequence = queueSeq)
     }
 }

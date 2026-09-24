@@ -19,12 +19,16 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import com.ptpws.ikikasir.feature.penjualan.data.local.dao.TransactionDao
+import java.util.Calendar
+
 private const val TAG = "AntreanRepository"
 
 @Singleton
 class AntreanRepositoryImpl @Inject constructor(
     private val localDao: AntreanDao,
     private val queueHistoryDao: QueueHistoryDao,
+    private val transactionDao: TransactionDao,
     private val remoteDataSource: AntreanRemoteDataSource,
     private val networkMonitor: NetworkMonitor
 ) : AntreanRepository {
@@ -178,8 +182,19 @@ class AntreanRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getNextQueueSequence(): Int {
-        val maxQueues = localDao.getMaxQueueSequence()
-        val maxHistory = queueHistoryDao.getMaxQueueSequence()
-        return maxOf(maxQueues, maxHistory) + 1
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startOfDayMillis = cal.timeInMillis
+
+        val maxQueuesToday = localDao.getMaxQueueSequenceToday(startOfDayMillis)
+        val maxHistoryToday = queueHistoryDao.getMaxQueueSequenceToday(startOfDayMillis)
+        val maxTxToday = transactionDao.getMaxQueueSequenceToday(startOfDayMillis)
+        val todayMax = maxOf(maxQueuesToday, maxHistoryToday, maxTxToday)
+
+        return todayMax + 1
     }
 }

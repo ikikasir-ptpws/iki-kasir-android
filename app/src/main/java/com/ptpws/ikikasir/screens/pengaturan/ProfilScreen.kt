@@ -34,11 +34,18 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
+import com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting
+import kotlinx.coroutines.launch
+
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel.ProfilViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfilScreen(
     navController: NavController,
+    viewModel: ProfilViewModel = hiltViewModel(),
     onEditProfil: () -> Unit = {},
     onKeamanan: () -> Unit = {},
     onAuditLog: () -> Unit = {},
@@ -49,6 +56,9 @@ fun ProfilScreen(
     onKeluar: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val liveNotaSetting by viewModel.notaSetting.collectAsState()
+
     var showPpnDialog by remember { mutableStateOf(false) }
     var showStrukDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -58,12 +68,24 @@ fun ProfilScreen(
     var isPpnAktif by remember { mutableStateOf(true) }
     var isPpnInklusif by remember { mutableStateOf(false) }
 
-    // State Nota / Struk
-    var namaToko by remember { mutableStateOf("IKIKASIR STORE") }
-    var alamatToko by remember { mutableStateOf("Jl. Merdeka No. 45, Jakarta") }
-    var noTeleponToko by remember { mutableStateOf("0812-3456-7890") }
-    var catatanStruk by remember { mutableStateOf("Terima kasih telah berbelanja!\nBarang yang sudah dibeli tidak dapat ditukar/dikembalikan.") }
-    var ukuranKertas by remember { mutableStateOf("58mm") }
+    // State Nota / Struk — diinisialisasi dari ViewModel (Room DB + Firestore) & SharedPreferences
+    val notaPrefs = remember { NotaSettingPreferences(context) }
+    val savedNota = remember { notaPrefs.getSetting() }
+    var namaToko by remember { mutableStateOf(savedNota.storeName) }
+    var alamatToko by remember { mutableStateOf(savedNota.storeAddress) }
+    var namaWifi by remember { mutableStateOf(savedNota.wifiName) }
+    var kataSandiWifi by remember { mutableStateOf(savedNota.wifiPassword) }
+    var ukuranKertas by remember { mutableStateOf(savedNota.paperWidth) }
+
+    LaunchedEffect(liveNotaSetting) {
+        if (liveNotaSetting.storeName.isNotBlank() || liveNotaSetting.storeAddress.isNotBlank()) {
+            namaToko = liveNotaSetting.storeName
+            alamatToko = liveNotaSetting.storeAddress
+            namaWifi = liveNotaSetting.wifiName
+            kataSandiWifi = liveNotaSetting.wifiPassword
+            ukuranKertas = liveNotaSetting.paperWidth
+        }
+    }
 
     Scaffold(
         containerColor = Color(0xFFF3F4F6),
@@ -570,11 +592,10 @@ fun ProfilScreen(
                     )
 
                     OutlinedTextField(
-                        value = noTeleponToko,
-                        onValueChange = { noTeleponToko = it },
-                        label = { Text("Nomor Telepon Toko", fontFamily = interfamily) },
+                        value = namaWifi,
+                        onValueChange = { namaWifi = it },
+                        label = { Text("Nama WiFi", fontFamily = interfamily) },
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -584,11 +605,10 @@ fun ProfilScreen(
                     )
 
                     OutlinedTextField(
-                        value = catatanStruk,
-                        onValueChange = { catatanStruk = it },
-                        label = { Text("Catatan / Footer Struk", fontFamily = interfamily) },
-                        minLines = 2,
-                        maxLines = 3,
+                        value = kataSandiWifi,
+                        onValueChange = { kataSandiWifi = it },
+                        label = { Text("Kata Sandi WiFi", fontFamily = interfamily) },
+                        singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -651,8 +671,26 @@ fun ProfilScreen(
                         }
                         Button(
                             onClick = {
+                                val updatedSetting = NotaSetting(
+                                    storeName    = namaToko,
+                                    storeAddress = alamatToko,
+                                    wifiName     = namaWifi,
+                                    wifiPassword = kataSandiWifi,
+                                    paperWidth   = ukuranKertas
+                                )
+                                // 1. Simpan ke SharedPreferences
+                                notaPrefs.saveSetting(updatedSetting)
+
+                                // 2. Simpan ke Room DB & Firestore via ViewModel (Clean Architecture)
+                                viewModel.saveNotaSetting(updatedSetting) { success ->
+                                    if (success) {
+                                        Toast.makeText(context, "Pengaturan Nota berhasil disimpan ke Database (Room & Firestore)", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Pengaturan Nota disimpan secara offline", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+
                                 showStrukDialog = false
-                                Toast.makeText(context, "Pengaturan Nota / Struk berhasil disimpan", Toast.LENGTH_SHORT).show()
                             },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),

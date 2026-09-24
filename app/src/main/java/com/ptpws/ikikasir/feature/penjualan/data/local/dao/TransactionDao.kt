@@ -26,4 +26,13 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET isSynced = 1 WHERE transactionId = :transactionId")
     suspend fun markAsSynced(transactionId: String)
+
+    @Query("SELECT COALESCE(MAX(queueSequence), 0) FROM transactions")
+    suspend fun getMaxQueueSequence(): Int
+
+    @Query("SELECT COALESCE(MAX(queueSequence), 0) FROM transactions WHERE createdAt >= :startOfDayMillis")
+    suspend fun getMaxQueueSequenceToday(startOfDayMillis: Long): Int
+
+    @Query("SELECT MAX(createdAt) FROM transactions")
+    suspend fun getLatestTransactionTimestamp(): Long?
 }

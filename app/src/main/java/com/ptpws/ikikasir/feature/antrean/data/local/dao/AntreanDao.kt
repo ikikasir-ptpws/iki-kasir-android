@@ -18,6 +18,9 @@ interface AntreanDao {
     @Query("SELECT * FROM queues WHERE id = :id LIMIT 1")
     suspend fun getAntreanById(id: String): AntreanEntity?
 
+    @Query("SELECT * FROM queues WHERE (transactionId = :transactionId OR id = :transactionId) AND isDeleted = 0 LIMIT 1")
+    suspend fun getAntreanByTransactionId(transactionId: String): AntreanEntity?
+
     @Upsert
     suspend fun insertOrUpdate(antrean: AntreanEntity)
 
@@ -26,6 +29,9 @@ interface AntreanDao {
 
     @Query("SELECT COALESCE(MAX(queueSequence), 0) FROM queues WHERE isDeleted = 0")
     suspend fun getMaxQueueSequence(): Int
+
+    @Query("SELECT COALESCE(MAX(queueSequence), 0) FROM queues WHERE isDeleted = 0 AND createdAt >= :startOfDayMillis")
+    suspend fun getMaxQueueSequenceToday(startOfDayMillis: Long): Int
 
     @Query("UPDATE queues SET status = :status, isSynced = 0, updatedAt = :updatedAt WHERE id = :id")
     suspend fun updateStatus(id: String, status: String, updatedAt: Long = System.currentTimeMillis())

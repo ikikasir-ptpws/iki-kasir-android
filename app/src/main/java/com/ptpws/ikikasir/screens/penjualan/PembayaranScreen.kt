@@ -75,17 +75,26 @@ fun PembayaranScreen(
         }
     }
 
+    var showStrukPreview by remember { mutableStateOf(false) }
+
     // Success Pop-Up Dialog
     if (state.showSuccessDialog) {
         PembayaranSuccessDialog(
             transaksi = state.transaksiSukses,
             onCetakStruk = {
-                Toast.makeText(context, "Mencetak struk belanja...", Toast.LENGTH_SHORT).show()
+                showStrukPreview = true
             },
             onTransaksiBaru = {
                 viewModel.dismissSuccessDialog()
                 onTransaksiSelesai()
             }
+        )
+    }
+
+    if (showStrukPreview && state.transaksiSukses != null) {
+        com.ptpws.ikikasir.feature.penjualan.presentation.component.StrukPreviewDialog(
+            transaksi = state.transaksiSukses!!,
+            onDismissRequest = { showStrukPreview = false }
         )
     }
 

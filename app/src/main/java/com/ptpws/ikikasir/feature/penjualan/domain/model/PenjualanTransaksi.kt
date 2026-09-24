@@ -16,6 +16,7 @@ data class PenjualanTransaksi(
     val notes: String = "",               // Catatan pesanan kasir/user
     val createdBy: String = "",           // Nama kasir/user
     val customerName: String = "",        // Nama Pelanggan
+    val queueSequence: Int = 1,           // Nomor Antrean Real
     val createdAt: Timestamp = Timestamp.now(),
     val updatedAt: Timestamp = Timestamp.now(),
     val isSynced: Boolean = false

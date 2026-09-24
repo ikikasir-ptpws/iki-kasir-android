@@ -67,6 +67,9 @@ data class TransactionDto(
     @get:PropertyName("customerName") @set:PropertyName("customerName")
     var customerName: String = "",
 
+    @get:PropertyName("queueSequence") @set:PropertyName("queueSequence")
+    var queueSequence: Int = 1,
+
     @get:PropertyName("createdAt") @set:PropertyName("createdAt")
     @get:ServerTimestamp
     var createdAt: Timestamp? = null,
@@ -107,6 +110,7 @@ data class TransactionDto(
             notes = notes,
             createdBy = createdBy,
             customerName = customerName,
+            queueSequence = queueSequence,
             createdAt = createdAt ?: Timestamp.now(),
             updatedAt = updatedAt ?: Timestamp.now(),
             isSynced = true
@@ -140,6 +144,7 @@ fun PenjualanTransaksi.toDto(): TransactionDto {
         notes = notes,
         createdBy = createdBy,
         customerName = customerName,
+        queueSequence = queueSequence,
         createdAt = null,
         updatedAt = null
     )

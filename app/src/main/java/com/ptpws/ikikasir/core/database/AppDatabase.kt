@@ -13,6 +13,8 @@ import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.dao.UserDao
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.entity.UserEntity
 import com.ptpws.ikikasir.feature.manajemenstok.data.local.dao.StokAdjustmentDao
 import com.ptpws.ikikasir.feature.manajemenstok.data.local.entity.StockMovementEntity
+import com.ptpws.ikikasir.feature.pengaturan.data.local.dao.NotaSettingDao
+import com.ptpws.ikikasir.feature.pengaturan.data.local.entity.NotaSettingEntity
 import com.ptpws.ikikasir.feature.penjualan.data.local.dao.TransactionDao
 import com.ptpws.ikikasir.feature.penjualan.data.local.entity.TransactionEntity
 import com.ptpws.ikikasir.feature.produk.data.local.dao.ProdukDao
@@ -29,9 +31,10 @@ import com.ptpws.ikikasir.feature.role.data.local.entity.RoleEntity
         AntreanEntity::class,
         QueueHistoryEntity::class,
         UserEntity::class,
-        RoleEntity::class
+        RoleEntity::class,
+        NotaSettingEntity::class
     ],
-    version = 18,
+    version = 20,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class, MapConverter::class)
@@ -44,6 +47,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val queueHistoryDao: QueueHistoryDao
     abstract val userDao: UserDao
     abstract val roleDao: RoleDao
+    abstract val notaSettingDao: NotaSettingDao
 
     companion object {
         const val DATABASE_NAME = "ikikasir_db"

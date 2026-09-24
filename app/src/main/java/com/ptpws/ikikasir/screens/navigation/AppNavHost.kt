@@ -124,7 +124,15 @@ fun AppNavHost() {
             }
             composable(AppScreen.Riwayat.route) {
                 val context = LocalContext.current
-                RiwayatTransaksiScreen(navController, onDetailTransaksi = { context.startActivity(Intent(context, DetailTransaksiActivity::class.java)) })
+                RiwayatTransaksiScreen(
+                    navController = navController,
+                    onDetailTransaksi = { txId ->
+                        val intent = Intent(context, DetailTransaksiActivity::class.java).apply {
+                            putExtra("TRANSACTION_ID", txId)
+                        }
+                        context.startActivity(intent)
+                    }
+                )
             }
             composable(AppScreen.Profil.route) {
                 val context = LocalContext.current

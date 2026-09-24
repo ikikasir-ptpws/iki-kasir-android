@@ -1,10 +1,7 @@
 package com.ptpws.ikikasir.feature.penjualan.presentation.component
 
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
 import android.widget.Toast
-import androidx.core.content.FileProvider
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,11 +10,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,23 +24,34 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.FileProvider
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GenerateStrukPdfUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.PrintStrukUseCase
 
 /**
  * Modern Clean Architecture Dialog showing the receipt preview with options to print and save as PDF.
+ *
+ * - Reads [NotaSetting] (nama toko, alamat, wifi) from SharedPreferences via [NotaSettingPreferences]
+ * - Passes [queueSequence] to [StrukReceiptCard] so the badge matches Riwayat Antrean
  */
 @Composable
 fun StrukPreviewDialog(
     transaksi: PenjualanTransaksi,
+    queueSequence: Int = transaksi.queueSequence,
     onDismissRequest: () -> Unit,
     generateStrukPdfUseCase: GenerateStrukPdfUseCase = GenerateStrukPdfUseCase(),
     printStrukUseCase: PrintStrukUseCase = PrintStrukUseCase()
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+
+    // Load setting nota dari SharedPreferences / Room DB fallback
+    val notaSetting = remember {
+        NotaSettingPreferences(context).getSetting()
+    }
 
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -57,10 +65,9 @@ fun StrukPreviewDialog(
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9))
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // Top Action Bar
+            Column(modifier = Modifier.fillMaxSize()) {
+
+                // ── Top Action Bar ─────────────────────────────────────────
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     color = Color.White,
@@ -91,7 +98,6 @@ fun StrukPreviewDialog(
                                 color = Color(0xFF0F172A)
                             )
                         }
-
                         IconButton(
                             onClick = onDismissRequest,
                             modifier = Modifier.size(32.dp)
@@ -105,7 +111,7 @@ fun StrukPreviewDialog(
                     }
                 }
 
-                // Scrollable Struk Visual Container
+                // ── Scrollable Receipt Visual ──────────────────────────────
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -114,10 +120,14 @@ fun StrukPreviewDialog(
                         .verticalScroll(scrollState),
                     contentAlignment = Alignment.TopCenter
                 ) {
-                    StrukReceiptCard(transaksi = transaksi)
+                    StrukReceiptCard(
+                        transaksi = transaksi,
+                        notaSetting = notaSetting,
+                        queueSequence = queueSequence
+                    )
                 }
 
-                // Bottom Button Actions: "Simpan PDF" and "Cetak Struk"
+                // ── Bottom Buttons: Simpan PDF & Cetak Struk ───────────────
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     color = Color.White,
@@ -129,7 +139,7 @@ fun StrukPreviewDialog(
                             .padding(horizontal = 16.dp, vertical = 14.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Button 1: Simpan PDF
+                        // Simpan PDF
                         OutlinedButton(
                             onClick = {
                                 try {
@@ -140,8 +150,6 @@ fun StrukPreviewDialog(
                                             "PDF Struk berhasil disimpan di Downloads",
                                             Toast.LENGTH_LONG
                                         ).show()
-
-                                        // Open PDF Intent
                                         try {
                                             val uri = FileProvider.getUriForFile(
                                                 context,
@@ -152,7 +160,9 @@ fun StrukPreviewDialog(
                                                 setDataAndType(uri, "application/pdf")
                                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                             }
-                                            context.startActivity(Intent.createChooser(intent, "Buka Struk PDF"))
+                                            context.startActivity(
+                                                Intent.createChooser(intent, "Buka Struk PDF")
+                                            )
                                         } catch (e: Exception) {
                                             e.printStackTrace()
                                         }
@@ -185,7 +195,7 @@ fun StrukPreviewDialog(
                             )
                         }
 
-                        // Button 2: Cetak Struk
+                        // Cetak Struk
                         Button(
                             onClick = {
                                 try {

@@ -31,9 +31,10 @@ class PembayaranViewModel @Inject constructor(
         observeCart()
     }
 
-    private fun generateOrderId() {
-        val randomNum = (1000..9999).random()
-        _state.update { it.copy(orderId = "#KP-2026-$randomNum") }
+    fun generateOrderId() {
+        val timeSuffix = (System.currentTimeMillis() % 100000).toString().padStart(5, '0')
+        val randomSuffix = (10..99).random()
+        _state.update { it.copy(orderId = "#KP-2026-$timeSuffix$randomSuffix") }
     }
 
     private fun observeCart() {
@@ -159,6 +160,7 @@ class PembayaranViewModel @Inject constructor(
                                 transaksiSukses = transaksi
                             )
                         }
+                        generateOrderId()
                     },
                     onFailure = { error ->
                         _state.update {
@@ -175,6 +177,7 @@ class PembayaranViewModel @Inject constructor(
 
     fun dismissSuccessDialog() {
         _state.update { it.copy(showSuccessDialog = false) }
+        generateOrderId()
     }
 
     fun dismissFailedDialog() {

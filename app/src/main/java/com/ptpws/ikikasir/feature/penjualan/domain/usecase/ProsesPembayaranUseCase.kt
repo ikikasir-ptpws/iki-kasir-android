@@ -14,6 +14,8 @@ import com.ptpws.ikikasir.feature.penjualan.domain.repository.PenjualanRepositor
 import com.ptpws.ikikasir.feature.produk.domain.usecase.UpdateProdukUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import com.ptpws.ikikasir.feature.antrean.domain.model.QueueHistory
+import com.ptpws.ikikasir.feature.antrean.domain.usecase.InsertQueueHistoryUseCase
 import java.util.UUID
 import javax.inject.Inject
 
@@ -22,6 +24,7 @@ class ProsesPembayaranUseCase @Inject constructor(
     private val updateProdukUseCase: UpdateProdukUseCase,
     private val saveStokAdjustmentUseCase: SaveStokAdjustmentUseCase,
     private val antreanRepository: AntreanRepository,
+    private val insertQueueHistoryUseCase: InsertQueueHistoryUseCase,
     private val firebaseAuth: FirebaseAuth
 ) {
     suspend operator fun invoke(
@@ -82,6 +85,13 @@ class ProsesPembayaranUseCase @Inject constructor(
             saveStokAdjustmentUseCase(movement).collect { /* fire and forget */ }
         }
 
+        // Hitung real queueSequence dari database
+        val realQueueSeq = try {
+            antreanRepository.getNextQueueSequence()
+        } catch (e: Exception) {
+            1
+        }
+
         val transaksi = PenjualanTransaksi(
             transactionId = invoiceId,
             transactionNumber = invoiceId,
@@ -96,6 +106,7 @@ class ProsesPembayaranUseCase @Inject constructor(
             notes = notes,
             createdBy = kasirNama,
             customerName = customerName,
+            queueSequence = realQueueSeq,
             createdAt = Timestamp.now(),
             updatedAt = Timestamp.now()
         )
@@ -103,21 +114,32 @@ class ProsesPembayaranUseCase @Inject constructor(
         repository.simpanTransaksi(transaksi).collect { result ->
             result.fold(
                 onSuccess = {
-                    // Otomatis buat data Antrean baru saat transaksi berhasil
+                    // Otomatis buat data Antrean baru & QueueHistory dengan real queueSequence yang sama
                     try {
-                        val nextSeq = antreanRepository.getNextQueueSequence()
                         val antrean = Antrean(
-                            id = UUID.randomUUID().toString(),
+                            id = "$invoiceId-Q",
                             transactionId = invoiceId,
-                            queueSequence = nextSeq,
+                            queueSequence = realQueueSeq,
                             status = AntreanStatus.WAITING,
                             customerName = customerName,
                             createdAt = Timestamp.now(),
                             updatedAt = Timestamp.now()
                         )
                         antreanRepository.insertAntrean(antrean).collect { /* save antrean */ }
+
+                        val history = QueueHistory(
+                            id = "$invoiceId-H",
+                            transactionId = invoiceId,
+                            status = "DONE",
+                            customerName = customerName,
+                            queueSequence = realQueueSeq,
+                            completedAt = Timestamp.now(),
+                            createdAt = Timestamp.now(),
+                            updatedAt = Timestamp.now()
+                        )
+                        insertQueueHistoryUseCase(history).collect { /* save history */ }
                     } catch (e: Exception) {
-                        android.util.Log.e("ProsesPembayaranUseCase", "Failed auto-creating antrean: ${e.message}", e)
+                        android.util.Log.e("ProsesPembayaranUseCase", "Failed auto-creating antrean/history: ${e.message}", e)
                     }
 
                     emit(Result.success(transaksi))

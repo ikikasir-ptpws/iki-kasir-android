@@ -19,6 +19,9 @@ interface QueueHistoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(entity: QueueHistoryEntity)
 
+    @Query("SELECT * FROM queue_history WHERE (transactionId = :transactionId OR id = :transactionId) AND isDeleted = 0 LIMIT 1")
+    suspend fun getHistoryByTransactionId(transactionId: String): QueueHistoryEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdateAll(entities: List<QueueHistoryEntity>)
 
@@ -30,4 +33,7 @@ interface QueueHistoryDao {
 
     @Query("SELECT COALESCE(MAX(queueSequence), 0) FROM queue_history WHERE isDeleted = 0")
     suspend fun getMaxQueueSequence(): Int
+
+    @Query("SELECT COALESCE(MAX(queueSequence), 0) FROM queue_history WHERE isDeleted = 0 AND createdAt >= :startOfDayMillis")
+    suspend fun getMaxQueueSequenceToday(startOfDayMillis: Long): Int
 }
