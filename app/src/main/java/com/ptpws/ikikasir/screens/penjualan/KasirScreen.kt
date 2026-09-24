@@ -230,16 +230,16 @@ fun KasirScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Termasuk PPN 11%",
+                                text = state.ppnLabel,
                                 fontFamily = interfamily,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF059669)
+                                color = if (state.taxSetting.isActive) Color(0xFF059669) else Color(0xFF94A3B8)
                             )
                         }
 
                         Text(
-                            text = "Rp ${formatRupiah(subtotal)}",
+                            text = "Rp ${formatRupiah(state.grandTotal)}",
                             fontFamily = interfamily,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
