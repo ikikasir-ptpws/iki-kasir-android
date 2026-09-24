@@ -22,6 +22,9 @@ import com.ptpws.ikikasir.feature.produk.data.local.entity.ProdukEntity
 import com.ptpws.ikikasir.feature.role.data.local.dao.RoleDao
 import com.ptpws.ikikasir.feature.role.data.local.entity.RoleEntity
 
+import com.ptpws.ikikasir.feature.pengaturan.data.local.dao.TaxSettingDao
+import com.ptpws.ikikasir.feature.pengaturan.data.local.entity.TaxSettingEntity
+
 @Database(
     entities = [
         KategoriEntity::class,
@@ -32,9 +35,10 @@ import com.ptpws.ikikasir.feature.role.data.local.entity.RoleEntity
         QueueHistoryEntity::class,
         UserEntity::class,
         RoleEntity::class,
-        NotaSettingEntity::class
+        NotaSettingEntity::class,
+        TaxSettingEntity::class
     ],
-    version = 20,
+    version = 21,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class, MapConverter::class)
@@ -48,6 +52,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val userDao: UserDao
     abstract val roleDao: RoleDao
     abstract val notaSettingDao: NotaSettingDao
+    abstract val taxSettingDao: TaxSettingDao
 
     companion object {
         const val DATABASE_NAME = "ikikasir_db"
