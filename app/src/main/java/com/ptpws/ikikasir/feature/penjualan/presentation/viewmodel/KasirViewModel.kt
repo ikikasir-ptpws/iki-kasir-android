@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.GetKategoriUseCase
+import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetTaxSettingUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetCartUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.ManageCartUseCase
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.KasirState
@@ -21,7 +22,8 @@ class KasirViewModel @Inject constructor(
     private val getCartUseCase: GetCartUseCase,
     private val manageCartUseCase: ManageCartUseCase,
     private val getProdukUseCase: GetProdukUseCase,
-    private val getKategoriUseCase: GetKategoriUseCase
+    private val getKategoriUseCase: GetKategoriUseCase,
+    private val getTaxSettingUseCase: GetTaxSettingUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(KasirState())
@@ -31,6 +33,15 @@ class KasirViewModel @Inject constructor(
         observeCart()
         loadProdukKatalog()
         loadKategoriList()
+        observeTaxSetting()
+    }
+
+    private fun observeTaxSetting() {
+        viewModelScope.launch {
+            getTaxSettingUseCase().collect { tax ->
+                _state.update { it.copy(taxSetting = tax) }
+            }
+        }
     }
 
     private fun observeCart() {
