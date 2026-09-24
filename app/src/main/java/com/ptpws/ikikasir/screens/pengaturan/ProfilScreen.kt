@@ -58,15 +58,18 @@ fun ProfilScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val liveNotaSetting by viewModel.notaSetting.collectAsState()
+    val liveTaxSetting by viewModel.taxSetting.collectAsState()
 
     var showPpnDialog by remember { mutableStateOf(false) }
     var showStrukDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
 
-    // State PPN / Pajak
-    var ppnPersen by remember { mutableStateOf("11") }
-    var isPpnAktif by remember { mutableStateOf(true) }
-    var isPpnInklusif by remember { mutableStateOf(false) }
+    // State PPN / Pajak — diinisialisasi dari ViewModel (Room DB + Firestore) & SharedPreferences
+    val taxPrefs = remember { com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context) }
+    val savedTax = remember { taxPrefs.getSetting() }
+    var ppnPersen by remember { mutableStateOf(savedTax.percentage.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() }) }
+    var isPpnAktif by remember { mutableStateOf(savedTax.isActive) }
+    var isPpnInklusif by remember { mutableStateOf(savedTax.type == com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_INCLUSIVE) }
 
     // State Nota / Struk — diinisialisasi dari ViewModel (Room DB + Firestore) & SharedPreferences
     val notaPrefs = remember { NotaSettingPreferences(context) }
@@ -85,6 +88,12 @@ fun ProfilScreen(
             kataSandiWifi = liveNotaSetting.wifiPassword
             ukuranKertas = liveNotaSetting.paperWidth
         }
+    }
+
+    LaunchedEffect(liveTaxSetting) {
+        isPpnAktif = liveTaxSetting.isActive
+        ppnPersen = liveTaxSetting.percentage.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() }
+        isPpnInklusif = liveTaxSetting.type == com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_INCLUSIVE
     }
 
     Scaffold(
@@ -510,8 +519,28 @@ fun ProfilScreen(
                         }
                         Button(
                             onClick = {
+                                val parsedPercent = ppnPersen.toDoubleOrNull() ?: 11.0
+                                val updatedSetting = com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting(
+                                    id = "default",
+                                    isActive = isPpnAktif,
+                                    percentage = parsedPercent,
+                                    type = if (isPpnInklusif) com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_INCLUSIVE
+                                           else com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_EXCLUSIVE
+                                )
+
+                                // 1. Simpan ke SharedPreferences
+                                taxPrefs.saveSetting(updatedSetting)
+
+                                // 2. Simpan ke Room DB & Firestore via ViewModel (Clean Architecture)
+                                viewModel.saveTaxSetting(updatedSetting) { success ->
+                                    if (success) {
+                                        Toast.makeText(context, "Pengaturan PPN berhasil disimpan ke Database (Room & Firestore)", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Pengaturan PPN disimpan secara offline", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+
                                 showPpnDialog = false
-                                Toast.makeText(context, "Pengaturan PPN berhasil disimpan", Toast.LENGTH_SHORT).show()
                             },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
