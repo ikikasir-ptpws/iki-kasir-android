@@ -73,6 +73,11 @@ class KasirViewModel @Inject constructor(
             it.barcode.equals(scannedCode, ignoreCase = true) || it.id.equals(scannedCode, ignoreCase = true)
         }
         if (matchingProduct != null) {
+            val currentQty = _state.value.getItemQuantity(matchingProduct.id)
+            if (currentQty >= matchingProduct.stock) {
+                _state.update { it.copy(userMessage = "Jumlah produk \"${matchingProduct.name}\" tidak boleh melebihi stok (${matchingProduct.stock} unit)") }
+                return
+            }
             viewModelScope.launch {
                 manageCartUseCase.addToCart(matchingProduct, 1)
                 _state.update { it.copy(userMessage = "Produk \"${matchingProduct.name}\" berhasil ditambahkan ke keranjang") }
@@ -95,6 +100,11 @@ class KasirViewModel @Inject constructor(
     }
 
     fun incrementCartItem(produk: Produk) {
+        val currentQty = _state.value.getItemQuantity(produk.id)
+        if (currentQty >= produk.stock) {
+            _state.update { it.copy(userMessage = "Jumlah produk \"${produk.name}\" tidak boleh melebihi stok (${produk.stock} unit)") }
+            return
+        }
         viewModelScope.launch {
             manageCartUseCase.addToCart(produk, 1)
         }
@@ -112,12 +122,25 @@ class KasirViewModel @Inject constructor(
     }
 
     fun addToCart(produk: Produk) {
+        val currentQty = _state.value.getItemQuantity(produk.id)
+        if (currentQty >= produk.stock) {
+            _state.update { it.copy(userMessage = "Jumlah produk \"${produk.name}\" tidak boleh melebihi stok (${produk.stock} unit)") }
+            return
+        }
         viewModelScope.launch {
             manageCartUseCase.addToCart(produk)
         }
     }
 
     fun updateQuantity(produkId: String, quantity: Int) {
+        val product = _state.value.produkKatalog.find { it.id == produkId }
+            ?: _state.value.cartItems.find { it.produk.id == produkId }?.produk
+
+        if (product != null && quantity > product.stock) {
+            _state.update { it.copy(userMessage = "Jumlah produk \"${product.name}\" tidak boleh melebihi stok (${product.stock} unit)") }
+            return
+        }
+
         viewModelScope.launch {
             manageCartUseCase.updateQuantity(produkId, quantity)
         }
