@@ -196,7 +196,7 @@ fun PembayaranScreen(
                                     color = Color.White
                                 )
                                 Text(
-                                    text = "  |  Rp ${formatRupiah(state.subtotal)}",
+                                    text = "  |  Rp ${formatRupiah(state.grandTotal)}",
                                     fontFamily = interfamily,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
@@ -250,12 +250,22 @@ fun PembayaranScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Rp ${formatRupiah(state.subtotal)}",
+                                text = "Rp ${formatRupiah(state.grandTotal)}",
                                 fontFamily = interfamily,
                                 fontSize = 26.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
+                            if (state.ppnLabel.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = state.ppnLabel,
+                                    fontFamily = interfamily,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xEEFFFFFF)
+                                )
+                            }
                         }
 
                         // Decorative Soft Translucent Box
