@@ -35,4 +35,22 @@ object PengaturanModule {
     fun provideNotaSettingRepository(repositoryImpl: NotaSettingRepositoryImpl): NotaSettingRepository {
         return repositoryImpl
     }
+
+    @Provides
+    @Singleton
+    fun provideTaxSettingDao(database: AppDatabase): com.ptpws.ikikasir.feature.pengaturan.data.local.dao.TaxSettingDao {
+        return database.taxSettingDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideTaxSettingRemoteDataSource(firestore: FirebaseFirestore): com.ptpws.ikikasir.feature.pengaturan.data.remote.datasource.TaxSettingRemoteDataSource {
+        return com.ptpws.ikikasir.feature.pengaturan.data.remote.datasource.TaxSettingRemoteDataSourceImpl(firestore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTaxSettingRepository(repositoryImpl: com.ptpws.ikikasir.feature.pengaturan.data.repository.TaxSettingRepositoryImpl): com.ptpws.ikikasir.feature.pengaturan.domain.repository.TaxSettingRepository {
+        return repositoryImpl
+    }
 }
