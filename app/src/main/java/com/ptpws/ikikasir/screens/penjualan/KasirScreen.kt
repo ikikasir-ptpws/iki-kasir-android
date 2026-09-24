@@ -853,11 +853,12 @@ fun CartItemCard(
                                 textAlign = TextAlign.Center
                             )
 
+                            val canIncrement = item.quantity < item.produk.stock
                             Box(
                                 modifier = Modifier
                                     .size(26.dp)
                                     .clip(CircleShape)
-                                    .background(PrimaryRoyalBlue)
+                                    .background(if (canIncrement) PrimaryRoyalBlue else Color(0xFFCBD5E1))
                                     .clickable { onIncrement() },
                                 contentAlignment = Alignment.Center
                             ) {
