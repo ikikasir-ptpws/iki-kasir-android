@@ -389,12 +389,14 @@ fun PilihProdukTersediaDialog(
                                                 textAlign = TextAlign.Center
                                             )
 
-                                            // Plus Icon Button (Solid Blue)
+                                            val canIncrement = currentQty < produk.stock
+
+                                            // Plus Icon Button (Solid Blue when available, Grayed when max stock reached)
                                             Box(
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
-                                                    .background(Color(0xFF3B32D1))
+                                                    .background(if (canIncrement) Color(0xFF3B32D1) else Color(0xFFCBD5E1))
                                                     .clickable { onIncrement(produk) },
                                                 contentAlignment = Alignment.Center
                                             ) {
