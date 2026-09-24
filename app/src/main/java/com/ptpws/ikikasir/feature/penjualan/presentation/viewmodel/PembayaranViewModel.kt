@@ -16,11 +16,15 @@ import java.text.NumberFormat
 import java.util.Locale
 import javax.inject.Inject
 
+import com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting
+import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetTaxSettingUseCase
+
 @HiltViewModel
 class PembayaranViewModel @Inject constructor(
     private val getCartUseCase: GetCartUseCase,
     private val manageCartUseCase: ManageCartUseCase,
-    private val prosesPembayaranUseCase: ProsesPembayaranUseCase
+    private val prosesPembayaranUseCase: ProsesPembayaranUseCase,
+    private val getTaxSettingUseCase: GetTaxSettingUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PembayaranState())
@@ -28,7 +32,7 @@ class PembayaranViewModel @Inject constructor(
 
     init {
         generateOrderId()
-        observeCart()
+        observeCartAndTax()
     }
 
     fun generateOrderId() {
@@ -37,7 +41,14 @@ class PembayaranViewModel @Inject constructor(
         _state.update { it.copy(orderId = "#KP-2026-$timeSuffix$randomSuffix") }
     }
 
-    private fun observeCart() {
+    private fun observeCartAndTax() {
+        viewModelScope.launch {
+            getTaxSettingUseCase().collect { tax ->
+                _state.update { it.copy(taxSetting = tax) }
+                recalculateTotal()
+            }
+        }
+
         viewModelScope.launch {
             getCartUseCase().collect { cartList ->
                 val subtotal = cartList.sumOf { it.totalPrice }
@@ -45,28 +56,60 @@ class PembayaranViewModel @Inject constructor(
                 val totalPcsCount = cartList.sumOf { it.quantity }
 
                 _state.update { current ->
-                    val isTunai = current.metodePembayaran.equals("Tunai", ignoreCase = true)
-                    val uangDiterima = if (!isTunai) subtotal else current.uangDiterima
-                    val kembalian = if (isTunai) (uangDiterima - subtotal).coerceAtLeast(0.0) else 0.0
-
                     current.copy(
                         cartItems = cartList,
                         subtotal = subtotal,
                         totalItemCount = totalItemCount,
-                        totalPcsCount = totalPcsCount,
-                        uangDiterima = uangDiterima,
-                        kembalian = kembalian
+                        totalPcsCount = totalPcsCount
                     )
                 }
+                recalculateTotal()
             }
+        }
+    }
+
+    private fun recalculateTotal() {
+        _state.update { current ->
+            val subtotal = current.subtotal
+            val tax = current.taxSetting
+
+            var ppnAmount = 0.0
+            var grandTotal = subtotal
+            var ppnLabel = ""
+
+            if (tax.isActive && tax.percentage > 0) {
+                val formattedPercent = if (tax.percentage % 1.0 == 0.0) "${tax.percentage.toInt()}%" else "${tax.percentage}%"
+                if (tax.type == TaxSetting.TAX_TYPE_EXCLUSIVE) {
+                    ppnAmount = subtotal * (tax.percentage / 100.0)
+                    grandTotal = subtotal + ppnAmount
+                    ppnLabel = "PPN $formattedPercent (Eksklusif)"
+                } else {
+                    ppnAmount = subtotal - (subtotal / (1 + tax.percentage / 100.0))
+                    grandTotal = subtotal
+                    ppnLabel = "Harga termasuk PPN $formattedPercent"
+                }
+            }
+
+            val isTunai = current.metodePembayaran.equals("Tunai", ignoreCase = true)
+            val uangDiterima = if (!isTunai) grandTotal else current.uangDiterima
+            val kembalian = if (isTunai) (uangDiterima - grandTotal).coerceAtLeast(0.0) else 0.0
+
+            current.copy(
+                ppnAmount = ppnAmount,
+                grandTotal = grandTotal,
+                ppnLabel = ppnLabel,
+                uangDiterima = uangDiterima,
+                kembalian = kembalian
+            )
         }
     }
 
     fun onMetodePembayaranSelect(metode: String) {
         _state.update { current ->
             val isTunai = metode.equals("Tunai", ignoreCase = true)
-            val uangDiterima = if (!isTunai) current.subtotal else current.uangDiterima
-            val kembalian = if (isTunai) (uangDiterima - current.subtotal).coerceAtLeast(0.0) else 0.0
+            val targetTotal = if (current.grandTotal > 0) current.grandTotal else current.subtotal
+            val uangDiterima = if (!isTunai) targetTotal else current.uangDiterima
+            val kembalian = if (isTunai) (uangDiterima - targetTotal).coerceAtLeast(0.0) else 0.0
 
             current.copy(
                 metodePembayaran = metode,
@@ -85,7 +128,8 @@ class PembayaranViewModel @Inject constructor(
         } else ""
 
         _state.update { current ->
-            val kembalian = (parsedVal - current.subtotal).coerceAtLeast(0.0)
+            val targetTotal = if (current.grandTotal > 0) current.grandTotal else current.subtotal
+            val kembalian = (parsedVal - targetTotal).coerceAtLeast(0.0)
             current.copy(
                 uangDiterimaText = formattedText,
                 uangDiterima = parsedVal,
@@ -97,7 +141,8 @@ class PembayaranViewModel @Inject constructor(
     fun onNominalQuickSelect(nominal: Double) {
         val formattedText = NumberFormat.getNumberInstance(Locale("id", "ID")).format(nominal.toLong())
         _state.update { current ->
-            val kembalian = (nominal - current.subtotal).coerceAtLeast(0.0)
+            val targetTotal = if (current.grandTotal > 0) current.grandTotal else current.subtotal
+            val kembalian = (nominal - targetTotal).coerceAtLeast(0.0)
             current.copy(
                 uangDiterimaText = formattedText,
                 uangDiterima = nominal,
@@ -125,9 +170,10 @@ class PembayaranViewModel @Inject constructor(
     fun prosesPembayaran() {
         val currentState = _state.value
         val isTunai = currentState.metodePembayaran.equals("Tunai", ignoreCase = true)
+        val targetTotal = if (currentState.grandTotal > 0) currentState.grandTotal else currentState.subtotal
 
-        // Validasi: Jika Tunai & Uang yang Diterima Kurang dari Subtotal -> Tampilkan Failed Dialog
-        if (isTunai && currentState.uangDiterima < currentState.subtotal) {
+        // Validasi: Jika Tunai & Uang yang Diterima Kurang dari Total Tagihan -> Tampilkan Failed Dialog
+        if (isTunai && currentState.uangDiterima < targetTotal) {
             _state.update {
                 it.copy(
                     showFailedDialog = true,
@@ -140,12 +186,12 @@ class PembayaranViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
 
-            val totalBayar = if (isTunai) currentState.uangDiterima else currentState.subtotal
+            val totalBayar = if (isTunai) currentState.uangDiterima else targetTotal
 
             prosesPembayaranUseCase(
                 kodeTransaksi = currentState.orderId,
                 items = currentState.cartItems,
-                subtotal = currentState.subtotal,
+                subtotal = targetTotal,
                 totalBayar = totalBayar,
                 metodePembayaran = currentState.metodePembayaran,
                 notes = currentState.notes,
