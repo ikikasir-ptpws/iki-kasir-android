@@ -48,8 +48,10 @@ class StrukPrintDocumentAdapter(
     ) {
         val pdfDoc = PdfDocument()
         val width = 384
-        var calculatedHeight = 650 + (transaksi.items.size * 45)
+        val notaSetting = com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences(context).getSetting()
+        var calculatedHeight = 620 + (transaksi.items.size * 45)
         if (transaksi.notes.isNotBlank()) calculatedHeight += 50
+        if (notaSetting.wifiName.isNotBlank() || notaSetting.wifiPassword.isNotBlank()) calculatedHeight += 40
 
         val pageInfo = PdfDocument.PageInfo.Builder(width, calculatedHeight, 1).create()
         val page = pdfDoc.startPage(pageInfo)
