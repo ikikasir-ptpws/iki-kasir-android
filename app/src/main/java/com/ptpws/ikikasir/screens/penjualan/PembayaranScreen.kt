@@ -532,60 +532,48 @@ fun PembayaranScreen(
                         color = Color(0xFF64748B)
                     )
 
-                    // 2x2 Payment Method Grid
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            PaymentMethodCard(
-                                title = "Tunai",
-                                subtitle = "Cash Manual",
-                                icon = Icons.Outlined.Payments,
-                                iconBgColor = Color(0xFFE0E7FF),
-                                iconTint = PrimaryRoyalBlue,
-                                isSelected = state.metodePembayaran.equals("Tunai", ignoreCase = true),
-                                onSelect = { viewModel.onMetodePembayaranSelect("Tunai") },
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            PaymentMethodCard(
-                                title = "QRIS",
-                                subtitle = "BCA, Gopay, OVO",
-                                icon = Icons.Default.QrCodeScanner,
-                                iconBgColor = Color(0xFFF3E8FF),
-                                iconTint = Color(0xFF9333EA),
-                                isSelected = state.metodePembayaran.equals("QRIS", ignoreCase = true),
-                                onSelect = { viewModel.onMetodePembayaranSelect("QRIS") },
-                                modifier = Modifier.weight(1f)
-                            )
+                    val enabledMethods = remember(state.paymentMethodSetting) {
+                        val list = mutableListOf<Triple<String, String, Triple<androidx.compose.ui.graphics.vector.ImageVector, Color, Color>>>()
+                        if (state.paymentMethodSetting.isTunaiEnabled) {
+                            list.add(Triple("Tunai", "Cash Manual", Triple(Icons.Outlined.Payments, Color(0xFFE0E7FF), PrimaryRoyalBlue)))
                         }
+                        if (state.paymentMethodSetting.isQrisEnabled) {
+                            list.add(Triple("QRIS", "BCA, Gopay, OVO", Triple(Icons.Default.QrCodeScanner, Color(0xFFF3E8FF), Color(0xFF9333EA))))
+                        }
+                        if (state.paymentMethodSetting.isKartuKreditEnabled) {
+                            list.add(Triple("Kartu Debit", "EDC Mesin", Triple(Icons.Default.CreditCard, Color(0xFFF1F5F9), Color(0xFF475569))))
+                        }
+                        if (state.paymentMethodSetting.isTransferEnabled) {
+                            list.add(Triple("Transfer", "BCA / Mandiri", Triple(Icons.Default.AccountBalance, Color(0xFFE0F2FE), Color(0xFF0284C7))))
+                        }
+                        if (list.isEmpty()) {
+                            list.add(Triple("Tunai", "Cash Manual", Triple(Icons.Outlined.Payments, Color(0xFFE0E7FF), PrimaryRoyalBlue)))
+                        }
+                        list
+                    }
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            PaymentMethodCard(
-                                title = "Kartu Debit",
-                                subtitle = "EDC Mesin",
-                                icon = Icons.Default.CreditCard,
-                                iconBgColor = Color(0xFFF1F5F9),
-                                iconTint = Color(0xFF475569),
-                                isSelected = state.metodePembayaran.equals("Kartu Debit", ignoreCase = true),
-                                onSelect = { viewModel.onMetodePembayaranSelect("Kartu Debit") },
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            PaymentMethodCard(
-                                title = "Transfer",
-                                subtitle = "BCA / Mandiri",
-                                icon = Icons.Default.AccountBalance,
-                                iconBgColor = Color(0xFFE0F2FE),
-                                iconTint = Color(0xFF0284C7),
-                                isSelected = state.metodePembayaran.equals("Transfer", ignoreCase = true),
-                                onSelect = { viewModel.onMetodePembayaranSelect("Transfer") },
-                                modifier = Modifier.weight(1f)
-                            )
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        enabledMethods.chunked(2).forEach { rowItems ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                rowItems.forEach { (title, subtitle, style) ->
+                                    PaymentMethodCard(
+                                        title = title,
+                                        subtitle = subtitle,
+                                        icon = style.first,
+                                        iconBgColor = style.second,
+                                        iconTint = style.third,
+                                        isSelected = state.metodePembayaran.equals(title, ignoreCase = true),
+                                        onSelect = { viewModel.onMetodePembayaranSelect(title) },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                                if (rowItems.size == 1) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
                         }
                     }
                 }
