@@ -18,13 +18,15 @@ import javax.inject.Inject
 
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetTaxSettingUseCase
+import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetPaymentMethodSettingUseCase
 
 @HiltViewModel
 class PembayaranViewModel @Inject constructor(
     private val getCartUseCase: GetCartUseCase,
     private val manageCartUseCase: ManageCartUseCase,
     private val prosesPembayaranUseCase: ProsesPembayaranUseCase,
-    private val getTaxSettingUseCase: GetTaxSettingUseCase
+    private val getTaxSettingUseCase: GetTaxSettingUseCase,
+    private val getPaymentMethodSettingUseCase: GetPaymentMethodSettingUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PembayaranState())
@@ -46,6 +48,34 @@ class PembayaranViewModel @Inject constructor(
             getTaxSettingUseCase().collect { tax ->
                 _state.update { it.copy(taxSetting = tax) }
                 recalculateTotal()
+            }
+        }
+
+        viewModelScope.launch {
+            getPaymentMethodSettingUseCase().collect { pmSetting ->
+                _state.update { current ->
+                    var selected = current.metodePembayaran
+                    val isCurrentActive = when (selected.lowercase()) {
+                        "tunai" -> pmSetting.isTunaiEnabled
+                        "qris" -> pmSetting.isQrisEnabled
+                        "transfer" -> pmSetting.isTransferEnabled
+                        "kartu debit", "kartu kredit" -> pmSetting.isKartuKreditEnabled
+                        else -> true
+                    }
+                    if (!isCurrentActive) {
+                        selected = when {
+                            pmSetting.isTunaiEnabled -> "Tunai"
+                            pmSetting.isQrisEnabled -> "QRIS"
+                            pmSetting.isTransferEnabled -> "Transfer"
+                            pmSetting.isKartuKreditEnabled -> "Kartu Debit"
+                            else -> "Tunai"
+                        }
+                    }
+                    current.copy(
+                        paymentMethodSetting = pmSetting,
+                        metodePembayaran = selected
+                    )
+                }
             }
         }
 
