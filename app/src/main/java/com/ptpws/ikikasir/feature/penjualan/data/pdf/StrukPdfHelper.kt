@@ -7,7 +7,7 @@ import android.os.Build
 import android.os.Environment
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
-import com.ptpws.ikikasir.R
+import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import java.io.File
 import java.io.FileOutputStream
@@ -16,17 +16,26 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 /**
- * Data Helper for drawing receipt onto Canvas and generating PDF files using R.drawable.logoikikasir and REAL data.
+ * Helper for drawing receipt onto Canvas and generating PDF files.
+ * Output is 100% IDENTICAL to StrukReceiptCard preview screen:
+ * - Store Name & Address from [NotaSetting]
+ * - Queue Sequence badge (#01, #02, etc.) matching Riwayat Antrean
+ * - Transaction metadata, items, subtotal, discount, total tagihan, payment method, payment/change
+ * - Catatan Pesanan & WiFi Info
+ * - QR Code verification & footer
  */
 object StrukPdfHelper {
 
     fun generatePdfFile(context: Context, transaksi: PenjualanTransaksi): File? {
         val pdfDoc = PdfDocument()
 
+        val notaSetting = NotaSettingPreferences(context).getSetting()
+
         // 80mm thermal receipt dimensions in points (384 pt x dynamic height)
         val width = 384
-        var calculatedHeight = 580 + (transaksi.items.size * 45)
+        var calculatedHeight = 620 + (transaksi.items.size * 45)
         if (transaksi.notes.isNotBlank()) calculatedHeight += 50
+        if (notaSetting.wifiName.isNotBlank() || notaSetting.wifiPassword.isNotBlank()) calculatedHeight += 40
 
         val pageInfo = PdfDocument.PageInfo.Builder(width, calculatedHeight, 1).create()
         val page = pdfDoc.startPage(pageInfo)
@@ -72,39 +81,41 @@ object StrukPdfHelper {
         canvas.drawColor(Color.WHITE)
 
         val margin = 20f
-        var y = 30f
+        var y = 32f
 
         val formatRupiah = { amount: Double ->
             "Rp " + NumberFormat.getNumberInstance(Locale("id", "ID")).format(amount.toLong())
         }
 
-        // 1. Header Logo (R.drawable.logoikikasir)
-        try {
-            val logoBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.logoikikasir)
-            if (logoBitmap != null) {
-                val logoWidth = 140f
-                val logoHeight = (logoBitmap.height.toFloat() / logoBitmap.width.toFloat()) * logoWidth
-                val logoRect = RectF((width - logoWidth) / 2f, y, (width + logoWidth) / 2f, y + logoHeight)
-                canvas.drawBitmap(logoBitmap, null, logoRect, paint)
-                y += logoHeight + 14f
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        // Load NotaSetting (Nama Toko & Alamat)
+        val notaSetting = NotaSettingPreferences(context).getSetting()
+
+        // ── 1. Header — Nama Toko & Alamat ────────
+        val storeName = notaSetting.storeName.ifBlank { "IKIKASIR" }
+        paint.color = Color.parseColor("#0F172A")
+        paint.textSize = 18f
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        paint.textAlign = Paint.Align.CENTER
+        canvas.drawText(storeName, width / 2f, y, paint)
+        y += 16f
+
+        if (notaSetting.storeAddress.isNotBlank()) {
+            paint.color = Color.parseColor("#64748B")
+            paint.textSize = 10f
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            canvas.drawText(notaSetting.storeAddress, width / 2f, y, paint)
+            y += 14f
         }
 
-        // Antrean Badge
-        val antreanNo = if (transaksi.transactionNumber.isNotBlank()) {
-            transaksi.transactionNumber.takeLast(4)
-        } else if (transaksi.transactionId.isNotBlank()) {
-            transaksi.transactionId.takeLast(4)
-        } else {
-            "01"
-        }
+        y += 10f
 
-        val antreanText = "Antrean #$antreanNo"
+        // ── Antrean Badge (nomor sama persis dengan Preview Struk & Riwayat Antrean) ──────
+        val queueNo = if (transaksi.queueSequence > 0) transaksi.queueSequence else 1
+        val antreanText = "Antrean #%02d".format(queueNo)
+
         paint.textSize = 11f
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        val textWidth = paint.measureText(antreanText) + 30f
+        val textWidth = paint.measureText(antreanText) + 26f
         val antreanRect = RectF((width - textWidth) / 2f, y - 14f, (width + textWidth) / 2f, y + 8f)
         paint.color = Color.parseColor("#EEF2FF")
         canvas.drawRoundRect(antreanRect, 12f, 12f, paint)
@@ -112,9 +123,9 @@ object StrukPdfHelper {
         paint.color = Color.parseColor("#4F46E5")
         paint.textAlign = Paint.Align.CENTER
         canvas.drawText(antreanText, width / 2f, y, paint)
-        y += 24f
+        y += 28f
 
-        // 2. Transaction Meta Box (REAL DATA)
+        // ── 2. Transaction Meta Box ──
         val metaBoxRect = RectF(margin, y, width - margin, y + 74f)
         paint.color = Color.parseColor("#F8FAFC")
         canvas.drawRoundRect(metaBoxRect, 10f, 10f, paint)
@@ -142,7 +153,7 @@ object StrukPdfHelper {
         canvas.drawText(transaksi.transactionNumber.ifBlank { transaksi.transactionId.ifBlank { "-" } }, margin + 12f, metaY2, paint)
 
         paint.textAlign = Paint.Align.RIGHT
-        canvas.drawText(transaksi.createdBy.ifBlank { "Admin" }, width - margin - 12f, metaY2, paint)
+        canvas.drawText(transaksi.createdBy.ifBlank { "admin" }, width - margin - 12f, metaY2, paint)
 
         val metaY3 = metaY2 + 18f
         paint.textAlign = Paint.Align.LEFT
@@ -169,7 +180,7 @@ object StrukPdfHelper {
         drawDashedLine(canvas, margin, width - margin, y)
         y += 18f
 
-        // 3. Items Table Header
+        // ── 3. Items Table Header ──
         paint.textAlign = Paint.Align.LEFT
         paint.color = Color.parseColor("#64748B")
         paint.textSize = 9f
@@ -200,7 +211,7 @@ object StrukPdfHelper {
             y += 20f
         }
 
-        // 4. Catatan Pesanan (Real Data: only drawn if notes present)
+        // ── 4. Catatan Pesanan (drawn if notes present) ──
         if (transaksi.notes.isNotBlank()) {
             val notesBox = RectF(margin, y, width - margin, y + 42f)
             paint.color = Color.parseColor("#F0F7FF")
@@ -219,7 +230,7 @@ object StrukPdfHelper {
             y += 54f
         }
 
-        // 5. Payment Summary Card (REAL DATA)
+        // ── 5. Payment Summary Card ──
         val hasDiscount = transaksi.discount > 0
         val summaryHeight = if (hasDiscount) 140f else 120f
         val summaryBox = RectF(margin, y, width - margin, y + summaryHeight)
@@ -318,7 +329,28 @@ object StrukPdfHelper {
 
         y += summaryHeight + 20f
 
-        // 6. QR Code Verification (Real Transaction ID)
+        // ── 6. WiFi Info (if configured) ──
+        if (notaSetting.wifiName.isNotBlank() || notaSetting.wifiPassword.isNotBlank()) {
+            val wifiText = buildString {
+                if (notaSetting.wifiName.isNotBlank()) append("WiFi: ${notaSetting.wifiName}")
+                if (notaSetting.wifiPassword.isNotBlank()) {
+                    if (notaSetting.wifiName.isNotBlank()) append(" • ")
+                    append("Sandi: ${notaSetting.wifiPassword}")
+                }
+            }
+            val wifiBox = RectF(margin, y, width - margin, y + 28f)
+            paint.color = Color.parseColor("#F0FDF4")
+            canvas.drawRoundRect(wifiBox, 6f, 6f, paint)
+
+            paint.color = Color.parseColor("#15803D")
+            paint.textSize = 9f
+            paint.textAlign = Paint.Align.CENTER
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            canvas.drawText(wifiText, width / 2f, y + 17f, paint)
+            y += 38f
+        }
+
+        // ── 7. QR Code Verification ──
         val qrContent = transaksi.transactionNumber.ifBlank { transaksi.transactionId }.ifBlank { "IKIKASIR-STRUK" }
         val qrBitmap = generateQrBitmap(qrContent, 120)
         if (qrBitmap != null) {
@@ -329,16 +361,23 @@ object StrukPdfHelper {
             paint.color = Color.parseColor("#64748B")
             paint.textSize = 8f
             paint.textAlign = Paint.Align.CENTER
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             canvas.drawText("PINDAI VERIFIKASI STRUK", width / 2f, y, paint)
             y += 24f
         }
 
-        // 7. Footer Message
+        // ── 8. Footer Message ──
         paint.color = Color.parseColor("#64748B")
         paint.textSize = 9f
         paint.textAlign = Paint.Align.CENTER
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
         canvas.drawText("\"Terima kasih atas kunjungan Anda! Silakan berkunjung kembali.\"", width / 2f, y, paint)
+        y += 16f
+
+        paint.color = Color.parseColor("#94A3B8")
+        paint.textSize = 8f
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        canvas.drawText("Powered by IKIKASIR", width / 2f, y, paint)
     }
 
     private fun drawDashedLine(canvas: Canvas, startX: Float, endX: Float, y: Float) {
