@@ -1,6 +1,7 @@
 package com.ptpws.ikikasir.screens.pengaturan
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.*
@@ -59,9 +61,11 @@ fun ProfilScreen(
     val coroutineScope = rememberCoroutineScope()
     val liveNotaSetting by viewModel.notaSetting.collectAsState()
     val liveTaxSetting by viewModel.taxSetting.collectAsState()
+    val livePaymentMethodSetting by viewModel.paymentMethodSetting.collectAsState()
 
     var showPpnDialog by remember { mutableStateOf(false) }
     var showStrukDialog by remember { mutableStateOf(false) }
+    var showMetodePembayaranDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
 
     // State PPN / Pajak — diinisialisasi dari ViewModel (Room DB + Firestore) & SharedPreferences
@@ -70,6 +74,14 @@ fun ProfilScreen(
     var ppnPersen by remember { mutableStateOf(savedTax.percentage.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() }) }
     var isPpnAktif by remember { mutableStateOf(savedTax.isActive) }
     var isPpnInklusif by remember { mutableStateOf(savedTax.type == com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_INCLUSIVE) }
+
+    // State Metode Pembayaran — diinisialisasi dari ViewModel (Room DB + Firestore) & SharedPreferences
+    val paymentMethodPrefs = remember { com.ptpws.ikikasir.feature.pengaturan.data.preferences.PaymentMethodSettingPreferences(context) }
+    val savedPaymentMethod = remember { paymentMethodPrefs.getSetting() }
+    var isTunaiAktif by remember { mutableStateOf(savedPaymentMethod.isTunaiEnabled) }
+    var isQrisAktif by remember { mutableStateOf(savedPaymentMethod.isQrisEnabled) }
+    var isTransferAktif by remember { mutableStateOf(savedPaymentMethod.isTransferEnabled) }
+    var isKartuKreditAktif by remember { mutableStateOf(savedPaymentMethod.isKartuKreditEnabled) }
 
     // State Nota / Struk — diinisialisasi dari ViewModel (Room DB + Firestore) & SharedPreferences
     val notaPrefs = remember { NotaSettingPreferences(context) }
@@ -94,6 +106,13 @@ fun ProfilScreen(
         isPpnAktif = liveTaxSetting.isActive
         ppnPersen = liveTaxSetting.percentage.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() }
         isPpnInklusif = liveTaxSetting.type == com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_INCLUSIVE
+    }
+
+    LaunchedEffect(livePaymentMethodSetting) {
+        isTunaiAktif = livePaymentMethodSetting.isTunaiEnabled
+        isQrisAktif = livePaymentMethodSetting.isQrisEnabled
+        isTransferAktif = livePaymentMethodSetting.isTransferEnabled
+        isKartuKreditAktif = livePaymentMethodSetting.isKartuKreditEnabled
     }
 
     Scaffold(
@@ -269,7 +288,10 @@ fun ProfilScreen(
                                 iconBackground = Color(0xFFDBEAFE),
                                 iconTint = Color(0xFF1D4ED8),
                                 label = "Metode Pembayaran",
-                                onClick = onMetodePembayaran
+                                onClick = {
+                                    showMetodePembayaranDialog = true
+                                    onMetodePembayaran()
+                                }
                             )
                             HorizontalDivider(color = Color(0xFFF3F4F6))
                             MenuAkunItem(
@@ -372,6 +394,241 @@ fun ProfilScreen(
                     color = Color(0xFF9CA3AF),
                     textAlign = TextAlign.Center
                 )
+            }
+        }
+    }
+
+    // ── Dialog Setting Metode Pembayaran
+    if (showMetodePembayaranDialog) {
+        Dialog(onDismissRequest = { showMetodePembayaranDialog = false }) {
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(22.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Header (Judul & Close Button)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Pengaturan Metode Pembayaran",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
+                            color = Color(0xFF1E293B)
+                        )
+                        IconButton(
+                            onClick = { showMetodePembayaranDialog = false },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Tutup",
+                                tint = Color(0xFF94A3B8)
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "Aktifkan atau nonaktifkan pilihan metode pembayaran yang muncul di kasir saat checkout.",
+                        fontFamily = interfamily,
+                        fontSize = 12.sp,
+                        color = Color(0xFF64748B)
+                    )
+
+                    HorizontalDivider(color = Color(0xFFF1F5F9))
+
+                    // Switch 1: Tunai
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Tunai",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = Color(0xFF1E293B)
+                            )
+                            Text(
+                                text = if (isTunaiAktif) "Pembayaran tunai / cash manual aktif" else "Pembayaran tunai nonaktif",
+                                fontFamily = interfamily,
+                                fontSize = 11.sp,
+                                color = Color(0xFF94A3B8)
+                            )
+                        }
+                        Switch(
+                            checked = isTunaiAktif,
+                            onCheckedChange = { isTunaiAktif = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFF3B32D1)
+                            )
+                        )
+                    }
+
+                    // Switch 2: QRIS
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "QRIS",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = Color(0xFF1E293B)
+                            )
+                            Text(
+                                text = if (isQrisAktif) "BCA, GoPay, OVO, ShopeePay, dll. aktif" else "QRIS nonaktif",
+                                fontFamily = interfamily,
+                                fontSize = 11.sp,
+                                color = Color(0xFF94A3B8)
+                            )
+                        }
+                        Switch(
+                            checked = isQrisAktif,
+                            onCheckedChange = { isQrisAktif = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFF3B32D1)
+                            )
+                        )
+                    }
+
+                    // Switch 3: Transfer Bank
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Transfer Bank",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = Color(0xFF1E293B)
+                            )
+                            Text(
+                                text = if (isTransferAktif) "Transfer BCA, Mandiri, BRI, dll. aktif" else "Transfer bank nonaktif",
+                                fontFamily = interfamily,
+                                fontSize = 11.sp,
+                                color = Color(0xFF94A3B8)
+                            )
+                        }
+                        Switch(
+                            checked = isTransferAktif,
+                            onCheckedChange = { isTransferAktif = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFF3B32D1)
+                            )
+                        )
+                    }
+
+                    // Switch 4: Kartu Debit / Kredit
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Kartu Debit / Kredit",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = Color(0xFF1E293B)
+                            )
+                            Text(
+                                text = if (isKartuKreditAktif) "Pembayaran EDC Mesin Kartu aktif" else "Kartu Debit/Kredit nonaktif",
+                                fontFamily = interfamily,
+                                fontSize = 11.sp,
+                                color = Color(0xFF94A3B8)
+                            )
+                        }
+                        Switch(
+                            checked = isKartuKreditAktif,
+                            onCheckedChange = { isKartuKreditAktif = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFF3B32D1)
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Buttons (Batal & Simpan)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showMetodePembayaranDialog = false },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+                        ) {
+                            Text(
+                                text = "Batal",
+                                fontFamily = interfamily,
+                                color = Color(0xFF475569),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                val updatedSetting = com.ptpws.ikikasir.feature.pengaturan.domain.model.PaymentMethodSetting(
+                                    id = "default",
+                                    isTunaiEnabled = isTunaiAktif,
+                                    isQrisEnabled = isQrisAktif,
+                                    isTransferEnabled = isTransferAktif,
+                                    isKartuKreditEnabled = isKartuKreditAktif
+                                )
+                                paymentMethodPrefs.saveSetting(updatedSetting)
+
+                                viewModel.savePaymentMethodSetting(updatedSetting) { success ->
+                                    if (success) {
+                                        Toast.makeText(context, "Metode pembayaran tersimpan ke Database (Room & Firestore)", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Metode pembayaran tersimpan secara offline", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                showMetodePembayaranDialog = false
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B32D1))
+                        ) {
+                            Text(
+                                text = "Simpan",
+                                fontFamily = interfamily,
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
             }
         }
     }
