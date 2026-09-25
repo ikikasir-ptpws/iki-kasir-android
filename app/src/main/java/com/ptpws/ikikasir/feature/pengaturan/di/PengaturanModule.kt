@@ -53,4 +53,22 @@ object PengaturanModule {
     fun provideTaxSettingRepository(repositoryImpl: com.ptpws.ikikasir.feature.pengaturan.data.repository.TaxSettingRepositoryImpl): com.ptpws.ikikasir.feature.pengaturan.domain.repository.TaxSettingRepository {
         return repositoryImpl
     }
+
+    @Provides
+    @Singleton
+    fun providePaymentMethodSettingDao(database: AppDatabase): com.ptpws.ikikasir.feature.pengaturan.data.local.dao.PaymentMethodSettingDao {
+        return database.paymentMethodSettingDao
+    }
+
+    @Provides
+    @Singleton
+    fun providePaymentMethodSettingRemoteDataSource(firestore: FirebaseFirestore): com.ptpws.ikikasir.feature.pengaturan.data.remote.datasource.PaymentMethodSettingRemoteDataSource {
+        return com.ptpws.ikikasir.feature.pengaturan.data.remote.datasource.PaymentMethodSettingRemoteDataSourceImpl(firestore)
+    }
+
+    @Provides
+    @Singleton
+    fun providePaymentMethodSettingRepository(repositoryImpl: com.ptpws.ikikasir.feature.pengaturan.data.repository.PaymentMethodSettingRepositoryImpl): com.ptpws.ikikasir.feature.pengaturan.domain.repository.PaymentMethodSettingRepository {
+        return repositoryImpl
+    }
 }
