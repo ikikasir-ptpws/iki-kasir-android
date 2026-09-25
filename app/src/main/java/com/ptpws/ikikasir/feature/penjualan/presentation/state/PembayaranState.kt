@@ -1,5 +1,6 @@
 package com.ptpws.ikikasir.feature.penjualan.presentation.state
 
+import com.ptpws.ikikasir.feature.pengaturan.domain.model.PaymentMethodSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting
 import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
@@ -11,6 +12,7 @@ data class PembayaranState(
     val totalItemCount: Int = 0,
     val totalPcsCount: Int = 0,
     val taxSetting: TaxSetting = TaxSetting(),
+    val paymentMethodSetting: PaymentMethodSetting = PaymentMethodSetting(),
     val ppnAmount: Double = 0.0,
     val grandTotal: Double = 0.0,
     val ppnLabel: String = "",
