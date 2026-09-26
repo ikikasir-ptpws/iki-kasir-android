@@ -60,6 +60,7 @@ class QueueHistoryRepositoryImpl @Inject constructor(
         // Room is Single Source of Truth
         return localDao.getAllHistoryFlow().map { entities ->
             entities.map { it.toDomain() }
+                .distinctBy { if (it.transactionId.isNotBlank()) it.transactionId else it.id }
         }
     }
 
