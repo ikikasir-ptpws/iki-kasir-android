@@ -311,9 +311,16 @@ private fun AntreanCard(
                         fontSize = 15.sp,
                         color = Color(0xFF111827)
                     )
-                    if (antrean.customerName.isNotBlank()) {
+                    val subtitleText = buildString {
+                        if (antrean.customerName.isNotBlank()) append(antrean.customerName)
+                        if (antrean.tableNumber.isNotBlank()) {
+                            if (isNotEmpty()) append(" • ")
+                            append("Meja: ${antrean.tableNumber}")
+                        }
+                    }
+                    if (subtitleText.isNotBlank()) {
                         Text(
-                            text = antrean.customerName,
+                            text = subtitleText,
                             fontFamily = interfamily,
                             fontSize = 12.sp,
                             color = Color(0xFF6B7280)
