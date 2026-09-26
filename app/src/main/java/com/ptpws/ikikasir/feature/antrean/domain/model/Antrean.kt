@@ -8,6 +8,7 @@ data class Antrean(
     val queueSequence: Int = 0,
     val status: String = AntreanStatus.WAITING,
     val customerName: String = "",
+    val tableNumber: String = "",
     val createdAt: Timestamp = Timestamp.now(),
     val updatedAt: Timestamp = Timestamp.now(),
     val isSynced: Boolean = true
