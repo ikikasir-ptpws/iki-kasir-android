@@ -72,19 +72,35 @@ fun DaftarKategoriScreen(
         produkState.produkList.groupBy { it.categoryId }
     }
 
-    // Sort categories so those with low stock warnings appear at the very top automatically
-    val sortedFilteredList = remember(state.filteredList, categoryProductMap) {
-        state.filteredList.sortedWith(
+    var isMenuMenipisFilterActive by remember { mutableStateOf(false) }
+
+    val totalMenu = produkState.produkList.size
+    val menuMenipis = remember(produkState.produkList) {
+        produkState.produkList.count { it.stock <= it.lowStockThreshold }
+    }
+
+    LaunchedEffect(menuMenipis) {
+        if (menuMenipis == 0) {
+            isMenuMenipisFilterActive = false
+        }
+    }
+
+    // Sort categories so those with low stock warnings appear at the top, and filter if menu menipis filter is active
+    val sortedFilteredList = remember(state.filteredList, categoryProductMap, isMenuMenipisFilterActive) {
+        val baseList = if (isMenuMenipisFilterActive) {
+            state.filteredList.filter { kategori ->
+                categoryProductMap[kategori.id]?.any { it.stock <= it.lowStockThreshold } == true
+            }
+        } else {
+            state.filteredList
+        }
+
+        baseList.sortedWith(
             compareByDescending<Kategori> { kategori ->
                 val products = categoryProductMap[kategori.id] ?: emptyList()
                 products.count { it.stock <= it.lowStockThreshold }
             }
         )
-    }
-
-    val totalMenu = produkState.produkList.size
-    val menuMenipis = remember(produkState.produkList) {
-        produkState.produkList.count { it.stock <= it.lowStockThreshold }
     }
 
     Scaffold(
@@ -199,31 +215,69 @@ fun DaftarKategoriScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF16A34A), modifier = Modifier.size(16.dp))
-                        Text(
-                            text = "$totalMenu Total Menu Siap Jual",
-                            fontFamily = interfamily,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF374151)
-                        )
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (!isMenuMenipisFilterActive) Color.Transparent else Color(0xFFF1F5F9),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable { isMenuMenipisFilterActive = false }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = if (!isMenuMenipisFilterActive) Color(0xFF16A34A) else Color(0xFF64748B),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "$totalMenu Total Menu Siap Jual",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                fontWeight = if (!isMenuMenipisFilterActive) FontWeight.Bold else FontWeight.Medium,
+                                color = if (!isMenuMenipisFilterActive) Color(0xFF374151) else Color(0xFF64748B)
+                            )
+                        }
                     }
+
                     if (menuMenipis > 0) {
-                        Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF7ED)) {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (isMenuMenipisFilterActive) Color(0xFFEA580C) else Color(0xFFFFF7ED),
+                            border = BorderStroke(1.dp, if (isMenuMenipisFilterActive) Color(0xFFC2410C) else Color(0xFFFED7AA)),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .clickable { isMenuMenipisFilterActive = !isMenuMenipisFilterActive }
+                        ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFEA580C), modifier = Modifier.size(13.dp))
+                                Icon(
+                                    Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = if (isMenuMenipisFilterActive) Color.White else Color(0xFFEA580C),
+                                    modifier = Modifier.size(13.dp)
+                                )
                                 Text(
                                     text = "$menuMenipis Menu Menipis",
                                     fontFamily = interfamily,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFFEA580C)
+                                    color = if (isMenuMenipisFilterActive) Color.White else Color(0xFFEA580C)
                                 )
+                                if (isMenuMenipisFilterActive) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Hapus filter",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -240,11 +294,11 @@ fun DaftarKategoriScreen(
                     ) {
                         Icon(Icons.Default.Category, contentDescription = null, tint = Color(0xFFD1D5DB), modifier = Modifier.size(56.dp))
                         Text(
-                            text = if (state.searchQuery.isNotEmpty()) "Kategori tidak ditemukan" else "Belum ada kategori",
+                            text = if (isMenuMenipisFilterActive) "Tidak ada kategori dengan stok menipis" else if (state.searchQuery.isNotEmpty()) "Kategori tidak ditemukan" else "Belum ada kategori",
                             fontFamily = interfamily, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF374151)
                         )
                         Text(
-                            text = if (state.searchQuery.isNotEmpty()) "Coba kata kunci lain" else "Ketuk Tambah Kategori untuk memulai",
+                            text = if (isMenuMenipisFilterActive) "Ketuk 'Total Menu Siap Jual' untuk menampilkan semua kategori" else if (state.searchQuery.isNotEmpty()) "Coba kata kunci lain" else "Ketuk Tambah Kategori untuk memulai",
                             fontFamily = interfamily, fontSize = 12.sp, color = Color(0xFF6B7280), textAlign = TextAlign.Center
                         )
                     }
