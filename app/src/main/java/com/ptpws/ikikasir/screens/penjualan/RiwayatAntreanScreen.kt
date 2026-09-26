@@ -556,11 +556,18 @@ private fun QueueHistoryCard(
                 }
             }
 
-            // Subtitle: Customer Name
-            if (history.customerName.isNotBlank()) {
+            // Subtitle: Customer Name & Table Number
+            val subtitleText = buildString {
+                if (history.customerName.isNotBlank()) append(history.customerName)
+                if (history.tableNumber.isNotBlank()) {
+                    if (isNotEmpty()) append(" • ")
+                    append("Meja: ${history.tableNumber}")
+                }
+            }
+            if (subtitleText.isNotBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = history.customerName,
+                    text = subtitleText,
                     fontSize = 13.sp,
                     color = Color(0xFF64748B),
                     fontFamily = interfamily
@@ -702,6 +709,9 @@ private fun QueueHistoryCard(
 
                     // Metadata rows (ID Antrean is removed!)
                     DetailRow(label = "Nomor Urut", value = "#${history.queueSequence}")
+                    if (history.tableNumber.isNotBlank()) {
+                        DetailRow(label = "Nomor Meja", value = history.tableNumber)
+                    }
                     DetailRow(label = "Status", value = history.status)
                     val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID"))
                     DetailRow(label = "Waktu Selesai", value = sdf.format(history.completedAt.toDate()))
