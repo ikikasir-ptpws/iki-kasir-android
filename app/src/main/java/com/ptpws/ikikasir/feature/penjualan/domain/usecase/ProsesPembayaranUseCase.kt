@@ -41,7 +41,7 @@ class ProsesPembayaranUseCase @Inject constructor(
             return@flow
         }
 
-        val totalTagihan = (subtotal - discount).coerceAtLeast(0.0)
+        val totalTagihan = (subtotal - discount + ppnAmount).coerceAtLeast(0.0)
         val isTunai = metodePembayaran.equals("Tunai", ignoreCase = true)
         if (isTunai && totalBayar < totalTagihan) {
             emit(Result.failure(IllegalArgumentException("Nominal uang yang diterima kurang dari total tagihan.")))
