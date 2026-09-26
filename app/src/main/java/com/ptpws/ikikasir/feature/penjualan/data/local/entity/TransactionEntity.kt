@@ -25,6 +25,9 @@ data class TransactionEntity(
     @ColumnInfo(name = "subtotal")
     val subtotal: Double,
 
+    @ColumnInfo(name = "ppnAmount")
+    val ppnAmount: Double = 0.0,
+
     @ColumnInfo(name = "discount")
     val discount: Double,
 
@@ -51,6 +54,9 @@ data class TransactionEntity(
 
     @ColumnInfo(name = "customerName")
     val customerName: String = "",
+
+    @ColumnInfo(name = "tableNumber")
+    val tableNumber: String = "",
 
     @ColumnInfo(name = "queueSequence")
     val queueSequence: Int = 1,
@@ -96,6 +102,7 @@ data class TransactionEntity(
             transactionNumber = transactionNumber,
             items = cartItems,
             subtotal = subtotal,
+            ppnAmount = ppnAmount,
             discount = discount,
             total = total,
             paymentMethod = paymentMethod,
@@ -105,6 +112,7 @@ data class TransactionEntity(
             notes = notes,
             createdBy = createdBy,
             customerName = customerName,
+            tableNumber = tableNumber,
             queueSequence = queueSequence,
             createdAt = createdAt,
             updatedAt = updatedAt,
@@ -132,6 +140,7 @@ fun PenjualanTransaksi.toEntity(isSynced: Boolean = false): TransactionEntity {
         transactionNumber = transactionNumber,
         itemsJson = jsonArray.toString(),
         subtotal = subtotal,
+        ppnAmount = ppnAmount,
         discount = discount,
         total = total,
         paymentMethod = paymentMethod,
@@ -141,6 +150,7 @@ fun PenjualanTransaksi.toEntity(isSynced: Boolean = false): TransactionEntity {
         notes = notes,
         createdBy = createdBy,
         customerName = customerName,
+        tableNumber = tableNumber,
         queueSequence = queueSequence,
         createdAt = createdAt,
         updatedAt = updatedAt,
