@@ -26,6 +26,8 @@ import com.ptpws.ikikasir.feature.pengaturan.data.local.dao.TaxSettingDao
 import com.ptpws.ikikasir.feature.pengaturan.data.local.entity.TaxSettingEntity
 import com.ptpws.ikikasir.feature.pengaturan.data.local.dao.PaymentMethodSettingDao
 import com.ptpws.ikikasir.feature.pengaturan.data.local.entity.PaymentMethodSettingEntity
+import com.ptpws.ikikasir.feature.pengaturan.data.local.dao.TableSettingDao
+import com.ptpws.ikikasir.feature.pengaturan.data.local.entity.TableSettingEntity
 
 @Database(
     entities = [
@@ -39,9 +41,10 @@ import com.ptpws.ikikasir.feature.pengaturan.data.local.entity.PaymentMethodSett
         RoleEntity::class,
         NotaSettingEntity::class,
         TaxSettingEntity::class,
-        PaymentMethodSettingEntity::class
+        PaymentMethodSettingEntity::class,
+        TableSettingEntity::class
     ],
-    version = 22,
+    version = 24,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class, MapConverter::class)
@@ -57,6 +60,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val notaSettingDao: NotaSettingDao
     abstract val taxSettingDao: TaxSettingDao
     abstract val paymentMethodSettingDao: PaymentMethodSettingDao
+    abstract val tableSettingDao: TableSettingDao
 
     companion object {
         const val DATABASE_NAME = "ikikasir_db"
