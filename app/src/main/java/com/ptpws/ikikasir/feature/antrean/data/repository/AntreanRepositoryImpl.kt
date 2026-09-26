@@ -56,7 +56,12 @@ class AntreanRepositoryImpl @Inject constructor(
                 try {
                     val remoteList = remoteDataSource.getAllAntrean()
                     if (remoteList.isNotEmpty()) {
+                        val validIds = remoteList.map { it.id }
+                        val validTxIds = remoteList.map { it.transactionId }
+                        localDao.deleteSyncedNotInRemote(validIds, validTxIds)
                         localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                    } else {
+                        localDao.deleteAllSynced()
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to fetch remote antrean: ${e.message}")
@@ -66,6 +71,7 @@ class AntreanRepositoryImpl @Inject constructor(
         // Room sebagai Single Source of Truth
         return localDao.getAllAntreanFlow().map { entities ->
             entities.map { it.toDomain() }
+                .distinctBy { if (it.transactionId.isNotBlank()) it.transactionId else it.id }
         }
     }
 
@@ -121,7 +127,7 @@ class AntreanRepositoryImpl @Inject constructor(
         if (isOnline) {
             try {
                 remoteDataSource.deleteAntrean(id)
-                localDao.deletePermanently(id)
+                localDao.deletePermanentlyByIdOrTxId(id)
                 emit(Result.success(Unit))
             } catch (e: Exception) {
                 Log.w(TAG, "Firestore delete failed, marking locally: ${e.message}")
