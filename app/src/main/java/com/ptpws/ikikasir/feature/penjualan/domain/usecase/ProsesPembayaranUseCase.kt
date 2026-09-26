@@ -14,8 +14,6 @@ import com.ptpws.ikikasir.feature.penjualan.domain.repository.PenjualanRepositor
 import com.ptpws.ikikasir.feature.produk.domain.usecase.UpdateProdukUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import com.ptpws.ikikasir.feature.antrean.domain.model.QueueHistory
-import com.ptpws.ikikasir.feature.antrean.domain.usecase.InsertQueueHistoryUseCase
 import java.util.UUID
 import javax.inject.Inject
 
@@ -24,18 +22,19 @@ class ProsesPembayaranUseCase @Inject constructor(
     private val updateProdukUseCase: UpdateProdukUseCase,
     private val saveStokAdjustmentUseCase: SaveStokAdjustmentUseCase,
     private val antreanRepository: AntreanRepository,
-    private val insertQueueHistoryUseCase: InsertQueueHistoryUseCase,
     private val firebaseAuth: FirebaseAuth
 ) {
     suspend operator fun invoke(
         kodeTransaksi: String,
         items: List<CartItem>,
         subtotal: Double,
+        ppnAmount: Double = 0.0,
         totalBayar: Double,
         metodePembayaran: String,
         discount: Double = 0.0,
         notes: String = "",
-        customerName: String = ""
+        customerName: String = "",
+        tableNumber: String = ""
     ): Flow<Result<PenjualanTransaksi>> = flow {
         if (items.isEmpty()) {
             emit(Result.failure(IllegalArgumentException("Tidak ada produk dalam keranjang pesanan.")))
@@ -50,7 +49,7 @@ class ProsesPembayaranUseCase @Inject constructor(
         }
 
         val kembalian = if (isTunai) (totalBayar - totalTagihan).coerceAtLeast(0.0) else 0.0
-        
+
         // Gunakan invoice number (kodeTransaksi) sebagai transactionId
         val invoiceId = if (kodeTransaksi.isNotBlank()) kodeTransaksi else "INV-2026-${(1000..9999).random()}"
 
@@ -92,13 +91,17 @@ class ProsesPembayaranUseCase @Inject constructor(
             1
         }
 
+        // Subtotal SEBELUM PPN (harga item-item saja)
+        val subtotalBeforeTax = items.sumOf { it.totalPrice }
+
         val transaksi = PenjualanTransaksi(
             transactionId = invoiceId,
             transactionNumber = invoiceId,
             items = items,
-            subtotal = subtotal,
+            subtotal = subtotalBeforeTax,    // selalu harga sebelum PPN
+            ppnAmount = ppnAmount,           // nominal PPN
             discount = discount,
-            total = totalTagihan,
+            total = totalTagihan,            // grand total (sudah termasuk PPN eksklusif)
             paymentMethod = metodePembayaran,
             paymentAmount = if (isTunai) totalBayar else totalTagihan,
             change = kembalian,
@@ -106,6 +109,7 @@ class ProsesPembayaranUseCase @Inject constructor(
             notes = notes,
             createdBy = kasirNama,
             customerName = customerName,
+            tableNumber = tableNumber,
             queueSequence = realQueueSeq,
             createdAt = Timestamp.now(),
             updatedAt = Timestamp.now()
@@ -114,32 +118,23 @@ class ProsesPembayaranUseCase @Inject constructor(
         repository.simpanTransaksi(transaksi).collect { result ->
             result.fold(
                 onSuccess = {
-                    // Otomatis buat data Antrean baru & QueueHistory dengan real queueSequence yang sama
+                    // Buat Antrean aktif (menunggu konfirmasi oleh kasir di WaitingList)
+                    // QueueHistory TIDAK dibuat di sini — hanya dibuat saat kasir klik ✓/✗
+                    // di WaitingListScreen melalui AntreanViewModel.selesaikan()/batalkan()
                     try {
                         val antrean = Antrean(
-                            id = "$invoiceId-Q",
+                            id = invoiceId,
                             transactionId = invoiceId,
                             queueSequence = realQueueSeq,
                             status = AntreanStatus.WAITING,
                             customerName = customerName,
+                            tableNumber = tableNumber,
                             createdAt = Timestamp.now(),
                             updatedAt = Timestamp.now()
                         )
                         antreanRepository.insertAntrean(antrean).collect { /* save antrean */ }
-
-                        val history = QueueHistory(
-                            id = "$invoiceId-H",
-                            transactionId = invoiceId,
-                            status = "DONE",
-                            customerName = customerName,
-                            queueSequence = realQueueSeq,
-                            completedAt = Timestamp.now(),
-                            createdAt = Timestamp.now(),
-                            updatedAt = Timestamp.now()
-                        )
-                        insertQueueHistoryUseCase(history).collect { /* save history */ }
                     } catch (e: Exception) {
-                        android.util.Log.e("ProsesPembayaranUseCase", "Failed auto-creating antrean/history: ${e.message}", e)
+                        android.util.Log.e("ProsesPembayaranUseCase", "Failed auto-creating antrean: ${e.message}", e)
                     }
 
                     emit(Result.success(transaksi))
