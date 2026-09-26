@@ -30,11 +30,15 @@ object StrukPdfHelper {
         val pdfDoc = PdfDocument()
 
         val notaSetting = NotaSettingPreferences(context).getSetting()
+        val taxSetting = com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context).getSetting()
 
         // 80mm thermal receipt dimensions in points (384 pt x dynamic height)
         val width = 384
         var calculatedHeight = 650 + (transaksi.items.size * 45)
-        if (transaksi.ppnAmount > 0) calculatedHeight += 20
+        val totalSubtotalCheck = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
+        val calcPpnCheck = if (taxSetting.isActive && taxSetting.percentage > 0) totalSubtotalCheck * (taxSetting.percentage / 100.0) else 0.0
+        val effectivePpnCheck = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calcPpnCheck
+        if (effectivePpnCheck > 0) calculatedHeight += 20
         if (transaksi.discount > 0) calculatedHeight += 20
         if (transaksi.notes.isNotBlank()) calculatedHeight += 50
         if (notaSetting.wifiName.isNotBlank() || notaSetting.wifiPassword.isNotBlank()) calculatedHeight += 40
@@ -89,8 +93,9 @@ object StrukPdfHelper {
             "Rp " + NumberFormat.getNumberInstance(Locale("id", "ID")).format(amount.toLong())
         }
 
-        // Load NotaSetting (Nama Toko & Alamat)
+        // Load NotaSetting & TaxSetting
         val notaSetting = NotaSettingPreferences(context).getSetting()
+        val taxSetting = com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context).getSetting()
 
         // ── 1. Header — Nama Toko & Alamat ────────
         val storeName = notaSetting.storeName.ifBlank { "IKIKASIR" }
@@ -240,7 +245,10 @@ object StrukPdfHelper {
         }
 
         // ── 5. Payment Summary Card ──
-        val hasPpn = transaksi.ppnAmount > 0
+        val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
+        val calcPpn = if (taxSetting.isActive && taxSetting.percentage > 0) totalSubtotal * (taxSetting.percentage / 100.0) else 0.0
+        val effectivePpn = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calcPpn
+        val hasPpn = effectivePpn > 0
         val hasDiscount = transaksi.discount > 0
         var summaryHeight = 120f
         if (hasPpn) summaryHeight += 16f
@@ -251,9 +259,8 @@ object StrukPdfHelper {
         canvas.drawRoundRect(summaryBox, 12f, 12f, paint)
 
         var sumY = y + 18f
-        val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
-        val grandTotal = if (transaksi.total > 0) transaksi.total else (totalSubtotal - transaksi.discount + transaksi.ppnAmount).coerceAtLeast(0.0)
-        val paidAmount = if (transaksi.paymentAmount > 0) transaksi.paymentAmount else grandTotal
+        val grandTotal = (totalSubtotal - transaksi.discount + effectivePpn).coerceAtLeast(0.0)
+        val paidAmount = if (transaksi.paymentAmount > 0 && transaksi.paymentAmount >= grandTotal) transaksi.paymentAmount else grandTotal
         val returnChange = if (transaksi.change >= 0 && transaksi.paymentAmount > 0) transaksi.change else (paidAmount - grandTotal).coerceAtLeast(0.0)
 
         // Subtotal
@@ -281,7 +288,7 @@ object StrukPdfHelper {
             paint.textAlign = Paint.Align.RIGHT
             paint.color = Color.parseColor("#0F172A")
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            canvas.drawText("+${formatRupiah(transaksi.ppnAmount)}", width - margin - 12f, sumY, paint)
+            canvas.drawText("+${formatRupiah(effectivePpn)}", width - margin - 12f, sumY, paint)
             sumY += 16f
         }
 
