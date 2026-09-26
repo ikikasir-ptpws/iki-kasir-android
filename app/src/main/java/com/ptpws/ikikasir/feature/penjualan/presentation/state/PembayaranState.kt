@@ -13,6 +13,7 @@ data class PembayaranState(
     val totalPcsCount: Int = 0,
     val taxSetting: TaxSetting = TaxSetting(),
     val paymentMethodSetting: PaymentMethodSetting = PaymentMethodSetting(),
+    val tableSetting: com.ptpws.ikikasir.feature.pengaturan.domain.model.TableSetting = com.ptpws.ikikasir.feature.pengaturan.domain.model.TableSetting(),
     val ppnAmount: Double = 0.0,
     val grandTotal: Double = 0.0,
     val ppnLabel: String = "",
@@ -22,6 +23,7 @@ data class PembayaranState(
     val kembalian: Double = 0.0,
     val notes: String = "", // Catatan pesanan kasir/user
     val customerName: String = "", // Nama Pelanggan (Opsional)
+    val tableNumber: String = "", // Nomor Meja (Opsional)
     val isCetakStrukOtomatis: Boolean = true,
     val isPrinterSiap: Boolean = true,
     val isRincianExpanded: Boolean = false,
