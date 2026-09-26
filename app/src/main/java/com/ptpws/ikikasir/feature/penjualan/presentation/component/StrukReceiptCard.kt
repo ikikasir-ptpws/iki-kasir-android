@@ -219,15 +219,21 @@ fun StrukReceiptCard(
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
-                                text = "PELANGGAN",
+                                text = if (transaksi.tableNumber.isNotBlank()) "PELANGGAN / MEJA" else "PELANGGAN",
                                 fontFamily = interfamily,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF64748B)
                             )
                             Spacer(modifier = Modifier.height(2.dp))
+                            val displayPelangganMeja = buildString {
+                                if (transaksi.customerName.isNotBlank()) append(transaksi.customerName)
+                                if (transaksi.tableNumber.isNotBlank()) {
+                                    if (isNotEmpty()) append(" (M: ${transaksi.tableNumber})") else append("Meja: ${transaksi.tableNumber}")
+                                }
+                            }.ifBlank { "-" }
                             Text(
-                                text = transaksi.customerName.ifBlank { "-" },
+                                text = displayPelangganMeja,
                                 fontFamily = interfamily,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -363,7 +369,8 @@ fun StrukReceiptCard(
             // ── 5. Payment Summary ─────────────────────────────────────────
             val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else displayItems.sumOf { it.subtotal }
             val totalDiscount = transaksi.discount
-            val grandTotal    = if (transaksi.total > 0) transaksi.total else (totalSubtotal - totalDiscount).coerceAtLeast(0.0)
+            val ppnAmount     = transaksi.ppnAmount
+            val grandTotal    = if (transaksi.total > 0) transaksi.total else (totalSubtotal - totalDiscount + ppnAmount).coerceAtLeast(0.0)
             val paidAmount    = if (transaksi.paymentAmount > 0) transaksi.paymentAmount else grandTotal
             val returnChange  = if (transaksi.change >= 0 && transaksi.paymentAmount > 0) transaksi.change else (paidAmount - grandTotal).coerceAtLeast(0.0)
             val itemCount     = displayItems.sumOf { it.quantity }
@@ -397,6 +404,28 @@ fun StrukReceiptCard(
                             fontSize = 13.sp,
                             color = Color(0xFF0F172A)
                         )
+                    }
+
+                    // PPN (hanya jika aktif)
+                    if (ppnAmount > 0) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "PPN",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                color = Color(0xFF64748B)
+                            )
+                            Text(
+                                text = "+${formatRupiah(ppnAmount)}",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = Color(0xFF0F172A)
+                            )
+                        }
                     }
 
                     // Diskon (hanya jika ada)
@@ -617,7 +646,7 @@ fun StrukReceiptCard(
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             Text(
                 text = "Powered by IKIKASIR",
@@ -628,7 +657,7 @@ fun StrukReceiptCard(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Jagged Paper Edge
             JaggedPaperEdge(modifier = Modifier.fillMaxWidth())
