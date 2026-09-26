@@ -283,6 +283,33 @@ fun DetailTransaksiScreen(
                                     )
                                 }
                             }
+
+                            if (tx.tableNumber.isNotBlank()) {
+                                HorizontalDivider(
+                                    color = Color(0xFFF1F5F9),
+                                    thickness = 1.dp,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Nomor Meja",
+                                        fontFamily = interfamily,
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF94A3B8)
+                                    )
+                                    Text(
+                                        text = tx.tableNumber,
+                                        fontFamily = interfamily,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF0F172A)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
