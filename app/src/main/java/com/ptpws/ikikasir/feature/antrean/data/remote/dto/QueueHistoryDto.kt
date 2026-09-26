@@ -12,6 +12,7 @@ data class QueueHistoryDto(
     var transactionId: String = "",
     var status: String = "",
     var customerName: String = "",
+    var tableNumber: String = "",
     var queueSequence: Int = 1,
     @ServerTimestamp
     var completedAt: Timestamp? = null,
@@ -22,11 +23,14 @@ data class QueueHistoryDto(
 ) {
     fun toEntity(isSynced: Boolean = true): QueueHistoryEntity {
         val now = Timestamp.now()
+        val effectiveId = id.ifBlank { transactionId.ifBlank { java.util.UUID.randomUUID().toString() } }
+        val effectiveTxId = transactionId.ifBlank { effectiveId }
         return QueueHistoryEntity(
-            id = id.ifBlank { java.util.UUID.randomUUID().toString() },
-            transactionId = transactionId,
+            id = effectiveId,
+            transactionId = effectiveTxId,
             status = status,
             customerName = customerName,
+            tableNumber = tableNumber,
             queueSequence = queueSequence,
             completedAt = completedAt ?: now,
             createdAt = createdAt ?: now,
@@ -38,11 +42,14 @@ data class QueueHistoryDto(
 
     fun toDomain(): QueueHistory {
         val now = Timestamp.now()
+        val effectiveId = id.ifBlank { transactionId }
+        val effectiveTxId = transactionId.ifBlank { effectiveId }
         return QueueHistory(
-            id = id,
-            transactionId = transactionId,
+            id = effectiveId,
+            transactionId = effectiveTxId,
             status = status,
             customerName = customerName,
+            tableNumber = tableNumber,
             queueSequence = queueSequence,
             completedAt = completedAt ?: now,
             createdAt = createdAt ?: now,
@@ -59,6 +66,7 @@ fun QueueHistory.toDto(): QueueHistoryDto {
         transactionId = transactionId,
         status = status,
         customerName = customerName,
+        tableNumber = tableNumber,
         queueSequence = queueSequence,
         completedAt = completedAt,
         createdAt = createdAt,
