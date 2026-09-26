@@ -465,7 +465,14 @@ fun RiwayatTransaksiScreen(
                         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
                         val dateObj = transaksi.createdAt.toDate()
                         val jamText = timeFormat.format(dateObj)
-                        val formattedPrice = "Rp " + NumberFormat.getInstance(Locale("id", "ID")).format(transaksi.total.toLong())
+                        val taxSetting = remember {
+                            com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context).getSetting()
+                        }
+                        val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
+                        val calculatedPpn = if (taxSetting.isActive && taxSetting.percentage > 0) totalSubtotal * (taxSetting.percentage / 100.0) else 0.0
+                        val effectivePpn = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calculatedPpn
+                        val grandTotal = (totalSubtotal - transaksi.discount + effectivePpn).coerceAtLeast(0.0)
+                        val formattedPrice = "Rp " + NumberFormat.getInstance(Locale("id", "ID")).format(grandTotal.toLong())
 
                         TransaksiCardItem(
                             kodeTransaksi = transaksi.transactionNumber,
