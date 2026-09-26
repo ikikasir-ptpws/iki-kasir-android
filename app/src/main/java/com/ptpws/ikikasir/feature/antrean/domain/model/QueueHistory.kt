@@ -8,6 +8,7 @@ data class QueueHistory(
     val transactionId: String,
     val status: String, // "DONE", "CANCELLED"
     val customerName: String = "",
+    val tableNumber: String = "",
     val queueSequence: Int = 1,
     val completedAt: Timestamp = Timestamp.now(),
     val createdAt: Timestamp = Timestamp.now(),
