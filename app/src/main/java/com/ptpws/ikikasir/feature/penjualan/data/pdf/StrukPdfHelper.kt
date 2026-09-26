@@ -261,7 +261,7 @@ object StrukPdfHelper {
         var sumY = y + 18f
         val grandTotal = (totalSubtotal - transaksi.discount + effectivePpn).coerceAtLeast(0.0)
         val paidAmount = if (transaksi.paymentAmount > 0 && transaksi.paymentAmount >= grandTotal) transaksi.paymentAmount else grandTotal
-        val returnChange = if (transaksi.change >= 0 && transaksi.paymentAmount > 0) transaksi.change else (paidAmount - grandTotal).coerceAtLeast(0.0)
+        val returnChange = (paidAmount - grandTotal).coerceAtLeast(0.0)
 
         // Subtotal
         paint.textAlign = Paint.Align.LEFT
@@ -407,10 +407,10 @@ object StrukPdfHelper {
         paint.textAlign = Paint.Align.CENTER
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
         canvas.drawText("\"Terima kasih atas kunjungan Anda! Silakan berkunjung kembali.\"", width / 2f, y, paint)
-        y += 20f
+        y += 24f
 
         paint.color = Color.parseColor("#94A3B8")
-        paint.textSize = 8f
+        paint.textSize = 9f
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         canvas.drawText("Powered by IKIKASIR", width / 2f, y, paint)
     }
