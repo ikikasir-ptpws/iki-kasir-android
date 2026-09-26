@@ -33,7 +33,9 @@ object StrukPdfHelper {
 
         // 80mm thermal receipt dimensions in points (384 pt x dynamic height)
         val width = 384
-        var calculatedHeight = 620 + (transaksi.items.size * 45)
+        var calculatedHeight = 650 + (transaksi.items.size * 45)
+        if (transaksi.ppnAmount > 0) calculatedHeight += 20
+        if (transaksi.discount > 0) calculatedHeight += 20
         if (transaksi.notes.isNotBlank()) calculatedHeight += 50
         if (notaSetting.wifiName.isNotBlank() || notaSetting.wifiPassword.isNotBlank()) calculatedHeight += 40
 
@@ -162,7 +164,8 @@ object StrukPdfHelper {
         canvas.drawText("WAKTU TRANSAKSI", margin + 12f, metaY3, paint)
 
         paint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("PELANGGAN", width - margin - 12f, metaY3, paint)
+        val labelPelangganMeja = if (transaksi.tableNumber.isNotBlank()) "PELANGGAN / MEJA" else "PELANGGAN"
+        canvas.drawText(labelPelangganMeja, width - margin - 12f, metaY3, paint)
 
         val metaY4 = metaY3 + 14f
         paint.textAlign = Paint.Align.LEFT
@@ -172,7 +175,13 @@ object StrukPdfHelper {
         canvas.drawText(dateFormatted, margin + 12f, metaY4, paint)
 
         paint.textAlign = Paint.Align.RIGHT
-        canvas.drawText(transaksi.customerName.ifBlank { "-" }, width - margin - 12f, metaY4, paint)
+        val textPelangganMeja = buildString {
+            if (transaksi.customerName.isNotBlank()) append(transaksi.customerName)
+            if (transaksi.tableNumber.isNotBlank()) {
+                if (isNotEmpty()) append(" (M: ${transaksi.tableNumber})") else append("Meja: ${transaksi.tableNumber}")
+            }
+        }.ifBlank { "-" }
+        canvas.drawText(textPelangganMeja, width - margin - 12f, metaY4, paint)
 
         y += 86f
 
@@ -231,15 +240,19 @@ object StrukPdfHelper {
         }
 
         // ── 5. Payment Summary Card ──
+        val hasPpn = transaksi.ppnAmount > 0
         val hasDiscount = transaksi.discount > 0
-        val summaryHeight = if (hasDiscount) 140f else 120f
+        var summaryHeight = 120f
+        if (hasPpn) summaryHeight += 16f
+        if (hasDiscount) summaryHeight += 16f
+
         val summaryBox = RectF(margin, y, width - margin, y + summaryHeight)
         paint.color = Color.parseColor("#F8FAFC")
         canvas.drawRoundRect(summaryBox, 12f, 12f, paint)
 
         var sumY = y + 18f
         val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
-        val grandTotal = if (transaksi.total > 0) transaksi.total else (totalSubtotal - transaksi.discount).coerceAtLeast(0.0)
+        val grandTotal = if (transaksi.total > 0) transaksi.total else (totalSubtotal - transaksi.discount + transaksi.ppnAmount).coerceAtLeast(0.0)
         val paidAmount = if (transaksi.paymentAmount > 0) transaksi.paymentAmount else grandTotal
         val returnChange = if (transaksi.change >= 0 && transaksi.paymentAmount > 0) transaksi.change else (paidAmount - grandTotal).coerceAtLeast(0.0)
 
@@ -256,6 +269,21 @@ object StrukPdfHelper {
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         canvas.drawText(formatRupiah(totalSubtotal), width - margin - 12f, sumY, paint)
         sumY += 16f
+
+        // PPN if > 0
+        if (hasPpn) {
+            paint.textAlign = Paint.Align.LEFT
+            paint.color = Color.parseColor("#64748B")
+            paint.textSize = 10f
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            canvas.drawText("PPN", margin + 12f, sumY, paint)
+
+            paint.textAlign = Paint.Align.RIGHT
+            paint.color = Color.parseColor("#0F172A")
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            canvas.drawText("+${formatRupiah(transaksi.ppnAmount)}", width - margin - 12f, sumY, paint)
+            sumY += 16f
+        }
 
         // Diskon if > 0
         if (hasDiscount) {
@@ -372,7 +400,7 @@ object StrukPdfHelper {
         paint.textAlign = Paint.Align.CENTER
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
         canvas.drawText("\"Terima kasih atas kunjungan Anda! Silakan berkunjung kembali.\"", width / 2f, y, paint)
-        y += 16f
+        y += 20f
 
         paint.color = Color.parseColor("#94A3B8")
         paint.textSize = 8f
