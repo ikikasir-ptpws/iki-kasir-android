@@ -25,6 +25,9 @@ data class AntreanEntity(
     @ColumnInfo(name = "customerName")
     val customerName: String = "",
 
+    @ColumnInfo(name = "tableNumber")
+    val tableNumber: String = "",
+
     @ColumnInfo(name = "createdAt")
     val createdAt: Timestamp = Timestamp.now(),
 
@@ -44,6 +47,7 @@ data class AntreanEntity(
             queueSequence = queueSequence,
             status = status,
             customerName = customerName,
+            tableNumber = tableNumber,
             createdAt = createdAt,
             updatedAt = updatedAt,
             isSynced = isSynced
@@ -58,6 +62,7 @@ fun Antrean.toEntity(isSynced: Boolean = true, isDeleted: Boolean = false): Antr
         queueSequence = queueSequence,
         status = status,
         customerName = customerName,
+        tableNumber = tableNumber,
         createdAt = createdAt,
         updatedAt = updatedAt,
         isSynced = isSynced,
