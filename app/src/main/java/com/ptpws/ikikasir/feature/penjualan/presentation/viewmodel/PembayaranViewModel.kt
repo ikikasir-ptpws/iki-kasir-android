@@ -19,6 +19,7 @@ import javax.inject.Inject
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetTaxSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetPaymentMethodSettingUseCase
+import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetTableSettingUseCase
 
 @HiltViewModel
 class PembayaranViewModel @Inject constructor(
@@ -26,7 +27,8 @@ class PembayaranViewModel @Inject constructor(
     private val manageCartUseCase: ManageCartUseCase,
     private val prosesPembayaranUseCase: ProsesPembayaranUseCase,
     private val getTaxSettingUseCase: GetTaxSettingUseCase,
-    private val getPaymentMethodSettingUseCase: GetPaymentMethodSettingUseCase
+    private val getPaymentMethodSettingUseCase: GetPaymentMethodSettingUseCase,
+    private val getTableSettingUseCase: GetTableSettingUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PembayaranState())
@@ -44,6 +46,12 @@ class PembayaranViewModel @Inject constructor(
     }
 
     private fun observeCartAndTax() {
+        viewModelScope.launch {
+            getTableSettingUseCase().collect { tableSetting ->
+                _state.update { it.copy(tableSetting = tableSetting) }
+            }
+        }
+
         viewModelScope.launch {
             getTaxSettingUseCase().collect { tax ->
                 _state.update { it.copy(taxSetting = tax) }
@@ -189,6 +197,10 @@ class PembayaranViewModel @Inject constructor(
         _state.update { it.copy(customerName = name) }
     }
 
+    fun onTableNumberChange(tableNumber: String) {
+        _state.update { it.copy(tableNumber = tableNumber) }
+    }
+
     fun toggleRincianExpanded() {
         _state.update { it.copy(isRincianExpanded = !it.isRincianExpanded) }
     }
@@ -221,11 +233,13 @@ class PembayaranViewModel @Inject constructor(
             prosesPembayaranUseCase(
                 kodeTransaksi = currentState.orderId,
                 items = currentState.cartItems,
-                subtotal = targetTotal,
+                subtotal = currentState.subtotal,
+                ppnAmount = currentState.ppnAmount,
                 totalBayar = totalBayar,
                 metodePembayaran = currentState.metodePembayaran,
                 notes = currentState.notes,
-                customerName = currentState.customerName
+                customerName = currentState.customerName,
+                tableNumber = currentState.tableNumber
             ).collect { result ->
                 _state.update { it.copy(isLoading = false) }
                 result.fold(
