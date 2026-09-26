@@ -24,6 +24,9 @@ data class AntreanDto(
     @get:PropertyName("customerName") @set:PropertyName("customerName")
     var customerName: String = "",
 
+    @get:PropertyName("tableNumber") @set:PropertyName("tableNumber")
+    var tableNumber: String = "",
+
     @get:PropertyName("createdAt") @set:PropertyName("createdAt")
     @get:ServerTimestamp
     var createdAt: Timestamp? = null,
@@ -39,6 +42,7 @@ data class AntreanDto(
             queueSequence = queueSequence,
             status = status,
             customerName = customerName,
+            tableNumber = tableNumber,
             createdAt = createdAt ?: Timestamp.now(),
             updatedAt = updatedAt ?: Timestamp.now(),
             isSynced = true
@@ -52,6 +56,7 @@ data class AntreanDto(
             queueSequence = queueSequence,
             status = status,
             customerName = customerName,
+            tableNumber = tableNumber,
             createdAt = createdAt ?: Timestamp.now(),
             updatedAt = updatedAt ?: Timestamp.now(),
             isSynced = true,
@@ -67,6 +72,7 @@ fun Antrean.toDto(): AntreanDto {
         queueSequence = queueSequence,
         status = status,
         customerName = customerName,
+        tableNumber = tableNumber,
         createdAt = null,  // Let @ServerTimestamp handle it
         updatedAt = null   // Let @ServerTimestamp handle it
     )
