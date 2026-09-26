@@ -18,6 +18,9 @@ import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.SaveTaxSettingUseCas
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.PaymentMethodSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetPaymentMethodSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.SavePaymentMethodSettingUseCase
+import com.ptpws.ikikasir.feature.pengaturan.domain.model.TableSetting
+import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetTableSettingUseCase
+import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.SaveTableSettingUseCase
 
 @HiltViewModel
 class ProfilViewModel @Inject constructor(
@@ -26,7 +29,9 @@ class ProfilViewModel @Inject constructor(
     private val getTaxSettingUseCase: GetTaxSettingUseCase,
     private val saveTaxSettingUseCase: SaveTaxSettingUseCase,
     private val getPaymentMethodSettingUseCase: GetPaymentMethodSettingUseCase,
-    private val savePaymentMethodSettingUseCase: SavePaymentMethodSettingUseCase
+    private val savePaymentMethodSettingUseCase: SavePaymentMethodSettingUseCase,
+    private val getTableSettingUseCase: GetTableSettingUseCase,
+    private val saveTableSettingUseCase: SaveTableSettingUseCase
 ) : ViewModel() {
 
     private val _notaSetting = MutableStateFlow(NotaSetting())
@@ -38,10 +43,14 @@ class ProfilViewModel @Inject constructor(
     private val _paymentMethodSetting = MutableStateFlow(PaymentMethodSetting())
     val paymentMethodSetting: StateFlow<PaymentMethodSetting> = _paymentMethodSetting.asStateFlow()
 
+    private val _tableSetting = MutableStateFlow(TableSetting())
+    val tableSetting: StateFlow<TableSetting> = _tableSetting.asStateFlow()
+
     init {
         loadNotaSetting()
         loadTaxSetting()
         loadPaymentMethodSetting()
+        loadTableSetting()
     }
 
     fun loadNotaSetting() {
@@ -64,6 +73,14 @@ class ProfilViewModel @Inject constructor(
         viewModelScope.launch {
             getPaymentMethodSettingUseCase().collect { setting ->
                 _paymentMethodSetting.value = setting
+            }
+        }
+    }
+
+    fun loadTableSetting() {
+        viewModelScope.launch {
+            getTableSettingUseCase().collect { setting ->
+                _tableSetting.value = setting
             }
         }
     }
@@ -106,6 +123,21 @@ class ProfilViewModel @Inject constructor(
             result.fold(
                 onSuccess = {
                     _paymentMethodSetting.value = setting
+                    onComplete(true)
+                },
+                onFailure = {
+                    onComplete(false)
+                }
+            )
+        }
+    }
+
+    fun saveTableSetting(setting: TableSetting, onComplete: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            val result = saveTableSettingUseCase(setting)
+            result.fold(
+                onSuccess = {
+                    _tableSetting.value = setting
                     onComplete(true)
                 },
                 onFailure = {
