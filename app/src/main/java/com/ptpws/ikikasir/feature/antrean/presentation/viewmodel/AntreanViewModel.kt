@@ -88,25 +88,31 @@ class AntreanViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val currentList = (uiState.value as? AntreanUiState.Success)?.data ?: emptyList()
-                val targetItem = currentList.find { it.id == id }
+                val targetItem = currentList.find { it.id == id || it.transactionId == id }
 
                 if (targetItem != null) {
-                    // 1. Save to QueueHistory with original queue sequence number
+                    val targetTxId = targetItem.transactionId.ifBlank { targetItem.id }
+
+                    // 1. Save to QueueHistory with identical transaction ID & tableNumber
                     val history = QueueHistory(
-                        id = targetItem.id,
-                        transactionId = targetItem.transactionId,
+                        id = targetTxId,
+                        transactionId = targetTxId,
                         status = status,
                         customerName = targetItem.customerName,
+                        tableNumber = targetItem.tableNumber,
                         queueSequence = targetItem.queueSequence,
                         completedAt = Timestamp.now(),
                         createdAt = targetItem.createdAt,
                         updatedAt = Timestamp.now()
                     )
                     insertQueueHistoryUseCase(history).collect {}
-                    Log.d(TAG, "QueueHistory inserted for $id (sequence #${targetItem.queueSequence}) with status $status")
+                    Log.d(TAG, "QueueHistory inserted for $targetTxId (sequence #${targetItem.queueSequence}) with status $status")
 
                     // 2. Delete item from active queues (Room DB + Firestore)
-                    antreanRepository.deleteAntrean(id).collect {}
+                    antreanRepository.deleteAntrean(targetItem.id).collect {}
+                    if (targetTxId != targetItem.id) {
+                        antreanRepository.deleteAntrean(targetTxId).collect {}
+                    }
                     Log.d(TAG, "Active antrean $id deleted from queues")
                 }
             } catch (e: Exception) {
