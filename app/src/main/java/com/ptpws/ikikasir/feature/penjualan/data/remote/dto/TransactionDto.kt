@@ -40,6 +40,9 @@ data class TransactionDto(
     @get:PropertyName("subtotal") @set:PropertyName("subtotal")
     var subtotal: Double = 0.0,
 
+    @get:PropertyName("ppnAmount") @set:PropertyName("ppnAmount")
+    var ppnAmount: Double = 0.0,
+
     @get:PropertyName("discount") @set:PropertyName("discount")
     var discount: Double = 0.0,
 
@@ -104,6 +107,7 @@ data class TransactionDto(
             transactionNumber = transactionNumber,
             items = cartItems,
             subtotal = subtotal,
+            ppnAmount = ppnAmount,
             discount = discount,
             total = total,
             paymentMethod = paymentMethod,
@@ -139,6 +143,7 @@ fun PenjualanTransaksi.toDto(): TransactionDto {
         transactionNumber = transactionNumber,
         items = itemsMapList,
         subtotal = subtotal,
+        ppnAmount = ppnAmount,
         discount = discount,
         total = total,
         paymentMethod = paymentMethod,
