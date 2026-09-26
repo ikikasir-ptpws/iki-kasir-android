@@ -496,6 +496,7 @@ private fun QueueHistoryCard(
     history: QueueHistory,
     transaksi: PenjualanTransaksi?
 ) {
+    val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
 
     val isDone = history.status.equals("DONE", ignoreCase = true) || history.status.equals("SELESAI", ignoreCase = true)
@@ -682,6 +683,14 @@ private fun QueueHistoryCard(
                             }
                         }
 
+                        val taxSetting = remember {
+                            com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context).getSetting()
+                        }
+                        val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
+                        val calculatedPpn = if (taxSetting.isActive && taxSetting.percentage > 0) totalSubtotal * (taxSetting.percentage / 100.0) else 0.0
+                        val effectivePpn = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calculatedPpn
+                        val grandTotal = (totalSubtotal - transaksi.discount + effectivePpn).coerceAtLeast(0.0)
+
                         HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp)
 
                         Row(
@@ -696,7 +705,7 @@ private fun QueueHistoryCard(
                                 fontFamily = interfamily
                             )
                             Text(
-                                text = rupiahFormat.format(transaksi.total),
+                                text = rupiahFormat.format(grandTotal),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF0066FF),
