@@ -42,6 +42,15 @@ interface AntreanDao {
     @Query("DELETE FROM queues WHERE id = :id")
     suspend fun deletePermanently(id: String)
 
+    @Query("DELETE FROM queues WHERE id = :id OR transactionId = :id")
+    suspend fun deletePermanentlyByIdOrTxId(id: String)
+
+    @Query("DELETE FROM queues WHERE isSynced = 1 AND id NOT IN (:validIds) AND transactionId NOT IN (:validTxIds)")
+    suspend fun deleteSyncedNotInRemote(validIds: List<String>, validTxIds: List<String>)
+
+    @Query("DELETE FROM queues WHERE isSynced = 1")
+    suspend fun deleteAllSynced()
+
     @Query("SELECT * FROM queues WHERE isSynced = 0")
     suspend fun getUnsyncedAntrean(): List<AntreanEntity>
 
