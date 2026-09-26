@@ -1,9 +1,11 @@
 package com.ptpws.ikikasir.feature.pengaturan.di
 
+import android.content.Context
 import com.google.firebase.firestore.FirebaseFirestore
 import com.ptpws.ikikasir.core.database.AppDatabase
 import com.ptpws.ikikasir.core.network.NetworkMonitor
 import com.ptpws.ikikasir.feature.pengaturan.data.local.dao.NotaSettingDao
+import com.ptpws.ikikasir.feature.pengaturan.data.preferences.TableSettingPreferences
 import com.ptpws.ikikasir.feature.pengaturan.data.remote.datasource.NotaSettingRemoteDataSource
 import com.ptpws.ikikasir.feature.pengaturan.data.remote.datasource.NotaSettingRemoteDataSourceImpl
 import com.ptpws.ikikasir.feature.pengaturan.data.repository.NotaSettingRepositoryImpl
@@ -11,6 +13,7 @@ import com.ptpws.ikikasir.feature.pengaturan.domain.repository.NotaSettingReposi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -69,6 +72,30 @@ object PengaturanModule {
     @Provides
     @Singleton
     fun providePaymentMethodSettingRepository(repositoryImpl: com.ptpws.ikikasir.feature.pengaturan.data.repository.PaymentMethodSettingRepositoryImpl): com.ptpws.ikikasir.feature.pengaturan.domain.repository.PaymentMethodSettingRepository {
+        return repositoryImpl
+    }
+
+    @Provides
+    @Singleton
+    fun provideTableSettingDao(database: AppDatabase): com.ptpws.ikikasir.feature.pengaturan.data.local.dao.TableSettingDao {
+        return database.tableSettingDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideTableSettingPreferences(@ApplicationContext context: Context): TableSettingPreferences {
+        return TableSettingPreferences(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTableSettingRemoteDataSource(firestore: FirebaseFirestore): com.ptpws.ikikasir.feature.pengaturan.data.remote.datasource.TableSettingRemoteDataSource {
+        return com.ptpws.ikikasir.feature.pengaturan.data.remote.datasource.TableSettingRemoteDataSourceImpl(firestore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTableSettingRepository(repositoryImpl: com.ptpws.ikikasir.feature.pengaturan.data.repository.TableSettingRepositoryImpl): com.ptpws.ikikasir.feature.pengaturan.domain.repository.TableSettingRepository {
         return repositoryImpl
     }
 }
