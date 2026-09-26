@@ -379,7 +379,7 @@ fun StrukReceiptCard(
             val ppnAmount     = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calculatedPpn
             val grandTotal    = (totalSubtotal - totalDiscount + ppnAmount).coerceAtLeast(0.0)
             val paidAmount    = if (transaksi.paymentAmount > 0 && transaksi.paymentAmount >= grandTotal) transaksi.paymentAmount else grandTotal
-            val returnChange  = if (transaksi.change >= 0 && transaksi.paymentAmount > 0) transaksi.change else (paidAmount - grandTotal).coerceAtLeast(0.0)
+            val returnChange  = (paidAmount - grandTotal).coerceAtLeast(0.0)
             val itemCount     = displayItems.sumOf { it.quantity }
 
             Card(
