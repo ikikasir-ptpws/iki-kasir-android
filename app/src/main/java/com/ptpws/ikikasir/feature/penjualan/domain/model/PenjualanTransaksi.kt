@@ -6,9 +6,10 @@ data class PenjualanTransaksi(
     val transactionId: String = "",       // Invoice number sebagai ID transaksi
     val transactionNumber: String = "",   // Invoice number
     val items: List<CartItem> = emptyList(),
-    val subtotal: Double = 0.0,
+    val subtotal: Double = 0.0,     // Harga keseluruhan sebelum PPN
+    val ppnAmount: Double = 0.0,    // Nominal PPN (0 jika tidak aktif)
     val discount: Double = 0.0,
-    val total: Double = 0.0,
+    val total: Double = 0.0,        // Grand total (termasuk PPN jika eksklusif)
     val paymentMethod: String = "Tunai",
     val paymentAmount: Double = 0.0,
     val change: Double = 0.0,
@@ -16,6 +17,7 @@ data class PenjualanTransaksi(
     val notes: String = "",               // Catatan pesanan kasir/user
     val createdBy: String = "",           // Nama kasir/user
     val customerName: String = "",        // Nama Pelanggan
+    val tableNumber: String = "",         // Nomor Meja
     val queueSequence: Int = 1,           // Nomor Antrean Real
     val createdAt: Timestamp = Timestamp.now(),
     val updatedAt: Timestamp = Timestamp.now(),
