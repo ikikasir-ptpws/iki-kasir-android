@@ -3,6 +3,8 @@ package com.example.app.ui.screen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
@@ -353,39 +355,55 @@ fun ProdukMenuSection(navController: NavController) {
 
 @Composable
 fun PenjualanMenuSection(navController: NavController) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.Start
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        MenuIconItem(
-            iconRes = R.drawable.kasirmenu,
-            label = "Kasir",
-            bgColor = Color(0xFFEFF6FF),
-            onClick = { navController.navigate(AppScreen.Kasir.route) }
-        )
-        Spacer(modifier = Modifier.width(28.dp))
-        MenuIconItem(
-            iconRes = R.drawable.transaksi,
-            label = "Transaksi",
-            bgColor = Color(0xFFECFEFF),
-            onClick = { navController.navigate(AppScreen.Riwayat.route) }
-        )
-        Spacer(modifier = Modifier.width(28.dp))
-        MenuIconItem(
-            iconRes = R.drawable.waitinglist,
-            label = "Antrean",
-            bgColor = Color(0xFFECFEFF),
-            onClick = { navController.navigate(AppScreen.WaitingList.route) }
-        )
-        Spacer(modifier = Modifier.width(28.dp))
-        MenuIconItem(
-            iconRes = R.drawable.riwayatantrean,
-            label = "Riwayat\nAntrean",
-            bgColor = Color(0xFFEFF6FF),
-            onClick = { navController.navigate(AppScreen.RiwayatAntrean.route) }
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            MenuIconItem(
+                iconRes = R.drawable.kasirmenu,
+                label = "Kasir",
+                bgColor = Color(0xFFEFF6FF),
+                onClick = { navController.navigate(AppScreen.Kasir.route) }
+            )
+            Spacer(modifier = Modifier.width(28.dp))
+            MenuIconItem(
+                iconRes = R.drawable.transaksi,
+                label = "Transaksi",
+                bgColor = Color(0xFFECFEFF),
+                onClick = { navController.navigate(AppScreen.Riwayat.route) }
+            )
+            Spacer(modifier = Modifier.width(28.dp))
+            MenuIconItem(
+                iconRes = R.drawable.waitinglist,
+                label = "Antrean",
+                bgColor = Color(0xFFECFEFF),
+                onClick = { navController.navigate(AppScreen.WaitingList.route) }
+            )
+            Spacer(modifier = Modifier.width(28.dp))
+            MenuIconItem(
+                iconRes = R.drawable.riwayatantrean,
+                label = "Riwayat\nAntrean",
+                bgColor = Color(0xFFEFF6FF),
+                onClick = { navController.navigate(AppScreen.RiwayatAntrean.route) }
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            MenuIconItem(
+                iconRes = R.drawable.promo,
+                label = "Promo",
+                bgColor = Color(0xFFFFFBEB),
+                onClick = { navController.navigate(AppScreen.Promo.route) }
+            )
+        }
     }
 }
 
