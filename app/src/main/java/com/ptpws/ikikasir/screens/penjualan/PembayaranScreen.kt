@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.TableBar
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -454,6 +455,72 @@ fun PembayaranScreen(
                                 inner()
                             }
                         )
+                    }
+                }
+            }
+
+            // ── 2.4.5 Nomor Meja Input Card (Tampil jika fitur Meja Aktif di Profil)
+            if (state.tableSetting.isTableEnabled) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.TableBar,
+                                    contentDescription = null,
+                                    tint = Color(0xFFD97706),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = "Nomor Meja (Opsional)",
+                                    fontFamily = interfamily,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
+                                )
+                            }
+
+                            BasicTextField(
+                                value = state.tableNumber,
+                                onValueChange = viewModel::onTableNumberChange,
+                                textStyle = TextStyle(
+                                    color = Color(0xFF0F172A),
+                                    fontSize = 13.sp,
+                                    fontFamily = interfamily
+                                ),
+                                singleLine = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color(0xFFF8FAFC), RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                    .padding(12.dp),
+                                decorationBox = { inner ->
+                                    if (state.tableNumber.isEmpty()) {
+                                        Text(
+                                            text = "Masukkan nomor meja...",
+                                            fontFamily = interfamily,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF94A3B8)
+                                        )
+                                    }
+                                    inner()
+                                }
+                            )
+                        }
                     }
                 }
             }
