@@ -141,6 +141,12 @@ sealed class AppScreen(
         "riwayat_antrean"
     )
 
+    object Promo : AppScreen(
+        R.string.screen_transaksi,
+        R.drawable.promo,
+        "promo"
+    )
+
 
 
     object Pengguna : AppScreen(
