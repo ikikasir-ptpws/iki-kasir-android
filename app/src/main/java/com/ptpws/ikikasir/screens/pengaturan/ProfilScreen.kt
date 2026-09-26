@@ -62,11 +62,17 @@ fun ProfilScreen(
     val liveNotaSetting by viewModel.notaSetting.collectAsState()
     val liveTaxSetting by viewModel.taxSetting.collectAsState()
     val livePaymentMethodSetting by viewModel.paymentMethodSetting.collectAsState()
+    val liveTableSetting by viewModel.tableSetting.collectAsState()
 
     var showPpnDialog by remember { mutableStateOf(false) }
     var showStrukDialog by remember { mutableStateOf(false) }
     var showMetodePembayaranDialog by remember { mutableStateOf(false) }
+    var showMejaDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+
+    // State Setting Meja — diinisialisasi dari ViewModel (Room DB + Firestore) & SharedPreferences
+    val tablePrefs = remember { com.ptpws.ikikasir.feature.pengaturan.data.preferences.TableSettingPreferences(context) }
+    var isMejaAktif by remember { mutableStateOf(tablePrefs.isTableEnabled()) }
 
     // State PPN / Pajak — diinisialisasi dari ViewModel (Room DB + Firestore) & SharedPreferences
     val taxPrefs = remember { com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context) }
@@ -91,6 +97,10 @@ fun ProfilScreen(
     var namaWifi by remember { mutableStateOf(savedNota.wifiName) }
     var kataSandiWifi by remember { mutableStateOf(savedNota.wifiPassword) }
     var ukuranKertas by remember { mutableStateOf(savedNota.paperWidth) }
+
+    LaunchedEffect(liveTableSetting) {
+        isMejaAktif = liveTableSetting.isTableEnabled
+    }
 
     LaunchedEffect(liveNotaSetting) {
         if (liveNotaSetting.storeName.isNotBlank() || liveNotaSetting.storeAddress.isNotBlank()) {
@@ -313,6 +323,16 @@ fun ProfilScreen(
                                 onClick = {
                                     showStrukDialog = true
                                     onSettingStruk()
+                                }
+                            )
+                            HorizontalDivider(color = Color(0xFFF3F4F6))
+                            MenuAkunItem(
+                                icon = Icons.Outlined.TableBar,
+                                iconBackground = Color(0xFFFEF3C7),
+                                iconTint = Color(0xFFD97706),
+                                label = "Setting Meja",
+                                onClick = {
+                                    showMejaDialog = true
                                 }
                             )
                         }
@@ -983,6 +1003,145 @@ fun ProfilScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
                         ) {
                             Text("Simpan", fontFamily = interfamily, color = Color.White)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Dialog Setting Meja
+    if (showMejaDialog) {
+        Dialog(onDismissRequest = { showMejaDialog = false }) {
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(22.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Header (Judul & Close Button)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Pengaturan Meja",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
+                            color = Color(0xFF1E293B)
+                        )
+                        IconButton(
+                            onClick = { showMejaDialog = false },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Tutup",
+                                tint = Color(0xFF94A3B8)
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "Aktifkan atau nonaktifkan fitur nomor meja untuk pelanggan saat transaksi di halaman pembayaran.",
+                        fontFamily = interfamily,
+                        fontSize = 12.sp,
+                        color = Color(0xFF64748B)
+                    )
+
+                    HorizontalDivider(color = Color(0xFFF1F5F9))
+
+                    // Switch Nomor Meja
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Status Nomor Meja",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = Color(0xFF1E293B)
+                            )
+                            Text(
+                                text = if (isMejaAktif) "Input nomor meja di halaman pembayaran aktif" else "Nomor meja nonaktif",
+                                fontFamily = interfamily,
+                                fontSize = 11.sp,
+                                color = Color(0xFF94A3B8)
+                            )
+                        }
+                        Switch(
+                            checked = isMejaAktif,
+                            onCheckedChange = { isMejaAktif = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFF3B32D1)
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Buttons (Batal & Simpan)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showMejaDialog = false },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+                        ) {
+                            Text(
+                                text = "Batal",
+                                fontFamily = interfamily,
+                                color = Color(0xFF475569),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                val updatedSetting = com.ptpws.ikikasir.feature.pengaturan.domain.model.TableSetting(
+                                    id = "default",
+                                    isTableEnabled = isMejaAktif
+                                )
+                                tablePrefs.setTableEnabled(isMejaAktif)
+
+                                viewModel.saveTableSetting(updatedSetting) { success ->
+                                    if (success) {
+                                        Toast.makeText(context, "Pengaturan meja tersimpan ke Database (Room & Firestore)", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Pengaturan meja tersimpan secara offline", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                showMejaDialog = false
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B32D1))
+                        ) {
+                            Text(
+                                text = "Simpan",
+                                fontFamily = interfamily,
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 }
