@@ -58,6 +58,8 @@ import com.ptpws.ikikasir.screens.penjualan.KasirScreen
 import com.ptpws.ikikasir.screens.penjualan.PembayaranScreen
 import com.ptpws.ikikasir.screens.penjualan.WaitingListScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatAntreanScreen
+import com.ptpws.ikikasir.screens.promo.ManajemenPromoScreen
+import com.ptpws.ikikasir.screens.promo.TambahPromoActivity
 
 // Daftar item bottom navigation
 
@@ -187,6 +189,15 @@ fun AppNavHost() {
             }
             composable(AppScreen.RiwayatAntrean.route) {
                 RiwayatAntreanScreen(navController)
+            }
+            composable(AppScreen.Promo.route) {
+                val context = LocalContext.current
+                ManajemenPromoScreen(
+                    onBack = { navController.popBackStack() },
+                    onTambahPromo = {
+                        context.startActivity(Intent(context, TambahPromoActivity::class.java))
+                    }
+                )
             }
             composable(AppScreen.Pengguna.route) {
                 val context = LocalContext.current
