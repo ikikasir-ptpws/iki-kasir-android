@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -366,12 +367,18 @@ fun StrukReceiptCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+    val context = LocalContext.current
+    val taxSetting = remember {
+        com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context).getSetting()
+    }
+
             // ── 5. Payment Summary ─────────────────────────────────────────
             val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else displayItems.sumOf { it.subtotal }
             val totalDiscount = transaksi.discount
-            val ppnAmount     = transaksi.ppnAmount
-            val grandTotal    = if (transaksi.total > 0) transaksi.total else (totalSubtotal - totalDiscount + ppnAmount).coerceAtLeast(0.0)
-            val paidAmount    = if (transaksi.paymentAmount > 0) transaksi.paymentAmount else grandTotal
+            val calculatedPpn = if (taxSetting.isActive && taxSetting.percentage > 0) totalSubtotal * (taxSetting.percentage / 100.0) else 0.0
+            val ppnAmount     = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calculatedPpn
+            val grandTotal    = (totalSubtotal - totalDiscount + ppnAmount).coerceAtLeast(0.0)
+            val paidAmount    = if (transaksi.paymentAmount > 0 && transaksi.paymentAmount >= grandTotal) transaksi.paymentAmount else grandTotal
             val returnChange  = if (transaksi.change >= 0 && transaksi.paymentAmount > 0) transaksi.change else (paidAmount - grandTotal).coerceAtLeast(0.0)
             val itemCount     = displayItems.sumOf { it.quantity }
 
