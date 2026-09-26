@@ -432,6 +432,14 @@ fun DetailTransaksiScreen(
 
                 // ── Card 4: Ringkasan Pembayaran (Gambar 1 Layout)
                 item {
+                    val taxSetting = remember {
+                        com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context).getSetting()
+                    }
+                    val totalSubtotal = if (tx.subtotal > 0) tx.subtotal else tx.items.sumOf { it.subtotal }
+                    val calculatedPpn = if (taxSetting.isActive && taxSetting.percentage > 0) totalSubtotal * (taxSetting.percentage / 100.0) else 0.0
+                    val effectivePpn = if (tx.ppnAmount > 0) tx.ppnAmount else calculatedPpn
+                    val totalPembayaran = (totalSubtotal - tx.discount + effectivePpn).coerceAtLeast(0.0)
+
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
@@ -446,9 +454,17 @@ fun DetailTransaksiScreen(
                         ) {
                             RingkasanBaris(
                                 label = "Subtotal",
-                                nilai = "Rp ${formatRupiah(tx.subtotal)}",
+                                nilai = "Rp ${formatRupiah(totalSubtotal)}",
                                 nilaiColor = Color(0xFF334155)
                             )
+
+                            if (effectivePpn > 0) {
+                                RingkasanBaris(
+                                    label = "PPN",
+                                    nilai = "+ Rp ${formatRupiah(effectivePpn)}",
+                                    nilaiColor = Color(0xFF334155)
+                                )
+                            }
 
                             if (tx.discount > 0) {
                                 RingkasanBaris(
@@ -473,7 +489,7 @@ fun DetailTransaksiScreen(
                                     color = Color(0xFF0F172A)
                                 )
                                 Text(
-                                    text = "Rp ${formatRupiah(tx.total)}",
+                                    text = "Rp ${formatRupiah(totalPembayaran)}",
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 20.sp,
