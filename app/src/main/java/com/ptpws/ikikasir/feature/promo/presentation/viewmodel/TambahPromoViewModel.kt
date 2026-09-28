@@ -7,17 +7,22 @@ import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
 import com.ptpws.ikikasir.feature.promo.domain.model.PromoProductItem
+import com.ptpws.ikikasir.feature.promo.domain.usecase.GetPromoByIdUseCase
 import com.ptpws.ikikasir.feature.promo.domain.usecase.InsertPromoUseCase
+import com.ptpws.ikikasir.feature.promo.domain.usecase.UpdatePromoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
 data class TambahPromoFormState(
+    val promoId: String? = null,
+    val isEditMode: Boolean = false,
     val namaPromo: String = "",
     val tipePromo: String = "",
     val selectedProducts: List<Produk> = emptyList(),
@@ -26,7 +31,6 @@ data class TambahPromoFormState(
     val nilaiDiskon: String = "",
     val tanggalMulai: String = "",
     val tanggalBerakhir: String = "",
-    val deskripsiPromo: String = "",
     val isLoading: Boolean = false,
     val isSavedSuccess: Boolean = false,
     val userMessage: String? = null,
@@ -36,7 +40,9 @@ data class TambahPromoFormState(
 @HiltViewModel
 class TambahPromoViewModel @Inject constructor(
     private val getProdukUseCase: GetProdukUseCase,
-    private val insertPromoUseCase: InsertPromoUseCase
+    private val insertPromoUseCase: InsertPromoUseCase,
+    private val updatePromoUseCase: UpdatePromoUseCase,
+    private val getPromoByIdUseCase: GetPromoByIdUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TambahPromoFormState())
@@ -52,6 +58,51 @@ class TambahPromoViewModel @Inject constructor(
                 _state.update { currentState ->
                     currentState.copy(availableProducts = products)
                 }
+            }
+        }
+    }
+
+    fun loadPromoForEdit(promoId: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            val existingPromo = getPromoByIdUseCase(promoId).firstOrNull()
+            if (existingPromo != null) {
+                val availableProds = _state.value.availableProducts.ifEmpty {
+                    getProdukUseCase().firstOrNull() ?: emptyList()
+                }
+
+                // Map promo.items back to Produk objects from catalog if available, or create transient Produk
+                val matchedProducts = existingPromo.items.map { item ->
+                    availableProds.find { it.id == item.productId } ?: Produk(
+                        id = item.productId,
+                        name = item.productName,
+                        sellingPrice = item.price,
+                        imageUrl = item.imageUrl
+                    )
+                }
+
+                val formattedDiskon = if (existingPromo.discountValue % 1.0 == 0.0) {
+                    existingPromo.discountValue.toLong().toString()
+                } else {
+                    existingPromo.discountValue.toString()
+                }
+
+                _state.update {
+                    it.copy(
+                        promoId = existingPromo.id,
+                        isEditMode = true,
+                        namaPromo = existingPromo.name,
+                        tipePromo = existingPromo.promoType,
+                        selectedProducts = matchedProducts,
+                        diskonType = existingPromo.discountType,
+                        nilaiDiskon = formattedDiskon,
+                        tanggalMulai = existingPromo.startDate,
+                        tanggalBerakhir = existingPromo.endDate,
+                        isLoading = false
+                    )
+                }
+            } else {
+                _state.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -78,10 +129,6 @@ class TambahPromoViewModel @Inject constructor(
 
     fun onTanggalBerakhirChange(tanggal: String) {
         _state.update { it.copy(tanggalBerakhir = tanggal) }
-    }
-
-    fun onDeskripsiChange(deskripsi: String) {
-        _state.update { it.copy(deskripsiPromo = deskripsi) }
     }
 
     fun setSelectedProducts(products: List<Produk>) {
@@ -112,16 +159,18 @@ class TambahPromoViewModel @Inject constructor(
             )
         }
 
-        val newPromo = Promo(
-            id = UUID.randomUUID().toString(),
-            nama = form.namaPromo,
-            tipePromo = form.tipePromo,
+        val isEdit = form.isEditMode && !form.promoId.isNullOrBlank()
+        val promoId = form.promoId ?: UUID.randomUUID().toString()
+
+        val targetPromo = Promo(
+            id = promoId,
+            name = form.namaPromo,
+            promoType = form.tipePromo,
             items = promoItems,
-            diskonType = form.diskonType,
-            nilaiDiskon = rawDiskon,
-            tanggalMulai = form.tanggalMulai,
-            tanggalBerakhir = form.tanggalBerakhir,
-            deskripsi = form.deskripsiPromo,
+            discountType = form.diskonType,
+            discountValue = rawDiskon,
+            startDate = form.tanggalMulai,
+            endDate = form.tanggalBerakhir,
             isActive = true,
             createdAt = Timestamp.now(),
             updatedAt = Timestamp.now(),
@@ -130,9 +179,11 @@ class TambahPromoViewModel @Inject constructor(
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            insertPromoUseCase(newPromo).collect { result ->
+            val flow = if (isEdit) updatePromoUseCase(targetPromo) else insertPromoUseCase(targetPromo)
+            flow.collect { result ->
                 result.onSuccess {
-                    _state.update { it.copy(isLoading = false, isSavedSuccess = true, userMessage = "Promo berhasil disimpan!") }
+                    val msg = if (isEdit) "Promo berhasil diperbarui!" else "Promo berhasil disimpan!"
+                    _state.update { it.copy(isLoading = false, isSavedSuccess = true, userMessage = msg) }
                 }.onFailure { err ->
                     _state.update { it.copy(isLoading = false, errorMessage = "Gagal menyimpan promo: ${err.message}") }
                 }
