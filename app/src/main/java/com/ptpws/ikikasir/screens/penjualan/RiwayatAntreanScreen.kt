@@ -646,6 +646,16 @@ private fun QueueHistoryCard(
                                         color = Color(0xFF64748B),
                                         fontFamily = interfamily
                                     )
+                                    if (cartItem.produk.discount > 0) {
+                                        val discLabel = if (cartItem.produk.discountType == "PERCENT") "${cartItem.produk.discount.toInt()}%" else rupiahFormat.format(cartItem.produk.discount)
+                                        Text(
+                                            text = "Promo Diskon: $discLabel",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFF16A34A),
+                                            fontFamily = interfamily
+                                        )
+                                    }
                                     if (cartItem.note.isNotBlank()) {
                                         Text(
                                             text = "Catatan: ${cartItem.note}",
@@ -686,16 +696,41 @@ private fun QueueHistoryCard(
                         val taxSetting = remember {
                             com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context).getSetting()
                         }
-                        val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
+                        val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.totalPrice }
                         val calculatedPpn = if (taxSetting.isActive && taxSetting.percentage > 0) totalSubtotal * (taxSetting.percentage / 100.0) else 0.0
                         val effectivePpn = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calculatedPpn
-                        val grandTotal = (totalSubtotal - transaksi.discount + effectivePpn).coerceAtLeast(0.0)
+                        val discountAmount = transaksi.discount
+                        val grandTotal = if (transaksi.total > 0) transaksi.total else (totalSubtotal - discountAmount + effectivePpn).coerceAtLeast(0.0)
 
                         HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp)
 
+                        if (discountAmount > 0) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Diskon Promo",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF16A34A),
+                                    fontFamily = interfamily
+                                )
+                                Text(
+                                    text = "- ${rupiahFormat.format(discountAmount)}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF16A34A),
+                                    fontFamily = interfamily
+                                )
+                            }
+                        }
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = "Total Tagihan",
