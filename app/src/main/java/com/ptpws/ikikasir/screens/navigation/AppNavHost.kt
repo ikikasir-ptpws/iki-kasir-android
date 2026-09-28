@@ -196,6 +196,12 @@ fun AppNavHost() {
                     onBack = { navController.popBackStack() },
                     onTambahPromo = {
                         context.startActivity(Intent(context, TambahPromoActivity::class.java))
+                    },
+                    onEditPromo = { promoId ->
+                        val intent = Intent(context, TambahPromoActivity::class.java).apply {
+                            putExtra("PROMO_ID", promoId)
+                        }
+                        context.startActivity(intent)
                     }
                 )
             }
