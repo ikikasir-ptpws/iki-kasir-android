@@ -47,7 +47,7 @@ import com.ptpws.ikikasir.feature.promo.data.local.entity.PromoEntity
         TableSettingEntity::class,
         PromoEntity::class
     ],
-    version = 26,
+    version = 27,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class, MapConverter::class)
