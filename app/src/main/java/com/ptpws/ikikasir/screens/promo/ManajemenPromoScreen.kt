@@ -32,98 +32,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.commond.interfamily
-
-data class PromoItem(
-    val id: String,
-    val namaPromo: String,
-    val nilaiPromo: String,
-    val infoTanggal: String,
-    val isBerakhirHariIni: Boolean = false,
-    val isMulaiNanti: Boolean = false,
-    val isSelesai: Boolean = false,
-    val isActive: Boolean = true,
-    val statusFilter: String
-)
+import com.ptpws.ikikasir.feature.promo.domain.model.Promo
+import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.PromoViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManajemenPromoScreen(
     onBack: () -> Unit = {},
-    onTambahPromo: () -> Unit = {}
+    onTambahPromo: () -> Unit = {},
+    viewModel: PromoViewModel = hiltViewModel()
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("Semua") }
+    val state by viewModel.state.collectAsState()
+    var promoToDelete by remember { mutableStateOf<Promo?>(null) }
 
-    var promoList by remember {
-        mutableStateOf(
-            listOf(
-                PromoItem(
-                    id = "1",
-                    namaPromo = "Promo Bundling Hemat",
-                    nilaiPromo = "Potongan Rp 25.000",
-                    infoTanggal = "Hingga 31 Mei 2024",
-                    isActive = true,
-                    statusFilter = "Aktif"
-                ),
-                PromoItem(
-                    id = "2",
-                    namaPromo = "Diskon Spesial Gajian",
-                    nilaiPromo = "Diskon 20% (Maks Rp 50rb)",
-                    infoTanggal = "Hingga 31 Mei 2024",
-                    isActive = true,
-                    statusFilter = "Aktif"
-                ),
-                PromoItem(
-                    id = "3",
-                    namaPromo = "Kopi Kenikmatan Sore",
-                    nilaiPromo = "Potongan Rp 5.000 / cup",
-                    infoTanggal = "Berakhir Hari Ini (23:59 WIB)",
-                    isBerakhirHariIni = true,
-                    isActive = true,
-                    statusFilter = "Aktif"
-                ),
-                PromoItem(
-                    id = "4",
-                    namaPromo = "Flash Sale Awal Bulan",
-                    nilaiPromo = "Diskon Rp 15.000",
-                    infoTanggal = "Mulai 31 Mei 2024",
-                    isMulaiNanti = true,
-                    isActive = false,
-                    statusFilter = "Akan Datang"
-                ),
-                PromoItem(
-                    id = "5",
-                    namaPromo = "Diskon Akhir Pekan Ramadan",
-                    nilaiPromo = "Potongan Rp 30.000",
-                    infoTanggal = "SELESAI",
-                    isSelesai = true,
-                    isActive = false,
-                    statusFilter = "Kedaluwarsa"
-                )
-            )
-        )
-    }
-
-    var promoToDelete by remember { mutableStateOf<PromoItem?>(null) }
-
-    val filteredList = remember(searchQuery, selectedFilter, promoList) {
-        promoList.filter { item ->
-            val matchSearch = searchQuery.isEmpty() ||
-                    item.namaPromo.contains(searchQuery, ignoreCase = true) ||
-                    item.nilaiPromo.contains(searchQuery, ignoreCase = true)
-            val matchFilter = when (selectedFilter) {
-                "Aktif" -> item.statusFilter == "Aktif"
-                "Akan Datang" -> item.statusFilter == "Akan Datang"
-                "Kedaluwarsa" -> item.statusFilter == "Kedaluwarsa"
-                else -> true
-            }
-            matchSearch && matchFilter
-        }
-    }
-
-    val promoAktifCount = remember(promoList) { promoList.count { it.isActive } }
-    val berakhirMingguIniCount = remember(promoList) { promoList.count { it.isBerakhirHariIni || (it.isActive && it.infoTanggal.contains("Mei")) } }
+    val activeCount = remember(state.promoList) { state.promoList.count { it.isActive } }
+    // Count promos whose end date is within the next 7 days from today (simple: check isActive with tanggalBerakhir set)
+    val endingThisWeekCount = remember(state.promoList) { state.promoList.count { it.isActive && it.tanggalBerakhir.isNotBlank() } }
 
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
@@ -211,8 +137,8 @@ fun ManajemenPromoScreen(
                             modifier = Modifier.size(20.dp)
                         )
                         BasicTextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
+                            value = state.searchQuery,
+                            onValueChange = { viewModel.onSearchQueryChange(it) },
                             modifier = Modifier.weight(1f),
                             textStyle = TextStyle(
                                 fontFamily = interfamily,
@@ -222,7 +148,7 @@ fun ManajemenPromoScreen(
                             cursorBrush = SolidColor(Color(0xFF2563EB)),
                             singleLine = true,
                             decorationBox = { innerTextField ->
-                                if (searchQuery.isEmpty()) {
+                                if (state.searchQuery.isEmpty()) {
                                     Text(
                                         text = "Cari promo ..",
                                         fontFamily = interfamily,
@@ -270,7 +196,7 @@ fun ManajemenPromoScreen(
                                     letterSpacing = 0.5.sp
                                 )
                                 Text(
-                                    text = "$promoAktifCount",
+                                    text = "$activeCount",
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 36.sp,
@@ -316,7 +242,7 @@ fun ManajemenPromoScreen(
                                     lineHeight = 13.sp
                                 )
                                 Text(
-                                    text = "$berakhirMingguIniCount",
+                                    text = "$endingThisWeekCount",
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 36.sp,
@@ -344,13 +270,13 @@ fun ManajemenPromoScreen(
                 ) {
                     val filters = listOf("Semua", "Aktif", "Akan Datang", "Kedaluwarsa")
                     items(filters) { filterText ->
-                        val isSelected = selectedFilter == filterText
+                        val isSelected = state.selectedFilterTab == filterText
                         Surface(
                             shape = RoundedCornerShape(20.dp),
                             color = if (isSelected) Color(0xFF2563EB) else Color(0xFFF1F5F9),
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
-                                .clickable { selectedFilter = filterText }
+                                .clickable { viewModel.onFilterTabSelected(filterText) }
                         ) {
                             Text(
                                 text = filterText,
@@ -366,85 +292,76 @@ fun ManajemenPromoScreen(
             }
 
             // ── 4. Promo Items List ──────────────────────────────────────
-            items(items = filteredList, key = { it.id }) { item ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
+            if (state.filteredList.isEmpty()) {
+                item {
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(top = 40.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        // Left Text Info
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        Text(
+                            text = "Belum ada promo",
+                            fontFamily = interfamily,
+                            fontSize = 14.sp,
+                            color = Color(0xFF94A3B8)
+                        )
+                    }
+                }
+            } else {
+                items(items = state.filteredList, key = { it.id }) { promo ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Subtitle / Nama Promo
-                            Text(
-                                text = item.namaPromo,
-                                fontFamily = interfamily,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (item.isSelesai) Color(0xFF94A3B8) else Color(0xFF334155)
-                            )
-                            // Main Value Title
-                            Text(
-                                text = item.nilaiPromo,
-                                fontFamily = interfamily,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = when {
-                                    item.isSelesai -> Color(0xFF94A3B8)
-                                    item.isMulaiNanti -> Color(0xFF0F172A)
-                                    else -> Color(0xFF2563EB)
-                                }
-                            )
-                            // Info Tanggal / Status
-                            if (item.isSelesai) {
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = Color(0xFFF1F5F9),
-                                    modifier = Modifier.padding(top = 2.dp)
-                                ) {
-                                    Text(
-                                        text = "SELESAI",
-                                        fontFamily = interfamily,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF94A3B8),
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            } else {
+                            // Left Text Info
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
                                 Text(
-                                    text = item.infoTanggal,
+                                    text = promo.nama,
                                     fontFamily = interfamily,
                                     fontSize = 11.sp,
-                                    fontWeight = if (item.isBerakhirHariIni) FontWeight.SemiBold else FontWeight.Normal,
-                                    color = if (item.isBerakhirHariIni) Color(0xFFEF4444) else Color(0xFF64748B)
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF334155)
+                                )
+                                val nilaidiskonText = if (promo.diskonType == "%") {
+                                    "Diskon ${promo.nilaiDiskon.toInt()}%"
+                                } else {
+                                    "Potongan Rp ${promo.nilaiDiskon.toInt()}"
+                                }
+                                Text(
+                                    text = nilaidiskonText,
+                                    fontFamily = interfamily,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF2563EB)
+                                )
+                                Text(
+                                    text = "Periode: ${promo.tanggalMulai} - ${promo.tanggalBerakhir}",
+                                    fontFamily = interfamily,
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF64748B)
                                 )
                             }
-                        }
 
-                        // Right Controls Row (Switch + Edit + Delete + Chevron)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
-                            // Switch (only if not completed/expired)
-                            if (!item.isSelesai) {
+                            // Right Controls Row (Switch + Edit + Delete + Chevron)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
                                 Switch(
-                                    checked = item.isActive,
-                                    onCheckedChange = { checked ->
-                                        promoList = promoList.map {
-                                            if (it.id == item.id) it.copy(isActive = checked) else it
-                                        }
-                                    },
+                                    checked = promo.isActive,
+                                    onCheckedChange = { viewModel.toggleStatus(promo.id, promo.isActive) },
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = Color.White,
                                         checkedTrackColor = Color(0xFF2563EB),
@@ -454,41 +371,38 @@ fun ManajemenPromoScreen(
                                     ),
                                     modifier = Modifier.scale(0.85f)
                                 )
-                            }
 
-                            // Edit Icon
-                            IconButton(
-                                onClick = onTambahPromo,
-                                modifier = Modifier.size(32.dp)
-                            ) {
+                                IconButton(
+                                    onClick = onTambahPromo,
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Edit Promo",
+                                        tint = Color(0xFF2563EB),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = { promoToDelete = promo },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Hapus Promo",
+                                        tint = Color(0xFFEF4444),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+
                                 Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Edit Promo",
-                                    tint = Color(0xFF2563EB),
-                                    modifier = Modifier.size(18.dp)
+                                    imageVector = Icons.Default.ArrowForwardIos,
+                                    contentDescription = null,
+                                    tint = Color(0xFFCBD5E1),
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
-
-                            // Delete Icon
-                            IconButton(
-                                onClick = { promoToDelete = item },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Hapus Promo",
-                                    tint = Color(0xFFEF4444),
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-
-                            // Chevron Right Icon
-                            Icon(
-                                imageVector = Icons.Default.ArrowForwardIos,
-                                contentDescription = null,
-                                tint = Color(0xFFCBD5E1),
-                                modifier = Modifier.size(20.dp)
-                            )
                         }
                     }
                 }
@@ -522,7 +436,7 @@ fun ManajemenPromoScreen(
             },
             text = {
                 Text(
-                    text = "Apakah Anda yakin ingin menghapus promo \"${targetPromo.namaPromo}\"?",
+                    text = "Apakah Anda yakin ingin menghapus promo \"${targetPromo.nama}\"?",
                     fontFamily = interfamily,
                     fontSize = 14.sp,
                     color = Color(0xFF4B5563)
@@ -531,7 +445,7 @@ fun ManajemenPromoScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        promoList = promoList.filter { it.id != targetPromo.id }
+                        viewModel.deletePromo(targetPromo.id)
                         promoToDelete = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),

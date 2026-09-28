@@ -20,6 +20,8 @@ import com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetTaxSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetPaymentMethodSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetTableSettingUseCase
+import com.ptpws.ikikasir.feature.promo.domain.model.Promo
+import com.ptpws.ikikasir.feature.promo.domain.usecase.GetActivePromosUseCase
 
 @HiltViewModel
 class PembayaranViewModel @Inject constructor(
@@ -28,7 +30,8 @@ class PembayaranViewModel @Inject constructor(
     private val prosesPembayaranUseCase: ProsesPembayaranUseCase,
     private val getTaxSettingUseCase: GetTaxSettingUseCase,
     private val getPaymentMethodSettingUseCase: GetPaymentMethodSettingUseCase,
-    private val getTableSettingUseCase: GetTableSettingUseCase
+    private val getTableSettingUseCase: GetTableSettingUseCase,
+    private val getActivePromosUseCase: GetActivePromosUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PembayaranState())
@@ -46,6 +49,12 @@ class PembayaranViewModel @Inject constructor(
     }
 
     private fun observeCartAndTax() {
+        viewModelScope.launch {
+            getActivePromosUseCase().collect { promos ->
+                _state.update { it.copy(activePromos = promos) }
+            }
+        }
+
         viewModelScope.launch {
             getTableSettingUseCase().collect { tableSetting ->
                 _state.update { it.copy(tableSetting = tableSetting) }
@@ -106,24 +115,49 @@ class PembayaranViewModel @Inject constructor(
         }
     }
 
+    fun onSelectPromo(promo: Promo?) {
+        _state.update { it.copy(selectedPromo = promo) }
+        recalculateTotal()
+    }
+
     private fun recalculateTotal() {
         _state.update { current ->
             val subtotal = current.subtotal
             val tax = current.taxSetting
+            val promo = current.selectedPromo
+
+            val promoDiscountAmount = if (promo != null && current.cartItems.isNotEmpty()) {
+                val eligibleSubtotal = if (promo.items.isEmpty()) {
+                    subtotal
+                } else {
+                    val promoProductIds = promo.items.map { it.productId }.toSet()
+                    current.cartItems.filter { it.produk.id in promoProductIds }.sumOf { it.totalPrice }
+                }
+                if (eligibleSubtotal > 0) {
+                    val discount = if (promo.diskonType.equals("%", ignoreCase = true)) {
+                        eligibleSubtotal * (promo.nilaiDiskon / 100.0)
+                    } else {
+                        promo.nilaiDiskon
+                    }
+                    discount.coerceAtMost(subtotal)
+                } else 0.0
+            } else 0.0
+
+            val discountedSubtotal = (subtotal - promoDiscountAmount).coerceAtLeast(0.0)
 
             var ppnAmount = 0.0
-            var grandTotal = subtotal
+            var grandTotal = discountedSubtotal
             var ppnLabel = ""
 
             if (tax.isActive && tax.percentage > 0) {
                 val formattedPercent = if (tax.percentage % 1.0 == 0.0) "${tax.percentage.toInt()}%" else "${tax.percentage}%"
                 if (tax.type == TaxSetting.TAX_TYPE_EXCLUSIVE) {
-                    ppnAmount = subtotal * (tax.percentage / 100.0)
-                    grandTotal = subtotal + ppnAmount
+                    ppnAmount = discountedSubtotal * (tax.percentage / 100.0)
+                    grandTotal = discountedSubtotal + ppnAmount
                     ppnLabel = "PPN $formattedPercent (Eksklusif)"
                 } else {
-                    ppnAmount = subtotal - (subtotal / (1 + tax.percentage / 100.0))
-                    grandTotal = subtotal
+                    ppnAmount = discountedSubtotal - (discountedSubtotal / (1 + tax.percentage / 100.0))
+                    grandTotal = discountedSubtotal
                     ppnLabel = "Harga termasuk PPN $formattedPercent"
                 }
             }
@@ -133,6 +167,7 @@ class PembayaranViewModel @Inject constructor(
             val kembalian = if (isTunai) (uangDiterima - grandTotal).coerceAtLeast(0.0) else 0.0
 
             current.copy(
+                promoDiscountAmount = promoDiscountAmount,
                 ppnAmount = ppnAmount,
                 grandTotal = grandTotal,
                 ppnLabel = ppnLabel,
@@ -237,6 +272,7 @@ class PembayaranViewModel @Inject constructor(
                 ppnAmount = currentState.ppnAmount,
                 totalBayar = totalBayar,
                 metodePembayaran = currentState.metodePembayaran,
+                discount = currentState.promoDiscountAmount,
                 notes = currentState.notes,
                 customerName = currentState.customerName,
                 tableNumber = currentState.tableNumber

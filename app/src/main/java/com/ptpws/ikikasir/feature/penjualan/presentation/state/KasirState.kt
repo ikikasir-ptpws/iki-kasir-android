@@ -4,6 +4,7 @@ import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting
 import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
+import com.ptpws.ikikasir.feature.promo.domain.model.Promo
 
 data class KasirState(
     val searchQuery: String = "",
@@ -12,6 +13,8 @@ data class KasirState(
     val kategoriList: List<Kategori> = emptyList(),
     val cartItems: List<CartItem> = emptyList(),
     val produkKatalog: List<Produk> = emptyList(),
+    val activePromos: List<Promo> = emptyList(),
+    val selectedPromo: Promo? = null,
     val showProductCatalogDialog: Boolean = false,
     val orderNote: String = "",
     val showOrderNoteDialog: Boolean = false,
@@ -23,8 +26,45 @@ data class KasirState(
     val totalItemCount: Int
         get() = cartItems.sumOf { it.quantity }
 
-    val subtotal: Double
+    val rawSubtotal: Double
         get() = cartItems.sumOf { it.totalPrice }
+
+    // Auto-detect applicable promo if none explicitly selected
+    val effectivePromo: Promo?
+        get() {
+            if (selectedPromo != null) return selectedPromo
+            if (cartItems.isEmpty() || activePromos.isEmpty()) return null
+            val cartProductIds = cartItems.map { it.produk.id }.toSet()
+            return activePromos.firstOrNull { promo ->
+                promo.isActive && (promo.items.isEmpty() || promo.items.any { it.productId in cartProductIds })
+            }
+        }
+
+    val promoDiscountAmount: Double
+        get() {
+            val promo = effectivePromo ?: return 0.0
+            if (cartItems.isEmpty()) return 0.0
+
+            val eligibleSubtotal = if (promo.items.isEmpty()) {
+                rawSubtotal
+            } else {
+                val promoProductIds = promo.items.map { it.productId }.toSet()
+                cartItems.filter { it.produk.id in promoProductIds }.sumOf { it.totalPrice }
+            }
+
+            if (eligibleSubtotal <= 0) return 0.0
+
+            val discount = if (promo.diskonType.equals("%", ignoreCase = true)) {
+                eligibleSubtotal * (promo.nilaiDiskon / 100.0)
+            } else {
+                promo.nilaiDiskon
+            }
+
+            return discount.coerceAtMost(rawSubtotal)
+        }
+
+    val subtotal: Double
+        get() = (rawSubtotal - promoDiscountAmount).coerceAtLeast(0.0)
 
     val ppnAmount: Double
         get() {

@@ -99,4 +99,12 @@ object DatabaseModule {
     ): RoleDao {
         return database.roleDao
     }
+
+    @Provides
+    @Singleton
+    fun providePromoDao(
+        database: AppDatabase
+    ): com.ptpws.ikikasir.feature.promo.data.local.dao.PromoDao {
+        return database.promoDao
+    }
 }

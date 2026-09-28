@@ -1,7 +1,7 @@
 package com.ptpws.ikikasir.screens.promo
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Delete
@@ -28,7 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -38,59 +37,47 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.produk.domain.model.Produk
+import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.TambahPromoViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-data class ProdukPromoItem(
-    val id: String,
-    val nama: String,
-    val hargaFormatted: String,
-    val harga: Double,
-    val kategori: String = "Umum",
-    val imageRes: Int = R.drawable.kopi
-)
-
-private val mockCatalogProduk = listOf(
-    ProdukPromoItem("1", "Nike Air Max Red", "Rp 850.000", 850000.0, "Sepatu"),
-    ProdukPromoItem("2", "Smartwatch Series X", "Rp 400.000", 400000.0, "Elektronik"),
-    ProdukPromoItem("3", "Kopi Latte Warm", "Rp 25.000", 25000.0, "Minuman"),
-    ProdukPromoItem("4", "Kaos Polos Premium", "Rp 120.000", 120000.0, "Pakaian"),
-    ProdukPromoItem("5", "Air Jordan 1 Retro", "Rp 2.100.000", 2100000.0, "Sepatu"),
-    ProdukPromoItem("6", "Headphone Wireless", "Rp 650.000", 650000.0, "Elektronik")
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TambahPromoScreen(
     onBack: () -> Unit = {},
-    onSimpanPromo: () -> Unit = {}
+    onSimpanPromo: () -> Unit = {},
+    viewModel: TambahPromoViewModel = hiltViewModel()
 ) {
-    var namaPromo by remember { mutableStateOf("Promo Bundling Hemat") }
-    var tipePromo by remember { mutableStateOf("Bundling Produk (Paket)") }
+    val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
 
-    var diskonType by remember { mutableStateOf("Rp") } // "Rp" or "%"
-    var nilaiDiskon by remember { mutableStateOf("25.000") }
+    LaunchedEffect(state.isSavedSuccess) {
+        if (state.isSavedSuccess) {
+            Toast.makeText(context, "Promo berhasil disimpan!", Toast.LENGTH_SHORT).show()
+            onSimpanPromo()
+        }
+    }
 
-    var tanggalMulai by remember { mutableStateOf("24 Mei 2024") }
-    var tanggalBerakhir by remember { mutableStateOf("31 Mei 2024") }
+    LaunchedEffect(state.errorMessage) {
+        state.errorMessage?.let { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessage()
+        }
+    }
+
     var showDatePickerMulai by remember { mutableStateOf(false) }
     var showDatePickerBerakhir by remember { mutableStateOf(false) }
     val datePickerStateMulai = rememberDatePickerState()
     val datePickerStateBerakhir = rememberDatePickerState()
 
     var showPilihProdukDialog by remember { mutableStateOf(false) }
-    var produkTerpilih by remember {
-        mutableStateOf(
-            listOf(
-                mockCatalogProduk[0],
-                mockCatalogProduk[1]
-            )
-        )
-    }
 
     if (showDatePickerMulai) {
         DatePickerDialog(
@@ -99,7 +86,7 @@ fun TambahPromoScreen(
                 TextButton(onClick = {
                     datePickerStateMulai.selectedDateMillis?.let { epoch ->
                         val formatter = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID"))
-                        tanggalMulai = formatter.format(Date(epoch))
+                        viewModel.onTanggalMulaiChange(formatter.format(Date(epoch)))
                     }
                     showDatePickerMulai = false
                 }) {
@@ -123,7 +110,7 @@ fun TambahPromoScreen(
                 TextButton(onClick = {
                     datePickerStateBerakhir.selectedDateMillis?.let { epoch ->
                         val formatter = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID"))
-                        tanggalBerakhir = formatter.format(Date(epoch))
+                        viewModel.onTanggalBerakhirChange(formatter.format(Date(epoch)))
                     }
                     showDatePickerBerakhir = false
                 }) {
@@ -142,10 +129,11 @@ fun TambahPromoScreen(
 
     if (showPilihProdukDialog) {
         PilihProdukPromoDialog(
-            initialSelected = produkTerpilih,
+            availableProducts = state.availableProducts,
+            initialSelected = state.selectedProducts,
             onDismiss = { showPilihProdukDialog = false },
             onSelesai = { selectedList ->
-                produkTerpilih = selectedList
+                viewModel.setSelectedProducts(selectedList)
                 showPilihProdukDialog = false
             }
         )
@@ -201,7 +189,8 @@ fun TambahPromoScreen(
                         .padding(16.dp)
                 ) {
                     Button(
-                        onClick = onSimpanPromo,
+                        onClick = { viewModel.simpanPromo() },
+                        enabled = !state.isLoading,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
@@ -210,24 +199,32 @@ fun TambahPromoScreen(
                             containerColor = Color(0xFF2563EB)
                         )
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                        if (state.isLoading) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Simpan Promo",
-                                fontFamily = interfamily,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Simpan Promo",
+                                    fontFamily = interfamily,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
                         }
                     }
                 }
@@ -299,8 +296,8 @@ fun TambahPromoScreen(
                                     contentAlignment = Alignment.CenterStart
                                 ) {
                                     BasicTextField(
-                                        value = namaPromo,
-                                        onValueChange = { namaPromo = it },
+                                        value = state.namaPromo,
+                                        onValueChange = { viewModel.onNamaPromoChange(it) },
                                         singleLine = true,
                                         textStyle = TextStyle(
                                             color = Color(0xFF0F172A),
@@ -310,7 +307,7 @@ fun TambahPromoScreen(
                                         ),
                                         modifier = Modifier.fillMaxWidth(),
                                         decorationBox = { innerTextField ->
-                                            if (namaPromo.isEmpty()) {
+                                            if (state.namaPromo.isEmpty()) {
                                                 Text(
                                                     text = "Masukkan nama promo",
                                                     fontSize = 14.sp,
@@ -358,8 +355,8 @@ fun TambahPromoScreen(
                                     contentAlignment = Alignment.CenterStart
                                 ) {
                                     BasicTextField(
-                                        value = tipePromo,
-                                        onValueChange = { tipePromo = it },
+                                        value = state.tipePromo,
+                                        onValueChange = { viewModel.onTipePromoChange(it) },
                                         singleLine = true,
                                         textStyle = TextStyle(
                                             color = Color(0xFF0F172A),
@@ -369,7 +366,7 @@ fun TambahPromoScreen(
                                         ),
                                         modifier = Modifier.fillMaxWidth(),
                                         decorationBox = { innerTextField ->
-                                            if (tipePromo.isEmpty()) {
+                                            if (state.tipePromo.isEmpty()) {
                                                 Text(
                                                     text = "Masukkan tipe promo",
                                                     fontSize = 14.sp,
@@ -416,7 +413,7 @@ fun TambahPromoScreen(
                                 letterSpacing = 0.5.sp
                             )
                             Text(
-                                text = "${produkTerpilih.size} Terpilih",
+                                text = "${state.selectedProducts.size} Terpilih",
                                 fontFamily = interfamily,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
@@ -425,62 +422,63 @@ fun TambahPromoScreen(
                         }
 
                         // Selected Products List
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            produkTerpilih.forEach { produk ->
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(14.dp),
-                                    color = Color(0xFFF8FAFC),
-                                    border = BorderStroke(1.dp, Color(0xFFF1F5F9))
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                        if (state.selectedProducts.isNotEmpty()) {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                state.selectedProducts.forEach { produk ->
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFFF8FAFC),
+                                        border = BorderStroke(1.dp, Color(0xFFF1F5F9))
                                     ) {
-                                        Image(
-                                            painter = painterResource(id = produk.imageRes),
-                                            contentDescription = produk.nama,
-                                            contentScale = ContentScale.Crop,
+                                        Row(
                                             modifier = Modifier
-                                                .size(44.dp)
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(Color(0xFFE2E8F0))
-                                        )
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        Column(
-                                            modifier = Modifier.weight(1f),
-                                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                                                .fillMaxWidth()
+                                                .padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text(
-                                                text = produk.nama,
-                                                fontFamily = interfamily,
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF0F172A),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
+                                            AsyncImage(
+                                                model = produk.imageUrl.ifBlank { R.drawable.kopi },
+                                                contentDescription = produk.name,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier
+                                                    .size(44.dp)
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(Color(0xFFE2E8F0))
                                             )
-                                            Text(
-                                                text = produk.hargaFormatted,
-                                                fontFamily = interfamily,
-                                                fontSize = 13.sp,
-                                                color = Color(0xFF64748B)
-                                            )
-                                        }
-                                        IconButton(
-                                            onClick = {
-                                                produkTerpilih = produkTerpilih.filter { it.id != produk.id }
-                                            },
-                                            modifier = Modifier.size(32.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Delete,
-                                                contentDescription = "Hapus",
-                                                tint = Color(0xFF94A3B8),
-                                                modifier = Modifier.size(20.dp)
-                                            )
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Column(
+                                                modifier = Modifier.weight(1f),
+                                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                                            ) {
+                                                Text(
+                                                    text = produk.name,
+                                                    fontFamily = interfamily,
+                                                    fontSize = 14.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color(0xFF0F172A),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                val fmt = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+                                                Text(
+                                                    text = fmt.format(produk.sellingPrice),
+                                                    fontFamily = interfamily,
+                                                    fontSize = 13.sp,
+                                                    color = Color(0xFF64748B)
+                                                )
+                                            }
+                                            IconButton(
+                                                onClick = { viewModel.removeProduct(produk.id) },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Delete,
+                                                    contentDescription = "Hapus",
+                                                    tint = Color(0xFF94A3B8),
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -563,31 +561,31 @@ fun TambahPromoScreen(
                                 ) {
                                     Surface(
                                         shape = RoundedCornerShape(16.dp),
-                                        color = if (diskonType == "Rp") Color.White else Color.Transparent,
-                                        shadowElevation = if (diskonType == "Rp") 1.dp else 0.dp,
-                                        modifier = Modifier.clickable { diskonType = "Rp" }
+                                        color = if (state.diskonType == "Rp") Color.White else Color.Transparent,
+                                        shadowElevation = if (state.diskonType == "Rp") 1.dp else 0.dp,
+                                        modifier = Modifier.clickable { viewModel.onDiskonTypeChange("Rp") }
                                     ) {
                                         Text(
                                             text = "Rp",
                                             fontFamily = interfamily,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (diskonType == "Rp") Color(0xFF2563EB) else Color(0xFF64748B),
+                                            color = if (state.diskonType == "Rp") Color(0xFF2563EB) else Color(0xFF64748B),
                                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                                         )
                                     }
                                     Surface(
                                         shape = RoundedCornerShape(16.dp),
-                                        color = if (diskonType == "%") Color.White else Color.Transparent,
-                                        shadowElevation = if (diskonType == "%") 1.dp else 0.dp,
-                                        modifier = Modifier.clickable { diskonType = "%" }
+                                        color = if (state.diskonType == "%") Color.White else Color.Transparent,
+                                        shadowElevation = if (state.diskonType == "%") 1.dp else 0.dp,
+                                        modifier = Modifier.clickable { viewModel.onDiskonTypeChange("%") }
                                     ) {
                                         Text(
                                             text = "%",
                                             fontFamily = interfamily,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (diskonType == "%") Color(0xFF2563EB) else Color(0xFF64748B),
+                                            color = if (state.diskonType == "%") Color(0xFF2563EB) else Color(0xFF64748B),
                                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                                         )
                                     }
@@ -616,7 +614,7 @@ fun TambahPromoScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = diskonType,
+                                        text = state.diskonType,
                                         fontFamily = interfamily,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
@@ -625,8 +623,8 @@ fun TambahPromoScreen(
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 BasicTextField(
-                                    value = nilaiDiskon,
-                                    onValueChange = { input -> nilaiDiskon = input },
+                                    value = state.nilaiDiskon,
+                                    onValueChange = { viewModel.onNilaiDiskonChange(it) },
                                     singleLine = true,
                                     textStyle = TextStyle(
                                         color = Color(0xFF0F172A),
@@ -635,7 +633,18 @@ fun TambahPromoScreen(
                                         fontWeight = FontWeight.Bold
                                     ),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
+                                    decorationBox = { innerTextField ->
+                                        if (state.nilaiDiskon.isEmpty()) {
+                                            Text(
+                                                text = "0",
+                                                fontSize = 15.sp,
+                                                fontFamily = interfamily,
+                                                color = Color(0xFF94A3B8)
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
                                 )
                             }
                         }
@@ -698,11 +707,11 @@ fun TambahPromoScreen(
                                         contentAlignment = Alignment.CenterStart
                                     ) {
                                         Text(
-                                            text = tanggalMulai.ifEmpty { "Pilih tanggal" },
+                                            text = state.tanggalMulai.ifEmpty { "Pilih tanggal" },
                                             fontFamily = interfamily,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = Color(0xFF0F172A)
+                                            color = if (state.tanggalMulai.isEmpty()) Color(0xFF94A3B8) else Color(0xFF0F172A)
                                         )
                                     }
                                 }
@@ -735,11 +744,11 @@ fun TambahPromoScreen(
                                         contentAlignment = Alignment.CenterStart
                                     ) {
                                         Text(
-                                            text = tanggalBerakhir.ifEmpty { "Pilih tanggal" },
+                                            text = state.tanggalBerakhir.ifEmpty { "Pilih tanggal" },
                                             fontFamily = interfamily,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = Color(0xFF0F172A)
+                                            color = if (state.tanggalBerakhir.isEmpty()) Color(0xFF94A3B8) else Color(0xFF0F172A)
                                         )
                                     }
                                 }
@@ -759,21 +768,20 @@ fun TambahPromoScreen(
 // ── POPUP DIALOG PILIH PRODUK PROMO
 @Composable
 fun PilihProdukPromoDialog(
-    initialSelected: List<ProdukPromoItem>,
+    availableProducts: List<Produk>,
+    initialSelected: List<Produk>,
     onDismiss: () -> Unit,
-    onSelesai: (List<ProdukPromoItem>) -> Unit
+    onSelesai: (List<Produk>) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf<String?>(null) }
-    val tempSelected = remember { mutableStateListOf<ProdukPromoItem>().apply { addAll(initialSelected) } }
+    val tempSelected = remember { mutableStateListOf<Produk>().apply { addAll(initialSelected) } }
 
-    val categories = listOf("Semua", "Sepatu", "Elektronik", "Minuman", "Pakaian")
-
-    val filteredList = remember(searchQuery, selectedCategory) {
-        mockCatalogProduk.filter { item ->
-            val matchesQuery = searchQuery.isBlank() || item.nama.contains(searchQuery, ignoreCase = true)
-            val matchesCategory = selectedCategory == null || selectedCategory == "Semua" || item.kategori.equals(selectedCategory, ignoreCase = true)
-            matchesQuery && matchesCategory
+    val filteredList = remember(searchQuery, availableProducts) {
+        availableProducts.filter { item ->
+            searchQuery.isBlank() ||
+                    item.name.contains(searchQuery, ignoreCase = true) ||
+                    item.barcode.contains(searchQuery, ignoreCase = true) ||
+                    item.id.contains(searchQuery, ignoreCase = true)
         }
     }
 
@@ -874,7 +882,7 @@ fun PilihProdukPromoDialog(
                             )
                             if (searchQuery.isEmpty()) {
                                 Text(
-                                    text = "Cari produk promo / scan ID...",
+                                    text = "Cari produk / barcode / scan ID...",
                                     fontFamily = interfamily,
                                     fontSize = 13.sp,
                                     color = Color(0xFF94A3B8)
@@ -882,9 +890,7 @@ fun PilihProdukPromoDialog(
                             }
                         }
                         IconButton(
-                            onClick = {
-                                // Trigger scan barcode action
-                            },
+                            onClick = { /* TODO: open barcode scanner */ },
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
@@ -892,32 +898,6 @@ fun PilihProdukPromoDialog(
                                 contentDescription = "Scan Barcode / ID Produk",
                                 tint = Color(0xFF2563EB),
                                 modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                }
-
-                // Category Chips
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(vertical = 2.dp)
-                ) {
-                    items(categories) { category ->
-                        val isSelected = (selectedCategory == null && category == "Semua") || selectedCategory == category
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (isSelected) Color(0xFF2563EB) else Color(0xFFF1F5F9),
-                            modifier = Modifier.clickable {
-                                selectedCategory = if (category == "Semua") null else category
-                            }
-                        ) {
-                            Text(
-                                text = category,
-                                fontFamily = interfamily,
-                                fontSize = 13.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) Color.White else Color(0xFF475569),
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp)
                             )
                         }
                     }
@@ -932,7 +912,7 @@ fun PilihProdukPromoDialog(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Tidak ada produk yang cocok",
+                            text = if (availableProducts.isEmpty()) "Belum ada produk tersedia" else "Tidak ada produk yang cocok",
                             fontFamily = interfamily,
                             fontSize = 13.sp,
                             color = Color(0xFF94A3B8)
@@ -948,6 +928,7 @@ fun PilihProdukPromoDialog(
                     ) {
                         items(filteredList, key = { it.id }) { item ->
                             val isChecked = tempSelected.any { it.id == item.id }
+                            val fmt = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
 
                             Card(
                                 modifier = Modifier
@@ -970,9 +951,9 @@ fun PilihProdukPromoDialog(
                                         .padding(12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Image(
-                                        painter = painterResource(id = item.imageRes),
-                                        contentDescription = item.nama,
+                                    AsyncImage(
+                                        model = item.imageUrl.ifBlank { R.drawable.kopi },
+                                        contentDescription = item.name,
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier
                                             .size(52.dp)
@@ -984,7 +965,7 @@ fun PilihProdukPromoDialog(
 
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = item.nama,
+                                            text = item.name,
                                             fontFamily = interfamily,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
@@ -993,15 +974,17 @@ fun PilihProdukPromoDialog(
                                             overflow = TextOverflow.Ellipsis
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = item.kategori,
-                                            fontFamily = interfamily,
-                                            fontSize = 12.sp,
-                                            color = Color(0xFF94A3B8)
-                                        )
+                                        if (item.barcode.isNotBlank()) {
+                                            Text(
+                                                text = item.barcode,
+                                                fontFamily = interfamily,
+                                                fontSize = 11.sp,
+                                                color = Color(0xFF94A3B8)
+                                            )
+                                        }
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
-                                            text = item.hargaFormatted,
+                                            text = fmt.format(item.sellingPrice),
                                             fontFamily = interfamily,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
@@ -1052,19 +1035,21 @@ fun PilihProdukPromoDialog(
                             modifier = Modifier.align(Alignment.Center)
                         )
 
-                        Surface(
-                            shape = RoundedCornerShape(100.dp),
-                            color = Color(0xFF1D4ED8),
-                            modifier = Modifier.align(Alignment.CenterEnd)
-                        ) {
-                            Text(
-                                text = "${tempSelected.size} Terpilih",
-                                fontFamily = interfamily,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                            )
+                        if (tempSelected.isNotEmpty()) {
+                            Surface(
+                                shape = RoundedCornerShape(100.dp),
+                                color = Color(0xFF1D4ED8),
+                                modifier = Modifier.align(Alignment.CenterEnd)
+                            ) {
+                                Text(
+                                    text = "${tempSelected.size} Terpilih",
+                                    fontFamily = interfamily,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -1081,4 +1066,3 @@ fun TambahPromoScreenPreview() {
         TambahPromoScreen()
     }
 }
-

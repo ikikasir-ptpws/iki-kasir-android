@@ -9,6 +9,8 @@ import com.ptpws.ikikasir.feature.penjualan.domain.usecase.ManageCartUseCase
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.KasirState
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
+import com.ptpws.ikikasir.feature.promo.domain.model.Promo
+import com.ptpws.ikikasir.feature.promo.domain.usecase.GetActivePromosUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +25,8 @@ class KasirViewModel @Inject constructor(
     private val manageCartUseCase: ManageCartUseCase,
     private val getProdukUseCase: GetProdukUseCase,
     private val getKategoriUseCase: GetKategoriUseCase,
-    private val getTaxSettingUseCase: GetTaxSettingUseCase
+    private val getTaxSettingUseCase: GetTaxSettingUseCase,
+    private val getActivePromosUseCase: GetActivePromosUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(KasirState())
@@ -34,6 +37,15 @@ class KasirViewModel @Inject constructor(
         loadProdukKatalog()
         loadKategoriList()
         observeTaxSetting()
+        observeActivePromos()
+    }
+
+    private fun observeActivePromos() {
+        viewModelScope.launch {
+            getActivePromosUseCase().collect { promos ->
+                _state.update { it.copy(activePromos = promos) }
+            }
+        }
     }
 
     private fun observeTaxSetting() {
@@ -168,6 +180,10 @@ class KasirViewModel @Inject constructor(
 
     fun onOrderNoteChange(note: String) {
         _state.update { it.copy(orderNote = note) }
+    }
+
+    fun selectPromo(promo: Promo?) {
+        _state.update { it.copy(selectedPromo = promo) }
     }
 
     fun clearUserMessage() {

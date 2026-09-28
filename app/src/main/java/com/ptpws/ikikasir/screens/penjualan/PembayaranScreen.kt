@@ -21,12 +21,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.TableBar
 import androidx.compose.material3.*
@@ -388,7 +390,182 @@ fun PembayaranScreen(
                                         )
                                     }
                                 }
+                                if (state.promoDiscountAmount > 0) {
+                                    HorizontalDivider(color = Color(0xFFF1F5F9))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Diskon Promo (${state.selectedPromo?.nama ?: ""})",
+                                            fontFamily = interfamily,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFF16A34A)
+                                        )
+                                        Text(
+                                            text = "- Rp ${formatRupiah(state.promoDiscountAmount)}",
+                                            fontFamily = interfamily,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF16A34A)
+                                        )
+                                    }
+                                }
                                 Spacer(modifier = Modifier.height(4.dp))
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── 2.3 Promo Selection Card
+            item {
+                var promoDropdownExpanded by remember { mutableStateOf(false) }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, if (state.selectedPromo != null) PrimaryRoyalBlue else Color(0xFFE2E8F0)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Sell,
+                                contentDescription = null,
+                                tint = PrimaryRoyalBlue,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = "Promo / Diskon",
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F172A)
+                            )
+                        }
+
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (state.selectedPromo != null) Color(0xFFEEF2FF) else Color(0xFFF8FAFC),
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = if (state.selectedPromo != null) PrimaryRoyalBlue.copy(alpha = 0.5f) else Color(0xFFE2E8F0)
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { promoDropdownExpanded = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    if (state.selectedPromo != null) {
+                                        val promo = state.selectedPromo!!
+                                        val diskonLabel = if (promo.diskonType == "%") "${promo.nilaiDiskon.toInt()}%" else "Rp ${formatRupiah(promo.nilaiDiskon)}"
+                                        Column {
+                                            Text(
+                                                text = promo.nama,
+                                                fontFamily = interfamily,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = PrimaryRoyalBlue
+                                            )
+                                            Text(
+                                                text = "Diskon $diskonLabel (-Rp ${formatRupiah(state.promoDiscountAmount)})",
+                                                fontFamily = interfamily,
+                                                fontSize = 11.sp,
+                                                color = Color(0xFF16A34A),
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = { viewModel.onSelectPromo(null) },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Hapus Promo",
+                                                tint = Color(0xFFEF4444),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    } else {
+                                        Text(
+                                            text = if (state.activePromos.isEmpty()) "Tidak ada promo aktif" else "Pilih Promo",
+                                            fontFamily = interfamily,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF94A3B8)
+                                        )
+                                        Icon(
+                                            imageVector = Icons.Default.KeyboardArrowDown,
+                                            contentDescription = "Pilih",
+                                            tint = Color(0xFF64748B)
+                                        )
+                                    }
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = promoDropdownExpanded,
+                                onDismissRequest = { promoDropdownExpanded = false },
+                                modifier = Modifier.fillMaxWidth(0.9f)
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = "Tanpa Promo",
+                                            fontFamily = interfamily,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF64748B)
+                                        )
+                                    },
+                                    onClick = {
+                                        viewModel.onSelectPromo(null)
+                                        promoDropdownExpanded = false
+                                    }
+                                )
+                                state.activePromos.forEach { promo ->
+                                    val diskonLabel = if (promo.diskonType == "%") "${promo.nilaiDiskon.toInt()}%" else "Rp ${formatRupiah(promo.nilaiDiskon)}"
+                                    DropdownMenuItem(
+                                        text = {
+                                            Column {
+                                                Text(
+                                                    text = promo.nama,
+                                                    fontFamily = interfamily,
+                                                    fontSize = 13.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color(0xFF0F172A)
+                                                )
+                                                Text(
+                                                    text = "Diskon $diskonLabel ${if (promo.tipePromo.isNotBlank()) "• ${promo.tipePromo}" else ""}",
+                                                    fontFamily = interfamily,
+                                                    fontSize = 11.sp,
+                                                    color = Color(0xFF16A34A)
+                                                )
+                                            }
+                                        },
+                                        onClick = {
+                                            viewModel.onSelectPromo(promo)
+                                            promoDropdownExpanded = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }

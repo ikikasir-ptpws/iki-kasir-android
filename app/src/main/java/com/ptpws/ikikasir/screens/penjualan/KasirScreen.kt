@@ -169,6 +169,8 @@ fun KasirScreen(
 
 
 
+
+
     Scaffold(
         containerColor = Color.White,
         topBar = {
@@ -238,13 +240,24 @@ fun KasirScreen(
                             )
                         }
 
-                        Text(
-                            text = "Rp ${formatRupiah(state.grandTotal)}",
-                            fontFamily = interfamily,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
-                        )
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "Rp ${formatRupiah(state.grandTotal)}",
+                                fontFamily = interfamily,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F172A)
+                            )
+                            if (state.promoDiscountAmount > 0) {
+                                Text(
+                                    text = "Hemat Rp ${formatRupiah(state.promoDiscountAmount)}",
+                                    fontFamily = interfamily,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF16A34A)
+                                )
+                            }
+                        }
                     }
 
                     // BAYAR Button
