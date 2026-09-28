@@ -15,29 +15,26 @@ data class PromoEntity(
     @ColumnInfo(name = "id")
     val id: String,
 
-    @ColumnInfo(name = "nama")
-    val nama: String,
+    @ColumnInfo(name = "name")
+    val name: String,
 
-    @ColumnInfo(name = "tipePromo")
-    val tipePromo: String,
+    @ColumnInfo(name = "promoType")
+    val promoType: String,
 
     @ColumnInfo(name = "itemsJson")
     val itemsJson: String = "[]", // JSON array of {productId, productName, price, imageUrl}
 
-    @ColumnInfo(name = "diskonType")
-    val diskonType: String = "Rp",
+    @ColumnInfo(name = "discountType")
+    val discountType: String = "Rp",
 
-    @ColumnInfo(name = "nilaiDiskon")
-    val nilaiDiskon: Double = 0.0,
+    @ColumnInfo(name = "discountValue")
+    val discountValue: Double = 0.0,
 
-    @ColumnInfo(name = "tanggalMulai")
-    val tanggalMulai: String = "",
+    @ColumnInfo(name = "startDate")
+    val startDate: String = "",
 
-    @ColumnInfo(name = "tanggalBerakhir")
-    val tanggalBerakhir: String = "",
-
-    @ColumnInfo(name = "deskripsi")
-    val deskripsi: String = "",
+    @ColumnInfo(name = "endDate")
+    val endDate: String = "",
 
     @ColumnInfo(name = "isActive")
     val isActive: Boolean = true,
@@ -74,14 +71,13 @@ data class PromoEntity(
         }
         return Promo(
             id = id,
-            nama = nama,
-            tipePromo = tipePromo,
+            name = name,
+            promoType = promoType,
             items = itemsList,
-            diskonType = diskonType,
-            nilaiDiskon = nilaiDiskon,
-            tanggalMulai = tanggalMulai,
-            tanggalBerakhir = tanggalBerakhir,
-            deskripsi = deskripsi,
+            discountType = discountType,
+            discountValue = discountValue,
+            startDate = startDate,
+            endDate = endDate,
             isActive = isActive,
             createdAt = createdAt,
             updatedAt = updatedAt,
@@ -102,14 +98,13 @@ fun Promo.toEntity(isSynced: Boolean = true, isDeleted: Boolean = false): PromoE
     }
     return PromoEntity(
         id = id,
-        nama = nama,
-        tipePromo = tipePromo,
+        name = name,
+        promoType = promoType,
         itemsJson = arr.toString(),
-        diskonType = diskonType,
-        nilaiDiskon = nilaiDiskon,
-        tanggalMulai = tanggalMulai,
-        tanggalBerakhir = tanggalBerakhir,
-        deskripsi = deskripsi,
+        discountType = discountType,
+        discountValue = discountValue,
+        startDate = startDate,
+        endDate = endDate,
         isActive = isActive,
         createdAt = createdAt,
         updatedAt = updatedAt,
