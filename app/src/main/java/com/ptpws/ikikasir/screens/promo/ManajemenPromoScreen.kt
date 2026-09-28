@@ -42,10 +42,12 @@ import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.PromoViewModel
 fun ManajemenPromoScreen(
     onBack: () -> Unit = {},
     onTambahPromo: () -> Unit = {},
+    onEditPromo: (String) -> Unit = {},
     viewModel: PromoViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     var promoToDelete by remember { mutableStateOf<Promo?>(null) }
+    var selectedPromoForDetail by remember { mutableStateOf<Promo?>(null) }
 
     val activeCount = remember(state.promoList) { state.promoList.count { it.isActive } }
     // Count promos whose end date is within the next 7 days from today (simple: check isActive with tanggalBerakhir set)
@@ -311,7 +313,9 @@ fun ManajemenPromoScreen(
             } else {
                 items(items = state.filteredList, key = { it.id }) { promo ->
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedPromoForDetail = promo },
                         shape = RoundedCornerShape(18.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -328,16 +332,16 @@ fun ManajemenPromoScreen(
                                 verticalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
                                 Text(
-                                    text = promo.nama,
+                                    text = promo.name,
                                     fontFamily = interfamily,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Color(0xFF334155)
                                 )
-                                val nilaidiskonText = if (promo.diskonType == "%") {
-                                    "Diskon ${promo.nilaiDiskon.toInt()}%"
+                                val nilaidiskonText = if (promo.discountType == "%") {
+                                    "Diskon ${promo.discountValue.toInt()}%"
                                 } else {
-                                    "Potongan Rp ${promo.nilaiDiskon.toInt()}"
+                                    "Potongan Rp ${promo.discountValue.toInt()}"
                                 }
                                 Text(
                                     text = nilaidiskonText,
@@ -347,7 +351,7 @@ fun ManajemenPromoScreen(
                                     color = Color(0xFF2563EB)
                                 )
                                 Text(
-                                    text = "Periode: ${promo.tanggalMulai} - ${promo.tanggalBerakhir}",
+                                    text = "Periode: ${promo.startDate} - ${promo.endDate}",
                                     fontFamily = interfamily,
                                     fontSize = 11.sp,
                                     color = Color(0xFF64748B)
@@ -373,7 +377,7 @@ fun ManajemenPromoScreen(
                                 )
 
                                 IconButton(
-                                    onClick = onTambahPromo,
+                                    onClick = { onEditPromo(promo.id) },
                                     modifier = Modifier.size(32.dp)
                                 ) {
                                     Icon(
@@ -396,18 +400,35 @@ fun ManajemenPromoScreen(
                                     )
                                 }
 
-                                Icon(
-                                    imageVector = Icons.Default.ArrowForwardIos,
-                                    contentDescription = null,
-                                    tint = Color(0xFFCBD5E1),
-                                    modifier = Modifier.size(20.dp)
-                                )
+                                IconButton(
+                                    onClick = { selectedPromoForDetail = promo },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowForwardIos,
+                                        contentDescription = "Detail Promo",
+                                        tint = Color(0xFFCBD5E1),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    // Detail Promo Dialog
+    selectedPromoForDetail?.let { detailPromo ->
+        DetailPromoDialog(
+            promo = detailPromo,
+            onDismiss = { selectedPromoForDetail = null },
+            onEdit = {
+                selectedPromoForDetail = null
+                onEditPromo(detailPromo.id)
+            }
+        )
     }
 
     // Delete Confirmation Dialog
@@ -436,7 +457,7 @@ fun ManajemenPromoScreen(
             },
             text = {
                 Text(
-                    text = "Apakah Anda yakin ingin menghapus promo \"${targetPromo.nama}\"?",
+                    text = "Apakah Anda yakin ingin menghapus promo \"${targetPromo.name}\"?",
                     fontFamily = interfamily,
                     fontSize = 14.sp,
                     color = Color(0xFF4B5563)
@@ -473,6 +494,230 @@ fun ManajemenPromoScreen(
             }
         )
     }
+}
+
+@Composable
+fun DetailPromoDialog(
+    promo: Promo,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(20.dp),
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocalOffer,
+                        contentDescription = null,
+                        tint = Color(0xFF2563EB),
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Text(
+                        text = "Detail Promo",
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = interfamily,
+                        fontSize = 18.sp,
+                        color = Color(0xFF0F172A)
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (promo.isActive) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)
+                ) {
+                    Text(
+                        text = if (promo.isActive) "Aktif" else "Nonaktif",
+                        fontFamily = interfamily,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (promo.isActive) Color(0xFF16A34A) else Color(0xFFEF4444),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                HorizontalDivider(color = Color(0xFFE2E8F0))
+
+                // Nama Promo
+                Column {
+                    Text(
+                        text = "Nama Promo",
+                        fontSize = 11.sp,
+                        fontFamily = interfamily,
+                        color = Color(0xFF64748B)
+                    )
+                    Text(
+                        text = promo.name,
+                        fontSize = 15.sp,
+                        fontFamily = interfamily,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                }
+
+                // Diskon & Tipe
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Besar Diskon",
+                            fontSize = 11.sp,
+                            fontFamily = interfamily,
+                            color = Color(0xFF64748B)
+                        )
+                        val diskonText = if (promo.discountType == "%") "${promo.discountValue.toInt()}%" else "Rp ${promo.discountValue.toInt()}"
+                        Text(
+                            text = diskonText,
+                            fontSize = 14.sp,
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2563EB)
+                        )
+                    }
+
+                    if (promo.promoType.isNotBlank()) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Tipe Promo",
+                                fontSize = 11.sp,
+                                fontFamily = interfamily,
+                                color = Color(0xFF64748B)
+                            )
+                            Text(
+                                text = promo.promoType,
+                                fontSize = 14.sp,
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF0F172A)
+                            )
+                        }
+                    }
+                }
+
+                // Periode
+                Column {
+                    Text(
+                        text = "Periode Promo",
+                        fontSize = 11.sp,
+                        fontFamily = interfamily,
+                        color = Color(0xFF64748B)
+                    )
+                    Text(
+                        text = "${promo.startDate} - ${promo.endDate}",
+                        fontSize = 13.sp,
+                        fontFamily = interfamily,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF334155)
+                    )
+                }
+
+                // Produk Promo List
+                if (promo.items.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = "Produk Terkait (${promo.items.size}):",
+                            fontSize = 11.sp,
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF64748B)
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color(0xFFF8FAFC),
+                            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                promo.items.forEach { item ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "• ${item.productName}",
+                                            fontSize = 12.sp,
+                                            fontFamily = interfamily,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFF0F172A),
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        if (item.price > 0) {
+                                            Text(
+                                                text = "Rp ${item.price.toInt()}",
+                                                fontSize = 12.sp,
+                                                fontFamily = interfamily,
+                                                color = Color(0xFF64748B)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onDismiss()
+                    onEdit()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Edit Promo",
+                        color = Color.White,
+                        fontFamily = interfamily,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text(
+                    text = "Tutup",
+                    fontFamily = interfamily,
+                    color = Color(0xFF6B7280)
+                )
+            }
+        }
+    )
 }
 
 @Preview(showBackground = true, showSystemUi = true)
