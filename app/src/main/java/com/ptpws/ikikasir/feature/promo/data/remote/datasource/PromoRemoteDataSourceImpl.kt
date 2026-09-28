@@ -2,6 +2,7 @@ package com.ptpws.ikikasir.feature.promo.data.remote.datasource
 
 import android.util.Log
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.ptpws.ikikasir.feature.promo.data.remote.dto.PromoDto
 import kotlinx.coroutines.tasks.await
@@ -19,7 +20,7 @@ class PromoRemoteDataSourceImpl @Inject constructor(
     override suspend fun getAllPromos(): List<PromoDto> {
         return try {
             val snapshot = firestore.collection(COLLECTION_PROMOS).get().await()
-            snapshot.toObjects(PromoDto::class.java)
+            snapshot.documents.mapNotNull { it.toPromoDto() }
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching promos from Firestore: ${e.message}", e)
             emptyList()
@@ -29,7 +30,7 @@ class PromoRemoteDataSourceImpl @Inject constructor(
     override suspend fun getPromoById(id: String): PromoDto? {
         return try {
             val snapshot = firestore.collection(COLLECTION_PROMOS).document(id).get().await()
-            snapshot.toObject(PromoDto::class.java)
+            snapshot.toPromoDto()
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching promo '$id' from Firestore: ${e.message}", e)
             null
@@ -71,5 +72,40 @@ class PromoRemoteDataSourceImpl @Inject constructor(
             .document(id)
             .delete()
             .await()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun DocumentSnapshot.toPromoDto(): PromoDto? {
+        if (!exists()) return null
+        val docId = getString("id") ?: id
+        val nameVal = getString("name")?.takeIf { it.isNotBlank() }
+            ?: getString("nama") ?: ""
+        val promoTypeVal = getString("promoType")?.takeIf { it.isNotBlank() }
+            ?: getString("tipePromo") ?: ""
+        val discountTypeVal = getString("discountType")?.takeIf { it.isNotBlank() }
+            ?: getString("diskonType") ?: "Rp"
+        val discountValueVal = getDouble("discountValue") ?: getDouble("nilaiDiskon") ?: 0.0
+        val startDateVal = getString("startDate")?.takeIf { it.isNotBlank() }
+            ?: getString("tanggalMulai") ?: ""
+        val endDateVal = getString("endDate")?.takeIf { it.isNotBlank() }
+            ?: getString("tanggalBerakhir") ?: ""
+        val isActiveVal = getBoolean("isActive") ?: true
+        val createdAtVal = getTimestamp("createdAt") ?: Timestamp.now()
+        val updatedAtVal = getTimestamp("updatedAt") ?: Timestamp.now()
+        val rawItems = get("items") as? List<Map<String, Any>> ?: emptyList()
+
+        return PromoDto(
+            id = docId,
+            name = nameVal,
+            promoType = promoTypeVal,
+            items = rawItems,
+            discountType = discountTypeVal,
+            discountValue = discountValueVal,
+            startDate = startDateVal,
+            endDate = endDateVal,
+            isActive = isActiveVal,
+            createdAt = createdAtVal,
+            updatedAt = updatedAtVal
+        )
     }
 }
