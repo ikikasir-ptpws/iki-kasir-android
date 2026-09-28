@@ -51,6 +51,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TambahPromoScreen(
+    promoId: String? = null,
     onBack: () -> Unit = {},
     onSimpanPromo: () -> Unit = {},
     viewModel: TambahPromoViewModel = hiltViewModel()
@@ -58,9 +59,16 @@ fun TambahPromoScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
+    LaunchedEffect(promoId) {
+        if (!promoId.isNullOrBlank()) {
+            viewModel.loadPromoForEdit(promoId)
+        }
+    }
+
     LaunchedEffect(state.isSavedSuccess) {
         if (state.isSavedSuccess) {
-            Toast.makeText(context, "Promo berhasil disimpan!", Toast.LENGTH_SHORT).show()
+            val msg = state.userMessage ?: if (state.isEditMode) "Promo berhasil diperbarui!" else "Promo berhasil disimpan!"
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             onSimpanPromo()
         }
     }
@@ -168,7 +176,7 @@ fun TambahPromoScreen(
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "Tambah Promo",
+                    text = if (state.isEditMode) "Edit Promo" else "Tambah Promo",
                     fontFamily = interfamily,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
@@ -218,7 +226,7 @@ fun TambahPromoScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Simpan Promo",
+                                    text = if (state.isEditMode) "Simpan Perubahan" else "Simpan Promo",
                                     fontFamily = interfamily,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
