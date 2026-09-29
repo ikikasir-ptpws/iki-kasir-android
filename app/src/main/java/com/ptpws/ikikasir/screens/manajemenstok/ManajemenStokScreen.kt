@@ -81,14 +81,12 @@ fun ManajemenStokScreen(
 
     LaunchedEffect(state.isSuccessRestock) {
         if (state.isSuccessRestock) {
-            Toast.makeText(context, "Stok berhasil diperbarui", Toast.LENGTH_SHORT).show()
             viewModel.clearSuccessRestock()
         }
     }
 
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let { error ->
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
             viewModel.clearError()
         }
     }

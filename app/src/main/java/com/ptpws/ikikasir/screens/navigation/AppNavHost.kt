@@ -37,6 +37,7 @@ import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.screens.produk.DaftarProdukScreen
 import com.ptpws.ikikasir.screens.produk.DetailProdukScreen
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
 import com.example.app.ui.screen.DashboardScreen
 import com.example.app.ui.screen.MenuFullScreen
 import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
@@ -227,6 +228,8 @@ fun AppNavHost() {
         ) {
             IkiKasirBottomBar(navController = navController, currentRoute = currentRoute)
         }
+
+        GlobalCrudResultDialogHost()
     }
 }
 

@@ -1,7 +1,6 @@
 package com.ptpws.ikikasir.screens.kategori
 
 import android.content.Intent
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -50,23 +49,9 @@ fun DaftarKategoriScreen(
     viewModel: KategoriViewModel = hiltViewModel(),
     produkViewModel: ProdukViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val produkState by produkViewModel.state.collectAsState()
-    val context = LocalContext.current
-
-    LaunchedEffect(state.userMessage) {
-        state.userMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            viewModel.clearUserMessage()
-        }
-    }
-    LaunchedEffect(state.errorMessage) {
-        state.errorMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            viewModel.clearUserMessage()
-        }
-    }
-
     // Map Produk to Category ID for Real Data Calculation
     val categoryProductMap = remember(produkState.produkList) {
         produkState.produkList.groupBy { it.categoryId }

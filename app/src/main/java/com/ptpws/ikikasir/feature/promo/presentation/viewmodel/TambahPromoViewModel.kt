@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.promo.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
@@ -146,7 +147,9 @@ class TambahPromoViewModel @Inject constructor(
     fun simpanPromo() {
         val form = _state.value
         if (form.namaPromo.isBlank()) {
-            _state.update { it.copy(errorMessage = "Nama promo tidak boleh kosong") }
+            val message = "Nama promo tidak boleh kosong"
+            GlobalCrudResultDialog.failure(message)
+            _state.update { it.copy(errorMessage = message) }
             return
         }
 
@@ -185,6 +188,10 @@ class TambahPromoViewModel @Inject constructor(
             flow.collect { result ->
                 result.onSuccess {
                     val msg = if (isEdit) "Promo berhasil diperbarui!" else "Promo berhasil disimpan!"
+                    GlobalCrudResultDialog.success(
+                        if (isEdit) "Promo \"${form.namaPromo}\" berhasil diperbarui."
+                        else "Promo \"${form.namaPromo}\" berhasil ditambahkan."
+                    )
                     val actionName = if (isEdit) "UPDATE" else "CREATE"
                     val actionTitle = if (isEdit) "Perubahan Promo: ${form.namaPromo}" else "Promo Baru: ${form.namaPromo}"
                     logActivityUseCase(
@@ -196,7 +203,9 @@ class TambahPromoViewModel @Inject constructor(
                     )
                     _state.update { it.copy(isLoading = false, isSavedSuccess = true, userMessage = msg) }
                 }.onFailure { err ->
-                    _state.update { it.copy(isLoading = false, errorMessage = "Gagal menyimpan promo: ${err.message}") }
+                    val message = err.message ?: "Gagal menyimpan promo."
+                    GlobalCrudResultDialog.failure(message)
+                    _state.update { it.copy(isLoading = false, errorMessage = "Gagal menyimpan promo: $message") }
                 }
             }
         }

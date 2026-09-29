@@ -2,7 +2,6 @@ package com.ptpws.ikikasir.screens.produk
 
 import android.content.Context
 import android.content.Intent
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -46,8 +45,8 @@ fun DetailProdukScreen(
     produkId: String? = null,
     viewModel: DetailProdukViewModel = hiltViewModel()
 ) {
-    val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val state by viewModel.state.collectAsState()
 
     LaunchedEffect(produkId) {
         if (!produkId.isNullOrBlank()) {
@@ -57,15 +56,7 @@ fun DetailProdukScreen(
 
     LaunchedEffect(state.isDeleted) {
         if (state.isDeleted) {
-            Toast.makeText(context, "Produk berhasil dihapus", Toast.LENGTH_SHORT).show()
             onBack()
-        }
-    }
-
-    LaunchedEffect(state.errorMessage) {
-        state.errorMessage?.let { error ->
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-            viewModel.clearError()
         }
     }
 

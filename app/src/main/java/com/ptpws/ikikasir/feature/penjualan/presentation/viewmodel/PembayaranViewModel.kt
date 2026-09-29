@@ -254,10 +254,11 @@ class PembayaranViewModel @Inject constructor(
 
         // Validasi: Jika Tunai & Uang yang Diterima Kurang dari Total Tagihan -> Tampilkan Failed Dialog
         if (isTunai && currentState.uangDiterima < targetTotal) {
+            val message = "Nominal uang yang diterima kurang dari total tagihan."
             _state.update {
                 it.copy(
                     showFailedDialog = true,
-                    errorMessage = "Nominal uang yang diterima kurang dari total tagihan."
+                    errorMessage = message
                 )
             }
             return
@@ -299,6 +300,7 @@ class PembayaranViewModel @Inject constructor(
                         generateOrderId()
                     },
                     onFailure = { error ->
+                        val message = error.message ?: "Terjadi kesalahan saat memproses pembayaran."
                         logActivityUseCase(
                             title = "Pembatalan Transaksi: ${currentState.orderId}",
                             description = "Alasan: Gagal memproses transaksi. ${error.message ?: ""}",
@@ -309,7 +311,7 @@ class PembayaranViewModel @Inject constructor(
                         _state.update {
                             it.copy(
                                 showFailedDialog = true,
-                                errorMessage = error.message ?: "Terjadi kesalahan saat memproses pembayaran."
+                                errorMessage = message
                             )
                         }
                     }

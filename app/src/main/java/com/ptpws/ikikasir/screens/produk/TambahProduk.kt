@@ -117,15 +117,8 @@ fun TambahProdukScreen(
 
     LaunchedEffect(formState.isSuccess) {
         if (formState.isSuccess) {
-            Toast.makeText(context, "Produk berhasil disimpan", Toast.LENGTH_SHORT).show()
             viewModel.resetSuccess()
             onBack()
-        }
-    }
-
-    LaunchedEffect(formState.errorMessage) {
-        formState.errorMessage?.let { error ->
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
         }
     }
 

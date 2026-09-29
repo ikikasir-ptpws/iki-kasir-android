@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.GetKategoriUseCase
 import com.ptpws.ikikasir.feature.manajemenstok.domain.model.MovementType
 import com.ptpws.ikikasir.feature.manajemenstok.domain.model.StockMovement
@@ -105,7 +106,9 @@ class ManajemenStokViewModel @Inject constructor(
         val addedStock = _state.value.restockTambahJumlahText.toIntOrNull() ?: 0
 
         if (addedStock <= 0) {
-            _state.update { it.copy(errorMessage = "Jumlah restock harus lebih dari 0") }
+            val message = "Jumlah restock harus lebih dari 0"
+            GlobalCrudResultDialog.failure(message)
+            _state.update { it.copy(errorMessage = message) }
             return
         }
 
@@ -142,6 +145,9 @@ class ManajemenStokViewModel @Inject constructor(
                     )
                     saveStokAdjustmentUseCase(movement).collect { /* fire and forget */ }
 
+                    GlobalCrudResultDialog.success(
+                        "Restock ${addedStock} unit untuk \"${currentProduk.name}\" berhasil."
+                    )
                     _state.update { 
                         it.copy(
                             isLoading = false,
@@ -151,10 +157,12 @@ class ManajemenStokViewModel @Inject constructor(
                         ) 
                     }
                 } else {
+                    val message = result.exceptionOrNull()?.message ?: "Gagal memperbarui stok"
+                    GlobalCrudResultDialog.failure(message)
                     _state.update { 
                         it.copy(
                             isLoading = false,
-                            errorMessage = result.exceptionOrNull()?.message ?: "Gagal memperbarui stok"
+                            errorMessage = message
                         ) 
                     }
                 }

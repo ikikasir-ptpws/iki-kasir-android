@@ -1,6 +1,5 @@
 package com.ptpws.ikikasir.screens.promo
 
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -57,7 +56,6 @@ fun TambahPromoScreen(
     viewModel: TambahPromoViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
-    val context = LocalContext.current
 
     LaunchedEffect(promoId) {
         if (!promoId.isNullOrBlank()) {
@@ -67,15 +65,12 @@ fun TambahPromoScreen(
 
     LaunchedEffect(state.isSavedSuccess) {
         if (state.isSavedSuccess) {
-            val msg = state.userMessage ?: if (state.isEditMode) "Promo berhasil diperbarui!" else "Promo berhasil disimpan!"
-            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             onSimpanPromo()
         }
     }
 
     LaunchedEffect(state.errorMessage) {
-        state.errorMessage?.let { msg ->
-            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+        state.errorMessage?.let {
             viewModel.clearMessage()
         }
     }

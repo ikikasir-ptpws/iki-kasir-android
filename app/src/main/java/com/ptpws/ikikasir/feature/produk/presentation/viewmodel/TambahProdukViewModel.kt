@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.produk.presentation.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.InsertProdukUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.UpdateProdukUseCase
@@ -128,7 +129,9 @@ class TambahProdukViewModel @Inject constructor(
         val nameTrimmed = currentState.name.trim()
 
         if (nameTrimmed.isBlank()) {
-            _formState.update { it.copy(errorMessage = "Nama produk tidak boleh kosong") }
+            val message = "Nama produk tidak boleh kosong"
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(errorMessage = message) }
             return
         }
 
@@ -146,6 +149,10 @@ class TambahProdukViewModel @Inject constructor(
             flow.collect { result ->
                 if (result.isSuccess) {
                     val isEdit = currentState.isEditMode
+                    GlobalCrudResultDialog.success(
+                        if (isEdit) "Produk \"${produk.name}\" berhasil diperbarui."
+                        else "Produk \"${produk.name}\" berhasil ditambahkan."
+                    )
                     val actionTitle = if (isEdit) "Perubahan Harga: ${produk.name}" else "Produk Baru: ${produk.name}"
                     val actionDesc = if (isEdit) {
                         "Harga atau informasi produk ${produk.name} berhasil diperbarui."
@@ -167,10 +174,12 @@ class TambahProdukViewModel @Inject constructor(
                         )
                     }
                 } else {
+                    val message = result.exceptionOrNull()?.message ?: "Gagal menyimpan produk"
+                    GlobalCrudResultDialog.failure(message)
                     _formState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = result.exceptionOrNull()?.message ?: "Gagal menyimpan produk"
+                            errorMessage = message
                         )
                     }
                 }

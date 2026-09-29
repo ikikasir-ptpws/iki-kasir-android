@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.produk.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.core.network.NetworkMonitor
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.DeleteProdukUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
@@ -113,6 +114,7 @@ class ProdukViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true, produkToDelete = null) }
             deleteProdukUseCase(id).collect { result ->
                 if (result.isSuccess) {
+                    GlobalCrudResultDialog.success("Produk \"$produkName\" berhasil dihapus.")
                     logActivityUseCase(
                         title = "Penghapusan Produk: $produkName",
                         description = "Produk $produkName telah dihapus dari katalog.",
@@ -127,10 +129,12 @@ class ProdukViewModel @Inject constructor(
                         )
                     }
                 } else {
+                    val message = result.exceptionOrNull()?.message ?: "Gagal menghapus produk"
+                    GlobalCrudResultDialog.failure(message)
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = result.exceptionOrNull()?.message ?: "Gagal menghapus produk"
+                            errorMessage = message
                         )
                     }
                 }

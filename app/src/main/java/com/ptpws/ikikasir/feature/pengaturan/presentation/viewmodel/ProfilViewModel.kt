@@ -2,6 +2,7 @@ package com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetNotaSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.SaveNotaSettingUseCase
@@ -91,9 +92,11 @@ class ProfilViewModel @Inject constructor(
                 result.fold(
                     onSuccess = {
                         _notaSetting.value = setting
+                        GlobalCrudResultDialog.success("Pengaturan nota berhasil disimpan.")
                         onComplete(true)
                     },
-                    onFailure = {
+                    onFailure = { error ->
+                        GlobalCrudResultDialog.failure(error.message ?: "Gagal menyimpan pengaturan nota.")
                         onComplete(false)
                     }
                 )
@@ -107,9 +110,11 @@ class ProfilViewModel @Inject constructor(
                 result.fold(
                     onSuccess = {
                         _taxSetting.value = setting
+                        GlobalCrudResultDialog.success("Pengaturan pajak berhasil disimpan.")
                         onComplete(true)
                     },
-                    onFailure = {
+                    onFailure = { error ->
+                        GlobalCrudResultDialog.failure(error.message ?: "Gagal menyimpan pengaturan pajak.")
                         onComplete(false)
                     }
                 )
@@ -123,9 +128,11 @@ class ProfilViewModel @Inject constructor(
             result.fold(
                 onSuccess = {
                     _paymentMethodSetting.value = setting
+                    GlobalCrudResultDialog.success("Pengaturan metode pembayaran berhasil disimpan.")
                     onComplete(true)
                 },
-                onFailure = {
+                onFailure = { error ->
+                    GlobalCrudResultDialog.failure(error.message ?: "Gagal menyimpan metode pembayaran.")
                     onComplete(false)
                 }
             )
@@ -138,9 +145,11 @@ class ProfilViewModel @Inject constructor(
             result.fold(
                 onSuccess = {
                     _tableSetting.value = setting
+                    GlobalCrudResultDialog.success("Pengaturan meja berhasil disimpan.")
                     onComplete(true)
                 },
-                onFailure = {
+                onFailure = { error ->
+                    GlobalCrudResultDialog.failure(error.message ?: "Gagal menyimpan pengaturan meja.")
                     onComplete(false)
                 }
             )

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.manajemenstok.domain.model.MovementType
 import com.ptpws.ikikasir.feature.manajemenstok.domain.model.StockMovement
 import com.ptpws.ikikasir.feature.manajemenstok.domain.usecase.SaveStokAdjustmentUseCase
@@ -99,7 +100,9 @@ class UpdateStokViewModel @Inject constructor(
 
     fun simpanPerubahan() {
         val currentProduk = _state.value.selectedProduk ?: run {
-            _state.update { it.copy(errorMessage = "Pilih produk terlebih dahulu") }
+            val message = "Pilih produk terlebih dahulu"
+            GlobalCrudResultDialog.failure(message)
+            _state.update { it.copy(errorMessage = message) }
             return
         }
         val stokSebelum = currentProduk.stock
@@ -148,6 +151,9 @@ class UpdateStokViewModel @Inject constructor(
                         isWarning = false
                     )
 
+                    GlobalCrudResultDialog.success(
+                        "Stok produk \"${currentProduk.name}\" berhasil diperbarui menjadi $targetStock unit."
+                    )
                     _state.update {
                         it.copy(
                             isLoading = false,
@@ -155,10 +161,12 @@ class UpdateStokViewModel @Inject constructor(
                         )
                     }
                 } else {
+                    val message = result.exceptionOrNull()?.message ?: "Gagal memperbarui stok"
+                    GlobalCrudResultDialog.failure(message)
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = result.exceptionOrNull()?.message ?: "Gagal memperbarui stok"
+                            errorMessage = message
                         )
                     }
                 }

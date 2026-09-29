@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.produk.presentation.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.GetKategoriUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetAllTransaksiUseCase
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
@@ -125,9 +126,14 @@ class DetailProdukViewModel @Inject constructor(
         viewModelScope.launch {
             updateProdukUseCase(updated).collect { result ->
                 if (result.isSuccess) {
+                    GlobalCrudResultDialog.success(
+                        "Visibilitas produk \"${currentProduk.name}\" berhasil diperbarui."
+                    )
                     _state.update { it.copy(produk = updated) }
                 } else {
-                    _state.update { it.copy(errorMessage = result.exceptionOrNull()?.message ?: "Gagal memperbarui visibilitas") }
+                    val message = result.exceptionOrNull()?.message ?: "Gagal memperbarui visibilitas"
+                    GlobalCrudResultDialog.failure(message)
+                    _state.update { it.copy(errorMessage = message) }
                 }
             }
         }
@@ -143,9 +149,12 @@ class DetailProdukViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true, showDeleteDialog = false) }
             deleteProdukUseCase(currentProduk.id).collect { result ->
                 if (result.isSuccess) {
+                    GlobalCrudResultDialog.success("Produk \"${currentProduk.name}\" berhasil dihapus.")
                     _state.update { it.copy(isLoading = false, isDeleted = true) }
                 } else {
-                    _state.update { it.copy(isLoading = false, errorMessage = result.exceptionOrNull()?.message ?: "Gagal menghapus produk") }
+                    val message = result.exceptionOrNull()?.message ?: "Gagal menghapus produk"
+                    GlobalCrudResultDialog.failure(message)
+                    _state.update { it.copy(isLoading = false, errorMessage = message) }
                 }
             }
         }

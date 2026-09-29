@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.model.User
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.usecase.DeleteUserUseCase
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.usecase.GetUsersUseCase
@@ -86,6 +87,7 @@ class UserViewModel @Inject constructor(
         viewModelScope.launch {
             deleteUserUseCase(id).collect { result ->
                 result.onSuccess {
+                    GlobalCrudResultDialog.success("Pengguna \"$userName\" berhasil dihapus.")
                     logActivityUseCase(
                         title = "Penghapusan Pengguna: $userName",
                         description = "Akun pengguna $userName telah dihapus dari sistem.",
@@ -95,6 +97,7 @@ class UserViewModel @Inject constructor(
                     )
                     _listState.update { it.copy(message = "Pengguna berhasil dihapus") }
                 }.onFailure { err ->
+                    GlobalCrudResultDialog.failure(err.message ?: "Gagal menghapus pengguna.")
                     _listState.update { it.copy(error = err.message) }
                 }
             }
@@ -167,23 +170,33 @@ class UserViewModel @Inject constructor(
     fun saveUser(onSuccess: () -> Unit = {}) {
         val current = _formState.value
         if (current.fullName.isBlank()) {
-            _formState.update { it.copy(error = "Nama lengkap tidak boleh kosong") }
+            val message = "Nama lengkap tidak boleh kosong"
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(error = message) }
             return
         }
         if (current.email.isBlank()) {
-            _formState.update { it.copy(error = "Alamat email tidak boleh kosong") }
+            val message = "Alamat email tidak boleh kosong"
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(error = message) }
             return
         }
         if (current.password.isBlank()) {
-            _formState.update { it.copy(error = "Kata sandi tidak boleh kosong") }
+            val message = "Kata sandi tidak boleh kosong"
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(error = message) }
             return
         }
         if (current.password.length < 6) {
-            _formState.update { it.copy(error = "Kata sandi minimal 6 karakter") }
+            val message = "Kata sandi minimal 6 karakter"
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(error = message) }
             return
         }
         if (current.roleId.isBlank()) {
-            _formState.update { it.copy(error = "Pilih role terlebih dahulu") }
+            val message = "Pilih role terlebih dahulu"
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(error = message) }
             return
         }
 
@@ -206,6 +219,10 @@ class UserViewModel @Inject constructor(
             val flow = if (!isEdit) insertUserUseCase(user) else updateUserUseCase(user)
             flow.collect { result ->
                 result.onSuccess {
+                    GlobalCrudResultDialog.success(
+                        if (isEdit) "Data pengguna \"${user.fullName}\" berhasil diperbarui."
+                        else "Pengguna \"${user.fullName}\" berhasil ditambahkan."
+                    )
                     val actionTitle = if (isEdit) "Perubahan Pengguna: ${user.fullName}" else "Pengguna Baru: ${user.fullName}"
                     val actionDesc = if (isEdit) {
                         "Data pengguna ${user.fullName} (${user.roleId}) telah diperbarui. Status aktif: ${if (user.isActive) "Aktif" else "Non-Aktif"}."
@@ -222,7 +239,9 @@ class UserViewModel @Inject constructor(
                     _formState.update { it.copy(isLoading = false, isSuccess = true) }
                     onSuccess()
                 }.onFailure { err ->
-                    _formState.update { it.copy(isLoading = false, error = err.message ?: "Gagal menyimpan pengguna") }
+                    val message = err.message ?: "Gagal menyimpan pengguna"
+                    GlobalCrudResultDialog.failure(message)
+                    _formState.update { it.copy(isLoading = false, error = message) }
                 }
             }
         }

@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.InsertKategoriUseCase
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.UpdateKategoriUseCase
@@ -94,7 +95,9 @@ class TambahKategoriViewModel @Inject constructor(
         val namaTrimmed = currentState.nama.trim()
 
         if (namaTrimmed.isBlank()) {
-            _formState.update { it.copy(errorMessage = "Nama kategori tidak boleh kosong") }
+            val message = "Nama kategori tidak boleh kosong"
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(errorMessage = message) }
             return
         }
 
@@ -124,6 +127,10 @@ class TambahKategoriViewModel @Inject constructor(
             flow.collect { result ->
                 if (result.isSuccess) {
                     val isEdit = currentState.isEditMode
+                    GlobalCrudResultDialog.success(
+                        if (isEdit) "Kategori \"$namaTrimmed\" berhasil diperbarui."
+                        else "Kategori \"$namaTrimmed\" berhasil ditambahkan."
+                    )
                     val actionTitle = if (isEdit) "Perubahan Kategori: $namaTrimmed" else "Kategori Baru: $namaTrimmed"
                     logActivityUseCase(
                         title = actionTitle,
@@ -140,10 +147,12 @@ class TambahKategoriViewModel @Inject constructor(
                         )
                     }
                 } else {
+                    val message = result.exceptionOrNull()?.message ?: "Gagal menyimpan kategori"
+                    GlobalCrudResultDialog.failure(message)
                     _formState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = result.exceptionOrNull()?.message ?: "Gagal menyimpan kategori"
+                            errorMessage = message
                         )
                     }
                 }

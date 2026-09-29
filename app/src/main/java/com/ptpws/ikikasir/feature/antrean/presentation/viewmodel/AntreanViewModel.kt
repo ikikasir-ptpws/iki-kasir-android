@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.antrean.domain.model.Antrean
 import com.ptpws.ikikasir.feature.antrean.domain.model.QueueHistory
 import com.ptpws.ikikasir.feature.antrean.domain.repository.AntreanRepository
@@ -93,49 +94,58 @@ class AntreanViewModel @Inject constructor(
                 val currentList = (uiState.value as? AntreanUiState.Success)?.data ?: emptyList()
                 val targetItem = currentList.find { it.id == id || it.transactionId == id }
 
-                if (targetItem != null) {
-                    val targetTxId = targetItem.transactionId.ifBlank { targetItem.id }
-
-                    // 1. Save to QueueHistory with identical transaction ID & tableNumber
-                    val history = QueueHistory(
-                        id = targetTxId,
-                        transactionId = targetTxId,
-                        status = status,
-                        customerName = targetItem.customerName,
-                        tableNumber = targetItem.tableNumber,
-                        queueSequence = targetItem.queueSequence,
-                        completedAt = Timestamp.now(),
-                        createdAt = targetItem.createdAt,
-                        updatedAt = Timestamp.now()
-                    )
-                    insertQueueHistoryUseCase(history).collect {}
-                    Log.d(TAG, "QueueHistory inserted for $targetTxId (sequence #${targetItem.queueSequence}) with status $status")
-
-                    // 2. Delete item from active queues (Room DB + Firestore)
-                    antreanRepository.deleteAntrean(targetItem.id).collect {}
-                    if (targetTxId != targetItem.id) {
-                        antreanRepository.deleteAntrean(targetTxId).collect {}
-                    }
-                    Log.d(TAG, "Active antrean $id deleted from queues")
-
-                    val isDone = status == "DONE"
-                    val actionTitle = if (isDone) "Antrean Selesai: #${targetItem.queueSequence}" else "Antrean Dibatalkan: #${targetItem.queueSequence}"
-                    val actionDesc = if (isDone) {
-                        "Pesanan atas nama ${targetItem.customerName} (Meja ${targetItem.tableNumber}) telah diselesaikan."
-                    } else {
-                        "Pesanan atas nama ${targetItem.customerName} (Meja ${targetItem.tableNumber}) telah dibatalkan."
-                    }
-
-                    logActivityUseCase(
-                        title = actionTitle,
-                        description = actionDesc,
-                        category = "TRANSACTION",
-                        action = if (isDone) "UPDATE" else "CANCEL",
-                        isWarning = !isDone
-                    )
+                if (targetItem == null) {
+                    GlobalCrudResultDialog.failure("Antrean tidak ditemukan.")
+                    return@launch
                 }
+                val targetTxId = targetItem.transactionId.ifBlank { targetItem.id }
+
+                // 1. Save to QueueHistory with identical transaction ID & tableNumber
+                val history = QueueHistory(
+                    id = targetTxId,
+                    transactionId = targetTxId,
+                    status = status,
+                    customerName = targetItem.customerName,
+                    tableNumber = targetItem.tableNumber,
+                    queueSequence = targetItem.queueSequence,
+                    completedAt = Timestamp.now(),
+                    createdAt = targetItem.createdAt,
+                    updatedAt = Timestamp.now()
+                )
+                insertQueueHistoryUseCase(history).collect { result -> result.getOrThrow() }
+                Log.d(TAG, "QueueHistory inserted for $targetTxId (sequence #${targetItem.queueSequence}) with status $status")
+
+                // 2. Delete item from active queues (Room DB + Firestore)
+                antreanRepository.deleteAntrean(targetItem.id).collect { result -> result.getOrThrow() }
+                if (targetTxId != targetItem.id) {
+                    antreanRepository.deleteAntrean(targetTxId).collect { result -> result.getOrThrow() }
+                }
+                Log.d(TAG, "Active antrean $id deleted from queues")
+
+                val isDone = status == "DONE"
+                val actionTitle = if (isDone) "Antrean Selesai: #${targetItem.queueSequence}" else "Antrean Dibatalkan: #${targetItem.queueSequence}"
+                val actionDesc = if (isDone) {
+                    "Pesanan atas nama ${targetItem.customerName} (Meja ${targetItem.tableNumber}) telah diselesaikan."
+                } else {
+                    "Pesanan atas nama ${targetItem.customerName} (Meja ${targetItem.tableNumber}) telah dibatalkan."
+                }
+
+                logActivityUseCase(
+                    title = actionTitle,
+                    description = actionDesc,
+                    category = "TRANSACTION",
+                    action = if (isDone) "UPDATE" else "CANCEL",
+                    isWarning = !isDone
+                )
+                GlobalCrudResultDialog.success(
+                    if (isDone) "Antrean #${targetItem.queueSequence} berhasil diselesaikan."
+                    else "Antrean #${targetItem.queueSequence} berhasil dibatalkan."
+                )
             } catch (e: Exception) {
                 Log.e(TAG, "Failed processing antrean removal ($status): ${e.message}", e)
+                GlobalCrudResultDialog.failure(
+                    e.message ?: if (status == "DONE") "Gagal menyelesaikan antrean." else "Gagal membatalkan antrean."
+                )
             }
         }
     }

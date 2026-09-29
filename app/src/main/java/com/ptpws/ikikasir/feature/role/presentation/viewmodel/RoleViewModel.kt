@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.role.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.usecase.GetUsersUseCase
 import com.ptpws.ikikasir.feature.role.domain.model.Role
 import com.ptpws.ikikasir.feature.role.domain.usecase.DeleteRoleUseCase
@@ -74,6 +75,7 @@ class RoleViewModel @Inject constructor(
         viewModelScope.launch {
             deleteRoleUseCase(id).collect { result ->
                 result.onSuccess {
+                    GlobalCrudResultDialog.success("Role \"$roleName\" berhasil dihapus.")
                     logActivityUseCase(
                         title = "Penghapusan Role: $roleName",
                         description = "Role & hak akses $roleName telah dihapus dari sistem.",
@@ -83,6 +85,7 @@ class RoleViewModel @Inject constructor(
                     )
                     _listState.update { it.copy(message = "Role berhasil dihapus") }
                 }.onFailure { err ->
+                    GlobalCrudResultDialog.failure(err.message ?: "Gagal menghapus role.")
                     _listState.update { it.copy(error = err.message) }
                 }
             }
@@ -153,7 +156,9 @@ class RoleViewModel @Inject constructor(
     fun saveRole(onSuccess: () -> Unit = {}) {
         val current = _formState.value
         if (current.name.isBlank()) {
-            _formState.update { it.copy(error = "Nama role tidak boleh kosong") }
+            val message = "Nama role tidak boleh kosong"
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(error = message) }
             return
         }
 
@@ -173,6 +178,10 @@ class RoleViewModel @Inject constructor(
             val flow = if (!isEdit) insertRoleUseCase(role) else updateRoleUseCase(role)
             flow.collect { result ->
                 result.onSuccess {
+                    GlobalCrudResultDialog.success(
+                        if (isEdit) "Role \"${role.name}\" berhasil diperbarui."
+                        else "Role \"${role.name}\" berhasil ditambahkan."
+                    )
                     val actionTitle = if (isEdit) "Perubahan Role: ${role.name}" else "Role Baru: ${role.name}"
                     logActivityUseCase(
                         title = actionTitle,
@@ -184,7 +193,9 @@ class RoleViewModel @Inject constructor(
                     _formState.update { it.copy(isLoading = false, isSuccess = true) }
                     onSuccess()
                 }.onFailure { err ->
-                    _formState.update { it.copy(isLoading = false, error = err.message ?: "Gagal menyimpan role") }
+                    val message = err.message ?: "Gagal menyimpan role"
+                    GlobalCrudResultDialog.failure(message)
+                    _formState.update { it.copy(isLoading = false, error = message) }
                 }
             }
         }

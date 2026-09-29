@@ -1,6 +1,5 @@
 package com.ptpws.ikikasir.screens.pengaturan
 
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -625,13 +624,7 @@ fun ProfilScreen(
                                 )
                                 paymentMethodPrefs.saveSetting(updatedSetting)
 
-                                viewModel.savePaymentMethodSetting(updatedSetting) { success ->
-                                    if (success) {
-                                        Toast.makeText(context, "Metode pembayaran tersimpan ke Database (Room & Firestore)", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        Toast.makeText(context, "Metode pembayaran tersimpan secara offline", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
+                                viewModel.savePaymentMethodSetting(updatedSetting)
                                 showMetodePembayaranDialog = false
                             },
                             modifier = Modifier
@@ -809,13 +802,7 @@ fun ProfilScreen(
                                 taxPrefs.saveSetting(updatedSetting)
 
                                 // 2. Simpan ke Room DB & Firestore via ViewModel (Clean Architecture)
-                                viewModel.saveTaxSetting(updatedSetting) { success ->
-                                    if (success) {
-                                        Toast.makeText(context, "Pengaturan PPN berhasil disimpan ke Database (Room & Firestore)", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        Toast.makeText(context, "Pengaturan PPN disimpan secara offline", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
+                                viewModel.saveTaxSetting(updatedSetting)
 
                                 showPpnDialog = false
                             },
@@ -988,13 +975,7 @@ fun ProfilScreen(
                                 notaPrefs.saveSetting(updatedSetting)
 
                                 // 2. Simpan ke Room DB & Firestore via ViewModel (Clean Architecture)
-                                viewModel.saveNotaSetting(updatedSetting) { success ->
-                                    if (success) {
-                                        Toast.makeText(context, "Pengaturan Nota berhasil disimpan ke Database (Room & Firestore)", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        Toast.makeText(context, "Pengaturan Nota disimpan secara offline", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
+                                viewModel.saveNotaSetting(updatedSetting)
 
                                 showStrukDialog = false
                             },
@@ -1121,13 +1102,7 @@ fun ProfilScreen(
                                 )
                                 tablePrefs.setTableEnabled(isMejaAktif)
 
-                                viewModel.saveTableSetting(updatedSetting) { success ->
-                                    if (success) {
-                                        Toast.makeText(context, "Pengaturan meja tersimpan ke Database (Room & Firestore)", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        Toast.makeText(context, "Pengaturan meja tersimpan secara offline", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
+                                viewModel.saveTableSetting(updatedSetting)
                                 showMejaDialog = false
                             },
                             modifier = Modifier

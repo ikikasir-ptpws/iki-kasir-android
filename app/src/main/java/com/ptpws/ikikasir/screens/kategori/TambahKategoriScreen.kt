@@ -1,6 +1,5 @@
 package com.ptpws.ikikasir.screens.kategori
 
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -38,19 +37,10 @@ fun TambahKategoriScreen(
     viewModel: TambahKategoriViewModel = hiltViewModel()
 ) {
     val formState by viewModel.formState.collectAsState()
-    val context = LocalContext.current
-
     LaunchedEffect(formState.isSuccess) {
         if (formState.isSuccess) {
-            Toast.makeText(context, if (formState.isEditMode) "Kategori berhasil diperbarui" else "Kategori berhasil disimpan", Toast.LENGTH_SHORT).show()
             viewModel.resetSuccess()
             onSimpanKategori(); onBack()
-        }
-    }
-
-    LaunchedEffect(formState.errorMessage) {
-        formState.errorMessage?.let { error ->
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
         }
     }
 

@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.antrean.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.antrean.domain.model.QueueHistory
 import com.ptpws.ikikasir.feature.antrean.domain.usecase.GetQueueHistoryUseCase
 import com.ptpws.ikikasir.feature.antrean.domain.usecase.InsertQueueHistoryUseCase
@@ -121,10 +122,21 @@ class QueueHistoryViewModel @Inject constructor(
     fun addHistory(history: QueueHistory) {
         viewModelScope.launch {
             try {
-                insertQueueHistoryUseCase(history).collect {}
-                Log.d(TAG, "QueueHistory added successfully: ${history.id}")
+                insertQueueHistoryUseCase(history).collect { result ->
+                    result.fold(
+                        onSuccess = {
+                            GlobalCrudResultDialog.success("Riwayat antrean berhasil disimpan.")
+                            Log.d(TAG, "QueueHistory added successfully: ${history.id}")
+                        },
+                        onFailure = { error ->
+                            GlobalCrudResultDialog.failure(error.message ?: "Gagal menyimpan riwayat antrean.")
+                            Log.e(TAG, "Failed adding QueueHistory: ${error.message}", error)
+                        }
+                    )
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed adding QueueHistory: ${e.message}", e)
+                GlobalCrudResultDialog.failure(e.message ?: "Gagal menyimpan riwayat antrean.")
             }
         }
     }

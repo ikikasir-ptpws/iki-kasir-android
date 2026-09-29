@@ -2,6 +2,7 @@ package com.ptpws.ikikasir.feature.promo.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
 import com.ptpws.ikikasir.feature.promo.domain.usecase.DeletePromoUseCase
@@ -78,6 +79,7 @@ class PromoViewModel @Inject constructor(
             togglePromoStatusUseCase(promoId, !currentStatus).collect { result ->
                 result.onSuccess {
                     val statusText = if (!currentStatus) "diaktifkan" else "dinonaktifkan"
+                    GlobalCrudResultDialog.success("Promo \"$promoName\" berhasil $statusText.")
                     logActivityUseCase(
                         title = "Status Promo: $promoName",
                         description = "Status promo $promoName $statusText.",
@@ -87,7 +89,9 @@ class PromoViewModel @Inject constructor(
                     )
                     _state.update { it.copy(userMessage = "Status promo berhasil diubah") }
                 }.onFailure { err ->
-                    _state.update { it.copy(errorMessage = "Gagal mengubah status: ${err.message}") }
+                    val message = err.message ?: "Gagal mengubah status promo."
+                    GlobalCrudResultDialog.failure(message)
+                    _state.update { it.copy(errorMessage = "Gagal mengubah status: $message") }
                 }
             }
         }
@@ -100,6 +104,7 @@ class PromoViewModel @Inject constructor(
         viewModelScope.launch {
             deletePromoUseCase(promoId).collect { result ->
                 result.onSuccess {
+                    GlobalCrudResultDialog.success("Promo \"$promoName\" berhasil dihapus.")
                     logActivityUseCase(
                         title = "Penghapusan Promo: $promoName",
                         description = "Promo $promoName telah dihapus dari daftar.",
@@ -109,7 +114,9 @@ class PromoViewModel @Inject constructor(
                     )
                     _state.update { it.copy(userMessage = "Promo berhasil dihapus") }
                 }.onFailure { err ->
-                    _state.update { it.copy(errorMessage = "Gagal menghapus promo: ${err.message}") }
+                    val message = err.message ?: "Gagal menghapus promo."
+                    GlobalCrudResultDialog.failure(message)
+                    _state.update { it.copy(errorMessage = "Gagal menghapus promo: $message") }
                 }
             }
         }

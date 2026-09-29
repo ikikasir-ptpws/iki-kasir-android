@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.kategori.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.core.network.NetworkMonitor
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.DeleteKategoriUseCase
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.GetKategoriUseCase
@@ -104,6 +105,7 @@ class KategoriViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true, kategoriToDelete = null) }
             deleteKategoriUseCase(id).collect { result ->
                 if (result.isSuccess) {
+                    GlobalCrudResultDialog.success("Kategori \"$categoryName\" berhasil dihapus.")
                     logActivityUseCase(
                         title = "Penghapusan Kategori: $categoryName",
                         description = "Kategori $categoryName telah dihapus dari sistem.",
@@ -118,10 +120,12 @@ class KategoriViewModel @Inject constructor(
                         )
                     }
                 } else {
+                    val message = result.exceptionOrNull()?.message ?: "Gagal menghapus kategori"
+                    GlobalCrudResultDialog.failure(message)
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = result.exceptionOrNull()?.message ?: "Gagal menghapus kategori"
+                            errorMessage = message
                         )
                     }
                 }
@@ -159,6 +163,7 @@ class KategoriViewModel @Inject constructor(
             updateKategoriUseCase(updated).collect { result ->
                 if (result.isSuccess) {
                     val statusStr = if (updated.isVisibleInCashier) "diaktifkan" else "dinonaktifkan"
+                    GlobalCrudResultDialog.success("Visibilitas kategori \"${kategori.name}\" berhasil $statusStr.")
                     logActivityUseCase(
                         title = "Visibilitas Kategori: ${kategori.name}",
                         description = "Status visibilitas kategori di kasir $statusStr.",
@@ -170,8 +175,10 @@ class KategoriViewModel @Inject constructor(
                         it.copy(userMessage = if (updated.isVisibleInCashier) "Kasir diaktifkan" else "Kasir dinonaktifkan")
                     }
                 } else {
+                    val message = result.exceptionOrNull()?.message ?: "Gagal update visibilitas"
+                    GlobalCrudResultDialog.failure(message)
                     _state.update {
-                        it.copy(errorMessage = result.exceptionOrNull()?.message ?: "Gagal update visibilitas")
+                        it.copy(errorMessage = message)
                     }
                 }
             }

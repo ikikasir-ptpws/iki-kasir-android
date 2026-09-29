@@ -172,20 +172,6 @@ fun DaftarProdukScreen(
         }
     }
 
-    LaunchedEffect(state.userMessage) {
-        state.userMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            viewModel.clearUserMessage()
-        }
-    }
-
-    LaunchedEffect(state.errorMessage) {
-        state.errorMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            viewModel.clearUserMessage()
-        }
-    }
-
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
         topBar = {
