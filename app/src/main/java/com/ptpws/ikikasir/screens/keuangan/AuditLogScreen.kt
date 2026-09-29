@@ -410,6 +410,8 @@ fun AuditLogScreen(
                             avatarInisial = getInitials(log.actorName),
                             avatarBgColor = getAvatarBgColor(log.actorName),
                             namaStaf = log.actorName.ifBlank { "System" },
+                            actorRole = log.actorRole,
+                            isPending = !log.isSynced,
                             isBahaya = log.isWarning
                         )
                     }
@@ -526,6 +528,8 @@ fun AuditlogItem(
     avatarInisial: String,
     avatarBgColor: Color,
     namaStaf: String,
+    actorRole: String,
+    isPending: Boolean,
     isBahaya: Boolean
 ) {
     Card(
@@ -616,11 +620,26 @@ fun AuditlogItem(
                         )
                     }
                     Text(
-                        text = "Oleh: $namaStaf",
+                        text = "Oleh: $namaStaf · ${actorRole.ifBlank { "Tanpa role" }}",
                         fontFamily = interfamily,
                         fontSize = 11.sp,
-                        color = Color(0xFF6B7280)
+                        color = Color(0xFF6B7280),
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                    if (isPending) {
+                        Text(
+                            text = "Pending",
+                            fontFamily = interfamily,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFB45309),
+                            modifier = Modifier
+                                .background(Color(0xFFFFF7ED), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 7.dp, vertical = 4.dp)
+                        )
+                    }
                 }
             }
         }
