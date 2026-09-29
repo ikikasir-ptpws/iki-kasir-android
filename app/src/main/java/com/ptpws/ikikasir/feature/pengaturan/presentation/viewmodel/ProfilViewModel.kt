@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetNotaSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.SaveNotaSettingUseCase
@@ -32,7 +33,8 @@ class ProfilViewModel @Inject constructor(
     private val getPaymentMethodSettingUseCase: GetPaymentMethodSettingUseCase,
     private val savePaymentMethodSettingUseCase: SavePaymentMethodSettingUseCase,
     private val getTableSettingUseCase: GetTableSettingUseCase,
-    private val saveTableSettingUseCase: SaveTableSettingUseCase
+    private val saveTableSettingUseCase: SaveTableSettingUseCase,
+    private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
     private val _notaSetting = MutableStateFlow(NotaSetting())
@@ -93,6 +95,12 @@ class ProfilViewModel @Inject constructor(
                     onSuccess = {
                         _notaSetting.value = setting
                         GlobalCrudResultDialog.success("Pengaturan nota berhasil disimpan.")
+                        logActivityUseCase(
+                            title = "Perubahan Pengaturan Nota",
+                            description = "Pengaturan identitas toko, jaringan nota, atau ukuran kertas diperbarui.",
+                            category = "SYSTEM",
+                            action = "UPDATE"
+                        )
                         onComplete(true)
                     },
                     onFailure = { error ->
@@ -111,6 +119,12 @@ class ProfilViewModel @Inject constructor(
                     onSuccess = {
                         _taxSetting.value = setting
                         GlobalCrudResultDialog.success("Pengaturan pajak berhasil disimpan.")
+                        logActivityUseCase(
+                            title = "Perubahan Pengaturan Pajak",
+                            description = "Pengaturan pajak ${if (setting.isActive) "diaktifkan" else "dinonaktifkan"} menjadi ${setting.percentage}% (${setting.type}).",
+                            category = "SYSTEM",
+                            action = "UPDATE"
+                        )
                         onComplete(true)
                     },
                     onFailure = { error ->
@@ -129,6 +143,12 @@ class ProfilViewModel @Inject constructor(
                 onSuccess = {
                     _paymentMethodSetting.value = setting
                     GlobalCrudResultDialog.success("Pengaturan metode pembayaran berhasil disimpan.")
+                    logActivityUseCase(
+                        title = "Perubahan Metode Pembayaran",
+                        description = "Pengaturan metode pembayaran tunai, QRIS, transfer, dan kartu diperbarui.",
+                        category = "SYSTEM",
+                        action = "UPDATE"
+                    )
                     onComplete(true)
                 },
                 onFailure = { error ->
@@ -146,6 +166,12 @@ class ProfilViewModel @Inject constructor(
                 onSuccess = {
                     _tableSetting.value = setting
                     GlobalCrudResultDialog.success("Pengaturan meja berhasil disimpan.")
+                    logActivityUseCase(
+                        title = "Perubahan Pengaturan Meja",
+                        description = "Fitur meja ${if (setting.isTableEnabled) "diaktifkan" else "dinonaktifkan"}.",
+                        category = "SYSTEM",
+                        action = "UPDATE"
+                    )
                     onComplete(true)
                 },
                 onFailure = { error ->
