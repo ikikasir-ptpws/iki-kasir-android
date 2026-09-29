@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -508,6 +509,23 @@ private fun GroupHeaderRow(
 }
 
 @Composable
+private fun PendingSyncBadge() {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = Color(0xFFFEF3C7)
+    ) {
+        Text(
+            text = "Pending",
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            fontSize = 10.sp,
+            fontFamily = interfamily,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFFD97706)
+        )
+    }
+}
+
+@Composable
 private fun QueueHistoryCard(
     history: QueueHistory,
     transaksi: PenjualanTransaksi?
@@ -540,35 +558,47 @@ private fun QueueHistoryCard(
             ) {
                 Text(
                     text = history.transactionId,
+                    modifier = Modifier.weight(1f),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF0F172A),
-                    fontFamily = interfamily
+                    fontFamily = interfamily,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
 
-                // Status Pill
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = statusBgColor
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    if (!history.isSynced || transaksi?.isSynced == false) {
+                        PendingSyncBadge()
+                    }
+
+                    // Status Pill
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = statusBgColor
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(statusDotColor)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = statusLabel,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = statusTextColor,
-                            fontFamily = interfamily
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(statusDotColor)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = statusLabel,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = statusTextColor,
+                                fontFamily = interfamily
+                            )
+                        }
                     }
                 }
             }
@@ -581,6 +611,7 @@ private fun QueueHistoryCard(
                     append("Meja: ${history.tableNumber}")
                 }
             }
+
             if (subtitleText.isNotBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
