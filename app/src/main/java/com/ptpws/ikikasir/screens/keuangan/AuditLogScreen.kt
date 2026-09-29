@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.auditlog.domain.model.AuditLog
 import com.ptpws.ikikasir.feature.auditlog.presentation.viewmodel.AuditLogViewModel
@@ -49,6 +50,19 @@ fun AuditLogScreen(
     viewModel: AuditLogViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    var showDateRangePicker by remember { mutableStateOf(false) }
+
+    if (showDateRangePicker) {
+        CustomDateRangePickerDialog(
+            initialStartDateMillis = state.startDateMillis,
+            initialEndDateMillis = state.endDateMillis,
+            onDismissRequest = { showDateRangePicker = false },
+            onDateRangeSelected = { start, end ->
+                viewModel.onCustomDateRangeSelected(start, end)
+                showDateRangePicker = false
+            }
+        )
+    }
 
     Scaffold(
         containerColor = Color(0xFFF3F4F6),
@@ -209,15 +223,20 @@ fun AuditLogScreen(
                             color = Color(0xFF9CA3AF),
                             letterSpacing = 0.5.sp
                         )
-                        Icon(
-                            imageVector = Icons.Default.CalendarMonth,
-                            contentDescription = null,
-                            tint = Color(0xFF4F46E5),
-                            modifier = Modifier.size(20.dp)
-                        )
+                        IconButton(
+                            onClick = { showDateRangePicker = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "Pilih rentang tanggal",
+                                tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
 
-                    val dateFilters = listOf("Hari Ini", "7 Hari Terakhir", "Semua Tanggal")
+                    val dateFilters = listOf("Semua", "Hari Ini", "7 Hari Terakhir")
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -230,6 +249,43 @@ fun AuditLogScreen(
                                 label = {
                                     Text(
                                         text = label,
+                                        fontFamily = interfamily,
+                                        fontSize = 13.sp,
+                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFF4F46E5),
+                                    selectedLabelColor = Color.White,
+                                    containerColor = Color.White,
+                                    labelColor = Color(0xFF374151)
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    enabled = true,
+                                    selected = isSelected,
+                                    selectedBorderColor = Color.Transparent,
+                                    borderColor = Color(0xFFE5E7EB),
+                                    borderWidth = 1.dp,
+                                    selectedBorderWidth = 0.dp
+                                ),
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                        }
+
+                        item {
+                            val isSelected = state.selectedDateFilter == "Filter Tanggal"
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    if (state.startDateMillis != null && state.endDateMillis != null) {
+                                        viewModel.onDateFilterSelected("Filter Tanggal")
+                                    } else {
+                                        showDateRangePicker = true
+                                    }
+                                },
+                                label = {
+                                    Text(
+                                        text = if (isSelected) state.customDateLabel ?: "Filter Tanggal" else "Pilih Tanggal",
                                         fontFamily = interfamily,
                                         fontSize = 13.sp,
                                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
