@@ -32,8 +32,11 @@ class NetworkMonitorImpl @Inject constructor(
             private val networks = mutableSetOf<Network>()
 
             override fun onAvailable(network: Network) {
-                networks.add(network)
-                trySend(true)
+                val capabilities = connectivityManager.getNetworkCapabilities(network)
+                if (capabilities?.hasValidatedInternet() == true) {
+                    networks.add(network)
+                    trySend(true)
+                }
             }
 
             override fun onLost(network: Network) {
@@ -45,8 +48,7 @@ class NetworkMonitorImpl @Inject constructor(
                 network: Network,
                 networkCapabilities: NetworkCapabilities
             ) {
-                val hasInternet = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                if (hasInternet) {
+                if (networkCapabilities.hasValidatedInternet()) {
                     networks.add(network)
                 } else {
                     networks.remove(network)
@@ -73,6 +75,10 @@ class NetworkMonitorImpl @Inject constructor(
         val cm = connectivityManager ?: return false
         val activeNetwork = cm.activeNetwork ?: return false
         val capabilities = cm.getNetworkCapabilities(activeNetwork) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        return capabilities.hasValidatedInternet()
     }
 }
+
+private fun NetworkCapabilities.hasValidatedInternet(): Boolean =
+    hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
