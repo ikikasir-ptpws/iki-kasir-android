@@ -18,6 +18,9 @@ interface RoleDao {
     @Query("SELECT * FROM roles WHERE id = :id LIMIT 1")
     suspend fun getRoleById(id: String): RoleEntity?
 
+    @Query("SELECT * FROM roles WHERE LOWER(name) = LOWER(:name) AND isDeleted = 0 LIMIT 1")
+    suspend fun getRoleByName(name: String): RoleEntity?
+
     @Upsert
     suspend fun insertOrUpdate(role: RoleEntity)
 
