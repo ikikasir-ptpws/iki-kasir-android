@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -530,12 +531,20 @@ fun TransaksiCardItem(
                 ) {
                     Text(
                         text = kodeTransaksi,
+                        modifier = Modifier.weight(1f),
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
                         fontSize = 15.sp,
-                        color = Color(0xFF0F172A)
+                        color = Color(0xFF0F172A),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                }
 
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     // Pending Badge (if offline unsynced)
                     if (!isSynced) {
                         Box(
