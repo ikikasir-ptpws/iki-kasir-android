@@ -59,7 +59,14 @@ class AntreanRepositoryImpl @Inject constructor(
                         val validIds = remoteList.map { it.id }
                         val validTxIds = remoteList.map { it.transactionId }
                         localDao.deleteSyncedNotInRemote(validIds, validTxIds)
-                        localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                        val mergeableAntrean = remoteList.mapNotNull { remote ->
+                            val local = localDao.getAntreanById(remote.id)
+                                ?: localDao.getAntreanByTransactionId(remote.transactionId)
+                            if (local?.isSynced == false) null else remote.toEntity()
+                        }
+                        if (mergeableAntrean.isNotEmpty()) {
+                            localDao.insertOrUpdateAll(mergeableAntrean)
+                        }
                     } else {
                         localDao.deleteAllSynced()
                     }
@@ -180,7 +187,14 @@ class AntreanRepositoryImpl @Inject constructor(
         try {
             val remoteList = remoteDataSource.getAllAntrean()
             if (remoteList.isNotEmpty()) {
-                localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                val mergeableAntrean = remoteList.mapNotNull { remote ->
+                    val local = localDao.getAntreanById(remote.id)
+                        ?: localDao.getAntreanByTransactionId(remote.transactionId)
+                    if (local?.isSynced == false) null else remote.toEntity()
+                }
+                if (mergeableAntrean.isNotEmpty()) {
+                    localDao.insertOrUpdateAll(mergeableAntrean)
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to pull remote antrean during sync: ${e.message}")
