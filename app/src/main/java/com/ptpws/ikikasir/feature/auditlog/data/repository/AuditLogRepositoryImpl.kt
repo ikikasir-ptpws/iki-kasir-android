@@ -7,11 +7,13 @@ import com.ptpws.ikikasir.feature.auditlog.data.local.dao.AuditLogDao
 import com.ptpws.ikikasir.feature.auditlog.data.local.entity.toAuditLog
 import com.ptpws.ikikasir.feature.auditlog.data.local.entity.toAuditLogEntity
 import com.ptpws.ikikasir.feature.auditlog.data.remote.datasource.AuditLogRemoteDataSource
+import com.ptpws.ikikasir.feature.auditlog.data.remote.dto.AuditLogDto
 import com.ptpws.ikikasir.feature.auditlog.data.remote.dto.toAuditLog
 import com.ptpws.ikikasir.feature.auditlog.data.remote.dto.toAuditLogDto
 import com.ptpws.ikikasir.feature.auditlog.domain.model.AuditLog
 import com.ptpws.ikikasir.feature.auditlog.domain.repository.AuditLogRepository
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.dao.UserDao
+import com.ptpws.ikikasir.feature.role.data.local.dao.RoleDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -31,6 +33,7 @@ class AuditLogRepositoryImpl @Inject constructor(
     private val remoteDataSource: AuditLogRemoteDataSource,
     private val firebaseAuth: FirebaseAuth,
     private val userDao: UserDao,
+    private val roleDao: RoleDao,
     private val networkMonitor: NetworkMonitor
 ) : AuditLogRepository {
 
@@ -68,18 +71,22 @@ class AuditLogRepositoryImpl @Inject constructor(
         var finalActorName = actorName ?: ""
         var finalActorRole = actorRole ?: ""
 
-        if (finalActorName.isBlank() || finalActorId.isBlank()) {
-            val currentUser = firebaseAuth.currentUser
-            if (currentUser != null) {
-                finalActorId = currentUser.uid
-                val email = currentUser.email ?: ""
-                val localUser = if (email.isNotBlank()) userDao.getUserByEmail(email) else null
-                finalActorName = localUser?.fullName ?: currentUser.displayName ?: email.ifBlank { "System User" }
-                finalActorRole = localUser?.roleId ?: "Staff"
-            } else {
-                finalActorName = "System"
-                finalActorRole = "System"
+        val currentUser = firebaseAuth.currentUser
+        if (currentUser != null) {
+            val email = currentUser.email.orEmpty()
+            val localUser = if (email.isNotBlank()) userDao.getUserByEmail(email) else null
+            finalActorId = finalActorId.ifBlank { currentUser.uid }
+            finalActorName = finalActorName.ifBlank {
+                localUser?.fullName
+                    ?: currentUser.displayName
+                    ?: email.ifBlank { "System User" }
             }
+            if (finalActorRole.isBlank() && localUser != null) {
+                finalActorRole = resolveRoleName(localUser.roleId)
+            }
+        } else {
+            finalActorName = finalActorName.ifBlank { "System" }
+            finalActorRole = finalActorRole.ifBlank { "System" }
         }
 
         val newLog = AuditLog(
@@ -107,6 +114,15 @@ class AuditLogRepositoryImpl @Inject constructor(
         }
     }
 
+    private suspend fun resolveRoleName(roleId: String): String {
+        if (roleId.isBlank()) return ""
+        return roleDao.getRoleById(roleId)?.name
+            ?.takeIf(String::isNotBlank)
+            ?: roleDao.getRoleByName(roleId)?.name
+                ?.takeIf(String::isNotBlank)
+            ?: roleId
+    }
+
     override suspend fun syncUnsyncedLogs() {
         if (!networkMonitor.isConnected()) return
 
@@ -132,12 +148,39 @@ class AuditLogRepositoryImpl @Inject constructor(
             val remoteDtos = remoteDataSource.getAllAuditLogs()
             if (remoteDtos.isNotEmpty()) {
                 val entities = remoteDtos.map { dto ->
-                    dto.toAuditLog().toAuditLogEntity()
+                    val correctedRole = resolveRemoteActorRole(dto)
+                    if (correctedRole == dto.actorRole) {
+                        dto.toAuditLog().toAuditLogEntity()
+                    } else {
+                        val correctedDto = dto.copy(actorRole = correctedRole)
+                        val synced = remoteDataSource.saveAuditLog(correctedDto)
+                        auditLogDao.updateSyncedActorRole(dto.id, correctedRole, synced)
+                        correctedDto.toAuditLog().toAuditLogEntity().copy(isSynced = synced)
+                    }
                 }
                 auditLogDao.insertAuditLogs(entities)
+                if (entities.any { !it.isSynced }) {
+                    syncUnsyncedLogs()
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error refreshing audit logs from remote: ${e.message}")
+        }
+    }
+
+    private suspend fun resolveRemoteActorRole(dto: AuditLogDto): String {
+        val actorUser = if (dto.actorName.contains('@')) {
+            userDao.getUserByEmail(dto.actorName)
+        } else {
+            userDao.getUserById(dto.actorId)
+        }
+
+        return if (actorUser != null) {
+            resolveRoleName(actorUser.roleId)
+        } else if (dto.actorName.contains('@')) {
+            ""
+        } else {
+            dto.actorRole
         }
     }
 }
