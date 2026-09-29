@@ -35,6 +35,9 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 try {
                     val remoteUser = remoteDataSource.getAllUsers().find { it.email.equals(cleanEmail, ignoreCase = true) }
+                    if (remoteUser != null) {
+                        userDao.insertOrUpdate(remoteUser.toEntity())
+                    }
                     remoteUser?.isActive ?: true
                 } catch (e: Exception) {
                     true
