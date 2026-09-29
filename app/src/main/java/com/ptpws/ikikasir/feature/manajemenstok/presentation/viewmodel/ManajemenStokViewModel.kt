@@ -10,6 +10,7 @@ import com.ptpws.ikikasir.feature.manajemenstok.domain.model.MovementType
 import com.ptpws.ikikasir.feature.manajemenstok.domain.model.StockMovement
 import com.ptpws.ikikasir.feature.manajemenstok.domain.usecase.SaveStokAdjustmentUseCase
 import com.ptpws.ikikasir.feature.manajemenstok.presentation.state.ManajemenStokState
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.UpdateProdukUseCase
@@ -28,7 +29,8 @@ class ManajemenStokViewModel @Inject constructor(
     private val updateProdukUseCase: UpdateProdukUseCase,
     private val getKategoriUseCase: GetKategoriUseCase,
     private val saveStokAdjustmentUseCase: SaveStokAdjustmentUseCase,
-    private val firebaseAuth: FirebaseAuth
+    private val firebaseAuth: FirebaseAuth,
+    private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ManajemenStokState())
@@ -145,6 +147,12 @@ class ManajemenStokViewModel @Inject constructor(
                     )
                     saveStokAdjustmentUseCase(movement).collect { /* fire and forget */ }
 
+                    logActivityUseCase(
+                        title = "Penambahan Stok: ${currentProduk.name}",
+                        description = "Restock $addedStock unit. Stok berubah dari $stokSebelum menjadi $stokSesudah unit.",
+                        category = "STOCK",
+                        action = "UPDATE"
+                    )
                     GlobalCrudResultDialog.success(
                         "Restock ${addedStock} unit untuk \"${currentProduk.name}\" berhasil."
                     )
