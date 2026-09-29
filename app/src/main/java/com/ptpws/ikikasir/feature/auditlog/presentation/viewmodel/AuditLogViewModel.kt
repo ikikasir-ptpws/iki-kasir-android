@@ -2,6 +2,9 @@ package com.ptpws.ikikasir.feature.auditlog.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.commond.formatDateRangeLabel
+import com.ptpws.ikikasir.commond.getEndOfDayLocalSeconds
+import com.ptpws.ikikasir.commond.getStartOfDayLocalSeconds
 import com.ptpws.ikikasir.feature.auditlog.domain.model.AuditLog
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.GetAuditLogsUseCase
 import com.ptpws.ikikasir.feature.auditlog.presentation.state.AuditLogState
@@ -40,7 +43,9 @@ class AuditLogViewModel @Inject constructor(
                             logs = logs,
                             query = currentState.searchQuery,
                             category = currentState.selectedCategory,
-                            dateFilter = currentState.selectedDateFilter
+                            dateFilter = currentState.selectedDateFilter,
+                            startDateMillis = currentState.startDateMillis,
+                            endDateMillis = currentState.endDateMillis
                         )
                         currentState.copy(
                             auditLogs = logs,
@@ -58,7 +63,9 @@ class AuditLogViewModel @Inject constructor(
                 logs = currentState.auditLogs,
                 query = query,
                 category = currentState.selectedCategory,
-                dateFilter = currentState.selectedDateFilter
+                dateFilter = currentState.selectedDateFilter,
+                startDateMillis = currentState.startDateMillis,
+                endDateMillis = currentState.endDateMillis
             )
             currentState.copy(searchQuery = query, filteredLogs = filtered)
         }
@@ -70,7 +77,9 @@ class AuditLogViewModel @Inject constructor(
                 logs = currentState.auditLogs,
                 query = currentState.searchQuery,
                 category = category,
-                dateFilter = currentState.selectedDateFilter
+                dateFilter = currentState.selectedDateFilter,
+                startDateMillis = currentState.startDateMillis,
+                endDateMillis = currentState.endDateMillis
             )
             currentState.copy(selectedCategory = category, filteredLogs = filtered)
         }
@@ -78,13 +87,43 @@ class AuditLogViewModel @Inject constructor(
 
     fun onDateFilterSelected(dateFilter: String) {
         _state.update { currentState ->
+            val startDateMillis = if (dateFilter == "Filter Tanggal") currentState.startDateMillis else null
+            val endDateMillis = if (dateFilter == "Filter Tanggal") currentState.endDateMillis else null
             val filtered = applyFilters(
                 logs = currentState.auditLogs,
                 query = currentState.searchQuery,
                 category = currentState.selectedCategory,
-                dateFilter = dateFilter
+                dateFilter = dateFilter,
+                startDateMillis = startDateMillis,
+                endDateMillis = endDateMillis
             )
-            currentState.copy(selectedDateFilter = dateFilter, filteredLogs = filtered)
+            currentState.copy(
+                selectedDateFilter = dateFilter,
+                startDateMillis = startDateMillis,
+                endDateMillis = endDateMillis,
+                customDateLabel = if (dateFilter == "Filter Tanggal") currentState.customDateLabel else null,
+                filteredLogs = filtered
+            )
+        }
+    }
+
+    fun onCustomDateRangeSelected(startDateMillis: Long, endDateMillis: Long) {
+        _state.update { currentState ->
+            val filtered = applyFilters(
+                logs = currentState.auditLogs,
+                query = currentState.searchQuery,
+                category = currentState.selectedCategory,
+                dateFilter = "Filter Tanggal",
+                startDateMillis = startDateMillis,
+                endDateMillis = endDateMillis
+            )
+            currentState.copy(
+                selectedDateFilter = "Filter Tanggal",
+                startDateMillis = startDateMillis,
+                endDateMillis = endDateMillis,
+                customDateLabel = formatDateRangeLabel(startDateMillis, endDateMillis),
+                filteredLogs = filtered
+            )
         }
     }
 
@@ -92,7 +131,9 @@ class AuditLogViewModel @Inject constructor(
         logs: List<AuditLog>,
         query: String,
         category: String,
-        dateFilter: String
+        dateFilter: String,
+        startDateMillis: Long?,
+        endDateMillis: Long?
     ): List<AuditLog> {
         val now = Calendar.getInstance()
 
@@ -127,6 +168,15 @@ class AuditLogViewModel @Inject constructor(
             val matchesDate = when (dateFilter) {
                 "Hari Ini" -> log.timestamp >= startOfToday
                 "7 Hari Terakhir" -> log.timestamp >= sevenDaysAgo
+                "Filter Tanggal" -> {
+                    if (startDateMillis != null && endDateMillis != null) {
+                        val startMillis = getStartOfDayLocalSeconds(startDateMillis) * 1000
+                        val endMillis = getEndOfDayLocalSeconds(endDateMillis) * 1000 + 999
+                        log.timestamp in startMillis..endMillis
+                    } else {
+                        true
+                    }
+                }
                 else -> true
             }
 
