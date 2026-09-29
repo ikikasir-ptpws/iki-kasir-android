@@ -19,7 +19,7 @@ interface AuditLogDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAuditLog(auditLog: AuditLogEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAuditLogs(auditLogs: List<AuditLogEntity>)
 
     @Query("UPDATE audit_logs SET isSynced = 1 WHERE id = :id")
