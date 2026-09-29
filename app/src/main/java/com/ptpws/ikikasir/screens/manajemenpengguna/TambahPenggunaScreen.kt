@@ -548,7 +548,7 @@ fun TambahPenggunaScreen(
                                         decorationBox = { innerTextField ->
                                             if (formState.password.isEmpty()) {
                                                 Text(
-                                                    text = "Min. 8 karakter",
+                                                    text = "Min. 6 karakter",
                                                     fontSize = 14.sp,
                                                     fontFamily = interfamily,
                                                     color = Color(0xFF94A3B8)
