@@ -11,6 +11,7 @@ import com.ptpws.ikikasir.feature.produk.domain.usecase.DeleteProdukUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.UpdateProdukUseCase
 import com.ptpws.ikikasir.feature.produk.presentation.state.DetailProdukState
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +28,7 @@ class DetailProdukViewModel @Inject constructor(
     private val deleteProdukUseCase: DeleteProdukUseCase,
     private val getKategoriUseCase: GetKategoriUseCase,
     private val getAllTransaksiUseCase: GetAllTransaksiUseCase,
+    private val logActivityUseCase: LogActivityUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -129,6 +131,12 @@ class DetailProdukViewModel @Inject constructor(
                     GlobalCrudResultDialog.success(
                         "Visibilitas produk \"${currentProduk.name}\" berhasil diperbarui."
                     )
+                    logActivityUseCase(
+                        title = "Visibilitas Produk: ${currentProduk.name}",
+                        description = "Status visibilitas produk di kasir ${if (isVisible) "diaktifkan" else "dinonaktifkan"}.",
+                        category = "SYSTEM",
+                        action = "UPDATE"
+                    )
                     _state.update { it.copy(produk = updated) }
                 } else {
                     val message = result.exceptionOrNull()?.message ?: "Gagal memperbarui visibilitas"
@@ -150,6 +158,13 @@ class DetailProdukViewModel @Inject constructor(
             deleteProdukUseCase(currentProduk.id).collect { result ->
                 if (result.isSuccess) {
                     GlobalCrudResultDialog.success("Produk \"${currentProduk.name}\" berhasil dihapus.")
+                    logActivityUseCase(
+                        title = "Penghapusan Produk: ${currentProduk.name}",
+                        description = "Produk ${currentProduk.name} telah dihapus dari sistem.",
+                        category = "PRICE",
+                        action = "DELETE",
+                        isWarning = true
+                    )
                     _state.update { it.copy(isLoading = false, isDeleted = true) }
                 } else {
                     val message = result.exceptionOrNull()?.message ?: "Gagal menghapus produk"
