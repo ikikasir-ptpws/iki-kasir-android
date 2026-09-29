@@ -2,6 +2,7 @@ package com.ptpws.ikikasir.feature.auditlog.data.repository
 
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
+import com.ptpws.ikikasir.core.network.NetworkMonitor
 import com.ptpws.ikikasir.feature.auditlog.data.local.dao.AuditLogDao
 import com.ptpws.ikikasir.feature.auditlog.data.local.entity.toAuditLog
 import com.ptpws.ikikasir.feature.auditlog.data.local.entity.toAuditLogEntity
@@ -13,7 +14,9 @@ import com.ptpws.ikikasir.feature.auditlog.domain.repository.AuditLogRepository
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.dao.UserDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -27,15 +30,24 @@ class AuditLogRepositoryImpl @Inject constructor(
     private val auditLogDao: AuditLogDao,
     private val remoteDataSource: AuditLogRemoteDataSource,
     private val firebaseAuth: FirebaseAuth,
-    private val userDao: UserDao
+    private val userDao: UserDao,
+    private val networkMonitor: NetworkMonitor
 ) : AuditLogRepository {
 
-    override fun getAuditLogs(): Flow<List<AuditLog>> {
-        // Trigger background sync when flow is collected
-        CoroutineScope(Dispatchers.IO).launch {
-            syncUnsyncedLogs()
-            refreshFromRemote()
+    private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    init {
+        repositoryScope.launch {
+            networkMonitor.isOnline.collect { isOnline ->
+                if (isOnline) {
+                    syncUnsyncedLogs()
+                    refreshFromRemote()
+                }
+            }
         }
+    }
+
+    override fun getAuditLogs(): Flow<List<AuditLog>> {
         return auditLogDao.getAllAuditLogs().map { entities ->
             entities.map { it.toAuditLog() }
         }
@@ -87,17 +99,21 @@ class AuditLogRepositoryImpl @Inject constructor(
         // 1. Save to Room DB (offline first)
         auditLogDao.insertAuditLog(newLog.toAuditLogEntity())
 
-        // 2. Try saving to Firestore
-        val isSavedRemote = remoteDataSource.saveAuditLog(newLog.toAuditLogDto())
-        if (isSavedRemote) {
-            auditLogDao.markAsSynced(newLog.id)
+        // Keep remote writes off the calling flow so offline logging never blocks the user action.
+        if (networkMonitor.isConnected()) {
+            repositoryScope.launch {
+                syncUnsyncedLogs()
+            }
         }
     }
 
     override suspend fun syncUnsyncedLogs() {
+        if (!networkMonitor.isConnected()) return
+
         try {
             val unsynced = auditLogDao.getUnsyncedAuditLogs()
             for (logEntity in unsynced) {
+                if (!networkMonitor.isConnected()) return
                 val log = logEntity.toAuditLog()
                 val success = remoteDataSource.saveAuditLog(log.toAuditLogDto())
                 if (success) {
@@ -110,6 +126,8 @@ class AuditLogRepositoryImpl @Inject constructor(
     }
 
     override suspend fun refreshFromRemote() {
+        if (!networkMonitor.isConnected()) return
+
         try {
             val remoteDtos = remoteDataSource.getAllAuditLogs()
             if (remoteDtos.isNotEmpty()) {
