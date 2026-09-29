@@ -49,7 +49,13 @@ class QueueHistoryRepositoryImpl @Inject constructor(
                 try {
                     val remoteList = remoteDataSource.getAllHistory()
                     if (remoteList.isNotEmpty()) {
-                        localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                        val mergeableHistory = remoteList.mapNotNull { remote ->
+                            val local = localDao.getHistoryByTransactionId(remote.transactionId.ifBlank { remote.id })
+                            if (local?.isSynced == false) null else remote.toEntity()
+                        }
+                        if (mergeableHistory.isNotEmpty()) {
+                            localDao.insertOrUpdateAll(mergeableHistory)
+                        }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to fetch remote queueHistory: ${e.message}")
