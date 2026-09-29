@@ -331,6 +331,24 @@ fun ManajemenPromoScreen(
                                 modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
+                                if (!promo.isSynced) {
+                                    Box(
+                                        modifier = Modifier
+                                            .background(
+                                                color = Color(0xFFFEF3C7),
+                                                shape = RoundedCornerShape(20.dp)
+                                            )
+                                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                                    ) {
+                                        Text(
+                                            text = "Pending",
+                                            fontFamily = interfamily,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFD97706)
+                                        )
+                                    }
+                                }
                                 Text(
                                     text = promo.name,
                                     fontFamily = interfamily,
