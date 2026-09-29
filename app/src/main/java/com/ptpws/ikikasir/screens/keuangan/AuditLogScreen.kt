@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -15,7 +16,9 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,23 +27,28 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.auditlog.domain.model.AuditLog
+import com.ptpws.ikikasir.feature.auditlog.presentation.viewmodel.AuditLogViewModel
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuditLogScreen(
     navController: NavController,
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    viewModel: AuditLogViewModel = hiltViewModel()
 ) {
-    var cariAktivitas by remember { mutableStateOf("") }
-    var filterKategori by remember { mutableStateOf("Semua") }
-    var filterTanggal by remember { mutableStateOf("Hari Ini") }
+    val state by viewModel.state.collectAsState()
 
     Scaffold(
         containerColor = Color(0xFFF3F4F6),
@@ -56,9 +64,13 @@ fun AuditLogScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { if (navController.currentDestination?.route == "audit_log") {
-                        navController.popBackStack()
-                    } }) {
+                    IconButton(onClick = {
+                        if (navController.currentDestination?.route == "audit_log") {
+                            navController.popBackStack()
+                        } else {
+                            onBack()
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
@@ -97,8 +109,8 @@ fun AuditLogScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     BasicTextField(
-                        value = cariAktivitas,
-                        onValueChange = { cariAktivitas = it },
+                        value = state.searchQuery,
+                        onValueChange = { viewModel.onSearchQueryChanged(it) },
                         singleLine = true,
                         textStyle = TextStyle(
                             color = Color.Black,
@@ -124,7 +136,7 @@ fun AuditLogScreen(
                                     modifier = Modifier.weight(1f),
                                     contentAlignment = Alignment.CenterStart
                                 ) {
-                                    if (cariAktivitas.isEmpty()) {
+                                    if (state.searchQuery.isEmpty()) {
                                         Text(
                                             text = "Cari aktivitas atau staf...",
                                             fontFamily = interfamily,
@@ -140,18 +152,19 @@ fun AuditLogScreen(
                 }
             }
 
-            //  Filter Kategori Chip Row
+            // Filter Kategori Chips
             item {
+                val categories = listOf("Semua", "Transaksi", "Stok", "Harga", "Autentikasi", "Promo", "Sistem")
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 2.dp)
                 ) {
-                    items(4) { index ->
-                        val label = listOf("Semua", "Transaksi", "Stok", "Harga")[index]
-                        val isSelected = filterKategori == label
+                    items(categories.size) { index ->
+                        val label = categories[index]
+                        val isSelected = state.selectedCategory == label
                         FilterChip(
                             selected = isSelected,
-                            onClick = { filterKategori = label },
+                            onClick = { viewModel.onCategorySelected(label) },
                             label = {
                                 Text(
                                     text = label,
@@ -204,15 +217,16 @@ fun AuditLogScreen(
                         )
                     }
 
+                    val dateFilters = listOf("Hari Ini", "7 Hari Terakhir", "Semua Tanggal")
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(3) { index ->
-                            val label = listOf("Hari Ini", "7 Hari Terakhir", "Pilih Tanggal")[index]
-                            val isSelected = filterTanggal == label
+                        items(dateFilters.size) { index ->
+                            val label = dateFilters[index]
+                            val isSelected = state.selectedDateFilter == label
                             FilterChip(
                                 selected = isSelected,
-                                onClick = { filterTanggal = label },
+                                onClick = { viewModel.onDateFilterSelected(label) },
                                 label = {
                                     Text(
                                         text = label,
@@ -242,118 +256,208 @@ fun AuditLogScreen(
                 }
             }
 
-
-            // Log 1: Transaksi Baru
-            item {
-                AuditlogItem(
-                    icon = Icons.Default.Description,
-                    iconBgColor = Color(0xFF4F46E5),
-                    iconTint = Color.White,
-                    judul = "Transaksi Baru: #TRX-9021",
-                    jam = "14:20",
-                    deskripsi = "Penjualan retail 3 item selesai.",
-                    avatarInisial = "KS",
-                    avatarBgColor = Color(0xFF6B7280),
-                    namaStaf = "Kasir Siti",
-                    isBahaya = false
-                )
-            }
-
-            // Log 2: Penambahan Stok
-            item {
-                AuditlogItem(
-                    icon = Icons.Default.Inventory,
-                    iconBgColor = Color(0xFFE5E7EB),
-                    iconTint = Color(0xFF374151),
-                    judul = "Penambahan Stok: Minyak Gore",
-                    jam = "11:05",
-                    deskripsi = "Stok ditambahkan sebanyak 24 unit ke Gudang A.",
-                    avatarInisial = "AA",
-                    avatarBgColor = Color(0xFF7C3AED),
-                    namaStaf = "Admin Ahmad",
-                    isBahaya = false
-                )
-            }
-
-            // Log 3: Perubahan Harga
-            item {
-                AuditlogItem(
-                    icon = Icons.Default.LocalOffer,
-                    iconBgColor = Color(0xFFE5E7EB),
-                    iconTint = Color(0xFF374151),
-                    judul = "Perubahan Harga: Beras Premiu...",
-                    jam = "09:15",
-                    deskripsi = "Harga diubah dari Rp 65.000 ke Rp 68.500.",
-                    avatarInisial = "MB",
-                    avatarBgColor = Color(0xFFD97706),
-                    namaStaf = "Manager Budi",
-                    isBahaya = false
-                )
-            }
-
-            //  Separator Tanggal
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    HorizontalDivider(
-                        modifier = Modifier.weight(1f),
-                        color = Color(0xFFE5E7EB)
-                    )
-                    Text(
-                        text = "KEMARIN — 23 OKT 2023",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = interfamily,
-                        color = Color(0xFF9CA3AF),
-                        letterSpacing = 0.5.sp
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.weight(1f),
-                        color = Color(0xFFE5E7EB)
-                    )
+            // Loading state
+            if (state.isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFF4F46E5))
+                    }
                 }
-            }
+            } else if (state.filteredLogs.isEmpty()) {
+                // Empty state
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Description,
+                                contentDescription = null,
+                                tint = Color(0xFF9CA3AF),
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "Belum Ada Aktivitas Auditlog",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = Color(0xFF374151)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Setiap transaksi, perubahan stok, harga, dan aktivitas sistem akan tercatat di sini.",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                color = Color(0xFF6B7280),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            } else {
+                // Render Logs with Date Headers
+                val groupedLogs = state.filteredLogs.groupBy { formatTimestampToDateHeader(it.timestamp) }
 
+                groupedLogs.forEach { (dateHeader, logsInGroup) ->
+                    item(key = "header_$dateHeader") {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            HorizontalDivider(
+                                modifier = Modifier.weight(1f),
+                                color = Color(0xFFE5E7EB)
+                            )
+                            Text(
+                                text = dateHeader,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = interfamily,
+                                color = Color(0xFF9CA3AF),
+                                letterSpacing = 0.5.sp
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.weight(1f),
+                                color = Color(0xFFE5E7EB)
+                            )
+                        }
+                    }
 
-            // Log 4: Sesi Berakhir
-            item {
-                AuditlogItem(
-                    icon = Icons.Default.Logout,
-                    iconBgColor = Color(0xFFE5E7EB),
-                    iconTint = Color(0xFF374151),
-                    judul = "Sesi Berakhir: Kasir Siti",
-                    jam = "21:00",
-                    deskripsi = "Logout sistem otomatis - Tutup Shift.",
-                    avatarInisial = "KS",
-                    avatarBgColor = Color(0xFF059669),
-                    namaStaf = "Kasir Siti",
-                    isBahaya = false
-                )
-            }
-
-            // Log 5: Pembatalan Transaksi (bahaya - merah)
-            item {
-                AuditlogItem(
-                    icon = Icons.Default.Cancel,
-                    iconBgColor = Color(0xFFFEE2E2),
-                    iconTint = Color(0xFFEF4444),
-                    judul = "Pembatalan Transaksi: #TRX-8...",
-                    jam = "18:45",
-                    deskripsi = "Alasan: Kesalahan input jumlah item.",
-                    avatarInisial = "SL",
-                    avatarBgColor = Color(0xFFEF4444),
-                    namaStaf = "Supervisor Linda",
-                    isBahaya = true
-                )
+                    items(logsInGroup, key = { it.id }) { log ->
+                        val iconInfo = getAuditLogIconAndColors(log)
+                        AuditlogItem(
+                            icon = iconInfo.icon,
+                            iconBgColor = iconInfo.bgColor,
+                            iconTint = iconInfo.tint,
+                            judul = log.title,
+                            jam = formatTimestampToTime(log.timestamp),
+                            deskripsi = log.description,
+                            avatarInisial = getInitials(log.actorName),
+                            avatarBgColor = getAvatarBgColor(log.actorName),
+                            namaStaf = log.actorName.ifBlank { "System" },
+                            isBahaya = log.isWarning
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-// Auditlog Item
+private data class IconInfo(
+    val icon: ImageVector,
+    val bgColor: Color,
+    val tint: Color
+)
+
+private fun getAuditLogIconAndColors(log: AuditLog): IconInfo {
+    if (log.isWarning) {
+        return IconInfo(
+            icon = Icons.Default.Cancel,
+            bgColor = Color(0xFFFEE2E2),
+            tint = Color(0xFFEF4444)
+        )
+    }
+
+    return when (log.category.uppercase()) {
+        "TRANSACTION" -> IconInfo(
+            icon = Icons.Default.Description,
+            bgColor = Color(0xFF4F46E5),
+            tint = Color.White
+        )
+        "STOCK" -> IconInfo(
+            icon = Icons.Default.Inventory,
+            bgColor = Color(0xFFE5E7EB),
+            tint = Color(0xFF374151)
+        )
+        "PRICE" -> IconInfo(
+            icon = Icons.Default.LocalOffer,
+            bgColor = Color(0xFFE5E7EB),
+            tint = Color(0xFF374151)
+        )
+        "AUTHENTICATION" -> IconInfo(
+            icon = Icons.Default.Logout,
+            bgColor = Color(0xFFE5E7EB),
+            tint = Color(0xFF374151)
+        )
+        "PROMO" -> IconInfo(
+            icon = Icons.Default.LocalOffer,
+            bgColor = Color(0xFFE5E7EB),
+            tint = Color(0xFF4F46E5)
+        )
+        else -> IconInfo(
+            icon = Icons.Default.Settings,
+            bgColor = Color(0xFFE5E7EB),
+            tint = Color(0xFF374151)
+        )
+    }
+}
+
+private fun formatTimestampToTime(timestamp: Long): String {
+    val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+    return sdf.format(Date(timestamp))
+}
+
+private fun formatTimestampToDateHeader(timestamp: Long): String {
+    val logCal = Calendar.getInstance().apply { timeInMillis = timestamp }
+    val todayCal = Calendar.getInstance()
+    val yesterdayCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+
+    return when {
+        logCal.get(Calendar.YEAR) == todayCal.get(Calendar.YEAR) &&
+                logCal.get(Calendar.DAY_OF_YEAR) == todayCal.get(Calendar.DAY_OF_YEAR) -> "HARI INI"
+
+        logCal.get(Calendar.YEAR) == yesterdayCal.get(Calendar.YEAR) &&
+                logCal.get(Calendar.DAY_OF_YEAR) == yesterdayCal.get(Calendar.DAY_OF_YEAR) -> "KEMARIN"
+
+        else -> {
+            val sdf = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID"))
+            sdf.format(Date(timestamp)).uppercase()
+        }
+    }
+}
+
+private fun getInitials(name: String): String {
+    if (name.isBlank()) return "SY"
+    val parts = name.trim().split("\\s+".toRegex())
+    return when {
+        parts.size >= 2 -> "${parts[0].firstOrNull()?.uppercaseChar() ?: ""}${parts[1].firstOrNull()?.uppercaseChar() ?: ""}"
+        parts.size == 1 && parts[0].length >= 2 -> parts[0].substring(0, 2).uppercase()
+        else -> name.take(2).uppercase()
+    }
+}
+
+private fun getAvatarBgColor(name: String): Color {
+    val colors = listOf(
+        Color(0xFF6B7280),
+        Color(0xFF7C3AED),
+        Color(0xFFD97706),
+        Color(0xFF059669),
+        Color(0xFF2563EB),
+        Color(0xFFDC2626)
+    )
+    val hash = kotlin.math.abs(name.hashCode())
+    return colors[hash % colors.size]
+}
 
 @Composable
 fun AuditlogItem(
@@ -382,7 +486,6 @@ fun AuditlogItem(
                 .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-
             // Icon kotak kiri
             Box(
                 modifier = Modifier
@@ -403,7 +506,6 @@ fun AuditlogItem(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
-
                 // Baris judul + jam
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -466,14 +568,5 @@ fun AuditlogItem(
                 }
             }
         }
-    }
-}
-
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun AuditlogScreenPreview() {
-    MaterialTheme {
-        AuditLogScreen(navController = rememberNavController())
     }
 }

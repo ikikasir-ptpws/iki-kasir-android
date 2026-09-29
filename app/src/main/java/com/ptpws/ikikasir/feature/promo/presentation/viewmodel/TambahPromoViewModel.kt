@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.promo.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
@@ -42,7 +43,8 @@ class TambahPromoViewModel @Inject constructor(
     private val getProdukUseCase: GetProdukUseCase,
     private val insertPromoUseCase: InsertPromoUseCase,
     private val updatePromoUseCase: UpdatePromoUseCase,
-    private val getPromoByIdUseCase: GetPromoByIdUseCase
+    private val getPromoByIdUseCase: GetPromoByIdUseCase,
+    private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TambahPromoFormState())
@@ -183,6 +185,15 @@ class TambahPromoViewModel @Inject constructor(
             flow.collect { result ->
                 result.onSuccess {
                     val msg = if (isEdit) "Promo berhasil diperbarui!" else "Promo berhasil disimpan!"
+                    val actionName = if (isEdit) "UPDATE" else "CREATE"
+                    val actionTitle = if (isEdit) "Perubahan Promo: ${form.namaPromo}" else "Promo Baru: ${form.namaPromo}"
+                    logActivityUseCase(
+                        title = actionTitle,
+                        description = "Promo ${form.namaPromo} (${form.diskonType} ${form.nilaiDiskon}) telah tersimpan.",
+                        category = "PROMO",
+                        action = actionName,
+                        isWarning = false
+                    )
                     _state.update { it.copy(isLoading = false, isSavedSuccess = true, userMessage = msg) }
                 }.onFailure { err ->
                     _state.update { it.copy(isLoading = false, errorMessage = "Gagal menyimpan promo: ${err.message}") }

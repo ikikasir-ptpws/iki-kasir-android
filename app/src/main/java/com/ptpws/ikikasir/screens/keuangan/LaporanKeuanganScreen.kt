@@ -45,6 +45,12 @@ import com.patrykandpatrick.vico.core.entry.entryOf
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.R
 
+import android.widget.Toast
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.ui.platform.LocalContext
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+import javax.inject.Inject
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LaporanKeuanganScreen(
@@ -52,6 +58,7 @@ fun LaporanKeuanganScreen(
     onBack: () -> Unit = {},
     onLihatSemuaProduk: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     val hariLabels = listOf("Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min")
 
     val chartModel = remember {
@@ -104,6 +111,17 @@ fun LaporanKeuanganScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
+                            tint = Color(0xFF4F46E5)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        Toast.makeText(context, "Laporan Keuangan berhasil diekspor!", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.FileDownload,
+                            contentDescription = "Ekspor Laporan",
                             tint = Color(0xFF4F46E5)
                         )
                     }

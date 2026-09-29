@@ -20,13 +20,16 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+
 @HiltViewModel
 class UserViewModel @Inject constructor(
     private val getUsersUseCase: GetUsersUseCase,
     private val insertUserUseCase: InsertUserUseCase,
     private val updateUserUseCase: UpdateUserUseCase,
     private val deleteUserUseCase: DeleteUserUseCase,
-    private val syncUsersUseCase: SyncUsersUseCase
+    private val syncUsersUseCase: SyncUsersUseCase,
+    private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
     private val _listState = MutableStateFlow(UserListState())
@@ -77,9 +80,19 @@ class UserViewModel @Inject constructor(
     }
 
     fun deleteUser(id: String) {
+        val targetUser = _listState.value.users.find { it.id == id }
+        val userName = targetUser?.fullName ?: id
+
         viewModelScope.launch {
             deleteUserUseCase(id).collect { result ->
                 result.onSuccess {
+                    logActivityUseCase(
+                        title = "Penghapusan Pengguna: $userName",
+                        description = "Akun pengguna $userName telah dihapus dari sistem.",
+                        category = "AUTHENTICATION",
+                        action = "DELETE",
+                        isWarning = true
+                    )
                     _listState.update { it.copy(message = "Pengguna berhasil dihapus") }
                 }.onFailure { err ->
                     _listState.update { it.copy(error = err.message) }
@@ -189,9 +202,23 @@ class UserViewModel @Inject constructor(
                 updatedAt = Timestamp.now()
             )
 
-            val flow = if (current.id.isBlank()) insertUserUseCase(user) else updateUserUseCase(user)
+            val isEdit = current.id.isNotBlank()
+            val flow = if (!isEdit) insertUserUseCase(user) else updateUserUseCase(user)
             flow.collect { result ->
                 result.onSuccess {
+                    val actionTitle = if (isEdit) "Perubahan Pengguna: ${user.fullName}" else "Pengguna Baru: ${user.fullName}"
+                    val actionDesc = if (isEdit) {
+                        "Data pengguna ${user.fullName} (${user.roleId}) telah diperbarui. Status aktif: ${if (user.isActive) "Aktif" else "Non-Aktif"}."
+                    } else {
+                        "Pengguna baru ${user.fullName} dengan role ${user.roleId} telah dibuat."
+                    }
+                    logActivityUseCase(
+                        title = actionTitle,
+                        description = actionDesc,
+                        category = "AUTHENTICATION",
+                        action = if (isEdit) "UPDATE" else "CREATE",
+                        isWarning = false
+                    )
                     _formState.update { it.copy(isLoading = false, isSuccess = true) }
                     onSuccess()
                 }.onFailure { err ->

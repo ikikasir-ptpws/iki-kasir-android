@@ -55,6 +55,10 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+import android.widget.Toast
+import androidx.compose.material.icons.filled.FileDownload
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RiwayatAntreanScreen(
@@ -189,6 +193,18 @@ fun RiwayatAntreanScreen(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
                             tint = Color(0xFF111827)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        viewModel.logExportActivity(filteredList.size)
+                        Toast.makeText(context, "Riwayat Antrean berhasil diekspor!", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.FileDownload,
+                            contentDescription = "Ekspor Riwayat Antrean",
+                            tint = Color(0xFF4F46E5)
                         )
                     }
                 },

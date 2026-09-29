@@ -21,12 +21,15 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+
 @HiltViewModel
 class UpdateStokViewModel @Inject constructor(
     private val getProdukUseCase: GetProdukUseCase,
     private val updateProdukUseCase: UpdateProdukUseCase,
     private val saveStokAdjustmentUseCase: SaveStokAdjustmentUseCase,
     private val firebaseAuth: FirebaseAuth,
+    private val logActivityUseCase: LogActivityUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -135,6 +138,15 @@ class UpdateStokViewModel @Inject constructor(
                         updatedAt = Timestamp.now()
                     )
                     saveStokAdjustmentUseCase(movement).collect { /* fire and forget */ }
+
+                    val actionTitle = if (tipe == MovementType.IN) "Penambahan Stok: ${currentProduk.name}" else "Pengurangan Stok: ${currentProduk.name}"
+                    logActivityUseCase(
+                        title = actionTitle,
+                        description = "Stok diubah dari $stokSebelum unit ke $targetStock unit (Selisih: ${if (tipe == MovementType.IN) "+$amount" else "-$amount"}).",
+                        category = "STOCK",
+                        action = "UPDATE",
+                        isWarning = false
+                    )
 
                     _state.update {
                         it.copy(

@@ -15,10 +15,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+
 @HiltViewModel
 class TambahProdukViewModel @Inject constructor(
     private val insertProdukUseCase: InsertProdukUseCase,
     private val updateProdukUseCase: UpdateProdukUseCase,
+    private val logActivityUseCase: LogActivityUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -142,6 +145,21 @@ class TambahProdukViewModel @Inject constructor(
 
             flow.collect { result ->
                 if (result.isSuccess) {
+                    val isEdit = currentState.isEditMode
+                    val actionTitle = if (isEdit) "Perubahan Harga: ${produk.name}" else "Produk Baru: ${produk.name}"
+                    val actionDesc = if (isEdit) {
+                        "Harga atau informasi produk ${produk.name} berhasil diperbarui."
+                    } else {
+                        "Produk baru ${produk.name} ditambahkan dengan harga Rp ${produk.sellingPrice}."
+                    }
+                    logActivityUseCase(
+                        title = actionTitle,
+                        description = actionDesc,
+                        category = "PRICE",
+                        action = if (isEdit) "UPDATE" else "CREATE",
+                        isWarning = false
+                    )
+
                     _formState.update {
                         it.copy(
                             isLoading = false,

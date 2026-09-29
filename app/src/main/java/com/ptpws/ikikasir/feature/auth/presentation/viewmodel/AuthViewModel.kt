@@ -2,6 +2,7 @@ package com.ptpws.ikikasir.feature.auth.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.auth.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +21,8 @@ sealed class AuthState {
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val repository: AuthRepository
+    private val repository: AuthRepository,
+    private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
@@ -45,6 +47,13 @@ class AuthViewModel @Inject constructor(
             repository.signInWithEmailAndPassword(cleanEmail, cleanPassword).collect { result ->
                 if (result.isSuccess) {
                     android.util.Log.d("AuthStatus", "Firebase Auth sukses mengembalikan respon")
+                    logActivityUseCase(
+                        title = "Sesi Dimulai: $cleanEmail",
+                        description = "Pengguna berhasil masuk ke sistem kasir.",
+                        category = "AUTHENTICATION",
+                        action = "LOGIN",
+                        isWarning = false
+                    )
                     _authState.value = AuthState.Success
                 } else {
                     val exception = result.exceptionOrNull()
@@ -77,6 +86,14 @@ class AuthViewModel @Inject constructor(
                         else -> rawMsg
                     }
 
+                    logActivityUseCase(
+                        title = "Gagal Login: $cleanEmail",
+                        description = "Percobaan masuk gagal: $userFriendlyMsg",
+                        category = "AUTHENTICATION",
+                        action = "LOGIN_FAILED",
+                        isWarning = true
+                    )
+
                     _authState.value = AuthState.Error(userFriendlyMsg)
                 }
             }
@@ -85,8 +102,17 @@ class AuthViewModel @Inject constructor(
 
     fun logout() {
         android.util.Log.d("AuthStatus", "Proses Logout...")
-        repository.signOut()
-        _authState.value = AuthState.LoggedOut
+        viewModelScope.launch {
+            logActivityUseCase(
+                title = "Sesi Berakhir",
+                description = "Pengguna keluar dari sistem (Logout).",
+                category = "AUTHENTICATION",
+                action = "LOGOUT",
+                isWarning = false
+            )
+            repository.signOut()
+            _authState.value = AuthState.LoggedOut
+        }
     }
 
     fun resetState() {

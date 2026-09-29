@@ -23,6 +23,8 @@ import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetTableSettingUseCa
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
 import com.ptpws.ikikasir.feature.promo.domain.usecase.GetActivePromosUseCase
 
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+
 @HiltViewModel
 class PembayaranViewModel @Inject constructor(
     private val getCartUseCase: GetCartUseCase,
@@ -31,7 +33,8 @@ class PembayaranViewModel @Inject constructor(
     private val getTaxSettingUseCase: GetTaxSettingUseCase,
     private val getPaymentMethodSettingUseCase: GetPaymentMethodSettingUseCase,
     private val getTableSettingUseCase: GetTableSettingUseCase,
-    private val getActivePromosUseCase: GetActivePromosUseCase
+    private val getActivePromosUseCase: GetActivePromosUseCase,
+    private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PembayaranState())
@@ -280,6 +283,13 @@ class PembayaranViewModel @Inject constructor(
                 _state.update { it.copy(isLoading = false) }
                 result.fold(
                     onSuccess = { transaksi ->
+                        logActivityUseCase(
+                            title = "Transaksi Baru: ${currentState.orderId}",
+                            description = "Penjualan ${currentState.totalItemCount} item (${currentState.totalPcsCount} pcs) via ${currentState.metodePembayaran} sebesar Rp ${NumberFormat.getNumberInstance(Locale("id", "ID")).format(targetTotal.toLong())}.",
+                            category = "TRANSACTION",
+                            action = "CREATE",
+                            isWarning = false
+                        )
                         _state.update {
                             it.copy(
                                 showSuccessDialog = true,
@@ -289,6 +299,13 @@ class PembayaranViewModel @Inject constructor(
                         generateOrderId()
                     },
                     onFailure = { error ->
+                        logActivityUseCase(
+                            title = "Pembatalan Transaksi: ${currentState.orderId}",
+                            description = "Alasan: Gagal memproses transaksi. ${error.message ?: ""}",
+                            category = "TRANSACTION",
+                            action = "CANCEL",
+                            isWarning = true
+                        )
                         _state.update {
                             it.copy(
                                 showFailedDialog = true,

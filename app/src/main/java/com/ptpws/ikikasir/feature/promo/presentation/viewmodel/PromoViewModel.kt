@@ -2,6 +2,7 @@ package com.ptpws.ikikasir.feature.promo.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
 import com.ptpws.ikikasir.feature.promo.domain.usecase.DeletePromoUseCase
 import com.ptpws.ikikasir.feature.promo.domain.usecase.GetPromoListUseCase
@@ -28,7 +29,8 @@ data class PromoListState(
 class PromoViewModel @Inject constructor(
     private val getPromoListUseCase: GetPromoListUseCase,
     private val togglePromoStatusUseCase: TogglePromoStatusUseCase,
-    private val deletePromoUseCase: DeletePromoUseCase
+    private val deletePromoUseCase: DeletePromoUseCase,
+    private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PromoListState())
@@ -69,9 +71,20 @@ class PromoViewModel @Inject constructor(
     }
 
     fun toggleStatus(promoId: String, currentStatus: Boolean) {
+        val target = _state.value.promoList.find { it.id == promoId }
+        val promoName = target?.name ?: promoId
+
         viewModelScope.launch {
             togglePromoStatusUseCase(promoId, !currentStatus).collect { result ->
                 result.onSuccess {
+                    val statusText = if (!currentStatus) "diaktifkan" else "dinonaktifkan"
+                    logActivityUseCase(
+                        title = "Status Promo: $promoName",
+                        description = "Status promo $promoName $statusText.",
+                        category = "PROMO",
+                        action = "UPDATE",
+                        isWarning = false
+                    )
                     _state.update { it.copy(userMessage = "Status promo berhasil diubah") }
                 }.onFailure { err ->
                     _state.update { it.copy(errorMessage = "Gagal mengubah status: ${err.message}") }
@@ -81,9 +94,19 @@ class PromoViewModel @Inject constructor(
     }
 
     fun deletePromo(promoId: String) {
+        val target = _state.value.promoList.find { it.id == promoId }
+        val promoName = target?.name ?: promoId
+
         viewModelScope.launch {
             deletePromoUseCase(promoId).collect { result ->
                 result.onSuccess {
+                    logActivityUseCase(
+                        title = "Penghapusan Promo: $promoName",
+                        description = "Promo $promoName telah dihapus dari daftar.",
+                        category = "PROMO",
+                        action = "DELETE",
+                        isWarning = true
+                    )
                     _state.update { it.copy(userMessage = "Promo berhasil dihapus") }
                 }.onFailure { err ->
                     _state.update { it.copy(errorMessage = "Gagal menghapus promo: ${err.message}") }

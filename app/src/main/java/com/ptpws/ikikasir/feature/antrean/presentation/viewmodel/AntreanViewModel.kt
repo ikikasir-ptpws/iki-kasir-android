@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+
 private const val TAG = "AntreanViewModel"
 
 @HiltViewModel
@@ -28,7 +30,8 @@ class AntreanViewModel @Inject constructor(
     private val getAntreanUseCase: GetAntreanUseCase,
     private val antreanRepository: AntreanRepository,
     private val insertQueueHistoryUseCase: InsertQueueHistoryUseCase,
-    private val getAllTransaksiUseCase: GetAllTransaksiUseCase
+    private val getAllTransaksiUseCase: GetAllTransaksiUseCase,
+    private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<AntreanUiState>(AntreanUiState.Loading)
@@ -114,6 +117,22 @@ class AntreanViewModel @Inject constructor(
                         antreanRepository.deleteAntrean(targetTxId).collect {}
                     }
                     Log.d(TAG, "Active antrean $id deleted from queues")
+
+                    val isDone = status == "DONE"
+                    val actionTitle = if (isDone) "Antrean Selesai: #${targetItem.queueSequence}" else "Antrean Dibatalkan: #${targetItem.queueSequence}"
+                    val actionDesc = if (isDone) {
+                        "Pesanan atas nama ${targetItem.customerName} (Meja ${targetItem.tableNumber}) telah diselesaikan."
+                    } else {
+                        "Pesanan atas nama ${targetItem.customerName} (Meja ${targetItem.tableNumber}) telah dibatalkan."
+                    }
+
+                    logActivityUseCase(
+                        title = actionTitle,
+                        description = actionDesc,
+                        category = "TRANSACTION",
+                        action = if (isDone) "UPDATE" else "CANCEL",
+                        isWarning = !isDone
+                    )
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed processing antrean removal ($status): ${e.message}", e)

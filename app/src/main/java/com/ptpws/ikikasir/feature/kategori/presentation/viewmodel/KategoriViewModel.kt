@@ -18,13 +18,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+
 @HiltViewModel
 class KategoriViewModel @Inject constructor(
     private val getKategoriUseCase: GetKategoriUseCase,
     private val deleteKategoriUseCase: DeleteKategoriUseCase,
     private val syncKategoriUseCase: SyncKategoriUseCase,
     private val updateKategoriUseCase: UpdateKategoriUseCase,
-    private val networkMonitor: NetworkMonitor
+    private val networkMonitor: NetworkMonitor,
+    private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(KategoriListState())
@@ -94,10 +97,20 @@ class KategoriViewModel @Inject constructor(
     }
 
     fun deleteKategori(id: String) {
+        val target = _state.value.kategoriList.find { it.id == id }
+        val categoryName = target?.name ?: id
+
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, kategoriToDelete = null) }
             deleteKategoriUseCase(id).collect { result ->
                 if (result.isSuccess) {
+                    logActivityUseCase(
+                        title = "Penghapusan Kategori: $categoryName",
+                        description = "Kategori $categoryName telah dihapus dari sistem.",
+                        category = "SYSTEM",
+                        action = "DELETE",
+                        isWarning = true
+                    )
                     _state.update {
                         it.copy(
                             isLoading = false,
@@ -145,6 +158,14 @@ class KategoriViewModel @Inject constructor(
             val updated = kategori.copy(isVisibleInCashier = !kategori.isVisibleInCashier)
             updateKategoriUseCase(updated).collect { result ->
                 if (result.isSuccess) {
+                    val statusStr = if (updated.isVisibleInCashier) "diaktifkan" else "dinonaktifkan"
+                    logActivityUseCase(
+                        title = "Visibilitas Kategori: ${kategori.name}",
+                        description = "Status visibilitas kategori di kasir $statusStr.",
+                        category = "SYSTEM",
+                        action = "UPDATE",
+                        isWarning = false
+                    )
                     _state.update {
                         it.copy(userMessage = if (updated.isVisibleInCashier) "Kasir diaktifkan" else "Kasir dinonaktifkan")
                     }

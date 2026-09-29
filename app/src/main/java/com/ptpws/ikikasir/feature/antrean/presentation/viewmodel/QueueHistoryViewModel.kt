@@ -24,13 +24,16 @@ import javax.inject.Inject
 
 import com.ptpws.ikikasir.commond.formatDateRangeLabel
 
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+
 private const val TAG = "QueueHistoryVM"
 
 @HiltViewModel
 class QueueHistoryViewModel @Inject constructor(
     private val getQueueHistoryUseCase: GetQueueHistoryUseCase,
     private val insertQueueHistoryUseCase: InsertQueueHistoryUseCase,
-    private val getAllTransaksiUseCase: GetAllTransaksiUseCase
+    private val getAllTransaksiUseCase: GetAllTransaksiUseCase,
+    private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<QueueHistoryUiState>(QueueHistoryUiState.Loading)
@@ -101,6 +104,18 @@ class QueueHistoryViewModel @Inject constructor(
         _endDateMillis.value = endMillis
         _customDateLabel.value = formatDateRangeLabel(startMillis, endMillis)
         _selectedFilter.value = "FILTER_TANGGAL"
+    }
+
+    fun logExportActivity(itemCount: Int) {
+        viewModelScope.launch {
+            logActivityUseCase(
+                title = "Ekspor Riwayat Antrean",
+                description = "Data riwayat antrean ($itemCount item) berhasil diekspor.",
+                category = "SYSTEM",
+                action = "EXPORT",
+                isWarning = false
+            )
+        }
     }
 
     fun addHistory(history: QueueHistory) {

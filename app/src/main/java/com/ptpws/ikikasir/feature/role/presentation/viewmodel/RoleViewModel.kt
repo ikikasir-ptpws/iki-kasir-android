@@ -22,6 +22,8 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+
 @HiltViewModel
 class RoleViewModel @Inject constructor(
     private val getRolesUseCase: GetRolesUseCase,
@@ -29,7 +31,8 @@ class RoleViewModel @Inject constructor(
     private val updateRoleUseCase: UpdateRoleUseCase,
     private val deleteRoleUseCase: DeleteRoleUseCase,
     private val syncRolesUseCase: SyncRolesUseCase,
-    private val getUsersUseCase: GetUsersUseCase
+    private val getUsersUseCase: GetUsersUseCase,
+    private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
     private val _listState = MutableStateFlow(RoleListState())
@@ -65,9 +68,19 @@ class RoleViewModel @Inject constructor(
     }
 
     fun deleteRole(id: String) {
+        val targetRole = _listState.value.roles.find { it.id == id }
+        val roleName = targetRole?.name ?: id
+
         viewModelScope.launch {
             deleteRoleUseCase(id).collect { result ->
                 result.onSuccess {
+                    logActivityUseCase(
+                        title = "Penghapusan Role: $roleName",
+                        description = "Role & hak akses $roleName telah dihapus dari sistem.",
+                        category = "SYSTEM",
+                        action = "DELETE",
+                        isWarning = true
+                    )
                     _listState.update { it.copy(message = "Role berhasil dihapus") }
                 }.onFailure { err ->
                     _listState.update { it.copy(error = err.message) }
@@ -156,9 +169,18 @@ class RoleViewModel @Inject constructor(
                 updatedAt = Timestamp.now()
             )
 
-            val flow = if (current.id.isBlank()) insertRoleUseCase(role) else updateRoleUseCase(role)
+            val isEdit = current.id.isNotBlank()
+            val flow = if (!isEdit) insertRoleUseCase(role) else updateRoleUseCase(role)
             flow.collect { result ->
                 result.onSuccess {
+                    val actionTitle = if (isEdit) "Perubahan Role: ${role.name}" else "Role Baru: ${role.name}"
+                    logActivityUseCase(
+                        title = actionTitle,
+                        description = "Role & hak akses ${role.name} (${role.description}) telah tersimpan.",
+                        category = "SYSTEM",
+                        action = if (isEdit) "UPDATE" else "CREATE",
+                        isWarning = false
+                    )
                     _formState.update { it.copy(isLoading = false, isSuccess = true) }
                     onSuccess()
                 }.onFailure { err ->

@@ -16,10 +16,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+
 @HiltViewModel
 class TambahKategoriViewModel @Inject constructor(
     private val insertKategoriUseCase: InsertKategoriUseCase,
     private val updateKategoriUseCase: UpdateKategoriUseCase,
+    private val logActivityUseCase: LogActivityUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -120,6 +123,16 @@ class TambahKategoriViewModel @Inject constructor(
 
             flow.collect { result ->
                 if (result.isSuccess) {
+                    val isEdit = currentState.isEditMode
+                    val actionTitle = if (isEdit) "Perubahan Kategori: $namaTrimmed" else "Kategori Baru: $namaTrimmed"
+                    logActivityUseCase(
+                        title = actionTitle,
+                        description = "Kategori $namaTrimmed telah tersimpan.",
+                        category = "SYSTEM",
+                        action = if (isEdit) "UPDATE" else "CREATE",
+                        isWarning = false
+                    )
+
                     _formState.update {
                         it.copy(
                             isLoading = false,

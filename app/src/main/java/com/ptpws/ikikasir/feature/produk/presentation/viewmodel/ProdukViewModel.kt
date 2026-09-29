@@ -17,12 +17,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+
 @HiltViewModel
 class ProdukViewModel @Inject constructor(
     private val getProdukUseCase: GetProdukUseCase,
     private val deleteProdukUseCase: DeleteProdukUseCase,
     private val syncProdukUseCase: SyncProdukUseCase,
-    private val networkMonitor: NetworkMonitor
+    private val networkMonitor: NetworkMonitor,
+    private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ProdukListState())
@@ -103,10 +106,20 @@ class ProdukViewModel @Inject constructor(
     }
 
     fun deleteProduk(id: String) {
+        val targetProduk = _state.value.produkList.find { it.id == id }
+        val produkName = targetProduk?.name ?: id
+
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, produkToDelete = null) }
             deleteProdukUseCase(id).collect { result ->
                 if (result.isSuccess) {
+                    logActivityUseCase(
+                        title = "Penghapusan Produk: $produkName",
+                        description = "Produk $produkName telah dihapus dari katalog.",
+                        category = "PRICE",
+                        action = "DELETE",
+                        isWarning = true
+                    )
                     _state.update {
                         it.copy(
                             isLoading = false,

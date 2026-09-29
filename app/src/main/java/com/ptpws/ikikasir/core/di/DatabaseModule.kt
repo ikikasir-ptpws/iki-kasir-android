@@ -107,4 +107,12 @@ object DatabaseModule {
     ): com.ptpws.ikikasir.feature.promo.data.local.dao.PromoDao {
         return database.promoDao
     }
+
+    @Provides
+    @Singleton
+    fun provideAuditLogDao(
+        database: AppDatabase
+    ): com.ptpws.ikikasir.feature.auditlog.data.local.dao.AuditLogDao {
+        return database.auditLogDao
+    }
 }
