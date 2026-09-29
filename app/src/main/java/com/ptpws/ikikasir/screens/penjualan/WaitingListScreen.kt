@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -257,6 +258,23 @@ fun WaitingListScreen(
 }
 
 @Composable
+private fun PendingSyncBadge() {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = Color(0xFFFEF3C7)
+    ) {
+        Text(
+            text = "Pending",
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            fontSize = 10.sp,
+            fontFamily = interfamily,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFFD97706)
+        )
+    }
+}
+
+@Composable
 private fun AntreanCard(
     nomor: Int,
     antrean: Antrean,
@@ -304,13 +322,24 @@ private fun AntreanCard(
 
                 // Invoice ID & Customer Name
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = antrean.transactionId,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = interfamily,
-                        fontSize = 15.sp,
-                        color = Color(0xFF111827)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = antrean.transactionId,
+                            modifier = Modifier.weight(1f, fill = false),
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = interfamily,
+                            fontSize = 15.sp,
+                            color = Color(0xFF111827),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (!antrean.isSynced || transaksi?.isSynced == false) {
+                            PendingSyncBadge()
+                        }
+                    }
                     val subtitleText = buildString {
                         if (antrean.customerName.isNotBlank()) append(antrean.customerName)
                         if (antrean.tableNumber.isNotBlank()) {
@@ -318,6 +347,7 @@ private fun AntreanCard(
                             append("Meja: ${antrean.tableNumber}")
                         }
                     }
+
                     if (subtitleText.isNotBlank()) {
                         Text(
                             text = subtitleText,
