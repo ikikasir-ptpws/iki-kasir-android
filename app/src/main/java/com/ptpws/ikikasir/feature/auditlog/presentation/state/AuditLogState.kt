@@ -8,6 +8,9 @@ data class AuditLogState(
     val searchQuery: String = "",
     val selectedCategory: String = "Semua", // Semua, Transaksi, Stok, Harga, Autentikasi, Promo, Sistem
     val selectedDateFilter: String = "Hari Ini", // Hari Ini, 7 Hari Terakhir, Semua Tanggal
+    val startDateMillis: Long? = null,
+    val endDateMillis: Long? = null,
+    val customDateLabel: String? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
