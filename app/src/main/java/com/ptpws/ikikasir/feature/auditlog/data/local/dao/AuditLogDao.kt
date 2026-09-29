@@ -25,6 +25,9 @@ interface AuditLogDao {
     @Query("UPDATE audit_logs SET isSynced = 1 WHERE id = :id")
     suspend fun markAsSynced(id: String)
 
+    @Query("UPDATE audit_logs SET actorRole = :actorRole, isSynced = :isSynced WHERE id = :id AND isSynced = 1")
+    suspend fun updateSyncedActorRole(id: String, actorRole: String, isSynced: Boolean)
+
     @Query("DELETE FROM audit_logs")
     suspend fun clearAll()
 }
