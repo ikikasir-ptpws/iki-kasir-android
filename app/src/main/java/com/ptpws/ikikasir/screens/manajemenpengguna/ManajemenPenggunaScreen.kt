@@ -173,6 +173,13 @@ fun ManajemenPenggunaScreen(
                                 putExtra("ROLE_ID", role.id)
                             }
                             context.startActivity(intent)
+                        },
+                        onEditPermissionsClick = { role ->
+                            val intent = Intent(context, TambahRoleActivity::class.java).apply {
+                                putExtra("ROLE_ID", role.id)
+                                putExtra("PERMISSIONS_ONLY", true)
+                            }
+                            context.startActivity(intent)
                         }
                     )
                 }
