@@ -17,6 +17,24 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
+private val DEFAULT_UNASSIGNED_ROLE_ACCESS = listOf(
+    "Dashboard",
+    "Profil",
+    "Produk",
+    "Kategori Produk",
+    "Manajemen Stok",
+    "Kasir",
+    "Transaksi",
+    "Promo",
+    "Antrean",
+    "Riwayat Antrean",
+    "Laporan Keuangan",
+    "Manajemen Pengguna",
+    "Manajemen Role",
+    "Pengaturan Menu",
+    "Audit Log"
+).associateWith { true }
+
 data class UserSessionState(
     val user: User? = null,
     val roleName: String = "",
@@ -41,15 +59,17 @@ class DashboardViewModel @Inject constructor(
 
     fun loadCurrentUserAndPermissions() {
         viewModelScope.launch {
-            val email = firebaseAuth.currentUser?.email
-            if (email.isNullOrBlank()) {
+            val firebaseUser = firebaseAuth.currentUser
+            val email = firebaseUser?.email.orEmpty()
+            if (firebaseUser == null) {
                 _sessionState.value = UserSessionState(isLoading = false)
                 return@launch
             }
 
             // 1. Instantly load from local Room DB cache on IO thread (zero UI delay)
             withContext(Dispatchers.IO) {
-                val localUser = userDao.getUserByEmail(email)
+                val localUser = email.takeIf { it.isNotBlank() }
+                    ?.let { userDao.getUserByEmail(it) }
                 val roleName = localUser?.roleId.orEmpty()
                 val allLocalRoles = roleDao.getAllRoles()
 
@@ -60,7 +80,12 @@ class DashboardViewModel @Inject constructor(
                         )
                 }
 
-                val menuAccess = matchedRole?.menuAccess.orEmpty()
+                val hasAssignedRole = !roleName.isBlank()
+                val menuAccess = when {
+                    matchedRole != null -> matchedRole.menuAccess
+                    !hasAssignedRole -> DEFAULT_UNASSIGNED_ROLE_ACCESS
+                    else -> emptyMap()
+                }
 
                 val user = localUser?.let {
                     User(
@@ -71,7 +96,15 @@ class DashboardViewModel @Inject constructor(
                         isActive = it.isActive,
                         photoUrl = it.photoUrl
                     )
-                }
+                } ?: User(
+                    id = firebaseUser.uid,
+                    fullName = firebaseUser.displayName
+                        ?.takeIf { it.isNotBlank() }
+                        ?: email.substringBefore("@").ifBlank { "Pengguna" },
+                    email = email,
+                    roleId = "",
+                    isActive = true
+                )
 
                 _sessionState.value = UserSessionState(
                     user = user,
@@ -97,7 +130,7 @@ class DashboardViewModel @Inject constructor(
                         menuAccess = matchedRole.menuAccess,
                         isLoading = false
                     )
-                } else if (currentState.menuAccess.isNotEmpty()) {
+                } else if (roleName.isNotBlank() && currentState.menuAccess.isNotEmpty()) {
                     _sessionState.value = currentState.copy(
                         menuAccess = emptyMap(),
                         isLoading = false
