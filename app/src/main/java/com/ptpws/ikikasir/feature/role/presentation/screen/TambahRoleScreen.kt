@@ -76,6 +76,7 @@ data class MenuItemInfo(
 @Composable
 fun TambahRoleScreen(
     roleId: String? = null,
+    permissionsOnly: Boolean = false,
     onBack: () -> Unit = {},
     onSimpanRole: () -> Unit = {},
     viewModel: RoleViewModel = hiltViewModel()
@@ -110,7 +111,11 @@ fun TambahRoleScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = if (formState.id.isBlank()) "Tambah Role" else "Edit Role",
+                        text = when {
+                            permissionsOnly -> "Hak Akses"
+                            formState.id.isBlank() -> "Tambah Role"
+                            else -> "Edit Role"
+                        },
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = interfamily,
                         fontSize = 20.sp,
@@ -166,8 +171,7 @@ fun TambahRoleScreen(
                 }
             }
 
-            // Nama Role
-            item {
+            if (!permissionsOnly) item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = "Nama Role",
@@ -217,8 +221,7 @@ fun TambahRoleScreen(
                 }
             }
 
-            // Deskripsi
-            item {
+            if (!permissionsOnly) item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = "Deskripsi",
@@ -279,7 +282,11 @@ fun TambahRoleScreen(
                         color = Color(0xFF1E293B)
                     )
                     Text(
-                        text = "Pilih menu yang dapat diakses oleh role ini.",
+                        text = if (permissionsOnly) {
+                            "Atur menu yang dapat diakses oleh role ${formState.name}."
+                        } else {
+                            "Pilih menu yang dapat diakses oleh role ini."
+                        },
                         fontFamily = interfamily,
                         fontSize = 12.sp,
                         color = Color(0xFF64748B)
@@ -390,7 +397,7 @@ fun TambahRoleScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "Simpan Role",
+                            text = if (permissionsOnly) "Simpan Hak Akses" else "Simpan Role",
                             fontFamily = interfamily,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp,
