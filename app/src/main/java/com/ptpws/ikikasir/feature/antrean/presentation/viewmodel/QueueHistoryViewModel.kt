@@ -1,13 +1,18 @@
 package com.ptpws.ikikasir.feature.antrean.presentation.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
+import com.ptpws.ikikasir.commond.formatDateRangeLabel
 import com.ptpws.ikikasir.feature.antrean.domain.model.QueueHistory
+import com.ptpws.ikikasir.feature.antrean.domain.usecase.ExportAntreanToExcelUseCase
 import com.ptpws.ikikasir.feature.antrean.domain.usecase.GetQueueHistoryUseCase
 import com.ptpws.ikikasir.feature.antrean.domain.usecase.InsertQueueHistoryUseCase
 import com.ptpws.ikikasir.feature.antrean.presentation.state.QueueHistoryUiState
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetAllTransaksiUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,10 +28,6 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
-import com.ptpws.ikikasir.commond.formatDateRangeLabel
-
-import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
-
 private const val TAG = "QueueHistoryVM"
 
 @HiltViewModel
@@ -34,6 +35,7 @@ class QueueHistoryViewModel @Inject constructor(
     private val getQueueHistoryUseCase: GetQueueHistoryUseCase,
     private val insertQueueHistoryUseCase: InsertQueueHistoryUseCase,
     private val getAllTransaksiUseCase: GetAllTransaksiUseCase,
+    private val exportAntreanToExcelUseCase: ExportAntreanToExcelUseCase,
     private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
@@ -43,7 +45,7 @@ class QueueHistoryViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _selectedFilter = MutableStateFlow("SEMUA") // "SEMUA", "HARI_INI", "7_HARI_TERAKHIR", "FILTER_TANGGAL"
+    private val _selectedFilter = MutableStateFlow("SEMUA")
     val selectedFilter: StateFlow<String> = _selectedFilter.asStateFlow()
 
     private val _startDateMillis = MutableStateFlow<Long?>(null)
@@ -57,6 +59,16 @@ class QueueHistoryViewModel @Inject constructor(
 
     private val _transaksiMap = MutableStateFlow<Map<String, PenjualanTransaksi>>(emptyMap())
     val transaksiMap: StateFlow<Map<String, PenjualanTransaksi>> = _transaksiMap.asStateFlow()
+
+    // Export states
+    private val _isExporting = MutableStateFlow(false)
+    val isExporting: StateFlow<Boolean> = _isExporting.asStateFlow()
+
+    private val _exportedFileUri = MutableStateFlow<Uri?>(null)
+    val exportedFileUri: StateFlow<Uri?> = _exportedFileUri.asStateFlow()
+
+    private val _exportError = MutableStateFlow<String?>(null)
+    val exportError: StateFlow<String?> = _exportError.asStateFlow()
 
     init {
         loadHistory()
@@ -107,6 +119,46 @@ class QueueHistoryViewModel @Inject constructor(
         _selectedFilter.value = "FILTER_TANGGAL"
     }
 
+    // ── Export to Excel ───────────────────────────────────────────────────────
+    fun exportToExcel(context: Context, filteredItems: List<QueueHistory>) {
+        val filterLabel = buildFilterLabel()
+        viewModelScope.launch {
+            _isExporting.value = true
+            _exportError.value = null
+
+            val result = exportAntreanToExcelUseCase(
+                context = context,
+                historyList = filteredItems,
+                transaksiMap = _transaksiMap.value,
+                filterLabel = filterLabel
+            )
+
+            result.fold(
+                onSuccess = { uri ->
+                    _isExporting.value = false
+                    _exportedFileUri.value = uri
+                    logActivityUseCase(
+                        title = "Ekspor Riwayat Antrean",
+                        description = "Data riwayat antrean (${filteredItems.size} item, filter: $filterLabel) berhasil diekspor ke Excel.",
+                        category = "LAPORAN",
+                        action = "EXPORT",
+                        isWarning = false
+                    )
+                },
+                onFailure = { error ->
+                    _isExporting.value = false
+                    _exportError.value = error.message ?: "Gagal ekspor data."
+                    Log.e(TAG, "Export failed: ${error.message}", error)
+                }
+            )
+        }
+    }
+
+    fun clearExportState() {
+        _exportedFileUri.value = null
+        _exportError.value = null
+    }
+
     fun logExportActivity(itemCount: Int) {
         viewModelScope.launch {
             logActivityUseCase(
@@ -144,18 +196,24 @@ class QueueHistoryViewModel @Inject constructor(
     fun groupHistoryByDate(items: List<QueueHistory>): Map<String, List<QueueHistory>> {
         val todayCal = Calendar.getInstance()
         val yesterdayCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
-
         val sdfFull = SimpleDateFormat("dd MMMM yyyy", Locale("id", "ID"))
-
         return items.groupBy { history ->
             val date = history.completedAt.toDate()
             val itemCal = Calendar.getInstance().apply { time = date }
-
             when {
                 isSameDay(itemCal, todayCal) -> "Hari Ini, ${sdfFull.format(date)}"
                 isSameDay(itemCal, yesterdayCal) -> "Kemarin, ${sdfFull.format(date)}"
                 else -> sdfFull.format(date)
             }
+        }
+    }
+
+    private fun buildFilterLabel(): String {
+        return when (_selectedFilter.value) {
+            "HARI_INI" -> "Hari Ini"
+            "7_HARI_TERAKHIR" -> "7 Hari Terakhir"
+            "FILTER_TANGGAL" -> _customDateLabel.value ?: "Custom"
+            else -> "Semua"
         }
     }
 
