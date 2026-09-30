@@ -45,9 +45,11 @@ object GlobalCrudResultDialog {
 }
 
 @Composable
-fun GlobalCrudResultDialogHost() {
+fun GlobalCrudResultDialogHost(showSuccess: Boolean = true) {
     val dialog by GlobalCrudResultDialog.state.collectAsState()
     val current = dialog ?: return
+    if (!showSuccess && current.type == CrudResultType.SUCCESS) return
+
     val isSuccess = current.type == CrudResultType.SUCCESS
     val accentColor = if (isSuccess) Color(0xFF059669) else Color(0xFFDC2626)
 
