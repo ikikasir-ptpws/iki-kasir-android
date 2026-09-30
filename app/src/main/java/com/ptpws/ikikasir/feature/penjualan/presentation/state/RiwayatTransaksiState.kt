@@ -1,5 +1,6 @@
 package com.ptpws.ikikasir.feature.penjualan.presentation.state
 
+import android.net.Uri
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 
 data class GroupedTransaksi(
@@ -19,5 +20,9 @@ data class RiwayatTransaksiState(
     val filteredList: List<PenjualanTransaksi> = emptyList(),
     val groupedTransactions: List<GroupedTransaksi> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isExporting: Boolean = false,
+    val exportedFileUri: Uri? = null,
+    val exportError: String? = null
 )
+
