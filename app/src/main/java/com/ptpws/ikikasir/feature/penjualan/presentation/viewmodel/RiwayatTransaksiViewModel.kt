@@ -1,11 +1,14 @@
 package com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.commond.formatDateRangeLabel
 import com.ptpws.ikikasir.commond.getEndOfDayLocalSeconds
 import com.ptpws.ikikasir.commond.getStartOfDayLocalSeconds
+import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
+import com.ptpws.ikikasir.feature.penjualan.domain.usecase.ExportTransaksiToExcelUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetAllTransaksiUseCase
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.GroupedTransaksi
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.RiwayatTransaksiState
@@ -23,7 +26,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RiwayatTransaksiViewModel @Inject constructor(
-    private val getAllTransaksiUseCase: GetAllTransaksiUseCase
+    private val getAllTransaksiUseCase: GetAllTransaksiUseCase,
+    private val exportTransaksiToExcelUseCase: ExportTransaksiToExcelUseCase,
+    private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(RiwayatTransaksiState())
@@ -120,6 +125,51 @@ class RiwayatTransaksiViewModel @Inject constructor(
         }
     }
 
+    // ── Export to Excel ───────────────────────────────────────────────────────
+    fun exportToExcel(context: Context) {
+        val currentState = _state.value
+        val dataToExport = currentState.filteredList
+        val filterLabel = buildFilterLabel(currentState)
+
+        viewModelScope.launch {
+            _state.update { it.copy(isExporting = true, exportError = null) }
+
+            val result = exportTransaksiToExcelUseCase(
+                context = context,
+                transaksiList = dataToExport,
+                filterLabel = filterLabel
+            )
+
+            result.fold(
+                onSuccess = { uri ->
+                    _state.update { it.copy(isExporting = false, exportedFileUri = uri, exportError = null) }
+                    logActivityUseCase(
+                        title = "Ekspor Riwayat Transaksi",
+                        description = "Data riwayat transaksi (${dataToExport.size} item, filter: $filterLabel) berhasil diekspor ke Excel.",
+                        category = "LAPORAN",
+                        action = "EXPORT",
+                        isWarning = false
+                    )
+                },
+                onFailure = { error ->
+                    _state.update { it.copy(isExporting = false, exportError = error.message ?: "Gagal ekspor data.") }
+                }
+            )
+        }
+    }
+
+    fun clearExportState() {
+        _state.update { it.copy(exportedFileUri = null, exportError = null) }
+    }
+
+    private fun buildFilterLabel(state: RiwayatTransaksiState): String {
+        return when (state.selectedFilter) {
+            "Filter Tanggal" -> state.customDateLabel ?: "Custom"
+            else -> state.selectedFilter
+        }
+    }
+
+    // ── Filter & Group ────────────────────────────────────────────────────────
     private fun filterTransactions(
         list: List<PenjualanTransaksi>,
         query: String,
@@ -130,7 +180,6 @@ class RiwayatTransaksiViewModel @Inject constructor(
     ): List<PenjualanTransaksi> {
         var filtered = list
 
-        // Search query filter (by transaction number or ID)
         if (query.isNotBlank()) {
             filtered = filtered.filter {
                 it.transactionNumber.contains(query, ignoreCase = true) ||
@@ -138,11 +187,8 @@ class RiwayatTransaksiViewModel @Inject constructor(
             }
         }
 
-        // Date filter
         when (filter) {
-            "Semua" -> {
-                // Show all transactions
-            }
+            "Semua" -> { /* Show all */ }
             "Hari Ini" -> {
                 val startOfDay = Calendar.getInstance().apply {
                     set(Calendar.HOUR_OF_DAY, 0)
@@ -150,10 +196,7 @@ class RiwayatTransaksiViewModel @Inject constructor(
                     set(Calendar.SECOND, 0)
                     set(Calendar.MILLISECOND, 0)
                 }.timeInMillis / 1000
-
-                filtered = filtered.filter {
-                    it.createdAt.seconds >= startOfDay
-                }
+                filtered = filtered.filter { it.createdAt.seconds >= startOfDay }
             }
             "7 Hari Terakhir" -> {
                 val startOf7Days = Calendar.getInstance().apply {
@@ -163,18 +206,13 @@ class RiwayatTransaksiViewModel @Inject constructor(
                     set(Calendar.SECOND, 0)
                     set(Calendar.MILLISECOND, 0)
                 }.timeInMillis / 1000
-
-                filtered = filtered.filter {
-                    it.createdAt.seconds >= startOf7Days
-                }
+                filtered = filtered.filter { it.createdAt.seconds >= startOf7Days }
             }
             "Filter Tanggal" -> {
                 if (startMillis != null && endMillis != null) {
                     val startSec = getStartOfDayLocalSeconds(startMillis)
                     val endSec = getEndOfDayLocalSeconds(endMillis)
-                    filtered = filtered.filter {
-                        it.createdAt.seconds in startSec..endSec
-                    }
+                    filtered = filtered.filter { it.createdAt.seconds in startSec..endSec }
                 } else if (customDateMillis != null) {
                     val startOfSelDay = Calendar.getInstance().apply {
                         timeInMillis = customDateMillis
@@ -183,7 +221,6 @@ class RiwayatTransaksiViewModel @Inject constructor(
                         set(Calendar.SECOND, 0)
                         set(Calendar.MILLISECOND, 0)
                     }.timeInMillis / 1000
-
                     val endOfSelDay = Calendar.getInstance().apply {
                         timeInMillis = customDateMillis
                         set(Calendar.HOUR_OF_DAY, 23)
@@ -191,10 +228,7 @@ class RiwayatTransaksiViewModel @Inject constructor(
                         set(Calendar.SECOND, 59)
                         set(Calendar.MILLISECOND, 999)
                     }.timeInMillis / 1000
-
-                    filtered = filtered.filter {
-                        it.createdAt.seconds in startOfSelDay..endOfSelDay
-                    }
+                    filtered = filtered.filter { it.createdAt.seconds in startOfSelDay..endOfSelDay }
                 }
             }
         }
@@ -204,15 +238,12 @@ class RiwayatTransaksiViewModel @Inject constructor(
 
     private fun groupTransactions(filteredList: List<PenjualanTransaksi>): List<GroupedTransaksi> {
         if (filteredList.isEmpty()) return emptyList()
-
         val map = LinkedHashMap<String, MutableList<PenjualanTransaksi>>()
-
         for (tx in filteredList) {
             val dateObj = tx.createdAt.toDate()
             val headerText = formatGroupHeaderDate(dateObj)
             map.getOrPut(headerText) { mutableListOf() }.add(tx)
         }
-
         return map.map { (header, list) ->
             GroupedTransaksi(
                 dateHeader = header,
@@ -226,10 +257,8 @@ class RiwayatTransaksiViewModel @Inject constructor(
         val txCal = Calendar.getInstance().apply { time = date }
         val todayCal = Calendar.getInstance()
         val yesterdayCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
-
         val dateFormat = SimpleDateFormat("d MMM yyyy", Locale("id", "ID"))
         val dayNameFormat = SimpleDateFormat("EEEE, d MMM yyyy", Locale("id", "ID"))
-
         return when {
             isSameDay(txCal, todayCal) -> "Hari Ini, ${dateFormat.format(date)}"
             isSameDay(txCal, yesterdayCal) -> "Kemarin, ${dateFormat.format(date)}"
