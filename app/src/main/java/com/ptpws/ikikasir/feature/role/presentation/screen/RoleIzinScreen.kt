@@ -31,8 +31,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,7 +48,8 @@ import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
 fun RoleIzinScreen(
     viewModel: RoleViewModel = hiltViewModel(),
     onAddRoleClick: () -> Unit = {},
-    onEditRoleClick: (Role) -> Unit = {}
+    onEditRoleClick: (Role) -> Unit = {},
+    onEditPermissionsClick: (Role) -> Unit = {}
 ) {
     val state by viewModel.listState.collectAsState()
     val roles = state.roles
@@ -93,6 +94,7 @@ fun RoleIzinScreen(
                     RoleCard(
                         role = role,
                         onEdit = { onEditRoleClick(role) },
+                        onShowPermissions = { onEditPermissionsClick(role) },
                         onDelete = { viewModel.deleteRole(role.id) }
                     )
                 }
@@ -135,6 +137,7 @@ fun RoleIzinScreen(
 fun RoleCard(
     role: Role,
     onEdit: () -> Unit = {},
+    onShowPermissions: () -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
     Card(
@@ -231,7 +234,7 @@ fun RoleCard(
                 }
                 // Izin/Permissions
                 IconButton(
-                    onClick = onEdit,
+                    onClick = onShowPermissions,
                     modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
