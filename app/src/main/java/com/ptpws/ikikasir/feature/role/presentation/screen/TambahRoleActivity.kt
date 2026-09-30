@@ -25,7 +25,7 @@ class TambahRoleActivity : ComponentActivity() {
                         onBack = { finish() },
                         onSimpanRole = { finish() }
                     )
-                    GlobalCrudResultDialogHost()
+                    GlobalCrudResultDialogHost(showSuccess = false)
                 }
             }
         }
