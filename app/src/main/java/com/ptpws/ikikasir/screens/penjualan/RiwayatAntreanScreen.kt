@@ -6,6 +6,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,9 +58,10 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-import android.widget.Toast
+import androidx.compose.animation.core.tween
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FileDownload
-import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,8 +77,171 @@ fun RiwayatAntreanScreen(
     val endDateMillis by viewModel.endDateMillis.collectAsState()
     val customDateLabel by viewModel.customDateLabel.collectAsState()
     val transaksiMap by viewModel.transaksiMap.collectAsState()
+    val isExporting by viewModel.isExporting.collectAsState()
+    val exportedFileUri by viewModel.exportedFileUri.collectAsState()
+    val exportError by viewModel.exportError.collectAsState()
 
     var showDateRangePickerDialog by remember { mutableStateOf(false) }
+    var showExportSuccessDialog by remember { mutableStateOf(false) }
+    var showExportErrorDialog by remember { mutableStateOf(false) }
+    var exportedUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var errorMessage by remember { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // ── Export state observers ──────────────────────────────────────────────
+    LaunchedEffect(exportedFileUri) {
+        if (exportedFileUri != null) {
+            exportedUri = exportedFileUri
+            showExportSuccessDialog = true
+        }
+    }
+
+    LaunchedEffect(exportError) {
+        if (!exportError.isNullOrBlank()) {
+            errorMessage = exportError ?: ""
+            showExportErrorDialog = true
+        }
+    }
+
+    // ── Export Success Dialog ─────────────────────────────────────────────
+    if (showExportSuccessDialog && exportedUri != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showExportSuccessDialog = false
+                viewModel.clearExportState()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF10B981),
+                    modifier = Modifier.size(52.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Ekspor Excel Berhasil!",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF0F172A)
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "File Excel riwayat antrean berhasil diunduh dan tersimpan di HP Anda.",
+                        fontFamily = interfamily,
+                        fontSize = 14.sp,
+                        color = Color(0xFF475569),
+                        lineHeight = 20.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Surface(
+                        color = Color(0xFFF1F5F9),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "📁 Lokasi Simpan (Berkas HP):",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp,
+                                color = Color(0xFF334155)
+                            )
+                            Text(
+                                text = "Memori Internal > Download > IkiKasir",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = Color(0xFF4F46E5)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val shareIntent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(exportedUri, "application/vnd.ms-excel")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        val chooser = Intent.createChooser(shareIntent, "Buka dengan")
+                        context.startActivity(chooser)
+                        showExportSuccessDialog = false
+                        viewModel.clearExportState()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Buka File", fontFamily = interfamily, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showExportSuccessDialog = false
+                    viewModel.clearExportState()
+                }) {
+                    Text("Tutup", fontFamily = interfamily, color = Color(0xFF64748B))
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    // ── Export Error Dialog ───────────────────────────────────────────────────
+    if (showExportErrorDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showExportErrorDialog = false
+                viewModel.clearExportState()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.ErrorOutline,
+                    contentDescription = null,
+                    tint = Color(0xFFEF4444),
+                    modifier = Modifier.size(52.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Ekspor Excel Gagal",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF991B1B)
+                )
+            },
+            text = {
+                Text(
+                    text = if (errorMessage.isNotBlank()) errorMessage else "Gagal mengunduh file Excel. Silakan coba lagi.",
+                    fontFamily = interfamily,
+                    fontSize = 14.sp,
+                    color = Color(0xFF475569),
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showExportErrorDialog = false
+                        viewModel.clearExportState()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Mengerti", fontFamily = interfamily, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
 
     // Launcher for legacy ZXing barcode scanner fallback
     val barcodeScanLauncher = rememberLauncherForActivityResult(
@@ -177,6 +343,7 @@ fun RiwayatAntreanScreen(
 
     Scaffold(
         containerColor = Color(0xFFF0F4FF),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -198,15 +365,23 @@ fun RiwayatAntreanScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        viewModel.logExportActivity(filteredList.size)
-                        Toast.makeText(context, "Riwayat Antrean berhasil diekspor!", Toast.LENGTH_SHORT).show()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.FileDownload,
-                            contentDescription = "Ekspor Riwayat Antrean",
-                            tint = Color(0xFF4F46E5)
-                        )
+                    IconButton(
+                        onClick = { viewModel.exportToExcel(context, filteredList) },
+                        enabled = !isExporting && filteredList.isNotEmpty()
+                    ) {
+                        if (isExporting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                color = Color(0xFF4F46E5),
+                                strokeWidth = 2.5.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.FileDownload,
+                                contentDescription = "Ekspor Excel",
+                                tint = if (filteredList.isNotEmpty()) Color(0xFF4F46E5) else Color(0xFFCBD5E1)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -346,6 +521,58 @@ fun RiwayatAntreanScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // ── Export Banner ────────────────────────────────────────────────
+            if (filteredList.isNotEmpty()) {
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn(tween(300)),
+                    exit = fadeOut(tween(300)),
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFEEF2FF), RoundedCornerShape(12.dp))
+                            .clickable(enabled = !isExporting) {
+                                viewModel.exportToExcel(context, filteredList)
+                            }
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FileDownload,
+                            contentDescription = null,
+                            tint = Color(0xFF4F46E5),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Ekspor ${filteredList.size} antrean ke Excel",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp,
+                                color = Color(0xFF3730A3)
+                            )
+                            Text(
+                                text = "Tekan untuk mengunduh file .xlsx",
+                                fontFamily = interfamily,
+                                fontSize = 11.sp,
+                                color = Color(0xFF6366F1)
+                            )
+                        }
+                        if (isExporting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = Color(0xFF4F46E5),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             // ── Main Grouped List ─────────────────────────────────────
             Box(
