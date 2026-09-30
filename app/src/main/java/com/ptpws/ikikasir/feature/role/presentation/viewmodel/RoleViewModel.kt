@@ -2,7 +2,7 @@ package com.ptpws.ikikasir.feature.role.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.Timestamp
+import android.util.Log
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.usecase.GetUsersUseCase
 import com.ptpws.ikikasir.feature.role.domain.model.Role
@@ -18,8 +18,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import java.util.UUID
 import javax.inject.Inject
 
@@ -124,19 +127,19 @@ class RoleViewModel @Inject constructor(
     }
 
     fun loadRoleById(roleId: String) {
-        if (roleId.isBlank()) return
+        if (roleId.isBlank() || _formState.value.id == roleId) return
         viewModelScope.launch {
-            getRolesUseCase().collect { roleList ->
-                val existing = roleList.find { it.id == roleId }
-                if (existing != null) {
-                    _formState.value = RoleFormState(
-                        id = existing.id,
-                        name = existing.name,
-                        description = existing.description,
-                        menuAccess = existing.menuAccess
-                    )
-                }
-            }
+            val existing = getRolesUseCase()
+                .first { roles -> roles.any { it.id == roleId } }
+                .first { it.id == roleId }
+
+            _formState.value = RoleFormState(
+                id = existing.id,
+                name = existing.name,
+                description = existing.description,
+                createdAt = existing.createdAt,
+                menuAccess = existing.menuAccess
+            )
         }
     }
 
@@ -145,6 +148,7 @@ class RoleViewModel @Inject constructor(
             id = role.id,
             name = role.name,
             description = role.description,
+            createdAt = role.createdAt,
             menuAccess = role.menuAccess
         )
     }
@@ -165,13 +169,18 @@ class RoleViewModel @Inject constructor(
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, error = null) }
             val roleId = if (current.id.isBlank()) UUID.randomUUID().toString() else current.id
+            val finalMenuAccess = current.menuAccess.toMutableMap().apply {
+                put("Dashboard", true)
+                put("Profil", true)
+                remove("Member")
+            }
             val role = Role(
                 id = roleId,
                 name = current.name.trim(),
                 description = current.description.trim(),
-                menuAccess = current.menuAccess,
-                createdAt = Timestamp.now(),
-                updatedAt = Timestamp.now()
+                menuAccess = finalMenuAccess,
+                createdAt = current.createdAt.takeIf { it > 0L } ?: System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis()
             )
 
             val isEdit = current.id.isNotBlank()
@@ -182,16 +191,23 @@ class RoleViewModel @Inject constructor(
                         if (isEdit) "Role \"${role.name}\" berhasil diperbarui."
                         else "Role \"${role.name}\" berhasil ditambahkan."
                     )
-                    val actionTitle = if (isEdit) "Perubahan Role: ${role.name}" else "Role Baru: ${role.name}"
-                    logActivityUseCase(
-                        title = actionTitle,
-                        description = "Role & hak akses ${role.name} (${role.description}) telah tersimpan.",
-                        category = "SYSTEM",
-                        action = if (isEdit) "UPDATE" else "CREATE",
-                        isWarning = false
-                    )
                     _formState.update { it.copy(isLoading = false, isSuccess = true) }
                     onSuccess()
+
+                    val actionTitle = if (isEdit) "Perubahan Role: ${role.name}" else "Role Baru: ${role.name}"
+                    withContext(NonCancellable) {
+                        try {
+                            logActivityUseCase(
+                                title = actionTitle,
+                                description = "Role & hak akses ${role.name} (${role.description}) telah tersimpan.",
+                                category = "SYSTEM",
+                                action = if (isEdit) "UPDATE" else "CREATE",
+                                isWarning = false
+                            )
+                        } catch (error: Exception) {
+                            Log.e("RoleViewModel", "Gagal mencatat aktivitas role", error)
+                        }
+                    }
                 }.onFailure { err ->
                     val message = err.message ?: "Gagal menyimpan role"
                     GlobalCrudResultDialog.failure(message)

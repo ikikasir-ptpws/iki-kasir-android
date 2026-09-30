@@ -26,11 +26,38 @@ import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+
 @Composable
 fun MenuFullScreen(
-    navController: NavController
+    navController: NavController,
+    viewModel: DashboardViewModel = hiltViewModel()
 ) {
+    val sessionState by viewModel.sessionState.collectAsState()
     val queryState = remember { mutableStateOf("") }
+    val query = queryState.value.trim()
+
+    val showProduk = viewModel.isAllowed("Produk") && (query.isBlank() || "produk".contains(query, true))
+    val showKategori = viewModel.isAllowed("Kategori Produk") && (query.isBlank() || "kategori".contains(query, true))
+    val showStok = viewModel.isAllowed("Manajemen Stok") && (query.isBlank() || "stok".contains(query, true))
+    val hasProdukSection = showProduk || showKategori || showStok
+
+    val showKasir = viewModel.isAllowed("Kasir") && (query.isBlank() || "kasir".contains(query, true))
+    val showTransaksi = viewModel.isAllowed("Transaksi") && (query.isBlank() || "transaksi".contains(query, true))
+    val showAntrean = viewModel.isAllowed("Antrean") && (query.isBlank() || "antrean".contains(query, true))
+    val showRiwayatAntrean = viewModel.isAllowed("Riwayat Antrean") && (query.isBlank() || "riwayat antrean".contains(query, true))
+    val showPromo = viewModel.isAllowed("Promo") && (query.isBlank() || "promo".contains(query, true))
+    val hasPenjualanSection = showKasir || showTransaksi || showAntrean || showRiwayatAntrean || showPromo
+
+    val showLaporanKeuangan = viewModel.isAllowed("Laporan Keuangan") && (query.isBlank() || "laporan".contains(query, true) || "keuangan".contains(query, true))
+    val hasKeuanganSection = showLaporanKeuangan
+
+    val showManajemenPengguna = viewModel.isAllowed("Manajemen Pengguna") && (query.isBlank() || "pengguna".contains(query, true))
+    val showPengaturanMenu = viewModel.isAllowed("Pengaturan Menu") && (query.isBlank() || "pengaturan".contains(query, true))
+    val showAuditLog = viewModel.isAllowed("Audit Log") && (query.isBlank() || "auditlog".contains(query, true) || "audit".contains(query, true))
+    val hasPenggunaSection = showManajemenPengguna || showPengaturanMenu || showAuditLog
 
     Scaffold(
         containerColor = Color(0xFFF0F4FF)
@@ -56,27 +83,86 @@ fun MenuFullScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            item { SectionTitle(title = "Produk") }
-            item { ProdukMenuSection(navController) }
-            item { Spacer(modifier = Modifier.height(12.dp)) }
+            if (sessionState.isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+            } else if (!hasProdukSection && !hasPenjualanSection && !hasKeuanganSection && !hasPenggunaSection) {
+                item {
+                    Text(
+                        text = "Tidak ada menu yang tersedia untuk akun ini.",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 24.dp),
+                        color = Color(0xFF64748B),
+                        fontSize = 14.sp
+                    )
+                }
+            }
 
-            item { SectionTitle(title = "Penjualan") }
-            item { PenjualanMenuSection(navController) }
-            item { Spacer(modifier = Modifier.height(12.dp)) }
+            if (!sessionState.isLoading && hasProdukSection) {
+                item { SectionTitle(title = "Produk") }
+                item {
+                    ProdukMenuSection(
+                        navController = navController,
+                        showProduk = showProduk,
+                        showKategori = showKategori,
+                        showStok = showStok
+                    )
+                }
+                item { Spacer(modifier = Modifier.height(12.dp)) }
+            }
 
-            item { SectionTitle(title = "Keuangan") }
-            item { KeuanganMenuSection(navController) }
-            item { Spacer(modifier = Modifier.height(12.dp)) }
+            if (!sessionState.isLoading && hasPenjualanSection) {
+                item { SectionTitle(title = "Penjualan") }
+                item {
+                    PenjualanMenuSection(
+                        navController = navController,
+                        showKasir = showKasir,
+                        showTransaksi = showTransaksi,
+                        showAntrean = showAntrean,
+                        showRiwayatAntrean = showRiwayatAntrean,
+                        showPromo = showPromo
+                    )
+                }
+                item { Spacer(modifier = Modifier.height(12.dp)) }
+            }
 
-            item { SectionTitle(title = "Pengguna") }
-            item { PenggunaMenuSection(navController) }
-            item { Spacer(modifier = Modifier.height(12.dp)) }
+            if (!sessionState.isLoading && hasKeuanganSection) {
+                item { SectionTitle(title = "Keuangan") }
+                item { KeuanganMenuSection(navController = navController, showLaporan = showLaporanKeuangan) }
+                item { Spacer(modifier = Modifier.height(12.dp)) }
+            }
+
+            if (!sessionState.isLoading && hasPenggunaSection) {
+                item { SectionTitle(title = "Pengguna") }
+                item {
+                    PenggunaMenuSection(
+                        navController = navController,
+                        showPengguna = showManajemenPengguna,
+                        showPengaturan = showPengaturanMenu,
+                        showAuditlog = showAuditLog
+                    )
+                }
+                item { Spacer(modifier = Modifier.height(12.dp)) }
+            }
         }
     }
 }
 
 @Composable
-fun KeuanganMenuSection(navController: NavController) {
+fun KeuanganMenuSection(
+    navController: NavController,
+    showLaporan: Boolean = true
+) {
+    if (!showLaporan) return
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -93,33 +179,56 @@ fun KeuanganMenuSection(navController: NavController) {
 }
 
 @Composable
-fun PenggunaMenuSection(navController: NavController) {
+fun PenggunaMenuSection(
+    navController: NavController,
+    showPengguna: Boolean = true,
+    showPengaturan: Boolean = true,
+    showAuditlog: Boolean = true
+) {
+    val items = mutableListOf<@Composable () -> Unit>()
+    if (showPengguna) {
+        items.add {
+            MenuIconItem(
+                iconRes = R.drawable.pengguna,
+                label = "Pengguna",
+                bgColor = Color(0xFFEFF1FF),
+                onClick = { navController.navigate(AppScreen.Pengguna.route) }
+            )
+        }
+    }
+    if (showPengaturan) {
+        items.add {
+            MenuIconItem(
+                iconRes = R.drawable.pengaturanmenu,
+                label = "Pengaturan\nMenu",
+                bgColor = Color(0xFFF4F7FF),
+                onClick = { navController.navigate(AppScreen.PengaturanMenu.route) }
+            )
+        }
+    }
+    if (showAuditlog) {
+        items.add {
+            MenuIconItem(
+                iconRes = R.drawable.auditlog,
+                label = "Auditlog",
+                bgColor = Color(0xFFFFF6F0),
+                onClick = { navController.navigate(AppScreen.AuditLog.route) }
+            )
+        }
+    }
+
+    if (items.isEmpty()) return
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.Start
     ) {
-        MenuIconItem(
-            iconRes = R.drawable.pengguna,
-            label = "Pengguna",
-            bgColor = Color(0xFFEFF1FF),
-            onClick = { navController.navigate(AppScreen.Pengguna.route) }
-        )
-        Spacer(modifier = Modifier.width(28.dp))
-        MenuIconItem(
-            iconRes = R.drawable.pengaturanmenu,
-            label = "Pengaturan\nMenu",
-            bgColor = Color(0xFFF4F7FF),
-            onClick = { navController.navigate(AppScreen.PengaturanMenu.route) }
-        )
-         Spacer(modifier = Modifier.width(28.dp))
-        MenuIconItem(
-            iconRes = R.drawable.auditlog,
-            label = "Auditlog",
-            bgColor = Color(0xFFFFF6F0),
-            onClick = { navController.navigate(AppScreen.AuditLog.route) }
-        )
+        items.forEachIndexed { idx, item ->
+            if (idx > 0) Spacer(modifier = Modifier.width(28.dp))
+            item()
+        }
     }
 }
 

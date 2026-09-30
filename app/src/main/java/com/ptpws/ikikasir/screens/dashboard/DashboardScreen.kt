@@ -38,8 +38,30 @@ import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+
 @Composable
-fun DashboardScreen(navController: NavController) {
+fun DashboardScreen(
+    navController: NavController,
+    viewModel: DashboardViewModel = hiltViewModel()
+) {
+    val sessionState by viewModel.sessionState.collectAsState()
+    val userName = sessionState.user?.fullName?.ifBlank { "Pengguna" } ?: "Pengguna"
+
+    val showProduk = viewModel.isAllowed("Produk")
+    val showKategori = viewModel.isAllowed("Kategori Produk")
+    val showStok = viewModel.isAllowed("Manajemen Stok")
+    val hasProdukSection = showProduk || showKategori || showStok
+
+    val showKasir = viewModel.isAllowed("Kasir")
+    val showTransaksi = viewModel.isAllowed("Transaksi")
+    val showAntrean = viewModel.isAllowed("Antrean")
+    val showRiwayatAntrean = viewModel.isAllowed("Riwayat Antrean")
+    val showPromo = viewModel.isAllowed("Promo")
+    val hasPenjualanSection = showKasir || showTransaksi || showAntrean || showRiwayatAntrean || showPromo
+
     Scaffold(
         containerColor = Color(0xFFF0F4FF),
     ) { paddingValues ->
@@ -50,21 +72,38 @@ fun DashboardScreen(navController: NavController) {
                 .padding(paddingValues),
             contentPadding = PaddingValues(bottom = 120.dp)
         ) {
-            item { HeaderSection() }
+            item { HeaderSection(userName = userName) }
             item { StatCardsSection() }
-            item { SectionHeader(title = "Produk", onLihatSemua = {navController.navigate(AppScreen.Semuamenu.route)}) }
-            item { ProdukMenuSection(navController) }
-            item {
-                Text(
-                    text = "Penjualan",
-                    fontSize = 18.sp,
-                    fontFamily = interfamily,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF1A1D2E),
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
-                )
+
+            val navigateToSemuaMenu = { navController.navigate(AppScreen.Semuamenu.route) }
+
+            if (hasProdukSection) {
+                item { SectionHeader(title = "Produk", onLihatSemua = navigateToSemuaMenu) }
+                item {
+                    ProdukMenuSection(
+                        navController = navController,
+                        showProduk = showProduk,
+                        showKategori = showKategori,
+                        showStok = showStok
+                    )
+                }
             }
-            item { PenjualanMenuSection(navController) }
+
+            if (hasPenjualanSection) {
+                val lihatSemuaAction = if (!hasProdukSection) navigateToSemuaMenu else null
+                item { SectionHeader(title = "Penjualan", onLihatSemua = lihatSemuaAction) }
+                item {
+                    PenjualanMenuSection(
+                        navController = navController,
+                        showKasir = showKasir,
+                        showTransaksi = showTransaksi,
+                        showAntrean = showAntrean,
+                        showRiwayatAntrean = showRiwayatAntrean,
+                        showPromo = showPromo
+                    )
+                }
+            }
+
             item { SectionHeader(title = "Ringkasan Hari Ini", onLihatSemua = {}) }
             item { RingkasanSection() }
             item { Spacer(modifier = Modifier.height(16.dp)) }
@@ -73,7 +112,7 @@ fun DashboardScreen(navController: NavController) {
 }
 
 @Composable
-fun HeaderSection() {
+fun HeaderSection(userName: String = "Pengguna") {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -90,7 +129,7 @@ fun HeaderSection() {
                 color = Color.Black
             )
             Text(
-                text = "Pro Player Alfanshter",
+                text = userName,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1A1D2E)
@@ -298,7 +337,7 @@ fun StatCardsSection() {
 }
 
 @Composable
-fun SectionHeader(title: String, onLihatSemua: () -> Unit) {
+fun SectionHeader(title: String, onLihatSemua: (() -> Unit)? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -313,79 +352,101 @@ fun SectionHeader(title: String, onLihatSemua: () -> Unit) {
             fontWeight = FontWeight.SemiBold,
             color = Color(0xFF1A1D2E)
         )
-        Text(
-            text = "Lihat Semua",
-            fontSize = 13.sp,
-            color = Color(0xFF3D5AF1),
-            modifier = Modifier.clickable { onLihatSemua() }
-        )
+        if (onLihatSemua != null) {
+            Text(
+                text = "Lihat Semua",
+                fontSize = 13.sp,
+                color = Color(0xFF3D5AF1),
+                modifier = Modifier.clickable { onLihatSemua() }
+            )
+        }
     }
 }
 
 @Composable
-fun ProdukMenuSection(navController: NavController) {
+fun ProdukMenuSection(
+    navController: NavController,
+    showProduk: Boolean = true,
+    showKategori: Boolean = true,
+    showStok: Boolean = true
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.Start
     ) {
-        MenuIconItem(
-            iconRes = R.drawable.produk,
-            label = "Produk",
-            bgColor = Color(0xFFF0FDF4),
-            onClick = { navController.navigate(AppScreen.Produk.baseRoute) }
-        )
-        Spacer(modifier = Modifier.width(28.dp))
-        MenuIconItem(
-            iconRes = R.drawable.kategori,
-            label = "Kategori\nProduk",
-            bgColor = Color(0xFFFAF5FF),
-            onClick = { navController.navigate(AppScreen.KategoriProduk.route) }
-        )
-        Spacer(modifier = Modifier.width(28.dp))
-        MenuIconItem(
-            iconRes = R.drawable.manajemenstok,
-            label = "Manajemen\nStok",
-            bgColor = Color(0xFFFFF7ED),
-            onClick = { navController.navigate(AppScreen.ManajemenStok.route) }
-        )
+        if (showProduk) {
+            MenuIconItem(
+                iconRes = R.drawable.produk,
+                label = "Produk",
+                bgColor = Color(0xFFF0FDF4),
+                onClick = { navController.navigate(AppScreen.Produk.baseRoute) }
+            )
+        }
+        if (showKategori) {
+            if (showProduk) Spacer(modifier = Modifier.width(28.dp))
+            MenuIconItem(
+                iconRes = R.drawable.kategori,
+                label = "Kategori\nProduk",
+                bgColor = Color(0xFFFAF5FF),
+                onClick = { navController.navigate(AppScreen.KategoriProduk.route) }
+            )
+        }
+        if (showStok) {
+            if (showProduk || showKategori) Spacer(modifier = Modifier.width(28.dp))
+            MenuIconItem(
+                iconRes = R.drawable.manajemenstok,
+                label = "Manajemen\nStok",
+                bgColor = Color(0xFFFFF7ED),
+                onClick = { navController.navigate(AppScreen.ManajemenStok.route) }
+            )
+        }
     }
 }
 
 @Composable
-fun PenjualanMenuSection(navController: NavController) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start
-        ) {
+fun PenjualanMenuSection(
+    navController: NavController,
+    showKasir: Boolean = true,
+    showTransaksi: Boolean = true,
+    showAntrean: Boolean = true,
+    showRiwayatAntrean: Boolean = true,
+    showPromo: Boolean = true
+) {
+    val firstRowItems = mutableListOf<@Composable () -> Unit>()
+    if (showKasir) {
+        firstRowItems.add {
             MenuIconItem(
                 iconRes = R.drawable.kasirmenu,
                 label = "Kasir",
                 bgColor = Color(0xFFEFF6FF),
                 onClick = { navController.navigate(AppScreen.Kasir.route) }
             )
-            Spacer(modifier = Modifier.width(28.dp))
+        }
+    }
+    if (showTransaksi) {
+        firstRowItems.add {
             MenuIconItem(
                 iconRes = R.drawable.transaksi,
                 label = "Transaksi",
                 bgColor = Color(0xFFECFEFF),
                 onClick = { navController.navigate(AppScreen.Riwayat.route) }
             )
-            Spacer(modifier = Modifier.width(28.dp))
+        }
+    }
+    if (showAntrean) {
+        firstRowItems.add {
             MenuIconItem(
                 iconRes = R.drawable.waitinglist,
                 label = "Antrean",
                 bgColor = Color(0xFFECFEFF),
                 onClick = { navController.navigate(AppScreen.WaitingList.route) }
             )
-            Spacer(modifier = Modifier.width(28.dp))
+        }
+    }
+    if (showRiwayatAntrean) {
+        firstRowItems.add {
             MenuIconItem(
                 iconRes = R.drawable.riwayatantrean,
                 label = "Riwayat\nAntrean",
@@ -393,16 +454,37 @@ fun PenjualanMenuSection(navController: NavController) {
                 onClick = { navController.navigate(AppScreen.RiwayatAntrean.route) }
             )
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start
-        ) {
-            MenuIconItem(
-                iconRes = R.drawable.promo,
-                label = "Promo",
-                bgColor = Color(0xFFFFFBEB),
-                onClick = { navController.navigate(AppScreen.Promo.route) }
-            )
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        if (firstRowItems.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                firstRowItems.forEachIndexed { idx, item ->
+                    if (idx > 0) Spacer(modifier = Modifier.width(28.dp))
+                    item()
+                }
+            }
+        }
+        if (showPromo) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                MenuIconItem(
+                    iconRes = R.drawable.promo,
+                    label = "Promo",
+                    bgColor = Color(0xFFFFFBEB),
+                    onClick = { navController.navigate(AppScreen.Promo.route) }
+                )
+            }
         }
     }
 }

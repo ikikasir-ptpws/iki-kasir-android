@@ -34,8 +34,8 @@ data class RoleDto(
             name = name,
             description = description,
             menuAccess = menuAccess,
-            createdAt = createdAt ?: Timestamp.now(),
-            updatedAt = updatedAt ?: Timestamp.now(),
+            createdAt = createdAt?.toDate()?.time ?: 0L,
+            updatedAt = updatedAt?.toDate()?.time ?: 0L,
             isSynced = true
         )
     }

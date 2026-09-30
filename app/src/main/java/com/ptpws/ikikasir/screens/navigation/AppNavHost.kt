@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.content.Intent
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -39,6 +40,7 @@ import com.ptpws.ikikasir.screens.produk.DetailProdukScreen
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
 import com.example.app.ui.screen.DashboardScreen
+import com.example.app.ui.screen.DashboardViewModel
 import com.example.app.ui.screen.MenuFullScreen
 import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
 import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
@@ -68,11 +70,14 @@ import com.ptpws.ikikasir.screens.promo.TambahPromoActivity
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
+    val dashboardViewModel: DashboardViewModel = hiltViewModel()
+    val sessionState by dashboardViewModel.sessionState.collectAsState()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
     // Rute-rute yang menampilkan bottom bar
-    val showBottomBar = (currentRoute in bottomNavItems.map { it.route } ||
+    val showBottomBar = !sessionState.isLoading &&
+            (currentRoute in bottomNavItems.map { it.route } ||
             currentRoute?.startsWith(AppScreen.Produk.baseRoute) == true) &&
             currentRoute != AppScreen.Kasir.route &&
             currentRoute != AppScreen.Pembayaran.route
@@ -86,11 +91,11 @@ fun AppNavHost() {
             modifier = Modifier.fillMaxSize()
         ) {
             composable(AppScreen.Dashboard.route) {
-                DashboardScreen(navController)
+                DashboardScreen(navController, dashboardViewModel)
             }
 
             composable(AppScreen.Semuamenu.route) {
-                MenuFullScreen(navController)
+                MenuFullScreen(navController, dashboardViewModel)
             }
             composable(AppScreen.Kasir.route) {
                 KasirScreen(
@@ -226,7 +231,11 @@ fun AppNavHost() {
             exit = slideOutVertically(targetOffsetY = { it }),
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            IkiKasirBottomBar(navController = navController, currentRoute = currentRoute)
+            IkiKasirBottomBar(
+                navController = navController,
+                currentRoute = currentRoute,
+                viewModel = dashboardViewModel
+            )
         }
 
         GlobalCrudResultDialogHost()
@@ -242,9 +251,26 @@ val bottomNavItems = listOf(
     AppScreen.Profil
 )
 
-
 @Composable
-fun IkiKasirBottomBar(navController: NavController, currentRoute: String?) {
+fun IkiKasirBottomBar(
+    navController: NavController,
+    currentRoute: String?,
+    viewModel: DashboardViewModel = hiltViewModel()
+) {
+    val showProduk = viewModel.isAllowed("Produk")
+    val showKasir = viewModel.isAllowed("Kasir")
+    val showRiwayat = viewModel.isAllowed("Transaksi") || viewModel.isAllowed("Riwayat Antrean") || viewModel.isAllowed("Antrean")
+
+    val visibleNavItems = remember(showProduk, showKasir, showRiwayat) {
+        mutableListOf<AppScreen>().apply {
+            add(AppScreen.Dashboard)
+            if (showProduk) add(AppScreen.Produk)
+            if (showKasir) add(AppScreen.Kasir)
+            if (showRiwayat) add(AppScreen.Riwayat)
+            add(AppScreen.Profil)
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -270,7 +296,7 @@ fun IkiKasirBottomBar(navController: NavController, currentRoute: String?) {
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            bottomNavItems.forEach { screen ->
+            visibleNavItems.forEach { screen ->
                 // Untuk Produk, isSelected jika currentRoute diawali dengan "produk"
                 val isSelected = if (screen == AppScreen.Produk) {
                     currentRoute?.startsWith(AppScreen.Produk.baseRoute) == true
@@ -285,11 +311,10 @@ fun IkiKasirBottomBar(navController: NavController, currentRoute: String?) {
                     isCenter = isCenter,
                     onClick = {
                         if (isSelected && screen != AppScreen.Kasir) return@BottomNavItem
-                        
+
                         if (screen.route == AppScreen.Dashboard.route) {
                             navController.popBackStack(AppScreen.Dashboard.route, inclusive = false)
                         } else if (screen == AppScreen.Produk) {
-                            // Navigate ke produk tanpa filter categoryId
                             navController.navigate(AppScreen.Produk.baseRoute) {
                                 val startRoute = navController.graph.findStartDestination().route
                                 if (startRoute != null) {

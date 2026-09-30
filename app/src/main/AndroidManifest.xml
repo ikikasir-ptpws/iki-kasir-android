@@ -67,7 +67,7 @@
             android:exported="false"
             android:theme="@style/Theme.IKIKASIR" />
         <activity
-            android:name=".screens.manajemenpengguna.TambahRoleActivity"
+            android:name=".feature.role.presentation.screen.TambahRoleActivity"
             android:exported="false"
             android:theme="@style/Theme.IKIKASIR" />
 

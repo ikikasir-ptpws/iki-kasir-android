@@ -12,6 +12,9 @@ interface RoleDao {
     @Query("SELECT * FROM roles WHERE isDeleted = 0 ORDER BY createdAt DESC")
     fun getAllRolesFlow(): Flow<List<RoleEntity>>
 
+    @Query("SELECT * FROM roles WHERE isDeleted = 0")
+    suspend fun getAllRoles(): List<RoleEntity>
+
     @Query("SELECT * FROM roles WHERE id = :id AND isDeleted = 0 LIMIT 1")
     fun getRoleByIdFlow(id: String): Flow<RoleEntity?>
 
@@ -35,6 +38,9 @@ interface RoleDao {
 
     @Query("SELECT * FROM roles WHERE isSynced = 0")
     suspend fun getUnsyncedRoles(): List<RoleEntity>
+
+    @Query("SELECT id FROM roles WHERE isSynced = 0")
+    suspend fun getUnsyncedRoleIds(): List<String>
 
     @Query("UPDATE roles SET isSynced = 1 WHERE id = :id")
     suspend fun markAsSynced(id: String)

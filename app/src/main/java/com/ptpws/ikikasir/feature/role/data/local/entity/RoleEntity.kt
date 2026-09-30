@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.firebase.Timestamp
 import com.ptpws.ikikasir.feature.role.domain.model.Role
+import java.util.Date
 
 @Entity(tableName = "roles")
 data class RoleEntity(
@@ -47,8 +48,8 @@ data class RoleEntity(
             menuAccess = menuAccess,
             userCount = userCount,
             isActive = isActive,
-            createdAt = createdAt,
-            updatedAt = updatedAt,
+            createdAt = createdAt.toDate().time,
+            updatedAt = updatedAt.toDate().time,
             isSynced = isSynced
         )
     }
@@ -62,8 +63,8 @@ fun Role.toEntity(isSynced: Boolean = true, isDeleted: Boolean = false): RoleEnt
         menuAccess = menuAccess,
         userCount = userCount,
         isActive = isActive,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
+        createdAt = Timestamp(Date(createdAt)),
+        updatedAt = Timestamp(Date(updatedAt)),
         isSynced = isSynced,
         isDeleted = isDeleted
     )

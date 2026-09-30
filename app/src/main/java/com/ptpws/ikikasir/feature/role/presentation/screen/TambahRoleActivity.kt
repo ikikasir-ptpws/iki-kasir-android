@@ -1,4 +1,4 @@
-package com.ptpws.ikikasir.screens.manajemenpengguna
+package com.ptpws.ikikasir.feature.role.presentation.screen
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

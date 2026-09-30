@@ -1,4 +1,4 @@
-package com.ptpws.ikikasir.screens.manajemenpengguna
+package com.ptpws.ikikasir.feature.role.presentation.screen
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -89,18 +89,17 @@ fun TambahRoleScreen(
     }
 
     val menuItems = listOf(
-        MenuItemInfo("Dashboard", "Dashboard", Icons.Outlined.SpaceDashboard),
         MenuItemInfo("Produk", "Produk", Icons.Outlined.Inventory2),
         MenuItemInfo("Kategori Produk", "Kategori Produk", Icons.Outlined.Category),
         MenuItemInfo("Manajemen Stok", "Manajemen Stok", Icons.Outlined.Storage),
         MenuItemInfo("Kasir", "Kasir", Icons.Outlined.PointOfSale),
         MenuItemInfo("Transaksi", "Transaksi", Icons.Outlined.ReceiptLong),
+        MenuItemInfo("Promo", "Promo", Icons.Outlined.ConfirmationNumber),
         MenuItemInfo("Antrean", "Antrean", Icons.Outlined.ConfirmationNumber),
         MenuItemInfo("Riwayat Antrean", "Riwayat Antrean", Icons.Outlined.History),
         MenuItemInfo("Laporan Keuangan", "Laporan Keuangan", Icons.Outlined.Assessment),
         MenuItemInfo("Manajemen Pengguna", "Manajemen Pengguna", Icons.Outlined.Person),
         MenuItemInfo("Manajemen Role", "Manajemen Role", Icons.Outlined.Shield),
-        MenuItemInfo("Member", "Member", Icons.Outlined.Group),
         MenuItemInfo("Pengaturan Menu", "Pengaturan Menu", Icons.Outlined.Settings),
         MenuItemInfo("Audit Log", "Audit Log", Icons.Outlined.FactCheck)
     )

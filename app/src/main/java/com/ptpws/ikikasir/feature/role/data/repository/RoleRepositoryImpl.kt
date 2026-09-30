@@ -51,7 +51,12 @@ class RoleRepositoryImpl @Inject constructor(
                 try {
                     val remoteList = remoteDataSource.getAllRoles()
                     if (remoteList.isNotEmpty()) {
-                        localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                        val pendingIds = localDao.getUnsyncedRoleIds().toSet()
+                        localDao.insertOrUpdateAll(
+                            remoteList
+                                .filterNot { it.id in pendingIds }
+                                .map { it.toEntity() }
+                        )
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Gagal mengambil data role dari remote background: ${e.message}")
@@ -93,24 +98,24 @@ class RoleRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateRole(role: Role): Flow<Result<Unit>> = flow {
-        val isOnline = networkMonitor.isConnected()
-
-        if (isOnline) {
-            try {
-                Log.d(TAG, "Online: Update role di Firestore...")
-                remoteDataSource.updateRole(role.toDto())
-                Log.d(TAG, "Online: Firestore update sukses, update Room DB dengan isSynced = true")
-                localDao.insertOrUpdate(role.toEntity(isSynced = true))
-                emit(Result.success(Unit))
-            } catch (e: Exception) {
-                Log.w(TAG, "Gagal update Firestore online, fallback simpan lokal: ${e.message}")
-                localDao.insertOrUpdate(role.toEntity(isSynced = false))
-                emit(Result.success(Unit))
-            }
-        } else {
-            Log.d(TAG, "Offline: Update role di Room DB dengan isSynced = false")
+        try {
             localDao.insertOrUpdate(role.toEntity(isSynced = false))
-            emit(Result.success(Unit))
+        } catch (error: Exception) {
+            emit(Result.failure(error))
+            return@flow
+        }
+
+        emit(Result.success(Unit))
+
+        if (networkMonitor.isConnected()) {
+            repositoryScope.launch {
+                try {
+                    remoteDataSource.updateRole(role.toDto())
+                    localDao.markAsSynced(role.id)
+                } catch (error: Exception) {
+                    Log.w(TAG, "Update role tertunda untuk sinkronisasi: ${error.message}")
+                }
+            }
         }
     }
 
@@ -180,7 +185,12 @@ class RoleRepositoryImpl @Inject constructor(
         try {
             val remoteList = remoteDataSource.getAllRoles()
             if (remoteList.isNotEmpty()) {
-                localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                val pendingIds = localDao.getUnsyncedRoleIds().toSet()
+                localDao.insertOrUpdateAll(
+                    remoteList
+                        .filterNot { it.id in pendingIds }
+                        .map { it.toEntity() }
+                )
             }
         } catch (e: Exception) {
             Log.e(TAG, "Gagal menarik data remote roles saat sync: ${e.message}")
