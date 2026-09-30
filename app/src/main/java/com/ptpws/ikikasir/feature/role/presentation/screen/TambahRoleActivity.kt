@@ -16,12 +16,14 @@ class TambahRoleActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val roleId = intent.getStringExtra("ROLE_ID")
+        val permissionsOnly = intent.getBooleanExtra("PERMISSIONS_ONLY", false)
         enableEdgeToEdge()
         setContent {
             MaterialTheme {
                 Box(Modifier.fillMaxSize()) {
                     TambahRoleScreen(
                         roleId = roleId,
+                        permissionsOnly = permissionsOnly,
                         onBack = { finish() },
                         onSimpanRole = { finish() }
                     )
