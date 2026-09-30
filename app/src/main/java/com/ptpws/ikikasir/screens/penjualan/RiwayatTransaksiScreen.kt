@@ -1,10 +1,13 @@
 package com.ptpws.ikikasir.screens.penjualan
 
 import android.app.Activity
-import android.app.DatePickerDialog
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,6 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -45,6 +50,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
+import androidx.compose.material.icons.filled.ErrorOutline
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RiwayatTransaksiScreen(
@@ -54,6 +61,176 @@ fun RiwayatTransaksiScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+
+    // ── Handle export result ──────────────────────────────────────────────────
+    var showExportSuccessDialog by remember { mutableStateOf(false) }
+    var showExportErrorDialog by remember { mutableStateOf(false) }
+    var exportedUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var errorMessage by remember { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(state.exportedFileUri) {
+        if (state.exportedFileUri != null) {
+            exportedUri = state.exportedFileUri
+            showExportSuccessDialog = true
+        }
+    }
+
+    LaunchedEffect(state.exportError) {
+        if (!state.exportError.isNullOrBlank()) {
+            errorMessage = state.exportError ?: ""
+            showExportErrorDialog = true
+        }
+    }
+
+    // ── Export Success Dialog ─────────────────────────────────────────────────
+    if (showExportSuccessDialog && exportedUri != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showExportSuccessDialog = false
+                viewModel.clearExportState()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF10B981),
+                    modifier = Modifier.size(52.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Ekspor Excel Berhasil!",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF0F172A)
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "File Excel riwayat transaksi berhasil diunduh dan tersimpan di HP Anda.",
+                        fontFamily = interfamily,
+                        fontSize = 14.sp,
+                        color = Color(0xFF475569),
+                        lineHeight = 20.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Surface(
+                        color = Color(0xFFF1F5F9),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "📁 Lokasi Simpan (Berkas HP):",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp,
+                                color = Color(0xFF334155)
+                            )
+                            Text(
+                                text = "Memori Internal > Download > IkiKasir",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = Color(0xFF4F46E5)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Total ${state.filteredList.size} transaksi diekspor",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val shareIntent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(exportedUri, "application/vnd.ms-excel")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        val chooser = Intent.createChooser(shareIntent, "Buka dengan")
+                        context.startActivity(chooser)
+                        showExportSuccessDialog = false
+                        viewModel.clearExportState()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Buka File", fontFamily = interfamily, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showExportSuccessDialog = false
+                        viewModel.clearExportState()
+                    }
+                ) {
+                    Text("Tutup", fontFamily = interfamily, color = Color(0xFF64748B))
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    // ── Export Error Dialog ───────────────────────────────────────────────────
+    if (showExportErrorDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showExportErrorDialog = false
+                viewModel.clearExportState()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.ErrorOutline,
+                    contentDescription = null,
+                    tint = Color(0xFFEF4444),
+                    modifier = Modifier.size(52.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Ekspor Excel Gagal",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF991B1B)
+                )
+            },
+            text = {
+                Text(
+                    text = if (errorMessage.isNotBlank()) errorMessage else "Gagal mengunduh file Excel. Silakan coba lagi.",
+                    fontFamily = interfamily,
+                    fontSize = 14.sp,
+                    color = Color(0xFF475569),
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showExportErrorDialog = false
+                        viewModel.clearExportState()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Mengerti", fontFamily = interfamily, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
 
     // Launcher for legacy ZXing barcode scanner fallback
     val barcodeScanLauncher = rememberLauncherForActivityResult(
@@ -74,14 +251,11 @@ fun RiwayatTransaksiScreen(
                 .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
                 .enableAutoZoom()
                 .build()
-
             val scanner = GmsBarcodeScanning.getClient(context, options)
             scanner.startScan()
                 .addOnSuccessListener { barcode ->
                     val rawValue = barcode.rawValue
-                    if (!rawValue.isNullOrBlank()) {
-                        viewModel.onSearchQueryChange(rawValue)
-                    }
+                    if (!rawValue.isNullOrBlank()) viewModel.onSearchQueryChange(rawValue)
                 }
                 .addOnFailureListener {
                     val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
@@ -91,9 +265,7 @@ fun RiwayatTransaksiScreen(
                         barcodeScanLauncher.launch(scanIntent)
                     }
                 }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
     var showDateRangePicker by remember { mutableStateOf(false) }
@@ -112,6 +284,7 @@ fun RiwayatTransaksiScreen(
 
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -134,6 +307,27 @@ fun RiwayatTransaksiScreen(
                             contentDescription = "Kembali",
                             tint = Color(0xFF4F46E5)
                         )
+                    }
+                },
+                actions = {
+                    // Export Button
+                    IconButton(
+                        onClick = { viewModel.exportToExcel(context) },
+                        enabled = !state.isExporting && state.filteredList.isNotEmpty()
+                    ) {
+                        if (state.isExporting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                color = Color(0xFF4F46E5),
+                                strokeWidth = 2.5.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.FileDownload,
+                                contentDescription = "Ekspor Excel",
+                                tint = if (state.filteredList.isNotEmpty()) Color(0xFF4F46E5) else Color(0xFFCBD5E1)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -234,6 +428,58 @@ fun RiwayatTransaksiScreen(
                                 tint = Color(0xFF4F46E5),
                                 modifier = Modifier.size(22.dp)
                             )
+                        }
+                    }
+                }
+            }
+
+            // Export Info Banner
+            if (state.filteredList.isNotEmpty()) {
+                item {
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(tween(300)),
+                        exit = fadeOut(tween(300))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFEEF2FF), RoundedCornerShape(10.dp))
+                                .clickable(enabled = !state.isExporting) {
+                                    viewModel.exportToExcel(context)
+                                }
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FileDownload,
+                                contentDescription = null,
+                                tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Ekspor ${state.filteredList.size} transaksi ke Excel",
+                                    fontFamily = interfamily,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF3730A3)
+                                )
+                                Text(
+                                    text = "Tekan untuk mengunduh file .xlsx",
+                                    fontFamily = interfamily,
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF6366F1)
+                                )
+                            }
+                            if (state.isExporting) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    color = Color(0xFF4F46E5),
+                                    strokeWidth = 2.dp
+                                )
+                            }
                         }
                     }
                 }
@@ -418,7 +664,7 @@ fun RiwayatTransaksiScreen(
                     }
                 }
             } else {
-                // Render Grouped Transactions by Date Header (Gambar 1 Layout)
+                // Render Grouped Transactions by Date Header
                 state.groupedTransactions.forEach { group ->
                     item(key = "header_${group.dateHeader}") {
                         Row(
@@ -427,7 +673,7 @@ fun RiwayatTransaksiScreen(
                                 .padding(top = 10.dp, bottom = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Vertical Indicator Pill (Gambar 1 style)
+                            // Vertical Indicator Pill
                             Box(
                                 modifier = Modifier
                                     .width(4.dp)
@@ -444,7 +690,7 @@ fun RiwayatTransaksiScreen(
                             )
                             Spacer(modifier = Modifier.weight(1f))
 
-                            // Total Transactions Badge Pill (Gambar 1 style)
+                            // Total Transactions Badge Pill
                             Box(
                                 modifier = Modifier
                                     .background(Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
