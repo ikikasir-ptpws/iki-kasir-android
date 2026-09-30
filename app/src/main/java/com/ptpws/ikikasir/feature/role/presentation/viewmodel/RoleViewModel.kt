@@ -187,12 +187,12 @@ class RoleViewModel @Inject constructor(
             val flow = if (!isEdit) insertRoleUseCase(role) else updateRoleUseCase(role)
             flow.collect { result ->
                 result.onSuccess {
+                    _formState.update { it.copy(isLoading = false, isSuccess = true) }
+                    onSuccess()
                     GlobalCrudResultDialog.success(
                         if (isEdit) "Role \"${role.name}\" berhasil diperbarui."
                         else "Role \"${role.name}\" berhasil ditambahkan."
                     )
-                    _formState.update { it.copy(isLoading = false, isSuccess = true) }
-                    onSuccess()
 
                     val actionTitle = if (isEdit) "Perubahan Role: ${role.name}" else "Role Baru: ${role.name}"
                     withContext(NonCancellable) {
