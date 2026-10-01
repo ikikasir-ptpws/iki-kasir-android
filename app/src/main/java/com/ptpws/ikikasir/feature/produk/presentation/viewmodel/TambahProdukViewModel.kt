@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.InsertProdukUseCase
+import com.ptpws.ikikasir.feature.produk.domain.usecase.PrintProductBarcodeUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.UpdateProdukUseCase
 import com.ptpws.ikikasir.feature.produk.presentation.state.ProdukFormState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,6 +23,7 @@ import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 class TambahProdukViewModel @Inject constructor(
     private val insertProdukUseCase: InsertProdukUseCase,
     private val updateProdukUseCase: UpdateProdukUseCase,
+    private val printProductBarcodeUseCase: PrintProductBarcodeUseCase,
     private val logActivityUseCase: LogActivityUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -122,6 +124,19 @@ class TambahProdukViewModel @Inject constructor(
 
     fun onVisibilityChange(isVisible: Boolean) {
         _formState.update { it.copy(isVisibleInCashier = isVisible) }
+    }
+
+    fun cetakBarcode(productName: String, barcode: String) {
+        viewModelScope.launch {
+            try {
+                printProductBarcodeUseCase(productName, barcode)
+                GlobalCrudResultDialog.success("Barcode dan QR berhasil dikirim ke printer.")
+            } catch (error: Exception) {
+                GlobalCrudResultDialog.failure(
+                    error.message ?: "Gagal mencetak barcode. Periksa koneksi printer Bluetooth."
+                )
+            }
+        }
     }
 
     fun simpanProduk() {
