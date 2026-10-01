@@ -3,14 +3,11 @@ package com.ptpws.ikikasir.screens.produk
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Environment
-import android.print.PrintAttributes
-import android.print.PrintManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -811,8 +808,12 @@ fun TambahProdukScreen(
             barcode = formState.barcode,
             productName = formState.name.ifBlank { "Produk" },
             onDismiss = { showPrintDialog = false },
-            onPrint = { bmp ->
-                printBarcodePdf(context, bmp, formState.name.ifBlank { "Produk" })
+            onPrint = {
+                viewModel.cetakBarcode(
+                    formState.name.ifBlank { "Produk" },
+                    formState.barcode
+                )
+                showPrintDialog = false
             },
             onSavePdf = { bmp ->
                 saveBarcodeAsPdf(context, formState.barcode, formState.name.ifBlank { "Produk" }, bmp)
@@ -853,79 +854,6 @@ private fun generateQrBitmap(content: String, size: Int = 400): Bitmap? {
         }
         bmp
     } catch (e: Exception) { null }
-}
-
-// ─── Helper: Print via Android PrintManager ──────────────────────────────────
-private fun printBarcodePdf(context: Context, bitmap: Bitmap, productName: String) {
-    try {
-        val printManager = context.getSystemService(Context.PRINT_SERVICE) as PrintManager
-        val jobName = "Barcode - $productName"
-        val printAdapter = object : android.print.PrintDocumentAdapter() {
-            override fun onLayout(
-                oldAttributes: PrintAttributes?,
-                newAttributes: PrintAttributes?,
-                cancellationSignal: android.os.CancellationSignal?,
-                callback: LayoutResultCallback?,
-                extras: android.os.Bundle?
-            ) {
-                if (cancellationSignal?.isCanceled == true) {
-                    callback?.onLayoutCancelled()
-                    return
-                }
-                val info = android.print.PrintDocumentInfo.Builder(jobName)
-                    .setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
-                    .setPageCount(1)
-                    .build()
-                callback?.onLayoutFinished(info, true)
-            }
-
-            override fun onWrite(
-                pages: Array<out android.print.PageRange>?,
-                destination: android.os.ParcelFileDescriptor?,
-                cancellationSignal: android.os.CancellationSignal?,
-                callback: WriteResultCallback?
-            ) {
-                val pdfDoc = PdfDocument()
-                val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
-                val page = pdfDoc.startPage(pageInfo)
-                drawBarcodePageToCanvas(page.canvas, bitmap, productName)
-                pdfDoc.finishPage(page)
-                pdfDoc.writeTo(FileOutputStream(destination!!.fileDescriptor))
-                pdfDoc.close()
-                callback?.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
-            }
-        }
-        printManager.print(jobName, printAdapter, PrintAttributes.Builder().build())
-    } catch (e: Exception) {
-        Toast.makeText(context, "Gagal mencetak: ${e.message}", Toast.LENGTH_LONG).show()
-    }
-}
-
-// ─── Helper: Gambar konten barcode ke Canvas (dipakai saat print & PDF) ──────
-private fun drawBarcodePageToCanvas(canvas: Canvas, barcodeBitmap: Bitmap, productName: String) {
-    val pageWidth = canvas.width.toFloat()
-    // Judul produk
-    val titlePaint = Paint().apply {
-        textSize = 28f
-        typeface = Typeface.DEFAULT_BOLD
-        color = android.graphics.Color.BLACK
-        textAlign = Paint.Align.CENTER
-    }
-    canvas.drawText(productName, pageWidth / 2f, 80f, titlePaint)
-
-    // Gambar barcode di tengah halaman
-    val barcodeScaled = Bitmap.createScaledBitmap(barcodeBitmap, 480, 160, false)
-    val barcodeLeft = (pageWidth - 480) / 2f
-    canvas.drawBitmap(barcodeScaled, barcodeLeft, 120f, null)
-
-    // Label kode barcode di bawah barcode
-    val codePaint = Paint().apply {
-        textSize = 20f
-        color = android.graphics.Color.BLACK
-        textAlign = Paint.Align.CENTER
-        letterSpacing = 0.15f
-    }
-    // Ambil teks barcode dari bitmap tidak tersedia, di-pass lewat caller
 }
 
 // ─── Helper: Save PDF ke Downloads ───────────────────────────────────────────
@@ -1042,7 +970,7 @@ fun CetakBarcodeDialog(
     barcode: String,
     productName: String,
     onDismiss: () -> Unit,
-    onPrint: (Bitmap) -> Unit,
+    onPrint: () -> Unit,
     onSavePdf: (Bitmap) -> Unit
 ) {
     val barcodeBitmap = remember(barcode) { generateBarcodeBitmap(barcode) }
@@ -1223,10 +1151,7 @@ fun CetakBarcodeDialog(
 
                 // Cetak via Printer
                 Button(
-                    onClick = {
-                        val bmpForPrint = barcodeBitmap ?: return@Button
-                        onPrint(bmpForPrint)
-                    },
+                    onClick = onPrint,
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp),
