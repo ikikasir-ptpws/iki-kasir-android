@@ -1,13 +1,7 @@
 package com.ptpws.ikikasir.feature.penjualan.domain.usecase
 
-import android.Manifest
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothSocket
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.core.content.ContextCompat
+import com.ptpws.ikikasir.feature.bluetooth.data.BluetoothPrinterConnection
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import com.ptpws.ikikasir.feature.bluetooth.data.preferences.BluetoothPrinterPreferences
@@ -17,11 +11,9 @@ import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPrefere
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
-import java.io.IOException
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
-import java.util.UUID
 
 /**
  * Prints the receipt directly to the saved ESC/POS Bluetooth printer.
@@ -36,37 +28,13 @@ class PrintStrukUseCase {
                 "Pilih dan simpan printer Bluetooth terlebih dahulu."
             }
 
-            val bluetoothManager = appContext.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-                ?: error("Bluetooth tidak tersedia di perangkat ini.")
-            val adapter = bluetoothManager.adapter
-                ?: error("Bluetooth tidak tersedia di perangkat ini.")
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                ContextCompat.checkSelfPermission(
-                    appContext,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                throw SecurityException("Izin Bluetooth diperlukan untuk mencetak struk.")
-            }
-
-            check(adapter.isEnabled) { "Aktifkan Bluetooth terlebih dahulu." }
-
-            val printer = adapter.getRemoteDevice(setting.savedAddress)
             val notaSetting = NotaSettingPreferences(appContext).getSetting()
-            val bytesPerLine = if (
-                setting.savedName.contains("MP58", ignoreCase = true) ||
-                setting.paperWidth != BluetoothPrinterSetting.PAPER_80MM
-            ) 32 else 48
-            val socket = connect(printer)
-            try {
-                socket.outputStream.use { output ->
-                    output.write(encodeReceipt(transaksi, notaSetting, bytesPerLine))
-                    output.flush()
-                }
-            } finally {
-                socket.close()
-            }
+            val bytesPerLine = if (notaSetting.paperWidth == BluetoothPrinterSetting.PAPER_80MM) 48 else 32
+            BluetoothPrinterConnection.send(
+                appContext,
+                setting.savedAddress,
+                encodeReceipt(transaksi, notaSetting, bytesPerLine)
+            )
         }
     }
 
@@ -254,37 +222,4 @@ class PrintStrukUseCase {
         if (character.code in 32..126) character else '?'
     }.joinToString("")
 
-    private fun connect(printer: BluetoothDevice): BluetoothSocket {
-        val secureSocket = printer.createRfcommSocketToServiceRecord(SPP_UUID)
-        try {
-            secureSocket.connect()
-            return secureSocket
-        } catch (error: IOException) {
-            try {
-                secureSocket.close()
-            } catch (closeError: IOException) {
-                error.addSuppressed(closeError)
-            }
-            val insecureSocket = printer.createInsecureRfcommSocketToServiceRecord(SPP_UUID)
-            try {
-                insecureSocket.connect()
-                return insecureSocket
-            } catch (fallbackError: IOException) {
-                try {
-                    insecureSocket.close()
-                } catch (closeError: IOException) {
-                    fallbackError.addSuppressed(closeError)
-                }
-                throw IOException(
-                    "Tidak dapat terhubung ke printer. Pastikan VSC MP58C menyala, sudah dipasangkan " +
-                        "di Pengaturan Bluetooth Android, dan tidak sedang terhubung ke perangkat lain.",
-                    fallbackError
-                )
-            }
-        }
-    }
-
-    private companion object {
-        val SPP_UUID: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
-    }
 }
