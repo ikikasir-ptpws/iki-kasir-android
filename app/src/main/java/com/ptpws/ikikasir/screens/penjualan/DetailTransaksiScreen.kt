@@ -1,6 +1,10 @@
 package com.ptpws.ikikasir.screens.penjualan
 
+import android.Manifest
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -33,10 +37,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.penjualan.domain.usecase.PrintStrukUseCase
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.DetailTransaksiViewModel
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -52,7 +59,48 @@ fun DetailTransaksiScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
-    var showStrukPreviewDialog by remember { mutableStateOf(false) }
+    val printScope = rememberCoroutineScope()
+    val printStrukUseCase = remember { PrintStrukUseCase() }
+
+    val printReceipt = {
+        val transaksi = state.transaksi
+        if (transaksi != null) {
+            printScope.launch {
+                try {
+                    printStrukUseCase(context, transaksi)
+                    Toast.makeText(context, "Struk berhasil dikirim ke printer.", Toast.LENGTH_SHORT).show()
+                } catch (error: Exception) {
+                    Toast.makeText(
+                        context,
+                        error.message ?: "Gagal mencetak struk.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+    val bluetoothPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            printReceipt()
+        } else {
+            Toast.makeText(context, "Izin Bluetooth diperlukan untuk mencetak struk.", Toast.LENGTH_LONG).show()
+        }
+    }
+    val onPrintReceipt = {
+        onCetakStruk()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+        } else {
+            printReceipt()
+        }
+    }
 
     LaunchedEffect(transactionId) {
         viewModel.loadTransaksi(transactionId)
@@ -536,10 +584,7 @@ fun DetailTransaksiScreen(
                 // ── Tombol Cetak Struk
                 item {
                     Button(
-                        onClick = {
-                            showStrukPreviewDialog = true
-                            onCetakStruk()
-                        },
+                        onClick = onPrintReceipt,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
@@ -562,15 +607,6 @@ fun DetailTransaksiScreen(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp,
                             color = Color.White
-                        )
-                    }
-                }
-
-                if (showStrukPreviewDialog && tx != null) {
-                    item {
-                        com.ptpws.ikikasir.feature.penjualan.presentation.component.StrukPreviewDialog(
-                            transaksi = tx,
-                            onDismissRequest = { showStrukPreviewDialog = false }
                         )
                     }
                 }

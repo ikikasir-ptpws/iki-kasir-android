@@ -1,6 +1,10 @@
 package com.ptpws.ikikasir.screens.penjualan
 
+import android.Manifest
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -50,13 +54,16 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.core.content.ContextCompat
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
+import com.ptpws.ikikasir.feature.penjualan.domain.usecase.PrintStrukUseCase
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.PembayaranViewModel
 import com.ptpws.ikikasir.screens.penjualan.component.PembayaranFailedDialog
 import com.ptpws.ikikasir.screens.penjualan.component.PembayaranSuccessDialog
 import java.text.NumberFormat
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 private val PrimaryRoyalBlue = Color(0xFF3B32D1)
 
@@ -71,6 +78,8 @@ fun PembayaranScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val printScope = rememberCoroutineScope()
+    val printStrukUseCase = remember { PrintStrukUseCase() }
 
     val formatRupiah = remember {
         { amount: Double ->
@@ -78,26 +87,54 @@ fun PembayaranScreen(
         }
     }
 
-    var showStrukPreview by remember { mutableStateOf(false) }
+    val printReceipt = {
+        val transaksi = state.transaksiSukses
+        if (transaksi != null) {
+            printScope.launch {
+                try {
+                    printStrukUseCase(context, transaksi)
+                    Toast.makeText(context, "Struk berhasil dikirim ke printer.", Toast.LENGTH_SHORT).show()
+                } catch (error: Exception) {
+                    Toast.makeText(
+                        context,
+                        error.message ?: "Gagal mencetak struk.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+    val bluetoothPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            printReceipt()
+        } else {
+            Toast.makeText(context, "Izin Bluetooth diperlukan untuk mencetak struk.", Toast.LENGTH_LONG).show()
+        }
+    }
+    val onPrintReceipt = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+        } else {
+            printReceipt()
+        }
+    }
 
     // Success Pop-Up Dialog
     if (state.showSuccessDialog) {
         PembayaranSuccessDialog(
             transaksi = state.transaksiSukses,
-            onCetakStruk = {
-                showStrukPreview = true
-            },
+            onCetakStruk = onPrintReceipt,
             onTransaksiBaru = {
                 viewModel.dismissSuccessDialog()
                 onTransaksiSelesai()
             }
-        )
-    }
-
-    if (showStrukPreview && state.transaksiSukses != null) {
-        com.ptpws.ikikasir.feature.penjualan.presentation.component.StrukPreviewDialog(
-            transaksi = state.transaksiSukses!!,
-            onDismissRequest = { showStrukPreview = false }
         )
     }
 

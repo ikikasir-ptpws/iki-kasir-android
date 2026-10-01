@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,6 +31,7 @@ import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPrefere
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GenerateStrukPdfUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.PrintStrukUseCase
+import kotlinx.coroutines.launch
 
 /**
  * Modern Clean Architecture Dialog showing the receipt preview with options to print and save as PDF.
@@ -47,6 +49,7 @@ fun StrukPreviewDialog(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
 
     // Load setting nota dari SharedPreferences / Room DB fallback
     val notaSetting = remember {
@@ -198,10 +201,13 @@ fun StrukPreviewDialog(
                         // Cetak Struk
                         Button(
                             onClick = {
-                                try {
-                                    printStrukUseCase(context, transaksi)
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "Gagal mencetak: ${e.message}", Toast.LENGTH_SHORT).show()
+                                coroutineScope.launch {
+                                    try {
+                                        printStrukUseCase(context, transaksi)
+                                        Toast.makeText(context, "Struk berhasil dikirim ke printer.", Toast.LENGTH_SHORT).show()
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, e.message ?: "Gagal mencetak struk.", Toast.LENGTH_LONG).show()
+                                    }
                                 }
                             },
                             modifier = Modifier

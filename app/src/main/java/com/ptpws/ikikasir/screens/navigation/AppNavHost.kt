@@ -46,6 +46,7 @@ import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
 import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
 import com.ptpws.ikikasir.screens.manajemenstok.UpdateStokScreen
 
+import com.ptpws.ikikasir.feature.bluetooth.presentation.screen.BluetoothPrinterScreen
 import com.ptpws.ikikasir.screens.pengaturan.ProfilScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
 import com.ptpws.ikikasir.screens.kategori.TambahKategoriActivity
@@ -222,6 +223,9 @@ fun AppNavHost() {
             }
             composable(AppScreen.PengaturanMenu.route) {
                 PengaturanDashboardScreen(navController)
+            }
+            composable(AppScreen.BluetoothPrinter.route) {
+                BluetoothPrinterScreen(navController)
             }
         }
 

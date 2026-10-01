@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel.ProfilViewModel
+import com.ptpws.ikikasir.screens.navigation.AppScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -332,6 +333,16 @@ fun ProfilScreen(
                                 label = "Setting Meja",
                                 onClick = {
                                     showMejaDialog = true
+                                }
+                            )
+                            HorizontalDivider(color = Color(0xFFF3F4F6))
+                            MenuAkunItem(
+                                icon = Icons.Outlined.Print,
+                                iconBackground = Color(0xFFEEF2FF),
+                                iconTint = Color(0xFF4F46E5),
+                                label = "Printer Bluetooth",
+                                onClick = {
+                                    navController.navigate(AppScreen.BluetoothPrinter.route)
                                 }
                             )
                         }

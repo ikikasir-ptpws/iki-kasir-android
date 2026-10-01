@@ -174,4 +174,10 @@ sealed class AppScreen(
         R.drawable.iconapk,
         "pembayaran"
     )
-}
+
+    object BluetoothPrinter : AppScreen(
+        R.string.screen_pengaturan,
+        R.drawable.logoikikasir,
+        "bluetooth_printer"
+    )
+}
