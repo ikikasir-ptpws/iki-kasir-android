@@ -1,8 +1,10 @@
 package com.ptpws.ikikasir.feature.bluetooth.presentation.viewmodel
 
 import android.util.Log
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.feature.bluetooth.data.BluetoothPrinterConnection
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.bluetooth.domain.model.BluetoothPrinterDevice
@@ -13,6 +15,7 @@ import com.ptpws.ikikasir.feature.bluetooth.domain.usecase.IsBluetoothEnabledUse
 import com.ptpws.ikikasir.feature.bluetooth.domain.usecase.SaveBluetoothPrinterSettingUseCase
 import com.ptpws.ikikasir.feature.bluetooth.presentation.state.BluetoothPrinterState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +29,7 @@ private const val TAG = "BluetoothPrinterVM"
 
 @HiltViewModel
 class BluetoothPrinterViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val getBluetoothPrinterSettingUseCase: GetBluetoothPrinterSettingUseCase,
     private val saveBluetoothPrinterSettingUseCase: SaveBluetoothPrinterSettingUseCase,
     private val getPairedBluetoothDevicesUseCase: GetPairedBluetoothDevicesUseCase,
@@ -65,6 +69,9 @@ class BluetoothPrinterViewModel @Inject constructor(
                         selectedDevice = selectedDevice
                     )
                 }
+                if (setting.isAutoConnect && _state.value.hasBluetoothPermission && selectedDevice != null) {
+                    connectDevice(selectedDevice, showError = false)
+                }
             }
         }
     }
@@ -81,6 +88,9 @@ class BluetoothPrinterViewModel @Inject constructor(
                 it.copy(
                     pairedDevices = devices,
                     isBluetoothEnabled = isEnabled,
+                    connectedAddress = it.setting.savedAddress.takeIf { address ->
+                        BluetoothPrinterConnection.isConnected(address)
+                    },
                     isLoading = false
                 )
             }
@@ -90,20 +100,71 @@ class BluetoothPrinterViewModel @Inject constructor(
 
     fun selectDevice(device: BluetoothPrinterDevice) {
         _state.update { it.copy(selectedDevice = device) }
+        connectDevice(device)
+    }
+
+    private fun connectDevice(device: BluetoothPrinterDevice, showError: Boolean = true) {
+        if (!_state.value.hasBluetoothPermission) return
+        viewModelScope.launch {
+            _state.update { it.copy(isConnecting = true, connectedAddress = null) }
+            try {
+                BluetoothPrinterConnection.connect(context, device.address)
+                _state.update {
+                    it.copy(
+                        selectedDevice = device,
+                        connectedAddress = device.address,
+                        isConnecting = false
+                    )
+                }
+            } catch (error: Exception) {
+                _state.update { it.copy(connectedAddress = null, isConnecting = false) }
+                Log.w(TAG, "Gagal menghubungkan printer ${device.name}: ${error.message}")
+                if (showError) {
+                    GlobalCrudResultDialog.failure(
+                        error.message ?: "Gagal menghubungkan printer Bluetooth."
+                    )
+                }
+            }
+        }
     }
 
     fun saveSetting(setting: BluetoothPrinterSetting, onComplete: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true) }
+            if (setting.isAutoConnect && setting.savedAddress.isNotBlank() &&
+                !BluetoothPrinterConnection.isConnected(setting.savedAddress)
+            ) {
+                try {
+                    BluetoothPrinterConnection.connect(context, setting.savedAddress)
+                } catch (error: Exception) {
+                    _state.update { it.copy(isSaving = false, connectedAddress = null) }
+                    GlobalCrudResultDialog.failure(
+                        error.message ?: "Koneksi otomatis ke printer gagal."
+                    )
+                    onComplete(false)
+                    return@launch
+                }
+            }
             val result = saveBluetoothPrinterSettingUseCase(setting)
             result.fold(
                 onSuccess = {
-                    _state.update { s -> s.copy(isSaving = false, setting = setting) }
+                    if (setting.savedAddress.isBlank()) {
+                        BluetoothPrinterConnection.disconnect()
+                    }
+                    _state.update { s ->
+                        s.copy(
+                            isSaving = false,
+                            setting = setting,
+                            connectedAddress = if (BluetoothPrinterConnection.isConnected(setting.savedAddress)) {
+                                setting.savedAddress
+                            } else null
+                        )
+                    }
                     GlobalCrudResultDialog.success("Pengaturan printer Bluetooth berhasil disimpan.")
                     logActivityUseCase(
                         title = "Pengaturan Printer Bluetooth",
                         description = "Printer ${setting.savedName} (${setting.savedAddress}) dipilih. " +
-                            "Lebar kertas: ${setting.paperWidth}.",
+                            "Koneksi otomatis: ${setting.isAutoConnect}.",
                         category = "SYSTEM",
                         action = "UPDATE"
                     )
@@ -127,7 +188,13 @@ class BluetoothPrinterViewModel @Inject constructor(
                 pairedDevices = if (hasPermission) it.pairedDevices else emptyList()
             )
         }
-        if (hasPermission) refreshPairedDevices()
+        if (hasPermission) {
+            refreshPairedDevices()
+            val current = _state.value
+            if (current.setting.isAutoConnect && current.selectedDevice != null) {
+                connectDevice(current.selectedDevice, showError = false)
+            }
+        }
     }
 
 }
