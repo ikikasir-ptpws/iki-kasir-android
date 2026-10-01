@@ -152,7 +152,10 @@ fun RiwayatTransaksiScreen(
                 Button(
                     onClick = {
                         val shareIntent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(exportedUri, "application/vnd.ms-excel")
+                            setDataAndType(
+                                exportedUri,
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            )
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
