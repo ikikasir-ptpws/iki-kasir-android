@@ -9,6 +9,8 @@ data class BluetoothPrinterState(
     val isBluetoothEnabled: Boolean = false,
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
+    val isConnecting: Boolean = false,
     val hasBluetoothPermission: Boolean = false,
-    val selectedDevice: BluetoothPrinterDevice? = null
+    val selectedDevice: BluetoothPrinterDevice? = null,
+    val connectedAddress: String? = null
 )
