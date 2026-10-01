@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 import com.ptpws.ikikasir.feature.bluetooth.data.preferences.BluetoothPrinterPreferences
 import com.ptpws.ikikasir.feature.bluetooth.domain.model.BluetoothPrinterSetting
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
@@ -125,13 +127,13 @@ class PrintStrukUseCase {
             if (current.length > indent.length) feedLine(current)
         }
 
-        fun row(left: String, right: String) {
-            val cleanRight = right.toAscii().take(columns)
-            val leftWidth = (columns - cleanRight.length - 1).coerceAtLeast(1)
+        fun row(left: String, right: String, lineColumns: Int = columns) {
+            val cleanRight = right.toAscii().take(lineColumns)
+            val leftWidth = (lineColumns - cleanRight.length - 1).coerceAtLeast(1)
             val cleanLeft = left.toAscii()
             if (cleanLeft.length > leftWidth) {
                 wrapped(cleanLeft)
-                feedLine(cleanRight.padStart(columns))
+                feedLine(cleanRight.padStart(lineColumns))
             } else {
                 feedLine(cleanLeft.padEnd(leftWidth) + " " + cleanRight)
             }
@@ -141,6 +143,8 @@ class PrintStrukUseCase {
 
         command(0x1B, 0x40)
         command(0x1B, 0x74, 0x00)
+        command(0x1D, 0x4C, 0x00, 0x00)
+        command(0x1D, 0x57, (columns * 12) and 0xFF, ((columns * 12) shr 8) and 0xFF)
         command(0x1B, 0x61, 0x01)
         command(0x1B, 0x45, 0x01)
         val storeName = notaSetting.storeName.ifBlank { "IKIKASIR" }.toAscii()
@@ -172,13 +176,23 @@ class PrintStrukUseCase {
         if (ppn > 0) row("PPN", amount(ppn))
         if (transaksi.discount > 0) row("Diskon", "- ${amount(transaksi.discount)}")
 
+        val grandTotalLabel = "TOTAL"
+        val grandTotal = transaksi.total.takeIf { it > 0 } ?: (subtotal + ppn - transaksi.discount)
+        val grandTotalAmount = amount(grandTotal)
+        val totalTextColumns = if (columns >= 48) 2 else 1
+        val totalLine = if (totalTextColumns == 2) {
+            val maxAmountLength = (columns / 2) - 1
+            val compactAmount = grandTotalAmount.takeLast(maxAmountLength)
+            grandTotalLabel.padEnd(columns - compactAmount.length) + compactAmount
+        } else {
+            grandTotalLabel.padEnd(columns - grandTotalAmount.length) + grandTotalAmount
+        }
         command(0x1B, 0x45, 0x01)
-        command(0x1D, 0x21, 0x10)
-        row("TOTAL", amount(transaksi.total.takeIf { it > 0 } ?: (subtotal + ppn - transaksi.discount)))
-        command(0x1D, 0x21, 0x00)
+        if (totalTextColumns == 2) command(0x1D, 0x21, 0x01)
+        feedLine(totalLine)
+        if (totalTextColumns == 2) command(0x1D, 0x21, 0x00)
         command(0x1B, 0x45, 0x00)
 
-        val grandTotal = transaksi.total.takeIf { it > 0 } ?: (subtotal + ppn - transaksi.discount)
         val paid = transaksi.paymentAmount.takeIf { it > 0 } ?: grandTotal
         row("Bayar (${transaksi.paymentMethod})", amount(paid))
         row("Kembalian", amount(transaksi.change))
@@ -207,26 +221,33 @@ class PrintStrukUseCase {
     }
 
     private fun printQrCode(output: ByteArrayOutputStream, content: String) {
-        val data = content.toAscii().toByteArray(Charsets.US_ASCII)
-        if (data.isEmpty()) return
+        val cleanContent = content.toAscii()
+        if (cleanContent.isBlank()) return
 
-        fun command(vararg values: Int) {
-            output.write(values.map(Int::toByte).toByteArray())
-        }
-
-        command(0x1B, 0x61, 0x01)
-        command(0x1D, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00)
-        command(0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x06)
-        command(0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x31)
-        val length = data.size + 3
-        command(
-            0x1D, 0x28, 0x6B,
-            length and 0xFF, (length shr 8) and 0xFF,
-            0x31, 0x50, 0x30
+        val matrix = QRCodeWriter().encode(cleanContent, BarcodeFormat.QR_CODE, 256, 256)
+        val widthBytes = (matrix.width + 7) / 8
+        val height = matrix.height
+        output.write(byteArrayOf(0x1B, 0x61, 0x01))
+        output.write(
+            byteArrayOf(
+                0x1D, 0x76, 0x30, 0x00,
+                widthBytes.toByte(), (widthBytes shr 8).toByte(),
+                height.toByte(), (height shr 8).toByte()
+            )
         )
-        output.write(data)
-        command(0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30)
-        command(0x1B, 0x61, 0x00)
+        for (y in 0 until height) {
+            for (byteIndex in 0 until widthBytes) {
+                var value = 0
+                for (bit in 0..7) {
+                    val x = byteIndex * 8 + bit
+                    if (x < matrix.width && matrix.get(x, y)) {
+                        value = value or (0x80 shr bit)
+                    }
+                }
+                output.write(value)
+            }
+        }
+        output.write(byteArrayOf(0x1B, 0x61, 0x00))
     }
 
     private fun String.toAscii(): String = map { character ->
