@@ -1,5 +1,8 @@
 package com.ptpws.ikikasir.screens.navigation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -29,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import android.content.Intent
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -47,6 +51,7 @@ import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
 import com.ptpws.ikikasir.screens.manajemenstok.UpdateStokScreen
 
 import com.ptpws.ikikasir.feature.bluetooth.presentation.screen.BluetoothPrinterScreen
+import com.ptpws.ikikasir.feature.bluetooth.presentation.viewmodel.BluetoothPrinterViewModel
 import com.ptpws.ikikasir.screens.pengaturan.ProfilScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
 import com.ptpws.ikikasir.screens.kategori.TambahKategoriActivity
@@ -72,9 +77,20 @@ import com.ptpws.ikikasir.screens.promo.TambahPromoActivity
 fun AppNavHost() {
     val navController = rememberNavController()
     val dashboardViewModel: DashboardViewModel = hiltViewModel()
+    val bluetoothPrinterViewModel: BluetoothPrinterViewModel = hiltViewModel()
+    val context = LocalContext.current
     val sessionState by dashboardViewModel.sessionState.collectAsState()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    LaunchedEffect(Unit) {
+        val hasBluetoothPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED
+        bluetoothPrinterViewModel.updatePermissionStatus(hasBluetoothPermission)
+    }
 
     // Rute-rute yang menampilkan bottom bar
     val showBottomBar = !sessionState.isLoading &&
