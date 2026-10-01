@@ -10,7 +10,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -54,15 +53,6 @@ fun BluetoothPrinterScreen(
     }
     var isAutoConnect by remember(state.setting.isAutoConnect) {
         mutableStateOf(state.setting.isAutoConnect)
-    }
-    var selectedPaperWidth by remember(state.setting.paperWidth) {
-        mutableStateOf(state.setting.paperWidth)
-    }
-
-    LaunchedEffect(selectedDevice?.address) {
-        if (selectedDevice?.name?.contains("MP58", ignoreCase = true) == true) {
-            selectedPaperWidth = BluetoothPrinterSetting.PAPER_58MM
-        }
     }
 
     // ── Permission launcher (Android 12+)
@@ -155,6 +145,8 @@ fun BluetoothPrinterScreen(
                 item {
                     SelectedPrinterCard(
                         device = selectedDevice!!,
+                        isConnected = state.connectedAddress == selectedDevice?.address,
+                        isConnecting = state.isConnecting,
                         onClear = {
                             selectedDevice = null
                         }
@@ -276,12 +268,9 @@ fun BluetoothPrinterScreen(
             items(state.pairedDevices) { device ->
                 BluetoothDeviceItem(
                     device = device,
-                    isSelected = selectedDevice?.address == device.address,
+                    isSelected = state.connectedAddress == device.address,
                     onClick = {
                         selectedDevice = device
-                        if (device.name.contains("MP58", ignoreCase = true)) {
-                            selectedPaperWidth = BluetoothPrinterSetting.PAPER_58MM
-                        }
                         viewModel.selectDevice(device)
                     }
                 )
@@ -355,70 +344,6 @@ fun BluetoothPrinterScreen(
                             )
                         }
 
-                        HorizontalDivider(color = Color(0xFFF3F4F6))
-
-                        // Paper Width Selection
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(Color(0xFFFEF3C7)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.ReceiptLong,
-                                        contentDescription = "Ukuran Kertas",
-                                        tint = Color(0xFFD97706),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Column {
-                                    Text(
-                                        text = "Lebar Kertas Struk",
-                                        fontFamily = interfamily,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 14.sp,
-                                        color = Color(0xFF1F2937)
-                                    )
-                                    Text(
-                                        text = "Sesuaikan dengan tipe printer Anda",
-                                        fontFamily = interfamily,
-                                        fontSize = 11.sp,
-                                        color = Color(0xFF9CA3AF)
-                                    )
-                                }
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                PaperWidthChip(
-                                    label = "58 mm",
-                                    sublabel = "Kecil",
-                                    isSelected = selectedPaperWidth == BluetoothPrinterSetting.PAPER_58MM,
-                                    onClick = { selectedPaperWidth = BluetoothPrinterSetting.PAPER_58MM },
-                                    modifier = Modifier.weight(1f)
-                                )
-                                PaperWidthChip(
-                                    label = "80 mm",
-                                    sublabel = "Standar",
-                                    isSelected = selectedPaperWidth == BluetoothPrinterSetting.PAPER_80MM,
-                                    onClick = { selectedPaperWidth = BluetoothPrinterSetting.PAPER_80MM },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -432,9 +357,18 @@ fun BluetoothPrinterScreen(
                             savedAddress = selectedDevice?.address ?: "",
                             savedName = selectedDevice?.name ?: "",
                             isAutoConnect = isAutoConnect,
-                            paperWidth = selectedPaperWidth
+                            paperWidth = state.setting.paperWidth
                         )
-                        viewModel.saveSetting(updatedSetting)
+                        viewModel.saveSetting(updatedSetting) { saved ->
+                            if (saved) {
+                                val profileRoute = com.ptpws.ikikasir.screens.navigation.AppScreen.Profil.route
+                                if (!navController.popBackStack(profileRoute, inclusive = false)) {
+                                    navController.navigate(profileRoute) {
+                                        launchSingleTop = true
+                                    }
+                                }
+                            }
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -568,14 +502,21 @@ private fun BluetoothStatusCard(
 @Composable
 private fun SelectedPrinterCard(
     device: BluetoothPrinterDevice,
+    isConnected: Boolean,
+    isConnecting: Boolean,
     onClear: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFEEF2FF)),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isConnected) Color(0xFFEEF2FF) else Color.White
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFADB5FF))
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (isConnected) Color(0xFFADB5FF) else Color(0xFFE5E7EB)
+        )
     ) {
         Row(
             modifier = Modifier
@@ -593,13 +534,13 @@ private fun SelectedPrinterCard(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF4F46E5)),
+                        .background(if (isConnected) Color(0xFF4F46E5) else Color(0xFFF3F4F6)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Print,
                         contentDescription = "Printer",
-                        tint = Color.White,
+                        tint = if (isConnected) Color.White else Color(0xFF6B7280),
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -609,7 +550,7 @@ private fun SelectedPrinterCard(
                         fontFamily = interfamily,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF4F46E5)
+                        color = if (isConnected) Color(0xFF4F46E5) else Color(0xFF6B7280)
                     )
                     Text(
                         text = device.name,
@@ -621,7 +562,11 @@ private fun SelectedPrinterCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = device.address,
+                        text = when {
+                            isConnecting -> "Menghubungkan..."
+                            isConnected -> "${device.address} • Terhubung"
+                            else -> "${device.address} • Belum terhubung"
+                        },
                         fontFamily = interfamily,
                         fontSize = 11.sp,
                         color = Color(0xFF6B7280)
@@ -714,47 +659,6 @@ private fun BluetoothDeviceItem(
                     modifier = Modifier.size(22.dp)
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun PaperWidthChip(
-    label: String,
-    sublabel: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (isSelected) Color(0xFFEEF2FF) else Color(0xFFF9FAFB)
-            )
-            .border(
-                width = if (isSelected) 1.5.dp else 1.dp,
-                color = if (isSelected) Color(0xFF4F46E5) else Color(0xFFE5E7EB),
-                shape = RoundedCornerShape(12.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = label,
-                fontFamily = interfamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                color = if (isSelected) Color(0xFF4F46E5) else Color(0xFF374151)
-            )
-            Text(
-                text = sublabel,
-                fontFamily = interfamily,
-                fontSize = 11.sp,
-                color = if (isSelected) Color(0xFF4F46E5) else Color(0xFF9CA3AF)
-            )
         }
     }
 }
