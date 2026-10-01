@@ -14,14 +14,17 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private const val EXCEL_MIME_TYPE = "application/vnd.ms-excel"
-private const val SPREADSHEET_NAMESPACE = "urn:schemas-microsoft-com:office:spreadsheet"
+private const val EXCEL_MIME_TYPE =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 @Singleton
 class ExcelExportService @Inject constructor() {
@@ -100,8 +103,8 @@ class ExcelExportService @Inject constructor() {
 
             saveAndShare(
                 context,
-                createSpreadsheetXml("Riwayat Transaksi", rows, listOf(45, 130, 105, 100, 100, 70, 85, 75, 70, 85, 95, 75)),
-                "Transaksi_${fileNameDateFormat.format(Date())}.xls"
+                createSpreadsheetXlsx("Riwayat Transaksi", rows, listOf(8, 24, 20, 18, 20, 12, 16, 14, 14, 16, 18, 14)),
+                "Transaksi_${fileNameDateFormat.format(Date())}.xlsx"
             )
         }
     }
@@ -171,58 +174,165 @@ class ExcelExportService @Inject constructor() {
 
             saveAndShare(
                 context,
-                createSpreadsheetXml("Riwayat Antrean", rows, listOf(45, 130, 70, 100, 70, 75, 200, 85, 105)),
-                "AntreanHistory_${fileNameDateFormat.format(Date())}.xls"
+                createSpreadsheetXlsx("Riwayat Antrean", rows, listOf(8, 24, 14, 20, 12, 16, 36, 16, 20)),
+                "AntreanHistory_${fileNameDateFormat.format(Date())}.xlsx"
             )
         }
     }
 
-    private fun createSpreadsheetXml(
+    private fun createSpreadsheetXlsx(
         sheetName: String,
         rows: List<List<ExcelCell>>,
         columnWidths: List<Int>
     ): ByteArray {
-        val columnCount = rows.maxOfOrNull { it.size } ?: 1
-        return buildString {
-            append("""<?xml version="1.0" encoding="UTF-8"?>""")
-            append("""<?mso-application progid="Excel.Sheet"?>""")
-            append("""<Workbook xmlns="$SPREADSHEET_NAMESPACE" xmlns:ss="$SPREADSHEET_NAMESPACE">""")
-            appendStyles()
-            append("""<Worksheet ss:Name="${sheetName.xmlEscape()}"><Table ss:ExpandedColumnCount="$columnCount" ss:ExpandedRowCount="${rows.size}">""")
-            columnWidths.forEach { width ->
-                append("""<Column ss:Width="$width"/>""")
-            }
-            rows.forEach { row ->
-                append("<Row>")
-                row.forEach { cell ->
-                    append("""<Cell ss:StyleID="${cell.style}"><Data ss:Type="${cell.type}">${cell.value.xmlEscape()}</Data></Cell>""")
+        val columnCount = maxOf(rows.maxOfOrNull { it.size } ?: 1, columnWidths.size)
+        val lastColumn = columnName(columnCount)
+        val output = ByteArrayOutputStream()
+        ZipOutputStream(output).use { zip ->
+            zip.addTextEntry(
+                "[Content_Types].xml",
+                """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                    <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+                    <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+                    <Default Extension="xml" ContentType="application/xml"/>
+                    <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+                    <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+                    <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+                    </Types>"""
+            )
+            zip.addTextEntry(
+                "_rels/.rels",
+                """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                    <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+                    <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+                    </Relationships>"""
+            )
+            zip.addTextEntry(
+                "xl/workbook.xml",
+                """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                    <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+                    xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+                    <sheets><sheet name="${sheetName.xmlEscape()}" sheetId="1" r:id="rId1"/></sheets>
+                    </workbook>"""
+            )
+            zip.addTextEntry(
+                "xl/_rels/workbook.xml.rels",
+                """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                    <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+                    <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+                    <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+                    </Relationships>"""
+            )
+            zip.addTextEntry("xl/styles.xml", createStylesXml())
+            zip.addTextEntry(
+                "xl/worksheets/sheet1.xml",
+                createWorksheetXml(rows, columnWidths, lastColumn)
+            )
+        }
+        return output.toByteArray()
+    }
+
+    private fun createWorksheetXml(
+        rows: List<List<ExcelCell>>,
+        columnWidths: List<Int>,
+        lastColumn: String
+    ): String = buildString {
+        append("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>""")
+        append("""<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">""")
+        append("""<dimension ref="A1:$lastColumn${rows.size}"/>""")
+        append("""<sheetViews><sheetView workbookViewId="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>""")
+        append("<cols>")
+        columnWidths.forEachIndexed { index, width ->
+            append("""<col min="${index + 1}" max="${index + 1}" width="$width" customWidth="1"/>""")
+        }
+        append("</cols><sheetData>")
+        rows.forEachIndexed { rowIndex, row ->
+            append("""<row r="${rowIndex + 1}">""")
+            row.forEachIndexed { columnIndex, cell ->
+                val cellRef = "${columnName(columnIndex + 1)}${rowIndex + 1}"
+                val styleIndex = cell.style.toStyleIndex()
+                if (cell.type == "Number") {
+                    val numericValue = cell.value.toDoubleOrNull() ?: 0.0
+                    append("""<c r="$cellRef" s="$styleIndex"><v>$numericValue</v></c>""")
+                } else {
+                    append("""<c r="$cellRef" s="$styleIndex" t="inlineStr"><is><t xml:space="preserve">${cell.value.xmlEscape()}</t></is></c>""")
                 }
-                append("</Row>")
             }
-            append("</Table><WorksheetOptions xmlns=")
-            append('"').append("urn:schemas-microsoft-com:office:excel").append('"')
-            append("><FreezePanes/><FrozenNoSplit/><SplitHorizontal>4</SplitHorizontal><TopRowBottomPane>4</TopRowBottomPane></WorksheetOptions>")
-            append("</Worksheet></Workbook>")
-        }.toByteArray(Charsets.UTF_8)
+            append("</row>")
+        }
+        append("</sheetData>")
+        append("""<mergeCells count="2"><mergeCell ref="A1:${lastColumn}1"/><mergeCell ref="A2:${lastColumn}2"/></mergeCells>""")
+        append("</worksheet>")
     }
 
-    private fun StringBuilder.appendStyles() {
-        append("<Styles>")
-        append("""<Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Calibri" ss:Size="10"/></Style>""")
-        append("""<Style ss:ID="Title"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Calibri" ss:Size="16" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#4338CA" ss:Pattern="Solid"/></Style>""")
-        append("""<Style ss:ID="Subtitle"><Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E3A8A"/><Interior ss:Color="#DBEAFE" ss:Pattern="Solid"/></Style>""")
-        append("""<Style ss:ID="Header"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#1E3A8A" ss:Pattern="Solid"/></Style>""")
-        append("""<Style ss:ID="Data"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="0.5" ss:Color="#D1D5DB"/></Borders></Style>""")
-        append("""<Style ss:ID="DataAlt"><Interior ss:Color="#EFF6FF" ss:Pattern="Solid"/></Style>""")
-        append("""<Style ss:ID="Number"><Alignment ss:Horizontal="Right"/><NumberFormat ss:Format="#,##0.00"/></Style>""")
-        append("""<Style ss:ID="NumberAlt"><Alignment ss:Horizontal="Right"/><NumberFormat ss:Format="#,##0.00"/><Interior ss:Color="#EFF6FF" ss:Pattern="Solid"/></Style>""")
-        append("""<Style ss:ID="Success"><Alignment ss:Horizontal="Center"/><Font ss:Bold="1" ss:Color="#166534"/><Interior ss:Color="#DCFCE7" ss:Pattern="Solid"/></Style>""")
-        append("""<Style ss:ID="Failure"><Alignment ss:Horizontal="Center"/><Font ss:Bold="1" ss:Color="#991B1B"/><Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/></Style>""")
-        append("""<Style ss:ID="TotalLabel"><Alignment ss:Horizontal="Center"/><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#1E3A8A" ss:Pattern="Solid"/></Style>""")
-        append("""<Style ss:ID="TotalValue"><Alignment ss:Horizontal="Right"/><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#4338CA" ss:Pattern="Solid"/></Style>""")
-        append("</Styles>")
+    private fun createStylesXml(): String = """
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+        <fonts count="3">
+        <font><sz val="10"/><name val="Calibri"/></font>
+        <font><b/><sz val="16"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
+        <font><b/><sz val="10"/><name val="Calibri"/></font>
+        </fonts>
+        <fills count="10">
+        <fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>
+        <fill><patternFill patternType="solid"><fgColor rgb="FF4338CA"/><bgColor indexed="64"/></patternFill></fill>
+        <fill><patternFill patternType="solid"><fgColor rgb="FFDBEAFE"/><bgColor indexed="64"/></patternFill></fill>
+        <fill><patternFill patternType="solid"><fgColor rgb="FF1E3A8A"/><bgColor indexed="64"/></patternFill></fill>
+        <fill><patternFill patternType="solid"><fgColor rgb="FFEFF6FF"/><bgColor indexed="64"/></patternFill></fill>
+        <fill><patternFill patternType="solid"><fgColor rgb="FFDCFCE7"/><bgColor indexed="64"/></patternFill></fill>
+        <fill><patternFill patternType="solid"><fgColor rgb="FFFEE2E2"/><bgColor indexed="64"/></patternFill></fill>
+        <fill><patternFill patternType="solid"><fgColor rgb="FF166534"/><bgColor indexed="64"/></patternFill></fill>
+        <fill><patternFill patternType="solid"><fgColor rgb="FF4338CA"/><bgColor indexed="64"/></patternFill></fill>
+        </fills>
+        <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+        <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+        <cellXfs count="12">
+        <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+        <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+        <xf numFmtId="0" fontId="0" fillId="3" borderId="0" xfId="0"/>
+        <xf numFmtId="0" fontId="1" fillId="4" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf>
+        <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+        <xf numFmtId="0" fontId="0" fillId="5" borderId="0" xfId="0"/>
+        <xf numFmtId="4" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right"/></xf>
+        <xf numFmtId="4" fontId="0" fillId="5" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right"/></xf>
+        <xf numFmtId="0" fontId="2" fillId="6" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf>
+        <xf numFmtId="0" fontId="2" fillId="7" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf>
+        <xf numFmtId="0" fontId="1" fillId="8" borderId="0" xfId="0"/>
+        <xf numFmtId="0" fontId="1" fillId="9" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right"/></xf>
+        </cellXfs>
+        </styleSheet>
+    """.trimIndent()
+
+    private fun String.toStyleIndex(): Int = when (this) {
+        "Title" -> 1
+        "Subtitle" -> 2
+        "Header" -> 3
+        "DataAlt" -> 5
+        "Number" -> 6
+        "NumberAlt" -> 7
+        "Success" -> 8
+        "Failure" -> 9
+        "TotalLabel" -> 10
+        "TotalValue" -> 11
+        else -> 4
     }
 
+    private fun columnName(column: Int): String {
+        var value = column
+        val name = StringBuilder()
+        while (value > 0) {
+            val remainder = (value - 1) % 26
+            name.insert(0, ('A'.code + remainder).toChar())
+            value = (value - 1) / 26
+        }
+        return name.toString()
+    }
+
+    private fun ZipOutputStream.addTextEntry(path: String, content: String) {
+        putNextEntry(ZipEntry(path))
+        write(content.toByteArray(Charsets.UTF_8))
+        closeEntry()
+    }
     private fun saveAndShare(context: Context, content: ByteArray, fileName: String): Uri {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
