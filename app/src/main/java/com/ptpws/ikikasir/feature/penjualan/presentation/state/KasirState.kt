@@ -5,6 +5,7 @@ import com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting
 import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
+import com.ptpws.ikikasir.feature.promo.domain.model.isAvailableOn
 
 data class KasirState(
     val searchQuery: String = "",
@@ -32,11 +33,15 @@ data class KasirState(
     // Auto-detect applicable promo if none explicitly selected
     val effectivePromo: Promo?
         get() {
-            if (selectedPromo != null) return selectedPromo
+            if (selectedPromo != null) {
+                return selectedPromo.takeIf { promo ->
+                    promo.isAvailableOn() && activePromos.any { it.id == promo.id }
+                }
+            }
             if (cartItems.isEmpty() || activePromos.isEmpty()) return null
             val cartProductIds = cartItems.map { it.produk.id }.toSet()
             return activePromos.firstOrNull { promo ->
-                promo.isActive && (promo.items.isEmpty() || promo.items.any { it.productId in cartProductIds })
+                promo.isAvailableOn() && (promo.items.isEmpty() || promo.items.any { it.productId in cartProductIds })
             }
         }
 
