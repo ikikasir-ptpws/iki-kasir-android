@@ -21,6 +21,7 @@ import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetTaxSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetPaymentMethodSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetTableSettingUseCase
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
+import com.ptpws.ikikasir.feature.promo.domain.model.isAvailableOn
 import com.ptpws.ikikasir.feature.promo.domain.usecase.GetActivePromosUseCase
 
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
@@ -54,7 +55,15 @@ class PembayaranViewModel @Inject constructor(
     private fun observeCartAndTax() {
         viewModelScope.launch {
             getActivePromosUseCase().collect { promos ->
-                _state.update { it.copy(activePromos = promos) }
+                _state.update { current ->
+                    current.copy(
+                        activePromos = promos,
+                        selectedPromo = current.selectedPromo?.takeIf { selected ->
+                            promos.any { it.id == selected.id }
+                        }
+                    )
+                }
+                recalculateTotal()
             }
         }
 
@@ -119,7 +128,13 @@ class PembayaranViewModel @Inject constructor(
     }
 
     fun onSelectPromo(promo: Promo?) {
-        _state.update { it.copy(selectedPromo = promo) }
+        _state.update { current ->
+            current.copy(
+                selectedPromo = promo?.takeIf {
+                    it.isAvailableOn() && current.activePromos.any { active -> active.id == it.id }
+                }
+            )
+        }
         recalculateTotal()
     }
 
@@ -127,9 +142,14 @@ class PembayaranViewModel @Inject constructor(
         _state.update { current ->
             val subtotal = current.subtotal
             val tax = current.taxSetting
-            val promo = current.selectedPromo
+            val promo = current.selectedPromo?.takeIf { selected ->
+                selected.isAvailableOn() && current.activePromos.any { it.id == selected.id }
+            }
 
-            val promoDiscountAmount = if (promo != null && current.cartItems.isNotEmpty()) {
+            val promoDiscountAmount = if (
+                promo != null &&
+                current.cartItems.isNotEmpty()
+            ) {
                 val eligibleSubtotal = if (promo.items.isEmpty()) {
                     subtotal
                 } else {
@@ -170,6 +190,7 @@ class PembayaranViewModel @Inject constructor(
             val kembalian = if (isTunai) (uangDiterima - grandTotal).coerceAtLeast(0.0) else 0.0
 
             current.copy(
+                selectedPromo = promo,
                 promoDiscountAmount = promoDiscountAmount,
                 ppnAmount = ppnAmount,
                 grandTotal = grandTotal,
@@ -248,6 +269,17 @@ class PembayaranViewModel @Inject constructor(
     }
 
     fun prosesPembayaran() {
+        _state.update { current ->
+            if (current.selectedPromo?.let { promo ->
+                    !promo.isAvailableOn() || current.activePromos.none { it.id == promo.id }
+                } == true
+            ) {
+                current.copy(selectedPromo = null)
+            } else {
+                current
+            }
+        }
+        recalculateTotal()
         val currentState = _state.value
         val isTunai = currentState.metodePembayaran.equals("Tunai", ignoreCase = true)
         val targetTotal = if (currentState.grandTotal > 0) currentState.grandTotal else currentState.subtotal
