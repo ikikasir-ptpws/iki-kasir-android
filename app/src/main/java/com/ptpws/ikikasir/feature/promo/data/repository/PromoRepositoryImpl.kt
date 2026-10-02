@@ -7,6 +7,7 @@ import com.ptpws.ikikasir.feature.promo.data.local.entity.toEntity
 import com.ptpws.ikikasir.feature.promo.data.remote.datasource.PromoRemoteDataSource
 import com.ptpws.ikikasir.feature.promo.data.remote.dto.toDto
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
+import com.ptpws.ikikasir.feature.promo.domain.model.isAvailableOn
 import com.ptpws.ikikasir.feature.promo.domain.repository.PromoRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -76,7 +77,7 @@ class PromoRepositoryImpl @Inject constructor(
             }
         }
         return localDao.getActivePromosFlow().map { entities ->
-            entities.map { it.toDomain() }
+            entities.map { it.toDomain() }.filter { it.isAvailableOn() }
         }
     }
 
