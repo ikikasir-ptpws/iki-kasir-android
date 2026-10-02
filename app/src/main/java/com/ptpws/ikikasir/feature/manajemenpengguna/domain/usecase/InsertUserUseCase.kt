@@ -8,5 +8,7 @@ import javax.inject.Inject
 class InsertUserUseCase @Inject constructor(
     private val repository: UserRepository
 ) {
-    suspend operator fun invoke(user: User): Flow<Result<Unit>> = repository.insertUser(user)
+    // plainPassword diteruskan ke Firebase Auth saja, tidak disimpan ke DB manapun
+    suspend operator fun invoke(user: User, plainPassword: String): Flow<Result<Unit>> =
+        repository.insertUser(user, plainPassword)
 }

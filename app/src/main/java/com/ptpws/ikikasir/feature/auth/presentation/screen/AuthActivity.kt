@@ -199,6 +199,9 @@ class AuthActivity : ComponentActivity() {
                     isLoading = authState is AuthState.Loading,
                     onLoginClick = { email, password ->
                         viewModel.login(email, password)
+                    },
+                    onSendPasswordReset = { email, onResult ->
+                        viewModel.sendPasswordResetEmail(email, onResult)
                     }
                 )
             }

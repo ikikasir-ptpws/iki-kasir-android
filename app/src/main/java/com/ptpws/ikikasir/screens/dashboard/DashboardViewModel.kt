@@ -70,7 +70,11 @@ class DashboardViewModel @Inject constructor(
             withContext(Dispatchers.IO) {
                 val localUser = email.takeIf { it.isNotBlank() }
                     ?.let { userDao.getUserByEmail(it) }
-                val roleName = localUser?.roleId.orEmpty()
+                val roleName = localUser?.roleId.takeIf { !it.isNullOrBlank() } ?: "Admin"
+                val isAdminRole = roleName.equals("Admin", ignoreCase = true) || 
+                        roleName.equals("System Administrator", ignoreCase = true) ||
+                        roleName.isBlank()
+
                 val allLocalRoles = roleDao.getAllRoles()
 
                 val matchedRole = allLocalRoles.find { role ->
@@ -80,11 +84,10 @@ class DashboardViewModel @Inject constructor(
                         )
                 }
 
-                val hasAssignedRole = !roleName.isBlank()
                 val menuAccess = when {
+                    isAdminRole -> DEFAULT_UNASSIGNED_ROLE_ACCESS
                     matchedRole != null -> matchedRole.menuAccess
-                    !hasAssignedRole -> DEFAULT_UNASSIGNED_ROLE_ACCESS
-                    else -> emptyMap()
+                    else -> DEFAULT_UNASSIGNED_ROLE_ACCESS
                 }
 
                 val user = localUser?.let {
@@ -92,7 +95,7 @@ class DashboardViewModel @Inject constructor(
                         id = it.id,
                         fullName = it.fullName,
                         email = it.email,
-                        roleId = it.roleId,
+                        roleId = it.roleId.ifBlank { "Admin" },
                         isActive = it.isActive,
                         photoUrl = it.photoUrl
                     )
@@ -102,13 +105,13 @@ class DashboardViewModel @Inject constructor(
                         ?.takeIf { it.isNotBlank() }
                         ?: email.substringBefore("@").ifBlank { "Pengguna" },
                     email = email,
-                    roleId = "",
+                    roleId = "Admin",
                     isActive = true
                 )
 
                 _sessionState.value = UserSessionState(
                     user = user,
-                    roleName = roleName,
+                    roleName = if (isAdminRole) "Admin" else roleName,
                     menuAccess = menuAccess,
                     isLoading = false
                 )
@@ -118,6 +121,18 @@ class DashboardViewModel @Inject constructor(
             getRolesUseCase().collect { roles ->
                 val currentState = _sessionState.value
                 val roleName = currentState.roleName
+                val isAdminRole = roleName.equals("Admin", ignoreCase = true) || 
+                        roleName.equals("System Administrator", ignoreCase = true) ||
+                        roleName.isBlank()
+
+                if (isAdminRole) {
+                    _sessionState.value = currentState.copy(
+                        menuAccess = DEFAULT_UNASSIGNED_ROLE_ACCESS,
+                        isLoading = false
+                    )
+                    return@collect
+                }
+
                 val matchedRole = roles.find { role ->
                     roleName.isNotBlank() && (
                         role.name.equals(roleName, ignoreCase = true) ||
@@ -141,12 +156,22 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun isAllowed(menuKey: String): Boolean {
-        // Dashboard and Profil are always allowed
+        val state = _sessionState.value
+        val currentRole = state.roleName
+        val isAdminRole = currentRole.isBlank() || 
+                currentRole.equals("Admin", ignoreCase = true) || 
+                currentRole.equals("System Administrator", ignoreCase = true)
+
+        // Admin, System Administrator, dan akun Firebase default memiliki akses penuh ke seluruh fitur
+        if (isAdminRole) {
+            return true
+        }
+
+        // Dashboard dan Profil selalu diizinkan
         if (menuKey.equals("Dashboard", ignoreCase = true) || menuKey.equals("Profil", ignoreCase = true)) {
             return true
         }
 
-        val state = _sessionState.value
         val direct = state.menuAccess[menuKey]
         if (direct != null) return direct
 

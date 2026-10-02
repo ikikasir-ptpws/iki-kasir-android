@@ -17,9 +17,6 @@ data class UserDto(
     @get:PropertyName("email") @set:PropertyName("email")
     var email: String = "",
 
-    @get:PropertyName("password") @set:PropertyName("password")
-    var password: String = "",
-
     @get:PropertyName("roleId") @set:PropertyName("roleId")
     var roleId: String = "Kasir",
 
@@ -42,7 +39,6 @@ data class UserDto(
             id = id,
             fullName = fullName,
             email = email,
-            password = password,
             roleId = roleId,
             isActive = isActive,
             photoUrl = photoUrl,
@@ -57,7 +53,6 @@ data class UserDto(
             id = id,
             fullName = fullName,
             email = email,
-            password = password,
             roleId = roleId,
             isActive = isActive,
             photoUrl = photoUrl,
@@ -74,7 +69,6 @@ fun User.toDto(): UserDto {
         id = id,
         fullName = fullName,
         email = email,
-        password = password,
         roleId = roleId,
         isActive = isActive,
         photoUrl = photoUrl,

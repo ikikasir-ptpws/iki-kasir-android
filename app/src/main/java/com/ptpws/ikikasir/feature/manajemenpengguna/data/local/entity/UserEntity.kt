@@ -18,9 +18,6 @@ data class UserEntity(
     @ColumnInfo(name = "email")
     val email: String,
 
-    @ColumnInfo(name = "password")
-    val password: String,
-
     @ColumnInfo(name = "roleId")
     val roleId: String,
 
@@ -47,7 +44,6 @@ data class UserEntity(
             id = id,
             fullName = fullName,
             email = email,
-            password = password,
             roleId = roleId,
             isActive = isActive,
             photoUrl = photoUrl,
@@ -63,7 +59,6 @@ fun User.toEntity(isSynced: Boolean = true, isDeleted: Boolean = false): UserEnt
         id = id,
         fullName = fullName,
         email = email,
-        password = password,
         roleId = roleId,
         isActive = isActive,
         photoUrl = photoUrl,

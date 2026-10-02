@@ -100,6 +100,33 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun sendPasswordResetEmail(email: String, onResult: (Boolean, String) -> Unit) {
+        val cleanEmail = email.trim()
+        if (cleanEmail.isEmpty()) {
+            onResult(false, "Masukkan email Anda terlebih dahulu.")
+            return
+        }
+
+        viewModelScope.launch {
+            repository.sendPasswordResetEmail(cleanEmail).collect { result ->
+                result.fold(
+                    onSuccess = {
+                        logActivityUseCase(
+                            title = "Lupa Kata Sandi: $cleanEmail",
+                            description = "Permintaan reset kata sandi dikirim via email.",
+                            category = "AUTHENTICATION",
+                            action = "RESET_PASSWORD"
+                        )
+                        onResult(true, "Instruksi reset kata sandi telah dikirim ke email $cleanEmail. Silakan periksa inbox atau folder spam email Anda.")
+                    },
+                    onFailure = { error ->
+                        onResult(false, error.message ?: "Gagal mengirimkan link reset kata sandi.")
+                    }
+                )
+            }
+        }
+    }
+
     fun logout() {
         android.util.Log.d("AuthStatus", "Proses Logout...")
         viewModelScope.launch {

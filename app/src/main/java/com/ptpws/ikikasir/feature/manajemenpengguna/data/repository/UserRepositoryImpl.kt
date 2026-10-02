@@ -75,12 +75,13 @@ class UserRepositoryImpl @Inject constructor(
         return localDao.getUserByIdFlow(id).map { it?.toDomain() }
     }
 
-    override suspend fun insertUser(user: User): Flow<Result<Unit>> = flow {
+    override suspend fun insertUser(user: User, plainPassword: String): Flow<Result<Unit>> = flow {
         val isOnline = networkMonitor.isConnected()
         Log.d(TAG, "insertUser dipanggil: fullName='${user.fullName}', isOnline=$isOnline")
 
         if (isOnline) {
-            createAuthUserIfOnline(user)
+            // Buat Firebase Auth account menggunakan password dari input form (tidak disimpan ke DB)
+            createAuthUserIfOnline(email = user.email, plainPassword = plainPassword)
             try {
                 Log.d(TAG, "Online: Mengirim data ke Firestore collection 'users' dengan ID '${user.id}'...")
                 remoteDataSource.saveUser(user.toDto())
@@ -99,8 +100,8 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun createAuthUserIfOnline(user: User) {
-        if (user.email.isBlank() || user.password.isBlank()) return
+    private suspend fun createAuthUserIfOnline(email: String, plainPassword: String) {
+        if (email.isBlank() || plainPassword.isBlank()) return
         try {
             val appName = "SecondaryAuthApp"
             val secondaryApp = try {
@@ -111,11 +112,11 @@ class UserRepositoryImpl @Inject constructor(
             }
             val secondaryAuth = FirebaseAuth.getInstance(secondaryApp)
             try {
-                secondaryAuth.createUserWithEmailAndPassword(user.email.trim(), user.password).await()
-                Log.d(TAG, "Secondary Auth: Akun ${user.email} berhasil terdaftar di Firebase Auth")
+                secondaryAuth.createUserWithEmailAndPassword(email.trim(), plainPassword).await()
+                Log.d(TAG, "Secondary Auth: Akun $email berhasil terdaftar di Firebase Auth")
                 secondaryAuth.signOut()
             } catch (e: Exception) {
-                Log.w(TAG, "Secondary Auth: Terjadi kesalahan / sudah terdaftar ${user.email}: ${e.message}")
+                Log.w(TAG, "Secondary Auth: Terjadi kesalahan / sudah terdaftar $email: ${e.message}")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Secondary Auth exception: ${e.message}", e)

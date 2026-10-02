@@ -153,7 +153,9 @@ class UserViewModel @Inject constructor(
                         id = existing.id,
                         fullName = existing.fullName,
                         email = existing.email,
-                        password = existing.password,
+                        // password tidak disimpan di DB, field dikosongkan saat edit
+                        password = "",
+                        confirmPassword = "",
                         roleId = existing.roleId,
                         isActive = existing.isActive,
                         photoUrl = existing.photoUrl
@@ -181,17 +183,27 @@ class UserViewModel @Inject constructor(
             _formState.update { it.copy(error = message) }
             return
         }
-        if (current.password.isBlank()) {
-            val message = "Kata sandi tidak boleh kosong"
-            GlobalCrudResultDialog.failure(message)
-            _formState.update { it.copy(error = message) }
-            return
-        }
-        if (current.password.length < 6) {
-            val message = "Kata sandi minimal 6 karakter"
-            GlobalCrudResultDialog.failure(message)
-            _formState.update { it.copy(error = message) }
-            return
+        val isEdit = current.id.isNotBlank()
+        if (!isEdit) {
+            // Tambah pengguna baru: password wajib diisi
+            if (current.password.isBlank()) {
+                val message = "Kata sandi tidak boleh kosong"
+                GlobalCrudResultDialog.failure(message)
+                _formState.update { it.copy(error = message) }
+                return
+            }
+            if (current.password.length < 6) {
+                val message = "Kata sandi minimal 6 karakter"
+                GlobalCrudResultDialog.failure(message)
+                _formState.update { it.copy(error = message) }
+                return
+            }
+            if (current.password != current.confirmPassword) {
+                val message = "Konfirmasi kata sandi tidak cocok"
+                GlobalCrudResultDialog.failure(message)
+                _formState.update { it.copy(error = message) }
+                return
+            }
         }
         if (current.roleId.isBlank()) {
             val message = "Pilih role terlebih dahulu"
@@ -203,11 +215,11 @@ class UserViewModel @Inject constructor(
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, error = null) }
             val userId = if (current.id.isBlank()) UUID.randomUUID().toString() else current.id
+            // User domain model TIDAK mengandung password
             val user = User(
                 id = userId,
                 fullName = current.fullName.trim(),
                 email = current.email.trim(),
-                password = current.password,
                 roleId = current.roleId,
                 isActive = current.isActive,
                 photoUrl = current.photoUrl,
@@ -215,8 +227,12 @@ class UserViewModel @Inject constructor(
                 updatedAt = Timestamp.now()
             )
 
-            val isEdit = current.id.isNotBlank()
-            val flow = if (!isEdit) insertUserUseCase(user) else updateUserUseCase(user)
+            val flow = if (!isEdit) {
+                // plainPassword hanya diteruskan ke Firebase Auth, tidak disimpan
+                insertUserUseCase(user, current.password)
+            } else {
+                updateUserUseCase(user)
+            }
             flow.collect { result ->
                 result.onSuccess {
                     GlobalCrudResultDialog.success(
@@ -251,3 +267,4 @@ class UserViewModel @Inject constructor(
         _listState.update { it.copy(message = null, error = null) }
     }
 }
+

@@ -37,6 +37,13 @@ import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import java.io.File
+import java.io.FileOutputStream
 import kotlinx.coroutines.launch
 
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -59,11 +66,13 @@ fun ProfilScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val userProfileState by viewModel.userProfileState.collectAsState()
     val liveNotaSetting by viewModel.notaSetting.collectAsState()
     val liveTaxSetting by viewModel.taxSetting.collectAsState()
     val livePaymentMethodSetting by viewModel.paymentMethodSetting.collectAsState()
     val liveTableSetting by viewModel.tableSetting.collectAsState()
 
+    var showEditProfilDialog by remember { mutableStateOf(false) }
     var showPpnDialog by remember { mutableStateOf(false) }
     var showStrukDialog by remember { mutableStateOf(false) }
     var showMetodePembayaranDialog by remember { mutableStateOf(false) }
@@ -174,6 +183,12 @@ fun ProfilScreen(
 
             // ── Card Profil
             item {
+                val user = userProfileState.user
+                val displayName = user?.fullName?.takeIf { it.isNotBlank() } ?: "Admin User"
+                val displayRole = userProfileState.roleName.takeIf { it.isNotBlank() } ?: "System Administrator"
+                val userPhoto = user?.photoUrl.orEmpty()
+                var avatarLoadError by remember(userPhoto) { mutableStateOf(false) }
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -188,7 +203,9 @@ fun ProfilScreen(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Box(
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            modifier = Modifier
+                                .padding(bottom = 8.dp)
+                                .clickable { showEditProfilDialog = true }
                         ) {
                             Box(
                                 modifier = Modifier
@@ -198,12 +215,22 @@ fun ProfilScreen(
                                     .border(2.dp, Color(0xFFEEF2FF), RoundedCornerShape(20.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = "Admin User",
-                                    tint = Color(0xFF9CA3AF),
-                                    modifier = Modifier.size(50.dp)
-                                )
+                                if (userPhoto.isNotBlank() && !avatarLoadError) {
+                                    AsyncImage(
+                                        model = userPhoto,
+                                        contentDescription = displayName,
+                                        contentScale = ContentScale.Crop,
+                                        onError = { avatarLoadError = true },
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = displayName,
+                                        tint = Color(0xFF9CA3AF),
+                                        modifier = Modifier.size(50.dp)
+                                    )
+                                }
                             }
                             Box(
                                 modifier = Modifier
@@ -225,14 +252,14 @@ fun ProfilScreen(
                         }
 
                         Text(
-                            text = "Admin User",
+                            text = displayName,
                             fontFamily = interfamily,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF111827)
                         )
                         Text(
-                            text = "System Administrator",
+                            text = displayRole,
                             fontFamily = interfamily,
                             fontSize = 13.sp,
                             color = Color(0xFF6B7280)
@@ -241,7 +268,10 @@ fun ProfilScreen(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         Button(
-                            onClick = onEditProfil,
+                            onClick = {
+                                onEditProfil()
+                                showEditProfilDialog = true
+                            },
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFFEEF2FF)
@@ -1214,6 +1244,186 @@ fun ProfilScreen(
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White
                             )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Dialog Edit Profil
+    if (showEditProfilDialog) {
+        val currentUser = userProfileState.user
+        var editFullName by remember(currentUser) { mutableStateOf(currentUser?.fullName.orEmpty()) }
+        var editPhotoUrl by remember(currentUser) { mutableStateOf(currentUser?.photoUrl.orEmpty()) }
+        var isSavingProfile by remember { mutableStateOf(false) }
+
+        val imagePickerLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent()
+        ) { uri: Uri? ->
+            uri?.let { sourceUri ->
+                try {
+                    val directory = File(context.filesDir, "user_images")
+                    if (!directory.exists()) directory.mkdirs()
+                    val destinationFile = File(directory, "user_${currentUser?.id ?: "profile"}_${System.currentTimeMillis()}.jpg")
+                    context.contentResolver.openInputStream(sourceUri)?.use { input ->
+                        FileOutputStream(destinationFile).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    editPhotoUrl = Uri.fromFile(destinationFile).toString()
+                } catch (e: Exception) {
+                    editPhotoUrl = sourceUri.toString()
+                }
+            }
+        }
+
+        Dialog(onDismissRequest = { if (!isSavingProfile) showEditProfilDialog = false }) {
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(22.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Edit Profil",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color(0xFF1E293B)
+                        )
+                        IconButton(
+                            onClick = { showEditProfilDialog = false },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Tutup",
+                                tint = Color(0xFF94A3B8)
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = Color(0xFFF1F5F9))
+
+                    // Photo preview & Upload button
+                    Box(
+                        modifier = Modifier
+                            .size(90.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFE5E7EB))
+                            .clickable { imagePickerLauncher.launch("image/*") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (editPhotoUrl.isNotBlank()) {
+                            AsyncImage(
+                                model = editPhotoUrl,
+                                contentDescription = "Foto Profil",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Default Avatar",
+                                tint = Color(0xFF9CA3AF),
+                                modifier = Modifier.size(50.dp)
+                            )
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = { imagePickerLauncher.launch("image/*") },
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Pilih / Ubah Foto Profil", fontFamily = interfamily, fontSize = 12.sp)
+                    }
+
+                    // Field Nama Lengkap
+                    OutlinedTextField(
+                        value = editFullName,
+                        onValueChange = { editFullName = it },
+                        label = { Text("Nama Lengkap", fontFamily = interfamily) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF4F46E5),
+                            unfocusedBorderColor = Color(0xFFE5E7EB)
+                        )
+                    )
+
+                    // Email Readonly
+                    OutlinedTextField(
+                        value = currentUser?.email.orEmpty(),
+                        onValueChange = {},
+                        enabled = false,
+                        label = { Text("Email (Tersinkron)", fontFamily = interfamily) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    // Role Readonly
+                    OutlinedTextField(
+                        value = userProfileState.roleName,
+                        onValueChange = {},
+                        enabled = false,
+                        label = { Text("Role / Hak Akses", fontFamily = interfamily) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showEditProfilDialog = false },
+                            enabled = !isSavingProfile,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Batal", fontFamily = interfamily, color = Color(0xFF475569))
+                        }
+
+                        Button(
+                            onClick = {
+                                isSavingProfile = true
+                                viewModel.updateUserProfile(editFullName, editPhotoUrl) {
+                                    isSavingProfile = false
+                                    showEditProfilDialog = false
+                                }
+                            },
+                            enabled = !isSavingProfile && editFullName.isNotBlank(),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                        ) {
+                            if (isSavingProfile) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                            } else {
+                                Text("Simpan", fontFamily = interfamily, color = Color.White)
+                            }
                         }
                     }
                 }
