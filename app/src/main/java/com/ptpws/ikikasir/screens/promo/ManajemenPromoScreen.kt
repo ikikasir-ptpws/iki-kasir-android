@@ -35,6 +35,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
+import com.ptpws.ikikasir.feature.promo.domain.model.isAvailableOn
+import com.ptpws.ikikasir.feature.promo.domain.model.isEndingWithinDays
+import com.ptpws.ikikasir.feature.promo.domain.model.isExpiredOn
+import com.ptpws.ikikasir.feature.promo.domain.model.isUpcomingOn
 import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.PromoViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,9 +53,8 @@ fun ManajemenPromoScreen(
     var promoToDelete by remember { mutableStateOf<Promo?>(null) }
     var selectedPromoForDetail by remember { mutableStateOf<Promo?>(null) }
 
-    val activeCount = remember(state.promoList) { state.promoList.count { it.isActive } }
-    // Count promos whose end date is within the next 7 days from today (simple: check isActive with tanggalBerakhir set)
-    val endingThisWeekCount = remember(state.promoList) { state.promoList.count { it.isActive && it.tanggalBerakhir.isNotBlank() } }
+    val activeCount = remember(state.promoList) { state.promoList.count { it.isAvailableOn() } }
+    val endingThisWeekCount = remember(state.promoList) { state.promoList.count { it.isEndingWithinDays(7) } }
 
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
@@ -382,7 +385,8 @@ fun ManajemenPromoScreen(
                                 horizontalArrangement = Arrangement.spacedBy(2.dp)
                             ) {
                                 Switch(
-                                    checked = promo.isActive,
+                                    checked = promo.isActive && !promo.isExpiredOn(),
+                                    enabled = !promo.isExpiredOn(),
                                     onCheckedChange = { viewModel.toggleStatus(promo.id, promo.isActive) },
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = Color.White,
@@ -550,14 +554,19 @@ fun DetailPromoDialog(
 
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = if (promo.isActive) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)
+                    color = if (promo.isAvailableOn()) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)
                 ) {
                     Text(
-                        text = if (promo.isActive) "Aktif" else "Nonaktif",
+                        text = when {
+                            promo.isExpiredOn() -> "Kedaluwarsa"
+                            promo.isUpcomingOn() -> "Akan Datang"
+                            promo.isAvailableOn() -> "Aktif"
+                            else -> "Nonaktif"
+                        },
                         fontFamily = interfamily,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (promo.isActive) Color(0xFF16A34A) else Color(0xFFEF4444),
+                        color = if (promo.isAvailableOn()) Color(0xFF16A34A) else Color(0xFFEF4444),
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     )
                 }
