@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
+import com.ptpws.ikikasir.feature.promo.domain.model.isAvailableOn
+import com.ptpws.ikikasir.feature.promo.domain.model.isExpiredOn
+import com.ptpws.ikikasir.feature.promo.domain.model.isUpcomingOn
 import com.ptpws.ikikasir.feature.promo.domain.usecase.DeletePromoUseCase
 import com.ptpws.ikikasir.feature.promo.domain.usecase.GetPromoListUseCase
 import com.ptpws.ikikasir.feature.promo.domain.usecase.TogglePromoStatusUseCase
@@ -137,9 +140,9 @@ class PromoViewModel @Inject constructor(
                     promo.tipePromo.contains(query, ignoreCase = true)
 
             val matchesTab = when (filterTab) {
-                "Aktif" -> promo.isActive
-                "Akan Datang" -> !promo.isActive
-                "Kedaluwarsa" -> false
+                "Aktif" -> promo.isAvailableOn()
+                "Akan Datang" -> promo.isUpcomingOn()
+                "Kedaluwarsa" -> promo.isExpiredOn()
                 else -> true
             }
 
