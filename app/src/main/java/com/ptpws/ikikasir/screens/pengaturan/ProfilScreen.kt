@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,6 +29,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -48,6 +52,7 @@ import kotlinx.coroutines.launch
 
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel.ProfilViewModel
+import com.ptpws.ikikasir.feature.auth.presentation.viewmodel.SecurityViewModel
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,6 +60,7 @@ import com.ptpws.ikikasir.screens.navigation.AppScreen
 fun ProfilScreen(
     navController: NavController,
     viewModel: ProfilViewModel = hiltViewModel(),
+    securityViewModel: SecurityViewModel = hiltViewModel(),
     onEditProfil: () -> Unit = {},
     onKeamanan: () -> Unit = {},
     onAuditLog: () -> Unit = {},
@@ -67,6 +73,7 @@ fun ProfilScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val userProfileState by viewModel.userProfileState.collectAsState()
+    val securityState by securityViewModel.state.collectAsState()
     val liveNotaSetting by viewModel.notaSetting.collectAsState()
     val liveTaxSetting by viewModel.taxSetting.collectAsState()
     val livePaymentMethodSetting by viewModel.paymentMethodSetting.collectAsState()
@@ -78,6 +85,14 @@ fun ProfilScreen(
     var showMetodePembayaranDialog by remember { mutableStateOf(false) }
     var showMejaDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showSecurityDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(securityState.isSuccess) {
+        if (securityState.isSuccess) {
+            showSecurityDialog = false
+            securityViewModel.clearForm()
+        }
+    }
 
     // State Setting Meja — diinisialisasi dari ViewModel (Room DB + Firestore) & SharedPreferences
     val tablePrefs = remember { com.ptpws.ikikasir.feature.pengaturan.data.preferences.TableSettingPreferences(context) }
@@ -312,7 +327,11 @@ fun ProfilScreen(
                                 iconBackground = Color(0xFFEEF2FF),
                                 iconTint = Color(0xFF4F46E5),
                                 label = "Keamanan",
-                                onClick = onKeamanan
+                                onClick = {
+                                    onKeamanan()
+                                    securityViewModel.clearForm()
+                                    showSecurityDialog = true
+                                }
                             )
                             HorizontalDivider(color = Color(0xFFF3F4F6))
                             MenuAkunItem(
@@ -1430,6 +1449,155 @@ fun ProfilScreen(
             }
         }
     }
+
+    if (showSecurityDialog) {
+        ChangePasswordDialog(
+            state = securityState,
+            onDismiss = {
+                if (!securityState.isLoading) {
+                    showSecurityDialog = false
+                    securityViewModel.clearForm()
+                }
+            },
+            onCurrentPasswordChange = securityViewModel::updateCurrentPassword,
+            onNewPasswordChange = securityViewModel::updateNewPassword,
+            onConfirmPasswordChange = securityViewModel::updateConfirmPassword,
+            onSubmit = securityViewModel::changePassword
+        )
+    }
+}
+
+@Composable
+private fun ChangePasswordDialog(
+    state: com.ptpws.ikikasir.feature.auth.presentation.state.SecurityState,
+    onDismiss: () -> Unit,
+    onCurrentPasswordChange: (String) -> Unit,
+    onNewPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+    onSubmit: () -> Unit
+) {
+    var showCurrentPassword by remember { mutableStateOf(false) }
+    var showNewPassword by remember { mutableStateOf(false) }
+    var showConfirmPassword by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(22.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Ubah Kata Sandi",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Masukkan kata sandi saat ini, lalu tentukan kata sandi baru.",
+                    fontFamily = interfamily,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                PasswordInput(
+                    label = "Kata sandi saat ini",
+                    value = state.currentPassword,
+                    visible = showCurrentPassword,
+                    enabled = !state.isLoading,
+                    onValueChange = onCurrentPasswordChange,
+                    onToggleVisibility = { showCurrentPassword = !showCurrentPassword }
+                )
+                PasswordInput(
+                    label = "Kata sandi baru (minimal 6 karakter)",
+                    value = state.newPassword,
+                    visible = showNewPassword,
+                    enabled = !state.isLoading,
+                    onValueChange = onNewPasswordChange,
+                    onToggleVisibility = { showNewPassword = !showNewPassword }
+                )
+                PasswordInput(
+                    label = "Konfirmasi kata sandi baru",
+                    value = state.confirmPassword,
+                    visible = showConfirmPassword,
+                    enabled = !state.isLoading,
+                    onValueChange = onConfirmPasswordChange,
+                    onToggleVisibility = { showConfirmPassword = !showConfirmPassword }
+                )
+                state.errorMessage?.let { message ->
+                    Text(
+                        text = message,
+                        fontFamily = interfamily,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        enabled = !state.isLoading,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Batal", fontFamily = interfamily)
+                    }
+                    Button(
+                        onClick = onSubmit,
+                        enabled = !state.isLoading,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                    ) {
+                        if (state.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Simpan", fontFamily = interfamily, color = Color.White)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PasswordInput(
+    label: String,
+    value: String,
+    visible: Boolean,
+    enabled: Boolean,
+    onValueChange: (String) -> Unit,
+    onToggleVisibility: () -> Unit
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label, fontFamily = interfamily, fontSize = 12.sp) },
+        singleLine = true,
+        enabled = enabled,
+        visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        trailingIcon = {
+            IconButton(onClick = onToggleVisibility, enabled = enabled) {
+                Icon(
+                    imageVector = if (visible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                    contentDescription = if (visible) "Sembunyikan kata sandi" else "Tampilkan kata sandi"
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp)
+    )
 }
 
 // ── Menu Item Akun (reusable)
