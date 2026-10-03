@@ -7,9 +7,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
@@ -41,11 +43,15 @@ import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import kotlinx.coroutines.launch
@@ -121,18 +127,92 @@ fun ProfilScreen(
     var namaWifi by remember { mutableStateOf(savedNota.wifiName) }
     var kataSandiWifi by remember { mutableStateOf(savedNota.wifiPassword) }
     var ukuranKertas by remember { mutableStateOf(savedNota.paperWidth) }
+    var logoUrl by remember { mutableStateOf(savedNota.logoUrl) }
+
+    val notaLogoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                // 1. Validasi ukuran file maksimal 2MB
+                var fileSizeInBytes: Long = 0L
+                try {
+                    context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val sizeIndex = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
+                            if (sizeIndex != -1) {
+                                fileSizeInBytes = cursor.getLong(sizeIndex)
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+
+                if (fileSizeInBytes <= 0L) {
+                    try {
+                        context.contentResolver.openInputStream(uri)?.use {
+                            fileSizeInBytes = it.available().toLong()
+                        }
+                    } catch (_: Exception) {}
+                }
+
+                val maxSizeBytes = 2 * 1024 * 1024L // 2 MB
+                if (fileSizeInBytes > maxSizeBytes) {
+                    Toast.makeText(context, "Ukuran gambar terlalu besar. Maksimal 2MB!", Toast.LENGTH_LONG).show()
+                    return@rememberLauncherForActivityResult
+                }
+
+                // 2. Decode & kompresi bitmap agar tersimpan rapi di Room DB dan Firestore
+                val originalBitmap = context.contentResolver.openInputStream(uri)?.use {
+                    BitmapFactory.decodeStream(it)
+                }
+
+                if (originalBitmap != null) {
+                    val maxDimension = 400
+                    val scale = minOf(maxDimension.toFloat() / originalBitmap.width, maxDimension.toFloat() / originalBitmap.height, 1f)
+                    val targetWidth = (originalBitmap.width * scale).toInt().coerceAtLeast(1)
+                    val targetHeight = (originalBitmap.height * scale).toInt().coerceAtLeast(1)
+                    val scaledBitmap = if (scale < 1f) {
+                        Bitmap.createScaledBitmap(originalBitmap, targetWidth, targetHeight, true)
+                    } else {
+                        originalBitmap
+                    }
+
+                    val baos = ByteArrayOutputStream()
+                    scaledBitmap.compress(Bitmap.CompressFormat.PNG, 90, baos)
+                    val imageBytes = baos.toByteArray()
+
+                    // Simpan salinan file lokal di internal storage sebagai file cache
+                    val directory = File(context.filesDir, "store_logo")
+                    if (!directory.exists()) directory.mkdirs()
+                    val destinationFile = File(directory, "store_logo.png")
+                    FileOutputStream(destinationFile).use { fos ->
+                        fos.write(imageBytes)
+                    }
+
+                    // Format Base64 disimpan di Room DB dan Firestore agar persisten & multi-device
+                    val base64String = "data:image/png;base64," + android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP)
+                    logoUrl = base64String
+                } else {
+                    Toast.makeText(context, "Gagal memproses gambar logo", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Terjadi kesalahan saat memproses logo: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     LaunchedEffect(liveTableSetting) {
         isMejaAktif = liveTableSetting.isTableEnabled
     }
 
     LaunchedEffect(liveNotaSetting) {
-        if (liveNotaSetting.storeName.isNotBlank() || liveNotaSetting.storeAddress.isNotBlank()) {
+        if (liveNotaSetting.storeName.isNotBlank() || liveNotaSetting.storeAddress.isNotBlank() || liveNotaSetting.logoUrl.isNotBlank()) {
             namaToko = liveNotaSetting.storeName
             alamatToko = liveNotaSetting.storeAddress
             namaWifi = liveNotaSetting.wifiName
             kataSandiWifi = liveNotaSetting.wifiPassword
             ukuranKertas = liveNotaSetting.paperWidth
+            logoUrl = liveNotaSetting.logoUrl
         }
     }
 
@@ -880,15 +960,20 @@ fun ProfilScreen(
 
     // ── Dialog Setting Nota / Struk Pembayaran
     if (showStrukDialog) {
+        val strukScrollState = rememberScrollState()
         Dialog(onDismissRequest = { showStrukDialog = false }) {
             Card(
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .verticalScroll(strukScrollState)
                         .padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
@@ -917,6 +1002,151 @@ fun ProfilScreen(
                     }
 
                     HorizontalDivider(color = Color(0xFFF3F4F6))
+
+                    // ── Upload Logo Nota / Struk ──
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Logo Nota / Struk",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp,
+                            color = Color(0xFF374151)
+                        )
+
+                        if (logoUrl.isNotBlank()) {
+                            val logoModel = remember(logoUrl) {
+                                if (logoUrl.startsWith("data:image")) {
+                                    try {
+                                        android.util.Base64.decode(logoUrl.substringAfter("base64,"), android.util.Base64.DEFAULT)
+                                    } catch (_: Exception) {
+                                        logoUrl
+                                    }
+                                } else {
+                                    logoUrl
+                                }
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color(0xFFF9FAFB), RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(12.dp))
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                AsyncImage(
+                                    model = logoModel,
+                                    contentDescription = "Logo Nota",
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Fit
+                                )
+
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(
+                                        text = "Logo Toko Terpasang",
+                                        fontFamily = interfamily,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF111827)
+                                    )
+                                    Text(
+                                        text = "Akan tampil di bagian atas nota saat dicetak",
+                                        fontFamily = interfamily,
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF6B7280)
+                                    )
+                                }
+
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    IconButton(
+                                        onClick = { notaLogoPickerLauncher.launch("image/*") },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Edit,
+                                            contentDescription = "Ganti Logo",
+                                            tint = Color(0xFF4F46E5),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = { logoUrl = "" },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Delete,
+                                            contentDescription = "Hapus Logo",
+                                            tint = Color(0xFFEF4444),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { notaLogoPickerLauncher.launch("image/*") },
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFF9FAFB),
+                                border = BorderStroke(1.dp, Color(0xFFD1D5DB))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 14.dp, horizontal = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFFEEF2FF),
+                                        modifier = Modifier.size(40.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Image,
+                                                contentDescription = null,
+                                                tint = Color(0xFF4F46E5),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Upload Logo Struk",
+                                            fontFamily = interfamily,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF1F2937)
+                                        )
+                                        Text(
+                                            text = "Ketuk untuk memilih gambar logo toko",
+                                            fontFamily = interfamily,
+                                            fontSize = 11.sp,
+                                            color = Color(0xFF6B7280)
+                                        )
+                                    }
+                                    Icon(
+                                        imageVector = Icons.Outlined.Upload,
+                                        contentDescription = "Pilih Gambar",
+                                        tint = Color(0xFF4F46E5),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
 
                     OutlinedTextField(
                         value = namaToko,
@@ -1029,7 +1259,8 @@ fun ProfilScreen(
                                     storeAddress = alamatToko,
                                     wifiName     = namaWifi,
                                     wifiPassword = kataSandiWifi,
-                                    paperWidth   = ukuranKertas
+                                    paperWidth   = ukuranKertas,
+                                    logoUrl      = logoUrl
                                 )
                                 // 1. Simpan ke SharedPreferences
                                 notaPrefs.saveSetting(updatedSetting)
