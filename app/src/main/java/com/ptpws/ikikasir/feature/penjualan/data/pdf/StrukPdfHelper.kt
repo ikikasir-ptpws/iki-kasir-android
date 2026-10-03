@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.penjualan.data.pdf
 import android.content.Context
 import android.graphics.*
 import android.graphics.pdf.PdfDocument
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import com.google.zxing.BarcodeFormat
@@ -30,25 +31,15 @@ object StrukPdfHelper {
         val pdfDoc = PdfDocument()
 
         val notaSetting = NotaSettingPreferences(context).getSetting()
-        val taxSetting = com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context).getSetting()
 
         // 80mm thermal receipt dimensions in points (384 pt x dynamic height)
         val width = 384
         var calculatedHeight = 650 + (transaksi.items.size * 45)
-        val isPpnInklusif = taxSetting.type == com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_INCLUSIVE
-        val totalSubtotalCheck = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
-        val calcPpnCheck = if (taxSetting.isActive && taxSetting.percentage > 0) {
-            if (isPpnInklusif) {
-                totalSubtotalCheck - (totalSubtotalCheck / (1.0 + taxSetting.percentage / 100.0))
-            } else {
-                totalSubtotalCheck * (taxSetting.percentage / 100.0)
-            }
-        } else 0.0
-        val effectivePpnCheck = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calcPpnCheck
-        if (effectivePpnCheck > 0) calculatedHeight += 20
+        if (transaksi.isPpnEksklusif) calculatedHeight += 20
         if (transaksi.discount > 0) calculatedHeight += 20
         if (transaksi.notes.isNotBlank()) calculatedHeight += 50
         if (notaSetting.wifiName.isNotBlank() || notaSetting.wifiPassword.isNotBlank()) calculatedHeight += 40
+        if (notaSetting.logoUrl.isNotBlank()) calculatedHeight += 70
 
         val pageInfo = PdfDocument.PageInfo.Builder(width, calculatedHeight, 1).create()
         val page = pdfDoc.startPage(pageInfo)
@@ -100,9 +91,18 @@ object StrukPdfHelper {
             "Rp " + NumberFormat.getNumberInstance(Locale("id", "ID")).format(amount.toLong())
         }
 
-        // Load NotaSetting & TaxSetting
+        // Load NotaSetting
         val notaSetting = NotaSettingPreferences(context).getSetting()
-        val taxSetting = com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context).getSetting()
+
+        // ── 0. Logo Toko ────────
+        if (notaSetting.logoUrl.isNotBlank()) {
+            val logoBitmap = loadLogoBitmap(context, notaSetting.logoUrl, maxWidth = 120, maxHeight = 60)
+            if (logoBitmap != null) {
+                val logoX = (width - logoBitmap.width) / 2f
+                canvas.drawBitmap(logoBitmap, logoX, y, null)
+                y += logoBitmap.height + 10f
+            }
+        }
 
         // ── 1. Header — Nama Toko & Alamat ────────
         val storeName = notaSetting.storeName.ifBlank { "IKIKASIR" }
@@ -252,20 +252,11 @@ object StrukPdfHelper {
         }
 
         // ── 5. Payment Summary Card ──
-        val isPpnInklusif = taxSetting.type == com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_INCLUSIVE
+        val isPpnEksklusif = transaksi.isPpnEksklusif
         val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
-        val calcPpn = if (taxSetting.isActive && taxSetting.percentage > 0) {
-            if (isPpnInklusif) {
-                totalSubtotal - (totalSubtotal / (1.0 + taxSetting.percentage / 100.0))
-            } else {
-                totalSubtotal * (taxSetting.percentage / 100.0)
-            }
-        } else 0.0
-        val effectivePpn = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calcPpn
-        val hasPpn = effectivePpn > 0
         val hasDiscount = transaksi.discount > 0
         var summaryHeight = 120f
-        if (hasPpn) summaryHeight += 16f
+        if (isPpnEksklusif) summaryHeight += 16f
         if (hasDiscount) summaryHeight += 16f
 
         val summaryBox = RectF(margin, y, width - margin, y + summaryHeight)
@@ -273,7 +264,7 @@ object StrukPdfHelper {
         canvas.drawRoundRect(summaryBox, 12f, 12f, paint)
 
         var sumY = y + 18f
-        val grandTotal = if (transaksi.total > 0) transaksi.total else (totalSubtotal - transaksi.discount + (if (isPpnInklusif) 0.0 else effectivePpn)).coerceAtLeast(0.0)
+        val grandTotal = if (transaksi.total > 0) transaksi.total else (totalSubtotal - transaksi.discount + (if (isPpnEksklusif) transaksi.ppnAmount else 0.0)).coerceAtLeast(0.0)
         val paidAmount = if (transaksi.paymentAmount > 0 && transaksi.paymentAmount >= grandTotal) transaksi.paymentAmount else grandTotal
         val returnChange = (paidAmount - grandTotal).coerceAtLeast(0.0)
 
@@ -291,19 +282,18 @@ object StrukPdfHelper {
         canvas.drawText(formatRupiah(totalSubtotal), width - margin - 12f, sumY, paint)
         sumY += 16f
 
-        // PPN if > 0
-        if (hasPpn) {
+        // PPN (hanya jika belum termasuk PPN / eksklusif)
+        if (isPpnEksklusif) {
             paint.textAlign = Paint.Align.LEFT
             paint.color = Color.parseColor("#64748B")
             paint.textSize = 10f
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            val ppnLabel = if (isPpnInklusif) "PPN (Termasuk)" else "PPN"
-            canvas.drawText(ppnLabel, margin + 12f, sumY, paint)
+            canvas.drawText("PPN", margin + 12f, sumY, paint)
 
             paint.textAlign = Paint.Align.RIGHT
             paint.color = Color.parseColor("#0F172A")
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            val ppnText = if (isPpnInklusif) formatRupiah(effectivePpn) else "+${formatRupiah(effectivePpn)}"
+            val ppnText = "+${transaksi.formattedPpnPercentage}"
             canvas.drawText(ppnText, width - margin - 12f, sumY, paint)
             sumY += 16f
         }
@@ -460,6 +450,34 @@ object StrukPdfHelper {
             bitmap
         } catch (e: Exception) {
             e.printStackTrace()
+            null
+        }
+    }
+
+    private fun loadLogoBitmap(context: Context, logoUrl: String, maxWidth: Int, maxHeight: Int): Bitmap? {
+        if (logoUrl.isBlank()) return null
+        return try {
+            val bitmap = if (logoUrl.startsWith("data:image") || logoUrl.startsWith("data:application")) {
+                val base64Data = logoUrl.substringAfter("base64,")
+                val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+            } else {
+                val uri = Uri.parse(logoUrl)
+                if (uri.scheme == "file" || uri.scheme == null) {
+                    val path = uri.path ?: logoUrl
+                    BitmapFactory.decodeFile(path)
+                } else {
+                    context.contentResolver.openInputStream(uri)?.use {
+                        BitmapFactory.decodeStream(it)
+                    }
+                }
+            } ?: return null
+
+            val scale = minOf(maxWidth.toFloat() / bitmap.width, maxHeight.toFloat() / bitmap.height, 1f)
+            val targetWidth = (bitmap.width * scale).toInt().coerceAtLeast(1)
+            val targetHeight = (bitmap.height * scale).toInt().coerceAtLeast(1)
+            Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+        } catch (e: Exception) {
             null
         }
     }
