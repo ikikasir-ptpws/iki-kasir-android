@@ -1,7 +1,9 @@
 package com.ptpws.ikikasir.feature.auth.data.repository
 
 import com.google.firebase.auth.AuthResult
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.ptpws.ikikasir.feature.auth.domain.repository.AuthRepository
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.dao.UserDao
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.entity.toEntity
@@ -148,6 +150,36 @@ class AuthRepositoryImpl @Inject constructor(
             }
             emit(Result.failure(Exception(msg)))
         }
+    }
+
+    override suspend fun changePassword(
+        currentPassword: String,
+        newPassword: String
+    ): Result<Unit> = runCatching {
+        val user = firebaseAuth.currentUser
+            ?: error("Sesi akun berakhir. Silakan masuk kembali.")
+        val email = user.email
+            ?: error("Akun ini tidak menggunakan email dan kata sandi. Gunakan metode reset akun.")
+        val credential = EmailAuthProvider.getCredential(email, currentPassword)
+        user.reauthenticate(credential).await()
+        user.updatePassword(newPassword).await()
+        Unit
+    }.recoverCatching { error ->
+        val message = when {
+            error.message?.contains("wrong-password", ignoreCase = true) == true ||
+                error.message?.contains("invalid-credential", ignoreCase = true) == true ->
+                "Kata sandi saat ini tidak sesuai."
+            error is FirebaseAuthRecentLoginRequiredException ||
+                error.message?.contains("requires-recent-login", ignoreCase = true) == true ||
+                error.message?.contains("requires recent authentication", ignoreCase = true) == true ->
+                "Sesi keamanan kedaluwarsa. Silakan keluar lalu masuk kembali."
+            error.message?.contains("network", ignoreCase = true) == true ->
+                "Koneksi internet bermasalah. Periksa koneksi lalu coba lagi."
+            error.message?.contains("weak-password", ignoreCase = true) == true ->
+                "Kata sandi baru terlalu lemah. Gunakan minimal 6 karakter."
+            else -> error.message ?: "Gagal mengubah kata sandi."
+        }
+        throw IllegalStateException(message, error)
     }
 
     override fun signOut() {
