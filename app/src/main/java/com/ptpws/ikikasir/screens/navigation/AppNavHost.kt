@@ -174,6 +174,9 @@ fun AppNavHost() {
 
                 ProfilScreen(
                     navController = navController,
+                    onAuditLog = {
+                        navController.navigate(AppScreen.AuditLog.route)
+                    },
                     onKeluar = {
                         authViewModel.logout()
                     }
