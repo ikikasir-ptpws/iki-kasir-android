@@ -23,6 +23,9 @@ data class NotaSettingDto(
     @get:PropertyName("paperWidth") @set:PropertyName("paperWidth")
     var paperWidth: String = "58mm",
 
+    @get:PropertyName("logoUrl") @set:PropertyName("logoUrl")
+    var logoUrl: String = "",
+
     @get:PropertyName("updatedAt") @set:PropertyName("updatedAt")
     var updatedAt: Timestamp = Timestamp.now()
 ) {
@@ -34,6 +37,7 @@ data class NotaSettingDto(
             wifiName = wifiName,
             wifiPassword = wifiPassword,
             paperWidth = paperWidth,
+            logoUrl = logoUrl,
             updatedAt = updatedAt,
             isSynced = true
         )
@@ -48,6 +52,7 @@ fun NotaSetting.toDto(): NotaSettingDto {
         wifiName = wifiName,
         wifiPassword = wifiPassword,
         paperWidth = paperWidth,
+        logoUrl = logoUrl,
         updatedAt = updatedAt
     )
 }
