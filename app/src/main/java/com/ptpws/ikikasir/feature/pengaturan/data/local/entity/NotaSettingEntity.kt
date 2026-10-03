@@ -27,6 +27,9 @@ data class NotaSettingEntity(
     @ColumnInfo(name = "paperWidth")
     val paperWidth: String = "58mm",
 
+    @ColumnInfo(name = "logoUrl")
+    val logoUrl: String = "",
+
     @ColumnInfo(name = "updatedAt")
     val updatedAt: Timestamp = Timestamp.now(),
 
@@ -41,6 +44,7 @@ data class NotaSettingEntity(
             wifiName = wifiName,
             wifiPassword = wifiPassword,
             paperWidth = paperWidth,
+            logoUrl = logoUrl,
             updatedAt = updatedAt,
             isSynced = isSynced
         )
@@ -55,6 +59,7 @@ fun NotaSetting.toEntity(isSynced: Boolean = this.isSynced): NotaSettingEntity {
         wifiName = wifiName,
         wifiPassword = wifiPassword,
         paperWidth = paperWidth,
+        logoUrl = logoUrl,
         updatedAt = updatedAt,
         isSynced = isSynced
     )
