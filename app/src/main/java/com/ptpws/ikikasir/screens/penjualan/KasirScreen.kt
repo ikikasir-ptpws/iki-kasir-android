@@ -53,7 +53,9 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting
 import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
+import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectivePrice
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.KasirViewModel
 import com.ptpws.ikikasir.screens.penjualan.component.PilihProdukTersediaDialog
 import java.text.NumberFormat
@@ -600,6 +602,7 @@ fun KasirScreen(
                                     CartItemCard(
                                         item = item,
                                         categoryName = categoryName,
+                                        taxSetting = state.taxSetting,
                                         onIncrement = { viewModel.updateQuantity(item.produk.id, item.quantity + 1) },
                                         onDecrement = { viewModel.updateQuantity(item.produk.id, item.quantity - 1) },
                                         onRemove = { viewModel.removeFromCart(item.produk.id) },
@@ -686,6 +689,7 @@ fun DashedTambahProdukButton(
 fun CartItemCard(
     item: CartItem,
     categoryName: String,
+    taxSetting: TaxSetting = TaxSetting(),
     onIncrement: () -> Unit,
     onDecrement: () -> Unit,
     onRemove: () -> Unit,
@@ -822,7 +826,7 @@ fun CartItemCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Rp ${formatRupiah(item.produk.price)}",
+                        text = "Rp ${formatRupiah(item.getEffectivePrice(taxSetting))}",
                         fontFamily = interfamily,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,

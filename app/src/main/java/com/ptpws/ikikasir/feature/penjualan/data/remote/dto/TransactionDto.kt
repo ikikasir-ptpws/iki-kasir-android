@@ -40,8 +40,14 @@ data class TransactionDto(
     @get:PropertyName("subtotal") @set:PropertyName("subtotal")
     var subtotal: Double = 0.0,
 
+    @get:PropertyName("ppnPercentage") @set:PropertyName("ppnPercentage")
+    var ppnPercentage: Double = 0.0,
+
     @get:PropertyName("ppnAmount") @set:PropertyName("ppnAmount")
     var ppnAmount: Double = 0.0,
+
+    @get:PropertyName("ppnType") @set:PropertyName("ppnType")
+    var ppnType: String = "",
 
     @get:PropertyName("discount") @set:PropertyName("discount")
     var discount: Double = 0.0,
@@ -107,7 +113,9 @@ data class TransactionDto(
             transactionNumber = transactionNumber,
             items = cartItems,
             subtotal = subtotal,
+            ppnPercentage = ppnPercentage,
             ppnAmount = ppnAmount,
+            ppnType = ppnType,
             discount = discount,
             total = total,
             paymentMethod = paymentMethod,
@@ -131,7 +139,7 @@ fun PenjualanTransaksi.toDto(): TransactionDto {
         mapOf(
             "productId" to cartItem.produk.id,
             "productName" to cartItem.produk.name,
-            "price" to cartItem.produk.sellingPrice,
+            "price" to cartItem.price,
             "quantity" to cartItem.quantity,
             "totalPrice" to cartItem.totalPrice,
             "imageUrl" to cartItem.produk.imageUrl
@@ -143,7 +151,9 @@ fun PenjualanTransaksi.toDto(): TransactionDto {
         transactionNumber = transactionNumber,
         items = itemsMapList,
         subtotal = subtotal,
+        ppnPercentage = ppnPercentage,
         ppnAmount = ppnAmount,
+        ppnType = ppnType,
         discount = discount,
         total = total,
         paymentMethod = paymentMethod,

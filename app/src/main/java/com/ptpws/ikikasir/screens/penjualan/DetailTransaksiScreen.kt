@@ -389,7 +389,7 @@ fun DetailTransaksiScreen(
                                 ProdukCardRow(
                                     namaProduk = item.produk.name,
                                     qty = item.quantity,
-                                    hargaSatuan = "Rp ${formatRupiah(item.produk.sellingPrice)}",
+                                    hargaSatuan = "Rp ${formatRupiah(item.price)}",
                                     totalHarga = "Rp ${formatRupiah(item.totalPrice)}",
                                     imageUrl = item.produk.imageUrl
                                 )
@@ -480,13 +480,11 @@ fun DetailTransaksiScreen(
 
                 // ── Card 4: Ringkasan Pembayaran (Gambar 1 Layout)
                 item {
-                    val taxSetting = remember {
-                        com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context).getSetting()
-                    }
                     val totalSubtotal = if (tx.subtotal > 0) tx.subtotal else tx.items.sumOf { it.subtotal }
-                    val calculatedPpn = if (taxSetting.isActive && taxSetting.percentage > 0) totalSubtotal * (taxSetting.percentage / 100.0) else 0.0
-                    val effectivePpn = if (tx.ppnAmount > 0) tx.ppnAmount else calculatedPpn
-                    val totalPembayaran = (totalSubtotal - tx.discount + effectivePpn).coerceAtLeast(0.0)
+                    val isPpnEksklusif = tx.isPpnEksklusif
+                    val formattedPercent = tx.formattedPpnPercentage
+                    val effectivePpn = tx.ppnAmount
+                    val totalPembayaran = if (tx.total > 0) tx.total else (totalSubtotal - tx.discount + (if (isPpnEksklusif) effectivePpn else 0.0)).coerceAtLeast(0.0)
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -506,10 +504,10 @@ fun DetailTransaksiScreen(
                                 nilaiColor = Color(0xFF334155)
                             )
 
-                            if (effectivePpn > 0) {
+                            if (isPpnEksklusif) {
                                 RingkasanBaris(
                                     label = "PPN",
-                                    nilai = "+ Rp ${formatRupiah(effectivePpn)}",
+                                    nilai = "+$formattedPercent",
                                     nilaiColor = Color(0xFF334155)
                                 )
                             }

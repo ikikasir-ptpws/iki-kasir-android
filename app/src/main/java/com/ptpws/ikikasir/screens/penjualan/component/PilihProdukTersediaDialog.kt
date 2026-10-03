@@ -34,6 +34,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectivePrice
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.KasirState
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import java.text.NumberFormat
@@ -341,7 +342,7 @@ fun PilihProdukTersediaDialog(
                                         Spacer(modifier = Modifier.height(4.dp))
 
                                         Text(
-                                            text = "Rp ${formatRupiah(produk.price)}",
+                                            text = "Rp ${formatRupiah(produk.getEffectivePrice(state.taxSetting))}",
                                             fontFamily = interfamily,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,

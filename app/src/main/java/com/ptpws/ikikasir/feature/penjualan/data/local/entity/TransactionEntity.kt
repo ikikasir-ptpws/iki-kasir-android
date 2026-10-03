@@ -25,8 +25,14 @@ data class TransactionEntity(
     @ColumnInfo(name = "subtotal")
     val subtotal: Double,
 
+    @ColumnInfo(name = "ppnPercentage")
+    val ppnPercentage: Double = 0.0,
+
     @ColumnInfo(name = "ppnAmount")
     val ppnAmount: Double = 0.0,
+
+    @ColumnInfo(name = "ppnType")
+    val ppnType: String = "",
 
     @ColumnInfo(name = "discount")
     val discount: Double,
@@ -102,7 +108,9 @@ data class TransactionEntity(
             transactionNumber = transactionNumber,
             items = cartItems,
             subtotal = subtotal,
+            ppnPercentage = ppnPercentage,
             ppnAmount = ppnAmount,
+            ppnType = ppnType,
             discount = discount,
             total = total,
             paymentMethod = paymentMethod,
@@ -127,7 +135,7 @@ fun PenjualanTransaksi.toEntity(isSynced: Boolean = false): TransactionEntity {
         val obj = JSONObject().apply {
             put("productId", cartItem.produk.id)
             put("productName", cartItem.produk.name)
-            put("price", cartItem.produk.sellingPrice)
+            put("price", cartItem.price)
             put("quantity", cartItem.quantity)
             put("totalPrice", cartItem.totalPrice)
             put("imageUrl", cartItem.produk.imageUrl)
@@ -140,7 +148,9 @@ fun PenjualanTransaksi.toEntity(isSynced: Boolean = false): TransactionEntity {
         transactionNumber = transactionNumber,
         itemsJson = jsonArray.toString(),
         subtotal = subtotal,
+        ppnPercentage = ppnPercentage,
         ppnAmount = ppnAmount,
+        ppnType = ppnType,
         discount = discount,
         total = total,
         paymentMethod = paymentMethod,

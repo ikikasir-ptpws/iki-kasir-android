@@ -24,6 +24,8 @@ import com.ptpws.ikikasir.feature.promo.domain.model.Promo
 import com.ptpws.ikikasir.feature.promo.domain.model.isAvailableOn
 import com.ptpws.ikikasir.feature.promo.domain.usecase.GetActivePromosUseCase
 
+import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectivePrice
+import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectiveSubtotal
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 
 @HiltViewModel
@@ -110,7 +112,12 @@ class PembayaranViewModel @Inject constructor(
 
         viewModelScope.launch {
             getCartUseCase().collect { cartList ->
-                val subtotal = cartList.sumOf { it.totalPrice }
+                val tax = _state.value.taxSetting
+                val subtotal = if (tax.isActive && tax.percentage > 0 && tax.type == TaxSetting.TAX_TYPE_INCLUSIVE) {
+                    cartList.sumOf { it.getEffectiveSubtotal(tax) }
+                } else {
+                    cartList.sumOf { it.totalPrice }
+                }
                 val totalItemCount = cartList.size
                 val totalPcsCount = cartList.sumOf { it.quantity }
 
@@ -140,8 +147,12 @@ class PembayaranViewModel @Inject constructor(
 
     private fun recalculateTotal() {
         _state.update { current ->
-            val subtotal = current.subtotal
             val tax = current.taxSetting
+            val subtotal = if (tax.isActive && tax.percentage > 0 && tax.type == TaxSetting.TAX_TYPE_INCLUSIVE) {
+                current.cartItems.sumOf { it.getEffectiveSubtotal(tax) }
+            } else {
+                current.cartItems.sumOf { it.totalPrice }
+            }
             val promo = current.selectedPromo?.takeIf { selected ->
                 selected.isAvailableOn() && current.activePromos.any { it.id == selected.id }
             }
@@ -154,7 +165,11 @@ class PembayaranViewModel @Inject constructor(
                     subtotal
                 } else {
                     val promoProductIds = promo.items.map { it.productId }.toSet()
-                    current.cartItems.filter { it.produk.id in promoProductIds }.sumOf { it.totalPrice }
+                    if (tax.isActive && tax.percentage > 0 && tax.type == TaxSetting.TAX_TYPE_INCLUSIVE) {
+                        current.cartItems.filter { it.produk.id in promoProductIds }.sumOf { it.getEffectiveSubtotal(tax) }
+                    } else {
+                        current.cartItems.filter { it.produk.id in promoProductIds }.sumOf { it.totalPrice }
+                    }
                 }
                 if (eligibleSubtotal > 0) {
                     val discount = if (promo.diskonType.equals("%", ignoreCase = true)) {
@@ -190,6 +205,7 @@ class PembayaranViewModel @Inject constructor(
             val kembalian = if (isTunai) (uangDiterima - grandTotal).coerceAtLeast(0.0) else 0.0
 
             current.copy(
+                subtotal = subtotal,
                 selectedPromo = promo,
                 promoDiscountAmount = promoDiscountAmount,
                 ppnAmount = ppnAmount,
@@ -296,22 +312,42 @@ class PembayaranViewModel @Inject constructor(
             return
         }
 
+        val isTaxInclusive = currentState.taxSetting.isActive &&
+            currentState.taxSetting.percentage > 0 &&
+            currentState.taxSetting.type == TaxSetting.TAX_TYPE_INCLUSIVE
+
+        val itemsForTransaction = if (isTaxInclusive) {
+            currentState.cartItems.map { item ->
+                item.copy(
+                    customPrice = item.getEffectivePrice(currentState.taxSetting)
+                )
+            }
+        } else {
+            currentState.cartItems
+        }
+
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
 
             val totalBayar = if (isTunai) currentState.uangDiterima else targetTotal
+            val tax = currentState.taxSetting
+            val ppnPercentage = if (tax.isActive && tax.percentage > 0) tax.percentage else 0.0
+            val ppnType = if (tax.isActive && tax.percentage > 0) tax.type else ""
 
             prosesPembayaranUseCase(
                 kodeTransaksi = currentState.orderId,
-                items = currentState.cartItems,
+                items = itemsForTransaction,
                 subtotal = currentState.subtotal,
+                ppnPercentage = ppnPercentage,
                 ppnAmount = currentState.ppnAmount,
+                ppnType = ppnType,
                 totalBayar = totalBayar,
                 metodePembayaran = currentState.metodePembayaran,
                 discount = currentState.promoDiscountAmount,
                 notes = currentState.notes,
                 customerName = currentState.customerName,
-                tableNumber = currentState.tableNumber
+                tableNumber = currentState.tableNumber,
+                isTaxInclusive = isTaxInclusive
             ).collect { result ->
                 _state.update { it.copy(isLoading = false) }
                 result.fold(

@@ -970,16 +970,36 @@ private fun QueueHistoryCard(
                             }
                         }
 
-                        val taxSetting = remember {
-                            com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context).getSetting()
-                        }
+                        val isPpnEksklusif = transaksi.isPpnEksklusif
+                        val formattedPercent = transaksi.formattedPpnPercentage
                         val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.totalPrice }
-                        val calculatedPpn = if (taxSetting.isActive && taxSetting.percentage > 0) totalSubtotal * (taxSetting.percentage / 100.0) else 0.0
-                        val effectivePpn = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calculatedPpn
                         val discountAmount = transaksi.discount
-                        val grandTotal = if (transaksi.total > 0) transaksi.total else (totalSubtotal - discountAmount + effectivePpn).coerceAtLeast(0.0)
+                        val grandTotal = if (transaksi.total > 0) transaksi.total else (totalSubtotal - discountAmount + (if (isPpnEksklusif) transaksi.ppnAmount else 0.0)).coerceAtLeast(0.0)
 
                         HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp)
+
+                        if (isPpnEksklusif) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "PPN",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF475569),
+                                    fontFamily = interfamily
+                                )
+                                Text(
+                                    text = "+$formattedPercent",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF334155),
+                                    fontFamily = interfamily
+                                )
+                            }
+                        }
 
                         if (discountAmount > 0) {
                             Row(

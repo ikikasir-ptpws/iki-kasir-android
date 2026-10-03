@@ -35,8 +35,15 @@ object StrukPdfHelper {
         // 80mm thermal receipt dimensions in points (384 pt x dynamic height)
         val width = 384
         var calculatedHeight = 650 + (transaksi.items.size * 45)
+        val isPpnInklusif = taxSetting.type == com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_INCLUSIVE
         val totalSubtotalCheck = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
-        val calcPpnCheck = if (taxSetting.isActive && taxSetting.percentage > 0) totalSubtotalCheck * (taxSetting.percentage / 100.0) else 0.0
+        val calcPpnCheck = if (taxSetting.isActive && taxSetting.percentage > 0) {
+            if (isPpnInklusif) {
+                totalSubtotalCheck - (totalSubtotalCheck / (1.0 + taxSetting.percentage / 100.0))
+            } else {
+                totalSubtotalCheck * (taxSetting.percentage / 100.0)
+            }
+        } else 0.0
         val effectivePpnCheck = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calcPpnCheck
         if (effectivePpnCheck > 0) calculatedHeight += 20
         if (transaksi.discount > 0) calculatedHeight += 20
@@ -245,8 +252,15 @@ object StrukPdfHelper {
         }
 
         // ── 5. Payment Summary Card ──
+        val isPpnInklusif = taxSetting.type == com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_INCLUSIVE
         val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
-        val calcPpn = if (taxSetting.isActive && taxSetting.percentage > 0) totalSubtotal * (taxSetting.percentage / 100.0) else 0.0
+        val calcPpn = if (taxSetting.isActive && taxSetting.percentage > 0) {
+            if (isPpnInklusif) {
+                totalSubtotal - (totalSubtotal / (1.0 + taxSetting.percentage / 100.0))
+            } else {
+                totalSubtotal * (taxSetting.percentage / 100.0)
+            }
+        } else 0.0
         val effectivePpn = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calcPpn
         val hasPpn = effectivePpn > 0
         val hasDiscount = transaksi.discount > 0
@@ -259,7 +273,7 @@ object StrukPdfHelper {
         canvas.drawRoundRect(summaryBox, 12f, 12f, paint)
 
         var sumY = y + 18f
-        val grandTotal = (totalSubtotal - transaksi.discount + effectivePpn).coerceAtLeast(0.0)
+        val grandTotal = if (transaksi.total > 0) transaksi.total else (totalSubtotal - transaksi.discount + (if (isPpnInklusif) 0.0 else effectivePpn)).coerceAtLeast(0.0)
         val paidAmount = if (transaksi.paymentAmount > 0 && transaksi.paymentAmount >= grandTotal) transaksi.paymentAmount else grandTotal
         val returnChange = (paidAmount - grandTotal).coerceAtLeast(0.0)
 
@@ -283,12 +297,14 @@ object StrukPdfHelper {
             paint.color = Color.parseColor("#64748B")
             paint.textSize = 10f
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            canvas.drawText("PPN", margin + 12f, sumY, paint)
+            val ppnLabel = if (isPpnInklusif) "PPN (Termasuk)" else "PPN"
+            canvas.drawText(ppnLabel, margin + 12f, sumY, paint)
 
             paint.textAlign = Paint.Align.RIGHT
             paint.color = Color.parseColor("#0F172A")
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            canvas.drawText("+${formatRupiah(effectivePpn)}", width - margin - 12f, sumY, paint)
+            val ppnText = if (isPpnInklusif) formatRupiah(effectivePpn) else "+${formatRupiah(effectivePpn)}"
+            canvas.drawText(ppnText, width - margin - 12f, sumY, paint)
             sumY += 16f
         }
 

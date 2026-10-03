@@ -28,20 +28,27 @@ class ProsesPembayaranUseCase @Inject constructor(
         kodeTransaksi: String,
         items: List<CartItem>,
         subtotal: Double,
+        ppnPercentage: Double = 0.0,
         ppnAmount: Double = 0.0,
+        ppnType: String = "",
         totalBayar: Double,
         metodePembayaran: String,
         discount: Double = 0.0,
         notes: String = "",
         customerName: String = "",
-        tableNumber: String = ""
+        tableNumber: String = "",
+        isTaxInclusive: Boolean = false
     ): Flow<Result<PenjualanTransaksi>> = flow {
         if (items.isEmpty()) {
             emit(Result.failure(IllegalArgumentException("Tidak ada produk dalam keranjang pesanan.")))
             return@flow
         }
 
-        val totalTagihan = (subtotal - discount + ppnAmount).coerceAtLeast(0.0)
+        val totalTagihan = if (isTaxInclusive) {
+            (subtotal - discount).coerceAtLeast(0.0)
+        } else {
+            (subtotal - discount + ppnAmount).coerceAtLeast(0.0)
+        }
         val isTunai = metodePembayaran.equals("Tunai", ignoreCase = true)
         if (isTunai && totalBayar < totalTagihan) {
             emit(Result.failure(IllegalArgumentException("Nominal uang yang diterima kurang dari total tagihan.")))
@@ -91,15 +98,17 @@ class ProsesPembayaranUseCase @Inject constructor(
             1
         }
 
-        // Subtotal SEBELUM PPN (harga item-item saja)
-        val subtotalBeforeTax = items.sumOf { it.totalPrice }
+        // Subtotal transaksi
+        val realSubtotal = if (isTaxInclusive) subtotal else items.sumOf { it.totalPrice }
 
         val transaksi = PenjualanTransaksi(
             transactionId = invoiceId,
             transactionNumber = invoiceId,
             items = items,
-            subtotal = subtotalBeforeTax,    // selalu harga sebelum PPN
-            ppnAmount = ppnAmount,           // nominal PPN
+            subtotal = realSubtotal,
+            ppnPercentage = ppnPercentage,
+            ppnAmount = ppnAmount,
+            ppnType = ppnType,
             discount = discount,
             total = totalTagihan,            // grand total (sudah termasuk PPN eksklusif)
             paymentMethod = metodePembayaran,

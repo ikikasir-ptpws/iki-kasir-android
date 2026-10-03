@@ -375,9 +375,16 @@ fun StrukReceiptCard(
             // ── 5. Payment Summary ─────────────────────────────────────────
             val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else displayItems.sumOf { it.subtotal }
             val totalDiscount = transaksi.discount
-            val calculatedPpn = if (taxSetting.isActive && taxSetting.percentage > 0) totalSubtotal * (taxSetting.percentage / 100.0) else 0.0
+            val isPpnInklusif = taxSetting.type == com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_INCLUSIVE
+            val calculatedPpn = if (taxSetting.isActive && taxSetting.percentage > 0) {
+                if (isPpnInklusif) {
+                    totalSubtotal - (totalSubtotal / (1.0 + taxSetting.percentage / 100.0))
+                } else {
+                    totalSubtotal * (taxSetting.percentage / 100.0)
+                }
+            } else 0.0
             val ppnAmount     = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calculatedPpn
-            val grandTotal    = (totalSubtotal - totalDiscount + ppnAmount).coerceAtLeast(0.0)
+            val grandTotal    = if (transaksi.total > 0) transaksi.total else (totalSubtotal - totalDiscount + (if (isPpnInklusif) 0.0 else ppnAmount)).coerceAtLeast(0.0)
             val paidAmount    = if (transaksi.paymentAmount > 0 && transaksi.paymentAmount >= grandTotal) transaksi.paymentAmount else grandTotal
             val returnChange  = (paidAmount - grandTotal).coerceAtLeast(0.0)
             val itemCount     = displayItems.sumOf { it.quantity }
@@ -420,13 +427,13 @@ fun StrukReceiptCard(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "PPN",
+                                text = if (isPpnInklusif) "PPN (Termasuk)" else "PPN",
                                 fontFamily = interfamily,
                                 fontSize = 12.sp,
                                 color = Color(0xFF64748B)
                             )
                             Text(
-                                text = "+${formatRupiah(ppnAmount)}",
+                                text = if (isPpnInklusif) formatRupiah(ppnAmount) else "+${formatRupiah(ppnAmount)}",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp,

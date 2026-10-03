@@ -29,11 +29,12 @@ class PrintStrukUseCase {
             }
 
             val notaSetting = NotaSettingPreferences(appContext).getSetting()
+            val taxSetting = com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(appContext).getSetting()
             val bytesPerLine = if (notaSetting.paperWidth == BluetoothPrinterSetting.PAPER_80MM) 48 else 32
             BluetoothPrinterConnection.send(
                 appContext,
                 setting.savedAddress,
-                encodeReceipt(transaksi, notaSetting, bytesPerLine)
+                encodeReceipt(transaksi, notaSetting, bytesPerLine, taxSetting)
             )
         }
     }
@@ -41,7 +42,8 @@ class PrintStrukUseCase {
     private fun encodeReceipt(
         transaksi: PenjualanTransaksi,
         notaSetting: com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting,
-        columns: Int
+        columns: Int,
+        taxSetting: com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting = com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting()
     ): ByteArray {
         val bytes = ByteArrayOutputStream()
         val encoding = Charsets.US_ASCII
@@ -139,13 +141,18 @@ class PrintStrukUseCase {
         }
         feedLine(line)
 
+        val isPpnInklusif = taxSetting.type == com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_INCLUSIVE
         val subtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
         val ppn = transaksi.ppnAmount
-        if (ppn > 0) row("PPN", amount(ppn))
+        if (ppn > 0) {
+            val ppnLabel = if (isPpnInklusif) "PPN (Termasuk)" else "PPN"
+            val ppnVal = if (isPpnInklusif) amount(ppn) else "+ ${amount(ppn)}"
+            row(ppnLabel, ppnVal)
+        }
         if (transaksi.discount > 0) row("Diskon", "- ${amount(transaksi.discount)}")
 
         val grandTotalLabel = "TOTAL"
-        val grandTotal = transaksi.total.takeIf { it > 0 } ?: (subtotal + ppn - transaksi.discount)
+        val grandTotal = transaksi.total.takeIf { it > 0 } ?: (subtotal + (if (isPpnInklusif) 0.0 else ppn) - transaksi.discount)
         val grandTotalAmount = amount(grandTotal)
         val totalTextColumns = if (columns >= 48) 2 else 1
         val totalLine = if (totalTextColumns == 2) {

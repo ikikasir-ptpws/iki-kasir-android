@@ -57,6 +57,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.core.content.ContextCompat
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
+import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectivePrice
+import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectiveSubtotal
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.PrintStrukUseCase
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.PembayaranViewModel
 import com.ptpws.ikikasir.screens.penjualan.component.PembayaranFailedDialog
@@ -395,6 +397,8 @@ fun PembayaranScreen(
                                 HorizontalDivider(color = Color(0xFFF1F5F9))
 
                                 state.cartItems.forEach { item ->
+                                    val itemPrice = item.getEffectivePrice(state.taxSetting)
+                                    val itemSubtotal = item.getEffectiveSubtotal(state.taxSetting)
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -411,7 +415,7 @@ fun PembayaranScreen(
                                                 overflow = TextOverflow.Ellipsis
                                             )
                                             Text(
-                                                text = "${item.quantity} Pcs x Rp ${formatRupiah(item.produk.price)}",
+                                                text = "${item.quantity} Pcs x Rp ${formatRupiah(itemPrice)}",
                                                 fontFamily = interfamily,
                                                 fontSize = 11.sp,
                                                 color = Color(0xFF64748B)
@@ -419,7 +423,7 @@ fun PembayaranScreen(
                                         }
 
                                         Text(
-                                            text = "Rp ${formatRupiah(item.totalPrice)}",
+                                            text = "Rp ${formatRupiah(itemSubtotal)}",
                                             fontFamily = interfamily,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,

@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,6 +50,7 @@ fun WaitingListScreen(
     navController: NavController,
     viewModel: AntreanViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val transaksiMap by viewModel.transaksiMap.collectAsState()
@@ -282,6 +284,7 @@ private fun AntreanCard(
     onSelesai: () -> Unit,
     onBatal: () -> Unit
 ) {
+    val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -523,6 +526,32 @@ private fun AntreanCard(
 
                         HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp)
 
+                        val isPpnEksklusif = transaksi.isPpnEksklusif
+                        val formattedPercent = transaksi.formattedPpnPercentage
+
+                        if (isPpnEksklusif) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "PPN",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF475569),
+                                    fontFamily = interfamily
+                                )
+                                Text(
+                                    text = "+$formattedPercent",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF334155),
+                                    fontFamily = interfamily
+                                )
+                            }
+                        }
+
                         if (transaksi.discount > 0) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -546,6 +575,9 @@ private fun AntreanCard(
                             }
                         }
 
+                        val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.totalPrice }
+                        val totalTagihan = if (transaksi.total > 0) transaksi.total else (totalSubtotal - transaksi.discount + (if (isPpnEksklusif) transaksi.ppnAmount else 0.0)).coerceAtLeast(0.0)
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -559,7 +591,7 @@ private fun AntreanCard(
                                 fontFamily = interfamily
                             )
                             Text(
-                                text = rupiahFormat.format(transaksi.total),
+                                text = rupiahFormat.format(totalTagihan),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF3D5AF1),

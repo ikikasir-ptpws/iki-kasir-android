@@ -51,7 +51,7 @@ import com.ptpws.ikikasir.feature.auditlog.data.local.entity.AuditLogEntity
         PromoEntity::class,
         AuditLogEntity::class
     ],
-    version = 29,
+    version = 30,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class, MapConverter::class)

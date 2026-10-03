@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.penjualan.presentation.state
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting
 import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
+import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectiveSubtotal
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
 import com.ptpws.ikikasir.feature.promo.domain.model.isAvailableOn
@@ -28,7 +29,11 @@ data class KasirState(
         get() = cartItems.sumOf { it.quantity }
 
     val rawSubtotal: Double
-        get() = cartItems.sumOf { it.totalPrice }
+        get() = if (taxSetting.isActive && taxSetting.percentage > 0 && taxSetting.type == TaxSetting.TAX_TYPE_INCLUSIVE) {
+            cartItems.sumOf { it.getEffectiveSubtotal(taxSetting) }
+        } else {
+            cartItems.sumOf { it.totalPrice }
+        }
 
     // Auto-detect applicable promo if none explicitly selected
     val effectivePromo: Promo?
@@ -54,7 +59,11 @@ data class KasirState(
                 rawSubtotal
             } else {
                 val promoProductIds = promo.items.map { it.productId }.toSet()
-                cartItems.filter { it.produk.id in promoProductIds }.sumOf { it.totalPrice }
+                if (taxSetting.isActive && taxSetting.percentage > 0 && taxSetting.type == TaxSetting.TAX_TYPE_INCLUSIVE) {
+                    cartItems.filter { it.produk.id in promoProductIds }.sumOf { it.getEffectiveSubtotal(taxSetting) }
+                } else {
+                    cartItems.filter { it.produk.id in promoProductIds }.sumOf { it.totalPrice }
+                }
             }
 
             if (eligibleSubtotal <= 0) return 0.0
