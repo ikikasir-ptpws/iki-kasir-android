@@ -1,6 +1,9 @@
 package com.ptpws.ikikasir.feature.penjualan.domain.usecase
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import com.ptpws.ikikasir.feature.bluetooth.data.BluetoothPrinterConnection
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
@@ -29,12 +32,11 @@ class PrintStrukUseCase {
             }
 
             val notaSetting = NotaSettingPreferences(appContext).getSetting()
-            val taxSetting = com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(appContext).getSetting()
             val bytesPerLine = if (notaSetting.paperWidth == BluetoothPrinterSetting.PAPER_80MM) 48 else 32
             BluetoothPrinterConnection.send(
                 appContext,
                 setting.savedAddress,
-                encodeReceipt(transaksi, notaSetting, bytesPerLine, taxSetting)
+                encodeReceipt(transaksi, notaSetting, bytesPerLine, appContext)
             )
         }
     }
@@ -43,7 +45,7 @@ class PrintStrukUseCase {
         transaksi: PenjualanTransaksi,
         notaSetting: com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting,
         columns: Int,
-        taxSetting: com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting = com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting()
+        context: Context
     ): ByteArray {
         val bytes = ByteArrayOutputStream()
         val encoding = Charsets.US_ASCII
@@ -115,6 +117,17 @@ class PrintStrukUseCase {
         command(0x1B, 0x74, 0x00)
         command(0x1D, 0x4C, 0x00, 0x00)
         command(0x1D, 0x57, (columns * 12) and 0xFF, ((columns * 12) shr 8) and 0xFF)
+
+        // ── 0. Logo Toko (jika ada) ────────
+        if (notaSetting.logoUrl.isNotBlank()) {
+            val maxLogoWidth = if (columns >= 48) 384 else 256
+            val logoBitmap = loadLogoBitmap(context, notaSetting.logoUrl, maxLogoWidth)
+            if (logoBitmap != null) {
+                printBitmap(bytes, logoBitmap)
+                feedLine()
+            }
+        }
+
         command(0x1B, 0x61, 0x01)
         command(0x1B, 0x45, 0x01)
         val storeName = notaSetting.storeName.ifBlank { "IKIKASIR" }.toAscii()
@@ -141,18 +154,14 @@ class PrintStrukUseCase {
         }
         feedLine(line)
 
-        val isPpnInklusif = taxSetting.type == com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_INCLUSIVE
         val subtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
-        val ppn = transaksi.ppnAmount
-        if (ppn > 0) {
-            val ppnLabel = if (isPpnInklusif) "PPN (Termasuk)" else "PPN"
-            val ppnVal = if (isPpnInklusif) amount(ppn) else "+ ${amount(ppn)}"
-            row(ppnLabel, ppnVal)
+        if (transaksi.isPpnEksklusif) {
+            row("PPN", "+${transaksi.formattedPpnPercentage}")
         }
         if (transaksi.discount > 0) row("Diskon", "- ${amount(transaksi.discount)}")
 
         val grandTotalLabel = "TOTAL"
-        val grandTotal = transaksi.total.takeIf { it > 0 } ?: (subtotal + (if (isPpnInklusif) 0.0 else ppn) - transaksi.discount)
+        val grandTotal = transaksi.total.takeIf { it > 0 } ?: (subtotal + (if (transaksi.isPpnEksklusif) transaksi.ppnAmount else 0.0) - transaksi.discount)
         val grandTotalAmount = amount(grandTotal)
         val totalTextColumns = if (columns >= 48) 2 else 1
         val totalLine = if (totalTextColumns == 2) {
@@ -229,4 +238,61 @@ class PrintStrukUseCase {
         if (character.code in 32..126) character else '?'
     }.joinToString("")
 
+    private fun loadLogoBitmap(context: Context, logoUrl: String, maxWidth: Int): Bitmap? {
+        if (logoUrl.isBlank()) return null
+        return try {
+            val bitmap = if (logoUrl.startsWith("data:image") || logoUrl.startsWith("data:application")) {
+                val base64Data = logoUrl.substringAfter("base64,")
+                val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+            } else {
+                val uri = Uri.parse(logoUrl)
+                if (uri.scheme == "file" || uri.scheme == null) {
+                    val path = uri.path ?: logoUrl
+                    BitmapFactory.decodeFile(path)
+                } else {
+                    context.contentResolver.openInputStream(uri)?.use {
+                        BitmapFactory.decodeStream(it)
+                    }
+                }
+            } ?: return null
+
+            if (bitmap.width <= maxWidth) {
+                bitmap
+            } else {
+                val ratio = maxWidth.toFloat() / bitmap.width
+                val targetHeight = (bitmap.height * ratio).toInt().coerceAtLeast(1)
+                Bitmap.createScaledBitmap(bitmap, maxWidth, targetHeight, true)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun printBitmap(output: ByteArrayOutputStream, bitmap: Bitmap) {
+        val bytesPerRow = (bitmap.width + 7) / 8
+        output.write(
+            byteArrayOf(
+                0x1B, 0x61, 0x01, // Center
+                0x1D, 0x76, 0x30, 0x00, // GS v 0 0
+                bytesPerRow.toByte(), (bytesPerRow shr 8).toByte(),
+                bitmap.height.toByte(), (bitmap.height shr 8).toByte()
+            )
+        )
+        for (y in 0 until bitmap.height) {
+            for (byteIndex in 0 until bytesPerRow) {
+                var value = 0
+                for (bit in 0..7) {
+                    val x = byteIndex * 8 + bit
+                    if (x < bitmap.width &&
+                        android.graphics.Color.red(bitmap.getPixel(x, y)) < 128
+                    ) {
+                        value = value or (0x80 shr bit)
+                    }
+                }
+                output.write(value)
+            }
+        }
+        output.write(byteArrayOf(0x1B, 0x61, 0x00)) // Reset to Left
+    }
 }
