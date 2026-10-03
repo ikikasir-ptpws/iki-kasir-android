@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -24,6 +25,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -93,6 +95,30 @@ fun StrukReceiptCard(
                 .padding(top = 24.dp, start = 20.dp, end = 20.dp, bottom = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
+            // ── 0. Logo Toko (dari NotaSetting) ────────
+            if (notaSetting.logoUrl.isNotBlank()) {
+                val logoModel = remember(notaSetting.logoUrl) {
+                    if (notaSetting.logoUrl.startsWith("data:image")) {
+                        try {
+                            android.util.Base64.decode(notaSetting.logoUrl.substringAfter("base64,"), android.util.Base64.DEFAULT)
+                        } catch (_: Exception) {
+                            notaSetting.logoUrl
+                        }
+                    } else {
+                        notaSetting.logoUrl
+                    }
+                }
+                AsyncImage(
+                    model = logoModel,
+                    contentDescription = "Logo Toko",
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Fit
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+            }
 
             // ── 1. Header — Nama Toko & Alamat (dari NotaSetting) ────────
             Text(
@@ -367,24 +393,11 @@ fun StrukReceiptCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-    val context = LocalContext.current
-    val taxSetting = remember {
-        com.ptpws.ikikasir.feature.pengaturan.data.preferences.TaxSettingPreferences(context).getSetting()
-    }
-
             // ── 5. Payment Summary ─────────────────────────────────────────
             val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else displayItems.sumOf { it.subtotal }
             val totalDiscount = transaksi.discount
-            val isPpnInklusif = taxSetting.type == com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting.TAX_TYPE_INCLUSIVE
-            val calculatedPpn = if (taxSetting.isActive && taxSetting.percentage > 0) {
-                if (isPpnInklusif) {
-                    totalSubtotal - (totalSubtotal / (1.0 + taxSetting.percentage / 100.0))
-                } else {
-                    totalSubtotal * (taxSetting.percentage / 100.0)
-                }
-            } else 0.0
-            val ppnAmount     = if (transaksi.ppnAmount > 0) transaksi.ppnAmount else calculatedPpn
-            val grandTotal    = if (transaksi.total > 0) transaksi.total else (totalSubtotal - totalDiscount + (if (isPpnInklusif) 0.0 else ppnAmount)).coerceAtLeast(0.0)
+            val isPpnEksklusif = transaksi.isPpnEksklusif
+            val grandTotal    = if (transaksi.total > 0) transaksi.total else (totalSubtotal - totalDiscount + (if (isPpnEksklusif) transaksi.ppnAmount else 0.0)).coerceAtLeast(0.0)
             val paidAmount    = if (transaksi.paymentAmount > 0 && transaksi.paymentAmount >= grandTotal) transaksi.paymentAmount else grandTotal
             val returnChange  = (paidAmount - grandTotal).coerceAtLeast(0.0)
             val itemCount     = displayItems.sumOf { it.quantity }
@@ -420,20 +433,20 @@ fun StrukReceiptCard(
                         )
                     }
 
-                    // PPN (hanya jika aktif)
-                    if (ppnAmount > 0) {
+                    // PPN (hanya jika belum termasuk PPN / eksklusif)
+                    if (isPpnEksklusif) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = if (isPpnInklusif) "PPN (Termasuk)" else "PPN",
+                                text = "PPN",
                                 fontFamily = interfamily,
                                 fontSize = 12.sp,
                                 color = Color(0xFF64748B)
                             )
                             Text(
-                                text = if (isPpnInklusif) formatRupiah(ppnAmount) else "+${formatRupiah(ppnAmount)}",
+                                text = "+${transaksi.formattedPpnPercentage}",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp,
