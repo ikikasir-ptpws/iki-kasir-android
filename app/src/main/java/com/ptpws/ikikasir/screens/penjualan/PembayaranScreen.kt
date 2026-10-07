@@ -61,6 +61,7 @@ import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectivePrice
 import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectiveSubtotal
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.PrintStrukUseCase
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.PembayaranViewModel
+import com.ptpws.ikikasir.feature.penjualan.presentation.state.PrinterStatus
 import com.ptpws.ikikasir.screens.penjualan.component.PembayaranFailedDialog
 import com.ptpws.ikikasir.screens.penjualan.component.PembayaranSuccessDialog
 import java.text.NumberFormat
@@ -125,6 +126,24 @@ fun PembayaranScreen(
             bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
         } else {
             printReceipt()
+        }
+    }
+
+    // Periksa status printer Bluetooth saat membuka halaman pembayaran
+    LaunchedEffect(Unit) {
+        viewModel.checkPrinterStatus(context)
+    }
+
+    // Cetak struk otomatis saat pembayaran sukses jika fitur diaktifkan/dicentang
+    var lastAutoPrintedTxId by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(state.showSuccessDialog, state.transaksiSukses) {
+        val tx = state.transaksiSukses
+        if (state.showSuccessDialog && tx != null && state.isCetakStrukOtomatis) {
+            val txId = tx.transactionNumber.ifBlank { tx.transactionId }
+            if (lastAutoPrintedTxId != txId) {
+                lastAutoPrintedTxId = txId
+                onPrintReceipt()
+            }
         }
     }
 
@@ -1024,7 +1043,18 @@ fun PembayaranScreen(
 
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = Color(0xFFDCFCE7)
+                        color = Color(state.printerStatus.bgColor),
+                        modifier = Modifier.clickable {
+                            if (state.printerStatus != PrinterStatus.SIAP) {
+                                viewModel.checkPrinterStatus(context)
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Printer siap: ${state.printerName.ifBlank { "Tersambung" }}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
@@ -1035,14 +1065,14 @@ fun PembayaranScreen(
                                 modifier = Modifier
                                     .size(6.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFF16A34A))
+                                    .background(Color(state.printerStatus.dotColor))
                             )
                             Text(
-                                text = "Printer Siap",
+                                text = state.printerStatus.label,
                                 fontFamily = interfamily,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF16A34A)
+                                color = Color(state.printerStatus.dotColor)
                             )
                         }
                     }
