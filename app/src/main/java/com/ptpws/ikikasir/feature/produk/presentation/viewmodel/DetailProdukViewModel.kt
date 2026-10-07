@@ -12,6 +12,10 @@ import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.UpdateProdukUseCase
 import com.ptpws.ikikasir.feature.produk.presentation.state.DetailProdukState
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+import com.ptpws.ikikasir.feature.promo.domain.model.Promo
+import com.ptpws.ikikasir.feature.promo.domain.model.isAvailableOn
+import com.ptpws.ikikasir.feature.promo.domain.model.isExpiredOn
+import com.ptpws.ikikasir.feature.promo.domain.usecase.GetActivePromosUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +32,7 @@ class DetailProdukViewModel @Inject constructor(
     private val deleteProdukUseCase: DeleteProdukUseCase,
     private val getKategoriUseCase: GetKategoriUseCase,
     private val getAllTransaksiUseCase: GetAllTransaksiUseCase,
+    private val getActivePromosUseCase: GetActivePromosUseCase,
     private val logActivityUseCase: LogActivityUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -60,10 +65,29 @@ class DetailProdukViewModel @Inject constructor(
                     }
                     loadCategoryName(produk.categoryId)
                     observeSalesSummary(produk.id, produk.barcode)
+                    observeActivePromos(produk.id)
                 } else {
                     _state.update { current ->
                         current.copy(isLoading = false)
                     }
+                }
+            }
+        }
+    }
+
+    private fun observeActivePromos(produkId: String) {
+        viewModelScope.launch {
+            getActivePromosUseCase().collect { promos ->
+                val applicable = promos.filter { promo ->
+                    promo.isActive && promo.isAvailableOn() && !promo.isExpiredOn() &&
+                        promo.items.any { it.productId.equals(produkId, ignoreCase = true) }
+                }
+
+                _state.update { current ->
+                    current.copy(
+                        activePromos = applicable,
+                        activePromo = applicable.firstOrNull()
+                    )
                 }
             }
         }
