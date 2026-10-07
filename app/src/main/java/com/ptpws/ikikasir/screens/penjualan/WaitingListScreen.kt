@@ -526,24 +526,26 @@ private fun AntreanCard(
 
                         HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp)
 
-                        val isPpnEksklusif = transaksi.isPpnEksklusif
-                        val formattedPercent = transaksi.formattedPpnPercentage
+                        val isPpnAktif = transaksi.isTaxActive()
+                        val isPpnEksklusif = transaksi.checkIsPpnEksklusif()
+                        val formattedPercent = transaksi.getFormattedPercentage()
+                        val effectivePpn = transaksi.getEffectivePpnAmount()
 
-                        if (isPpnEksklusif) {
+                        if (isPpnAktif && effectivePpn > 0) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "PPN",
+                                    text = "PPN ($formattedPercent)",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF475569),
                                     fontFamily = interfamily
                                 )
                                 Text(
-                                    text = "+$formattedPercent",
+                                    text = if (isPpnEksklusif) "+ ${rupiahFormat.format(effectivePpn)}" else rupiahFormat.format(effectivePpn),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF334155),
@@ -576,7 +578,7 @@ private fun AntreanCard(
                         }
 
                         val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.totalPrice }
-                        val totalTagihan = if (transaksi.total > 0) transaksi.total else (totalSubtotal - transaksi.discount + (if (isPpnEksklusif) transaksi.ppnAmount else 0.0)).coerceAtLeast(0.0)
+                        val totalTagihan = if (transaksi.total > 0) transaksi.total else (totalSubtotal - transaksi.discount + (if (isPpnEksklusif) effectivePpn else 0.0)).coerceAtLeast(0.0)
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
