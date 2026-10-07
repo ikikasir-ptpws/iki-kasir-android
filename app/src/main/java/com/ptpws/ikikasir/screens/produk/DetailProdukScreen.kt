@@ -15,6 +15,8 @@ import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import com.ptpws.ikikasir.feature.promo.domain.model.Promo
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Inventory2
@@ -196,6 +198,24 @@ fun DetailProdukScreen(
         } else {
             val produk = state.produk
             if (produk != null) {
+                val activePromo = state.activePromo
+                val discountAmount = if (activePromo != null) {
+                    if (activePromo.discountType.equals("%", ignoreCase = true) || activePromo.discountType.contains("PERSEN", ignoreCase = true)) {
+                        produk.sellingPrice * (activePromo.discountValue / 100.0)
+                    } else {
+                        activePromo.discountValue
+                    }
+                } else 0.0
+
+                val effectiveSellingPrice = if (discountAmount > 0) {
+                    (produk.sellingPrice - discountAmount).coerceAtLeast(0.0)
+                } else {
+                    produk.sellingPrice
+                }
+
+                val labaKotor = effectiveSellingPrice - produk.costPrice
+                val marginPercent = if (effectiveSellingPrice > 0) (labaKotor / effectiveSellingPrice * 100) else 0.0
+
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -362,9 +382,6 @@ fun DetailProdukScreen(
                                 )
 
                                 // Pricing Cards Grid (Set IntrinsicSize.Max & fillMaxHeight agar persis SAMA TINGGI)
-                                val labaKotor = produk.sellingPrice - produk.costPrice
-                                val marginPercent = if (produk.sellingPrice > 0) (labaKotor / produk.sellingPrice * 100) else 0.0
-
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -387,32 +404,66 @@ fun DetailProdukScreen(
                                             verticalArrangement = Arrangement.SpaceBetween
                                         ) {
                                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = "HARGA JUAL",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontFamily = interfamily,
+                                                        color = Color(0xFF64748B)
+                                                    )
+                                                    if (discountAmount > 0 && activePromo != null) {
+                                                        Surface(
+                                                            shape = RoundedCornerShape(6.dp),
+                                                            color = Color(0xFFFEF2F2)
+                                                        ) {
+                                                            Text(
+                                                                text = if (activePromo.discountType.equals("%", ignoreCase = true) || activePromo.discountType.contains("PERSEN", ignoreCase = true)) {
+                                                                    "-${if (activePromo.discountValue % 1.0 == 0.0) activePromo.discountValue.toInt() else activePromo.discountValue}%"
+                                                                } else {
+                                                                    "PROMO"
+                                                                },
+                                                                fontSize = 10.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                fontFamily = interfamily,
+                                                                color = Color(0xFFDC2626),
+                                                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                }
                                                 Text(
-                                                    text = "HARGA JUAL",
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontFamily = interfamily,
-                                                    color = Color(0xFF64748B)
-                                                )
-                                                Text(
-                                                    text = "Rp ${formatRupiah(produk.sellingPrice)}",
+                                                    text = "Rp ${formatRupiah(effectiveSellingPrice)}",
                                                     fontSize = 20.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     fontFamily = interfamily,
                                                     color = Color(0xFF4F46E5)
                                                 )
+                                                if (discountAmount > 0) {
+                                                    Text(
+                                                        text = "Rp ${formatRupiah(produk.sellingPrice)}",
+                                                        fontSize = 11.sp,
+                                                        fontFamily = interfamily,
+                                                        color = Color(0xFF94A3B8),
+                                                        textDecoration = TextDecoration.LineThrough
+                                                    )
+                                                }
                                             }
                                             Spacer(modifier = Modifier.height(8.dp))
                                             Surface(
                                                 shape = RoundedCornerShape(8.dp),
-                                                color = Color(0xFFECFDF5)
+                                                color = if (marginPercent >= 0) Color(0xFFECFDF5) else Color(0xFFFEF2F2)
                                             ) {
                                                 Text(
                                                     text = "Margin ~${String.format(Locale.US, "%.1f%%", marginPercent)}",
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     fontFamily = interfamily,
-                                                    color = Color(0xFF059669),
+                                                    color = if (marginPercent >= 0) Color(0xFF059669) else Color(0xFFDC2626),
                                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                                 )
                                             }
@@ -633,7 +684,6 @@ fun DetailProdukScreen(
                                 }
 
                                 // Sub-Row: HPP & Estimasi Laba Kotor
-                                val labaKotor = produk.sellingPrice - produk.costPrice
                                 val isProfitable = labaKotor >= 0
 
                                 Surface(
@@ -690,6 +740,9 @@ fun DetailProdukScreen(
 
                     // 4. Pengaturan Diskon Card
                     item {
+                        val activePromos = state.activePromos
+                        val hasDiscount = activePromos.isNotEmpty()
+
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
@@ -722,54 +775,160 @@ fun DetailProdukScreen(
                                         )
                                     }
 
-                                    val hasDiscount = produk.discount > 0
-                                    Text(
-                                        text = if (hasDiscount) "Diskon Aktif" else "Tidak Ada Diskon",
-                                        fontSize = 12.sp,
-                                        fontFamily = interfamily,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (hasDiscount) Color(0xFF16A34A) else Color(0xFF94A3B8)
-                                    )
-                                }
-
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = Color(0xFFF8FAFC),
-                                    border = BorderStroke(1.dp, Color(0xFFF1F5F9)),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(14.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "Diskon Produk",
-                                            fontSize = 13.sp,
-                                            fontFamily = interfamily,
-                                            color = Color(0xFF475569)
-                                        )
-
-                                        val discountText = if (produk.discount > 0) {
-                                            if (produk.discountType == "PERCENT") "${produk.discount}%" else "Rp ${formatRupiah(produk.discount)}"
-                                        } else {
-                                            "0% (Tidak aktif)"
-                                        }
-
+                                    if (hasDiscount) {
                                         Surface(
                                             shape = RoundedCornerShape(20.dp),
-                                            color = Color.White,
-                                            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                                            color = Color(0xFFECFDF5),
+                                            border = BorderStroke(1.dp, Color(0xFFA7F3D0))
                                         ) {
                                             Text(
-                                                text = discountText,
+                                                text = "Diskon Aktif",
                                                 fontSize = 12.sp,
                                                 fontFamily = interfamily,
-                                                color = Color(0xFF64748B),
-                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF059669),
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                             )
+                                        }
+                                    } else {
+                                        Text(
+                                            text = "Tidak Ada Diskon",
+                                            fontSize = 12.sp,
+                                            fontFamily = interfamily,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFF94A3B8)
+                                        )
+                                    }
+                                }
+
+                                if (hasDiscount) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        activePromos.forEach { promo ->
+                                            val promoDiscountNominal = if (promo.discountType.equals("%", ignoreCase = true) || promo.discountType.contains("PERSEN", ignoreCase = true)) {
+                                                produk.sellingPrice * (promo.discountValue / 100.0)
+                                            } else {
+                                                promo.discountValue
+                                            }
+                                            val discountPillText = if (promo.discountType.equals("%", ignoreCase = true) || promo.discountType.contains("PERSEN", ignoreCase = true)) {
+                                                "${if (promo.discountValue % 1.0 == 0.0) promo.discountValue.toInt() else promo.discountValue}%"
+                                            } else {
+                                                "Rp ${formatRupiah(promo.discountValue)}"
+                                            }
+
+                                            Surface(
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = Color(0xFFF8FAFC),
+                                                border = BorderStroke(1.dp, Color(0xFFF1F5F9)),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(14.dp),
+                                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Column(modifier = Modifier.weight(1f)) {
+                                                            Text(
+                                                                text = promo.name.ifBlank { "Promo Diskon" },
+                                                                fontSize = 14.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                fontFamily = interfamily,
+                                                                color = Color(0xFF0F172A)
+                                                            )
+                                                            if (promo.endDate.isNotBlank()) {
+                                                                Spacer(modifier = Modifier.height(2.dp))
+                                                                Text(
+                                                                    text = "Berlaku s/d ${promo.endDate}",
+                                                                    fontSize = 11.sp,
+                                                                    fontFamily = interfamily,
+                                                                    color = Color(0xFF64748B)
+                                                                )
+                                                            }
+                                                        }
+
+                                                        Surface(
+                                                            shape = RoundedCornerShape(20.dp),
+                                                            color = Color(0xFFFEF2F2),
+                                                            border = BorderStroke(1.dp, Color(0xFFFECACA))
+                                                        ) {
+                                                            Text(
+                                                                text = discountPillText,
+                                                                fontSize = 12.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                fontFamily = interfamily,
+                                                                color = Color(0xFFDC2626),
+                                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                                                            )
+                                                        }
+                                                    }
+
+                                                    HorizontalDivider(
+                                                        color = Color(0xFFF1F5F9),
+                                                        thickness = 1.dp
+                                                    )
+
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Text(
+                                                            text = "Hemat per unit",
+                                                            fontSize = 12.sp,
+                                                            fontFamily = interfamily,
+                                                            color = Color(0xFF64748B)
+                                                        )
+                                                        Text(
+                                                            text = "-Rp ${formatRupiah(promoDiscountNominal)}",
+                                                            fontSize = 13.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontFamily = interfamily,
+                                                            color = Color(0xFF16A34A)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color(0xFFF8FAFC),
+                                        border = BorderStroke(1.dp, Color(0xFFF1F5F9)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(14.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "Diskon Produk",
+                                                fontSize = 13.sp,
+                                                fontFamily = interfamily,
+                                                color = Color(0xFF475569)
+                                            )
+
+                                            Surface(
+                                                shape = RoundedCornerShape(20.dp),
+                                                color = Color.White,
+                                                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                                            ) {
+                                                Text(
+                                                    text = "0% (Tidak aktif)",
+                                                    fontSize = 12.sp,
+                                                    fontFamily = interfamily,
+                                                    color = Color(0xFF64748B),
+                                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
