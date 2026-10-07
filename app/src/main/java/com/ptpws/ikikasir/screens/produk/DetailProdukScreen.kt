@@ -767,7 +767,7 @@ fun DetailProdukScreen(
                                         )
                                         Spacer(modifier = Modifier.width(10.dp))
                                         Text(
-                                            text = "Pengaturan Diskon",
+                                            text = "Diskon",
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = interfamily,
