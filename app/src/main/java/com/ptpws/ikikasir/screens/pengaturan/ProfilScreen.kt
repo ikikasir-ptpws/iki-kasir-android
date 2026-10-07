@@ -271,7 +271,7 @@ fun ProfilScreen(
                 start = 16.dp,
                 end = 16.dp,
                 top = 8.dp,
-                bottom = 86.dp
+                bottom = 140.dp
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -545,9 +545,12 @@ fun ProfilScreen(
 
             // ── Versi Aplikasi
             item {
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Versi 2.4.0 • Dibuat dengan presisi",
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
                     fontFamily = interfamily,
                     fontSize = 12.sp,
                     color = Color(0xFF9CA3AF),
