@@ -13,11 +13,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.content.Intent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.ImageNotSupported
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Wallet
@@ -38,9 +40,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GenerateStrukPdfUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.PrintStrukUseCase
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.DetailTransaksiViewModel
 import kotlinx.coroutines.launch
@@ -61,6 +65,45 @@ fun DetailTransaksiScreen(
     val context = LocalContext.current
     val printScope = rememberCoroutineScope()
     val printStrukUseCase = remember { PrintStrukUseCase() }
+    val generateStrukPdfUseCase = remember { GenerateStrukPdfUseCase() }
+
+    val onSavePdf = {
+        val transaksi = state.transaksi
+        if (transaksi != null) {
+            try {
+                val pdfFile = generateStrukPdfUseCase(context, transaksi)
+                if (pdfFile != null && pdfFile.exists()) {
+                    Toast.makeText(
+                        context,
+                        "PDF Struk berhasil disimpan di Downloads",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    try {
+                        val uri = FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            pdfFile
+                        )
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, "application/pdf")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        context.startActivity(
+                            Intent.createChooser(intent, "Buka Struk PDF")
+                        )
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                } else {
+                    Toast.makeText(context, "Gagal membuat file PDF struk.", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "Data transaksi belum siap.", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     val printReceipt = {
         val transaksi = state.transaksi
@@ -130,6 +173,15 @@ fun DetailTransaksiScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
+                            tint = Color(0xFF4F46E5)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onSavePdf) {
+                        Icon(
+                            imageVector = Icons.Default.PictureAsPdf,
+                            contentDescription = "Simpan PDF",
                             tint = Color(0xFF4F46E5)
                         )
                     }
@@ -580,33 +632,67 @@ fun DetailTransaksiScreen(
                     }
                 }
 
-                // ── Tombol Cetak Struk
+                // ── Tombol Simpan PDF & Cetak Struk
                 item {
-                    Button(
-                        onClick = onPrintReceipt,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4F46E5)
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Print,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                            tint = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Cetak Struk",
-                            fontFamily = interfamily,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                            color = Color.White
-                        )
+                        // Tombol Simpan PDF
+                        OutlinedButton(
+                            onClick = onSavePdf,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(1.5.dp, Color(0xFF4F46E5)),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Color(0xFF4F46E5)
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PictureAsPdf,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = Color(0xFF4F46E5)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Simpan PDF",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = Color(0xFF4F46E5)
+                            )
+                        }
+
+                        // Tombol Cetak Struk
+                        Button(
+                            onClick = onPrintReceipt,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4F46E5)
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Print,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Cetak Struk",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = Color.White
+                            )
+                        }
                     }
                 }
 
