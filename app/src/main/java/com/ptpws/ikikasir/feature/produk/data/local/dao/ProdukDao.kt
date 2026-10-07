@@ -15,10 +15,10 @@ interface ProdukDao {
     @Query("SELECT * FROM products WHERE categoryId = :categoryId AND isDeleted = 0 ORDER BY createdAt DESC")
     fun getProdukByCategoryIdFlow(categoryId: String): Flow<List<ProdukEntity>>
 
-    @Query("SELECT * FROM products WHERE id = :id AND isDeleted = 0 LIMIT 1")
+    @Query("SELECT * FROM products WHERE (id = :id OR barcode = :id) AND isDeleted = 0 LIMIT 1")
     fun getProdukByIdFlow(id: String): Flow<ProdukEntity?>
 
-    @Query("SELECT * FROM products WHERE id = :id LIMIT 1")
+    @Query("SELECT * FROM products WHERE (id = :id OR barcode = :id) LIMIT 1")
     suspend fun getProdukById(id: String): ProdukEntity?
 
     @Upsert
