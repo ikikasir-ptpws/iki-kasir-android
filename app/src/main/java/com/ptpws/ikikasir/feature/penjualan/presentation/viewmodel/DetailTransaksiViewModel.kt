@@ -39,10 +39,15 @@ class DetailTransaksiViewModel @Inject constructor(
                         val enrichedTx = enrichTransaction(tx)
                         _state.update { it.copy(transaksi = enrichedTx, isLoading = false) }
                     } else {
-                        // Fallback to latest transaction if specific ID is not found in DB
+                        // Fallback to searching in all transactions if specific ID is not found in DB
                         getAllTransaksiUseCase().collect { list ->
-                            val latest = list.firstOrNull()
-                            val enrichedTx = latest?.let { enrichTransaction(it) }
+                            val clean = transactionId.trim().removePrefix("#")
+                            val matched = list.firstOrNull { item ->
+                                item.transactionId.equals(transactionId.trim(), ignoreCase = true) ||
+                                item.transactionNumber.equals(transactionId.trim(), ignoreCase = true) ||
+                                item.transactionNumber.removePrefix("#").equals(clean, ignoreCase = true)
+                            } ?: list.firstOrNull()
+                            val enrichedTx = matched?.let { enrichTransaction(it) }
                             _state.update {
                                 it.copy(
                                     transaksi = enrichedTx,
