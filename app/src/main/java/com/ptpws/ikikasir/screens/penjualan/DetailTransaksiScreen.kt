@@ -481,9 +481,10 @@ fun DetailTransaksiScreen(
                 // ── Card 4: Ringkasan Pembayaran (Gambar 1 Layout)
                 item {
                     val totalSubtotal = if (tx.subtotal > 0) tx.subtotal else tx.items.sumOf { it.subtotal }
-                    val isPpnEksklusif = tx.isPpnEksklusif
-                    val formattedPercent = tx.formattedPpnPercentage
-                    val effectivePpn = tx.ppnAmount
+                    val isPpnAktif = tx.isTaxActive()
+                    val isPpnEksklusif = tx.checkIsPpnEksklusif()
+                    val formattedPercent = tx.getFormattedPercentage()
+                    val effectivePpn = tx.getEffectivePpnAmount()
                     val totalPembayaran = if (tx.total > 0) tx.total else (totalSubtotal - tx.discount + (if (isPpnEksklusif) effectivePpn else 0.0)).coerceAtLeast(0.0)
 
                     Card(
@@ -504,10 +505,10 @@ fun DetailTransaksiScreen(
                                 nilaiColor = Color(0xFF334155)
                             )
 
-                            if (isPpnEksklusif) {
+                            if (isPpnAktif && effectivePpn > 0) {
                                 RingkasanBaris(
-                                    label = "PPN",
-                                    nilai = "+$formattedPercent",
+                                    label = "PPN ($formattedPercent)",
+                                    nilai = if (isPpnEksklusif) "+ Rp ${formatRupiah(effectivePpn)}" else "Rp ${formatRupiah(effectivePpn)}",
                                     nilaiColor = Color(0xFF334155)
                                 )
                             }
