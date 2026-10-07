@@ -30,4 +30,9 @@ class BluetoothPrinterPreferences(context: Context) {
 
     fun getSavedAddress(): String = prefs.getString("savedAddress", "") ?: ""
     fun getSavedName(): String = prefs.getString("savedName", "") ?: ""
+
+    fun isAutoPrint(): Boolean = prefs.getBoolean("isAutoPrint", false)
+    fun setAutoPrint(enabled: Boolean) {
+        prefs.edit().putBoolean("isAutoPrint", enabled).apply()
+    }
 }
