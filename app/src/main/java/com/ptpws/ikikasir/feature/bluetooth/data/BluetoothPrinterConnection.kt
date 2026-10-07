@@ -9,6 +9,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -21,6 +24,8 @@ object BluetoothPrinterConnection {
     private var socket: BluetoothSocket? = null
     @Volatile
     private var connectedAddress: String? = null
+    private val _connectedAddressFlow = MutableStateFlow<String?>(null)
+    val connectedAddressFlow: StateFlow<String?> = _connectedAddressFlow.asStateFlow()
 
     suspend fun connect(context: Context, address: String) {
         withContext(Dispatchers.IO) {
@@ -50,6 +55,7 @@ object BluetoothPrinterConnection {
                 val connectedSocket = openSocket(device)
                 socket = connectedSocket
                 connectedAddress = address
+                _connectedAddressFlow.value = address
             }
         }
     }
@@ -71,6 +77,11 @@ object BluetoothPrinterConnection {
 
     fun isConnected(address: String): Boolean =
         connectedAddress == address && socket?.isConnected == true
+
+    fun isConnected(): Boolean =
+        socket?.isConnected == true && connectedAddress != null
+
+    fun getConnectedAddress(): String? = connectedAddress
 
     suspend fun disconnect() {
         withContext(Dispatchers.IO) {
@@ -115,6 +126,7 @@ object BluetoothPrinterConnection {
         } finally {
             socket = null
             connectedAddress = null
+            _connectedAddressFlow.value = null
         }
     }
 
