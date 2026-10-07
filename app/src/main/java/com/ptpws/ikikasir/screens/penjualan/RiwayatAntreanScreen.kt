@@ -970,29 +970,31 @@ private fun QueueHistoryCard(
                             }
                         }
 
-                        val isPpnEksklusif = transaksi.isPpnEksklusif
-                        val formattedPercent = transaksi.formattedPpnPercentage
+                        val isPpnAktif = transaksi.isTaxActive()
+                        val isPpnEksklusif = transaksi.checkIsPpnEksklusif()
+                        val formattedPercent = transaksi.getFormattedPercentage()
+                        val effectivePpn = transaksi.getEffectivePpnAmount()
                         val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.totalPrice }
                         val discountAmount = transaksi.discount
-                        val grandTotal = if (transaksi.total > 0) transaksi.total else (totalSubtotal - discountAmount + (if (isPpnEksklusif) transaksi.ppnAmount else 0.0)).coerceAtLeast(0.0)
+                        val grandTotal = if (transaksi.total > 0) transaksi.total else (totalSubtotal - discountAmount + (if (isPpnEksklusif) effectivePpn else 0.0)).coerceAtLeast(0.0)
 
                         HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp)
 
-                        if (isPpnEksklusif) {
+                        if (isPpnAktif && effectivePpn > 0) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "PPN",
+                                    text = "PPN ($formattedPercent)",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF475569),
                                     fontFamily = interfamily
                                 )
                                 Text(
-                                    text = "+$formattedPercent",
+                                    text = if (isPpnEksklusif) "+ ${rupiahFormat.format(effectivePpn)}" else rupiahFormat.format(effectivePpn),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF334155),
