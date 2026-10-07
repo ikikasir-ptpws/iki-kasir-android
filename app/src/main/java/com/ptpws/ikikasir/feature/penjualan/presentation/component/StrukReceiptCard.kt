@@ -396,8 +396,11 @@ fun StrukReceiptCard(
             // ── 5. Payment Summary ─────────────────────────────────────────
             val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else displayItems.sumOf { it.subtotal }
             val totalDiscount = transaksi.discount
-            val isPpnEksklusif = transaksi.isPpnEksklusif
-            val grandTotal    = if (transaksi.total > 0) transaksi.total else (totalSubtotal - totalDiscount + (if (isPpnEksklusif) transaksi.ppnAmount else 0.0)).coerceAtLeast(0.0)
+            val isPpnAktif = transaksi.isTaxActive()
+            val isPpnEksklusif = transaksi.checkIsPpnEksklusif()
+            val formattedPercent = transaksi.getFormattedPercentage()
+            val effectivePpn = transaksi.getEffectivePpnAmount()
+            val grandTotal    = if (transaksi.total > 0) transaksi.total else (totalSubtotal - totalDiscount + (if (isPpnEksklusif) effectivePpn else 0.0)).coerceAtLeast(0.0)
             val paidAmount    = if (transaksi.paymentAmount > 0 && transaksi.paymentAmount >= grandTotal) transaksi.paymentAmount else grandTotal
             val returnChange  = (paidAmount - grandTotal).coerceAtLeast(0.0)
             val itemCount     = displayItems.sumOf { it.quantity }
@@ -433,20 +436,20 @@ fun StrukReceiptCard(
                         )
                     }
 
-                    // PPN (hanya jika belum termasuk PPN / eksklusif)
-                    if (isPpnEksklusif) {
+                    // PPN (jika aktif)
+                    if (isPpnAktif && effectivePpn > 0) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "PPN",
+                                text = "PPN ($formattedPercent)",
                                 fontFamily = interfamily,
                                 fontSize = 12.sp,
                                 color = Color(0xFF64748B)
                             )
                             Text(
-                                text = "+${transaksi.formattedPpnPercentage}",
+                                text = if (isPpnEksklusif) "+ ${formatRupiah(effectivePpn)}" else formatRupiah(effectivePpn),
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp,
@@ -556,13 +559,13 @@ fun StrukReceiptCard(
                         )
                     }
 
-                    // Kembalian
+                    // Kembali
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Kembalian",
+                            text = "Kembali",
                             fontFamily = interfamily,
                             fontSize = 12.sp,
                             color = Color(0xFF64748B)
