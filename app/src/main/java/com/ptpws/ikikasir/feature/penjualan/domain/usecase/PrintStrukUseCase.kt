@@ -115,6 +115,8 @@ class PrintStrukUseCase {
 
         command(0x1B, 0x40)
         command(0x1B, 0x74, 0x00)
+        command(0x1C, 0x2E) // FS . (Cancel Kanji/Chinese mode agar spasi karakter ASCII tidak renggang)
+        command(0x1B, 0x20, 0x00) // ESC SP 0 (Set inter-character space = 0)
         command(0x1D, 0x4C, 0x00, 0x00)
         command(0x1D, 0x57, (columns * 12) and 0xFF, ((columns * 12) shr 8) and 0xFF)
 
@@ -155,13 +157,19 @@ class PrintStrukUseCase {
         feedLine(line)
 
         val subtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.subtotal }
-        if (transaksi.isPpnEksklusif) {
-            row("PPN", "+${transaksi.formattedPpnPercentage}")
+        val isPpnAktif = transaksi.isTaxActive()
+        val isPpnEksklusif = transaksi.checkIsPpnEksklusif()
+        val formattedPercent = transaksi.getFormattedPercentage()
+        val effectivePpn = transaksi.getEffectivePpnAmount()
+        if (isPpnAktif && effectivePpn > 0) {
+            val ppnLabel = "PPN ($formattedPercent)"
+            val ppnVal = if (isPpnEksklusif) "+ ${amount(effectivePpn)}" else amount(effectivePpn)
+            row(ppnLabel, ppnVal)
         }
         if (transaksi.discount > 0) row("Diskon", "- ${amount(transaksi.discount)}")
 
         val grandTotalLabel = "TOTAL"
-        val grandTotal = transaksi.total.takeIf { it > 0 } ?: (subtotal + (if (transaksi.isPpnEksklusif) transaksi.ppnAmount else 0.0) - transaksi.discount)
+        val grandTotal = transaksi.total.takeIf { it > 0 } ?: (subtotal + (if (isPpnEksklusif) effectivePpn else 0.0) - transaksi.discount)
         val grandTotalAmount = amount(grandTotal)
         val totalTextColumns = if (columns >= 48) 2 else 1
         val totalLine = if (totalTextColumns == 2) {
@@ -179,7 +187,7 @@ class PrintStrukUseCase {
 
         val paid = transaksi.paymentAmount.takeIf { it > 0 } ?: grandTotal
         row("Bayar (${transaksi.paymentMethod})", amount(paid))
-        row("Kembalian", amount(transaksi.change))
+        row("Kembali", amount(transaksi.change))
         feedLine(line)
 
         if (transaksi.notes.isNotBlank()) {
