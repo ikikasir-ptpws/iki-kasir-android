@@ -127,6 +127,37 @@ fun DaftarProdukScreen(
         state.produkList.count { it.stock <= it.lowStockThreshold }
     }
 
+    // Handler saat barcode / QR produk berhasil discan: langsung arahkan ke halaman detail produk
+    val handleScannedBarcode: (String) -> Unit = { rawCode ->
+        val clean = rawCode.trim()
+        val matched = state.produkList.firstOrNull { p ->
+            p.barcode.equals(clean, ignoreCase = true) ||
+            p.id.equals(clean, ignoreCase = true) ||
+            (clean.isNotBlank() && p.barcode.isNotBlank() && p.barcode.trimStart('0') == clean.trimStart('0'))
+        }
+
+        if (matched != null) {
+            viewModel.onSearchQueryChange(matched.name)
+            val intent = Intent(context, DetailProdukActivity::class.java).apply {
+                putExtra("produkId", matched.id)
+            }
+            context.startActivity(intent)
+        } else if (state.produkList.isEmpty()) {
+            // Jika daftar produk di memori belum terload, coba buka via ID/barcode langsung
+            val intent = Intent(context, DetailProdukActivity::class.java).apply {
+                putExtra("produkId", clean)
+            }
+            context.startActivity(intent)
+        } else {
+            viewModel.onSearchQueryChange(clean)
+            Toast.makeText(
+                context,
+                "Produk dengan barcode \"$clean\" tidak ditemukan",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
     // Camera Barcode Scanner Fallback
     val barcodeLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -134,7 +165,7 @@ fun DaftarProdukScreen(
         if (result.resultCode == Activity.RESULT_OK) {
             val code = result.data?.getStringExtra("SCAN_RESULT")
             if (!code.isNullOrBlank()) {
-                viewModel.onSearchQueryChange(code)
+                handleScannedBarcode(code)
             }
         }
     }
@@ -151,7 +182,7 @@ fun DaftarProdukScreen(
                 .addOnSuccessListener { barcode ->
                     val rawValue = barcode.rawValue
                     if (!rawValue.isNullOrBlank()) {
-                        viewModel.onSearchQueryChange(rawValue)
+                        handleScannedBarcode(rawValue)
                     }
                 }
                 .addOnFailureListener {
