@@ -59,6 +59,7 @@ class DetailProdukViewModel @Inject constructor(
                         )
                     }
                     loadCategoryName(produk.categoryId)
+                    observeSalesSummary(produk.id, produk.barcode)
                 } else {
                     _state.update { current ->
                         current.copy(isLoading = false)
@@ -66,11 +67,9 @@ class DetailProdukViewModel @Inject constructor(
                 }
             }
         }
-
-        observeSalesSummary(produkId)
     }
 
-    private fun observeSalesSummary(produkId: String) {
+    private fun observeSalesSummary(produkId: String, barcode: String = "") {
         viewModelScope.launch {
             getAllTransaksiUseCase().collect { transactions ->
                 val startOfTodayMillis = Calendar.getInstance().apply {
@@ -91,7 +90,9 @@ class DetailProdukViewModel @Inject constructor(
                     if (!tx.status.equals("CANCELLED", ignoreCase = true) && !tx.status.equals("BATAL", ignoreCase = true)) {
                         val txMillis = tx.createdAt.toDate().time
                         tx.items.forEach { cartItem ->
-                            if (cartItem.produk.id == produkId) {
+                            val isMatch = cartItem.produk.id == produkId || 
+                                (barcode.isNotBlank() && cartItem.produk.barcode.equals(barcode, ignoreCase = true))
+                            if (isMatch) {
                                 if (txMillis >= startOfTodayMillis) {
                                     todayQty += cartItem.quantity
                                 }
