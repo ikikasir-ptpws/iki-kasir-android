@@ -235,6 +235,24 @@ fun RiwayatTransaksiScreen(
         )
     }
 
+    // Handler saat barcode / QR transaksi berhasil discan: langsung arahkan ke detail transaksi
+    val handleScannedTransaction: (String) -> Unit = { rawCode ->
+        val clean = rawCode.trim()
+        val cleanNoHash = clean.removePrefix("#").trim()
+
+        val matched = state.transaksiList.firstOrNull { tx ->
+            tx.transactionId.equals(clean, ignoreCase = true) ||
+            tx.transactionId.equals(cleanNoHash, ignoreCase = true) ||
+            tx.transactionNumber.equals(clean, ignoreCase = true) ||
+            tx.transactionNumber.equals(cleanNoHash, ignoreCase = true) ||
+            tx.transactionNumber.removePrefix("#").equals(cleanNoHash, ignoreCase = true)
+        }
+
+        val targetTxId = matched?.transactionId ?: clean
+        viewModel.onSearchQueryChange(matched?.transactionNumber ?: clean)
+        onDetailTransaksi(targetTxId)
+    }
+
     // Launcher for legacy ZXing barcode scanner fallback
     val barcodeScanLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -242,7 +260,7 @@ fun RiwayatTransaksiScreen(
         if (result.resultCode == Activity.RESULT_OK) {
             val contents = result.data?.getStringExtra("SCAN_RESULT")
             if (!contents.isNullOrBlank()) {
-                viewModel.onSearchQueryChange(contents)
+                handleScannedTransaction(contents)
             }
         }
     }
@@ -258,7 +276,9 @@ fun RiwayatTransaksiScreen(
             scanner.startScan()
                 .addOnSuccessListener { barcode ->
                     val rawValue = barcode.rawValue
-                    if (!rawValue.isNullOrBlank()) viewModel.onSearchQueryChange(rawValue)
+                    if (!rawValue.isNullOrBlank()) {
+                        handleScannedTransaction(rawValue)
+                    }
                 }
                 .addOnFailureListener {
                     val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
