@@ -27,6 +27,11 @@ import com.ptpws.ikikasir.feature.promo.domain.usecase.GetActivePromosUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectivePrice
 import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectiveSubtotal
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+import android.content.Context
+import com.ptpws.ikikasir.feature.bluetooth.data.BluetoothPrinterConnection
+import com.ptpws.ikikasir.feature.bluetooth.data.preferences.BluetoothPrinterPreferences
+import com.ptpws.ikikasir.feature.bluetooth.domain.repository.BluetoothPrinterRepository
+import com.ptpws.ikikasir.feature.penjualan.presentation.state.PrinterStatus
 
 @HiltViewModel
 class PembayaranViewModel @Inject constructor(
@@ -37,7 +42,9 @@ class PembayaranViewModel @Inject constructor(
     private val getPaymentMethodSettingUseCase: GetPaymentMethodSettingUseCase,
     private val getTableSettingUseCase: GetTableSettingUseCase,
     private val getActivePromosUseCase: GetActivePromosUseCase,
-    private val logActivityUseCase: LogActivityUseCase
+    private val logActivityUseCase: LogActivityUseCase,
+    private val bluetoothPrinterPreferences: BluetoothPrinterPreferences,
+    private val bluetoothPrinterRepository: BluetoothPrinterRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PembayaranState())
@@ -45,7 +52,10 @@ class PembayaranViewModel @Inject constructor(
 
     init {
         generateOrderId()
+        val savedAutoPrint = bluetoothPrinterPreferences.isAutoPrint()
+        _state.update { it.copy(isCetakStrukOtomatis = savedAutoPrint) }
         observeCartAndTax()
+        observePrinterConnection()
     }
 
     fun generateOrderId() {
@@ -130,6 +140,32 @@ class PembayaranViewModel @Inject constructor(
                     )
                 }
                 recalculateTotal()
+            }
+        }
+    }
+
+    private fun observePrinterConnection() {
+        viewModelScope.launch {
+            BluetoothPrinterConnection.connectedAddressFlow.collect { connectedAddress ->
+                val setting = bluetoothPrinterPreferences.getSetting()
+                if (setting.savedAddress.isNotBlank()) {
+                    if (connectedAddress == setting.savedAddress) {
+                        _state.update {
+                            it.copy(
+                                printerStatus = PrinterStatus.SIAP,
+                                isPrinterSiap = true,
+                                printerName = setting.savedName
+                            )
+                        }
+                    } else if (connectedAddress == null && _state.value.printerStatus == PrinterStatus.SIAP) {
+                        _state.update {
+                            it.copy(
+                                printerStatus = PrinterStatus.BELUM_TERHUBUNG,
+                                isPrinterSiap = false
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -281,7 +317,72 @@ class PembayaranViewModel @Inject constructor(
     }
 
     fun toggleCetakStrukOtomatis() {
-        _state.update { it.copy(isCetakStrukOtomatis = !it.isCetakStrukOtomatis) }
+        val newSetting = !_state.value.isCetakStrukOtomatis
+        bluetoothPrinterPreferences.setAutoPrint(newSetting)
+        _state.update { it.copy(isCetakStrukOtomatis = newSetting) }
+    }
+
+    fun checkPrinterStatus(context: Context) {
+        val isBluetoothOn = bluetoothPrinterRepository.isBluetoothEnabled()
+        if (!isBluetoothOn) {
+            _state.update {
+                it.copy(
+                    printerStatus = PrinterStatus.BLUETOOTH_MATI,
+                    isPrinterSiap = false
+                )
+            }
+            return
+        }
+
+        val setting = bluetoothPrinterPreferences.getSetting()
+        if (setting.savedAddress.isBlank()) {
+            _state.update {
+                it.copy(
+                    printerStatus = PrinterStatus.BELUM_DIATUR,
+                    isPrinterSiap = false
+                )
+            }
+            return
+        }
+
+        if (BluetoothPrinterConnection.isConnected(setting.savedAddress)) {
+            _state.update {
+                it.copy(
+                    printerStatus = PrinterStatus.SIAP,
+                    isPrinterSiap = true,
+                    printerName = setting.savedName
+                )
+            }
+            return
+        }
+
+        // Coba hubungkan di background secara halus
+        viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    printerStatus = PrinterStatus.CONNECTING,
+                    isPrinterSiap = false,
+                    printerName = setting.savedName
+                )
+            }
+            try {
+                BluetoothPrinterConnection.connect(context, setting.savedAddress)
+                val isNowConnected = BluetoothPrinterConnection.isConnected(setting.savedAddress)
+                _state.update {
+                    it.copy(
+                        printerStatus = if (isNowConnected) PrinterStatus.SIAP else PrinterStatus.BELUM_TERHUBUNG,
+                        isPrinterSiap = isNowConnected
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(
+                        printerStatus = PrinterStatus.BELUM_TERHUBUNG,
+                        isPrinterSiap = false
+                    )
+                }
+            }
+        }
     }
 
     fun prosesPembayaran() {
