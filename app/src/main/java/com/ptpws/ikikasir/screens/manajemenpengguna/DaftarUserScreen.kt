@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,6 +30,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -58,10 +60,75 @@ fun DaftarUserScreen(
 ) {
     val state by viewModel.listState.collectAsState()
 
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                viewModel.syncData()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     val users = state.filteredUsers
     val totalPengguna = state.users.size
     val penggunaAktif = state.users.count { it.isActive }
     val penggunaNonAktif = state.users.count { !it.isActive }
+
+    var userToDelete by remember { mutableStateOf<com.ptpws.ikikasir.feature.manajemenpengguna.domain.model.User?>(null) }
+
+    if (userToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { userToDelete = null },
+            title = {
+                Text(
+                    text = "Hapus Pengguna",
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = interfamily,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Text(
+                    text = "Apakah Anda yakin ingin menghapus akun \"${userToDelete?.fullName}\"? Data akun ini akan dihapus dari sistem.",
+                    fontFamily = interfamily,
+                    fontSize = 14.sp,
+                    color = Color(0xFF4B5563)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        userToDelete?.let { viewModel.deleteUser(it.id) }
+                        userToDelete = null
+                    }
+                ) {
+                    Text(
+                        text = "Hapus",
+                        color = Color(0xFFEF4444),
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = interfamily
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { userToDelete = null }
+                ) {
+                    Text(
+                        text = "Batal",
+                        color = Color(0xFF6B7280),
+                        fontFamily = interfamily
+                    )
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = Color.White
+        )
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -308,7 +375,7 @@ fun DaftarUserScreen(
                                         )
                                     }
                                     IconButton(
-                                        onClick = { viewModel.deleteUser(user.id) },
+                                        onClick = { userToDelete = user },
                                         modifier = Modifier.size(24.dp)
                                     ) {
                                         Icon(

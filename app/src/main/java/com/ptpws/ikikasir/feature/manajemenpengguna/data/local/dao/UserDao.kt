@@ -12,6 +12,9 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE isDeleted = 0 ORDER BY createdAt DESC")
     fun getAllUsersFlow(): Flow<List<UserEntity>>
 
+    @Query("SELECT * FROM users WHERE isDeleted = 0 ORDER BY createdAt DESC")
+    suspend fun getAllUsers(): List<UserEntity>
+
     @Query("SELECT * FROM users WHERE id = :id AND isDeleted = 0 LIMIT 1")
     fun getUserByIdFlow(id: String): Flow<UserEntity?>
 

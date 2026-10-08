@@ -19,7 +19,7 @@ class UserRemoteDataSourceImpl @Inject constructor(
     override fun getUserFlow(): Flow<List<UserDto>> = callbackFlow {
         val listener = collection.addSnapshotListener { snapshot, error ->
             if (error != null) {
-                close(error)
+                android.util.Log.w("UserRemoteDataSource", "Firestore snapshot listener error: ${error.message}")
                 return@addSnapshotListener
             }
             if (snapshot != null) {

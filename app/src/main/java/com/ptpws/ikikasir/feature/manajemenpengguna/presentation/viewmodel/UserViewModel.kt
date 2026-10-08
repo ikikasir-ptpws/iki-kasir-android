@@ -41,6 +41,7 @@ class UserViewModel @Inject constructor(
 
     init {
         loadUsers()
+        syncData()
     }
 
     fun loadUsers() {
@@ -120,19 +121,23 @@ class UserViewModel @Inject constructor(
     // ── Form Actions ──
 
     fun onFullNameChange(value: String) {
-        _formState.update { it.copy(fullName = value) }
+        _formState.update { it.copy(fullName = value, error = null) }
     }
 
     fun onEmailChange(value: String) {
-        _formState.update { it.copy(email = value) }
+        _formState.update { it.copy(email = value, error = null) }
     }
 
     fun onPasswordChange(value: String) {
-        _formState.update { it.copy(password = value) }
+        _formState.update { it.copy(password = value, error = null) }
+    }
+
+    fun onConfirmPasswordChange(value: String) {
+        _formState.update { it.copy(confirmPassword = value, error = null) }
     }
 
     fun onRoleChange(value: String) {
-        _formState.update { it.copy(roleId = value) }
+        _formState.update { it.copy(roleId = value, error = null) }
     }
 
     fun onActiveChange(value: Boolean) {
@@ -183,6 +188,18 @@ class UserViewModel @Inject constructor(
             _formState.update { it.copy(error = message) }
             return
         }
+        if (!current.email.contains("@")) {
+            val message = "Format email tidak valid (harus mengandung '@')"
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(error = message) }
+            return
+        }
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(current.email.trim()).matches()) {
+            val message = "Format email tidak valid (contoh: nama@domain.com)"
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(error = message) }
+            return
+        }
         val isEdit = current.id.isNotBlank()
         if (!isEdit) {
             // Tambah pengguna baru: password wajib diisi
@@ -198,11 +215,45 @@ class UserViewModel @Inject constructor(
                 _formState.update { it.copy(error = message) }
                 return
             }
+            if (current.confirmPassword.isBlank()) {
+                val message = "Konfirmasi kata sandi tidak boleh kosong"
+                GlobalCrudResultDialog.failure(message)
+                _formState.update { it.copy(error = message) }
+                return
+            }
             if (current.password != current.confirmPassword) {
                 val message = "Konfirmasi kata sandi tidak cocok"
                 GlobalCrudResultDialog.failure(message)
                 _formState.update { it.copy(error = message) }
                 return
+            }
+        } else {
+            // Edit pengguna: password opsional (hanya divalidasi jika diisi)
+            if (current.password.isNotBlank() || current.confirmPassword.isNotBlank()) {
+                if (current.password.isBlank()) {
+                    val message = "Kata sandi baru tidak boleh kosong"
+                    GlobalCrudResultDialog.failure(message)
+                    _formState.update { it.copy(error = message) }
+                    return
+                }
+                if (current.password.length < 6) {
+                    val message = "Kata sandi minimal 6 karakter"
+                    GlobalCrudResultDialog.failure(message)
+                    _formState.update { it.copy(error = message) }
+                    return
+                }
+                if (current.confirmPassword.isBlank()) {
+                    val message = "Konfirmasi kata sandi baru tidak boleh kosong"
+                    GlobalCrudResultDialog.failure(message)
+                    _formState.update { it.copy(error = message) }
+                    return
+                }
+                if (current.password != current.confirmPassword) {
+                    val message = "Konfirmasi kata sandi tidak cocok"
+                    GlobalCrudResultDialog.failure(message)
+                    _formState.update { it.copy(error = message) }
+                    return
+                }
             }
         }
         if (current.roleId.isBlank()) {
@@ -231,7 +282,7 @@ class UserViewModel @Inject constructor(
                 // plainPassword hanya diteruskan ke Firebase Auth, tidak disimpan
                 insertUserUseCase(user, current.password)
             } else {
-                updateUserUseCase(user)
+                updateUserUseCase(user, current.password.ifBlank { null })
             }
             flow.collect { result ->
                 result.onSuccess {

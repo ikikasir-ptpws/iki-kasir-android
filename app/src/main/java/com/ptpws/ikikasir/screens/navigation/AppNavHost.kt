@@ -83,6 +83,14 @@ fun AppNavHost() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    LaunchedEffect(sessionState.user, sessionState.isLoading) {
+        if (!sessionState.isLoading && sessionState.user == null) {
+            context.startActivity(Intent(context, com.ptpws.ikikasir.feature.auth.presentation.screen.AuthActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            })
+        }
+    }
+
     LaunchedEffect(Unit) {
         val hasBluetoothPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
             ContextCompat.checkSelfPermission(

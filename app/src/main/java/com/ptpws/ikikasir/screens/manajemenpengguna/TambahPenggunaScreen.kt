@@ -99,12 +99,6 @@ fun TambahPenggunaScreen(
 ) {
     val formState by viewModel.formState.collectAsState()
 
-    androidx.compose.runtime.LaunchedEffect(userId) {
-        if (!userId.isNullOrEmpty()) {
-            viewModel.loadUserById(userId)
-        }
-    }
-
     val roleListState by roleViewModel.listState.collectAsState()
     val availableRoles = roleListState.roles
     val context = LocalContext.current
@@ -112,13 +106,15 @@ fun TambahPenggunaScreen(
     var roleDropdownExpanded by remember { mutableStateOf(false) }
 
     var kataSandiTerlihat by remember { mutableStateOf(false) }
-    var konfirmasiKataSandi by remember { mutableStateOf("") }
     var konfirmasiKataSandiTerlihat by remember { mutableStateOf(false) }
     var localError by remember { mutableStateOf<String?>(null) }
 
-    androidx.compose.runtime.LaunchedEffect(formState.password) {
-        if (konfirmasiKataSandi.isEmpty() && formState.password.isNotEmpty()) {
-            konfirmasiKataSandi = formState.password
+    androidx.compose.runtime.LaunchedEffect(userId) {
+        if (!userId.isNullOrEmpty()) {
+            viewModel.loadUserById(userId)
+        } else {
+            viewModel.resetForm()
+            profileImageUri = null
         }
     }
 
@@ -491,6 +487,7 @@ fun TambahPenggunaScreen(
                                                     )
                                                 },
                                                 onClick = {
+                                                    localError = null
                                                     viewModel.onRoleChange(role.name)
                                                     roleDropdownExpanded = false
                                                 }
@@ -501,10 +498,12 @@ fun TambahPenggunaScreen(
                             }
                         }
 
+                        val isEdit = formState.id.isNotBlank()
+
                         // Kata Sandi
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
-                                text = "Kata Sandi",
+                                text = if (isEdit) "Kata Sandi (Opsional)" else "Kata Sandi",
                                 fontFamily = interfamily,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
@@ -548,7 +547,7 @@ fun TambahPenggunaScreen(
                                         decorationBox = { innerTextField ->
                                             if (formState.password.isEmpty()) {
                                                 Text(
-                                                    text = "Min. 6 karakter",
+                                                    text = if (isEdit) "Kosongkan jika tidak ingin mengubah sandi" else "Min. 6 karakter",
                                                     fontSize = 14.sp,
                                                     fontFamily = interfamily,
                                                     color = Color(0xFF94A3B8)
@@ -572,7 +571,7 @@ fun TambahPenggunaScreen(
                         // Konfirmasi Kata Sandi
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
-                                text = "Konfirmasi Kata Sandi",
+                                text = if (isEdit) "Konfirmasi Kata Sandi (Opsional)" else "Konfirmasi Kata Sandi",
                                 fontFamily = interfamily,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
@@ -600,10 +599,10 @@ fun TambahPenggunaScreen(
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     BasicTextField(
-                                        value = konfirmasiKataSandi,
+                                        value = formState.confirmPassword,
                                         onValueChange = {
                                             localError = null
-                                            konfirmasiKataSandi = it
+                                            viewModel.onConfirmPasswordChange(it)
                                         },
                                         singleLine = true,
                                         textStyle = TextStyle(
@@ -614,9 +613,9 @@ fun TambahPenggunaScreen(
                                         visualTransformation = if (konfirmasiKataSandiTerlihat) VisualTransformation.None else PasswordVisualTransformation(),
                                         modifier = Modifier.weight(1f),
                                         decorationBox = { innerTextField ->
-                                            if (konfirmasiKataSandi.isEmpty()) {
+                                            if (formState.confirmPassword.isEmpty()) {
                                                 Text(
-                                                    text = "Ulangi kata sandi",
+                                                    text = if (isEdit) "Ulangi kata sandi baru" else "Ulangi kata sandi",
                                                     fontSize = 14.sp,
                                                     fontFamily = interfamily,
                                                     color = Color(0xFF94A3B8)
@@ -732,15 +731,65 @@ fun TambahPenggunaScreen(
 
             // ── Tombol Simpan Pengguna
             item {
+                val isEdit = formState.id.isNotBlank()
                 Button(
                     onClick = {
-                        if (formState.password.isNotBlank() && formState.password.length < 6) {
-                            localError = "Kata sandi minimal 6 karakter"
+                        if (formState.fullName.isBlank()) {
+                            localError = "Nama lengkap tidak boleh kosong"
                             return@Button
                         }
-                        if (formState.password.isNotBlank() && konfirmasiKataSandi.isNotBlank() && formState.password != konfirmasiKataSandi) {
-                            localError = "Konfirmasi kata sandi tidak cocok"
+                        if (formState.email.isBlank()) {
+                            localError = "Alamat email tidak boleh kosong"
                             return@Button
+                        }
+                        if (!formState.email.contains("@")) {
+                            localError = "Format email tidak valid (harus mengandung '@')"
+                            return@Button
+                        }
+                        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(formState.email.trim()).matches()) {
+                            localError = "Format email tidak valid (contoh: nama@domain.com)"
+                            return@Button
+                        }
+                        if (formState.roleId.isBlank()) {
+                            localError = "Pilih role terlebih dahulu"
+                            return@Button
+                        }
+                        if (!isEdit) {
+                            if (formState.password.isBlank()) {
+                                localError = "Kata sandi tidak boleh kosong"
+                                return@Button
+                            }
+                            if (formState.password.length < 6) {
+                                localError = "Kata sandi minimal 6 karakter"
+                                return@Button
+                            }
+                            if (formState.confirmPassword.isBlank()) {
+                                localError = "Konfirmasi kata sandi tidak boleh kosong"
+                                return@Button
+                            }
+                            if (formState.password != formState.confirmPassword) {
+                                localError = "Konfirmasi kata sandi tidak cocok"
+                                return@Button
+                            }
+                        } else {
+                            if (formState.password.isNotBlank() || formState.confirmPassword.isNotBlank()) {
+                                if (formState.password.isBlank()) {
+                                    localError = "Kata sandi baru tidak boleh kosong"
+                                    return@Button
+                                }
+                                if (formState.password.length < 6) {
+                                    localError = "Kata sandi minimal 6 karakter"
+                                    return@Button
+                                }
+                                if (formState.confirmPassword.isBlank()) {
+                                    localError = "Konfirmasi kata sandi baru tidak boleh kosong"
+                                    return@Button
+                                }
+                                if (formState.password != formState.confirmPassword) {
+                                    localError = "Konfirmasi kata sandi tidak cocok"
+                                    return@Button
+                                }
+                            }
                         }
                         localError = null
                         viewModel.saveUser {
@@ -754,7 +803,7 @@ fun TambahPenggunaScreen(
                         .height(52.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2563EB)
+                        containerColor = if (isEdit) Color(0xFF16A34A) else Color(0xFF2563EB)
                     )
                 ) {
                     if (formState.isLoading) {
@@ -768,7 +817,7 @@ fun TambahPenggunaScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Simpan Pengguna",
+                            text = if (isEdit) "Simpan Perubahan" else "Simpan Pengguna",
                             fontFamily = interfamily,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,

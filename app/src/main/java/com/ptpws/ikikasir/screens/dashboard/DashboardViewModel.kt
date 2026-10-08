@@ -17,6 +17,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
+import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.entity.toEntity
+import com.ptpws.ikikasir.feature.manajemenpengguna.data.remote.datasource.UserRemoteDataSource
+import com.ptpws.ikikasir.feature.manajemenpengguna.data.remote.dto.toDto
+import kotlinx.coroutines.tasks.await
+
 private val DEFAULT_UNASSIGNED_ROLE_ACCESS = listOf(
     "Dashboard",
     "Profil",
@@ -47,7 +52,8 @@ class DashboardViewModel @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val userDao: UserDao,
     private val roleDao: RoleDao,
-    private val getRolesUseCase: GetRolesUseCase
+    private val getRolesUseCase: GetRolesUseCase,
+    private val userRemoteDataSource: UserRemoteDataSource
 ) : ViewModel() {
 
     private val _sessionState = MutableStateFlow(UserSessionState())
@@ -66,11 +72,125 @@ class DashboardViewModel @Inject constructor(
                 return@launch
             }
 
+            // Validasi apakah akun masih terdaftar di Firebase Auth
+            try {
+                firebaseUser.reload().await()
+            } catch (e: Exception) {
+                if (e is com.google.firebase.auth.FirebaseAuthInvalidUserException ||
+                    e.message?.contains("no user record", ignoreCase = true) == true ||
+                    e.message?.contains("user-not-found", ignoreCase = true) == true) {
+                    withContext(Dispatchers.IO) {
+                        try {
+                            val local = email.takeIf { it.isNotBlank() }?.let { userDao.getUserByEmail(it) }
+                            if (local != null) {
+                                userDao.deletePermanently(local.id)
+                                userRemoteDataSource.deleteUser(local.id)
+                            }
+                        } catch (_: Exception) {}
+                    }
+                    firebaseAuth.signOut()
+                    _sessionState.value = UserSessionState(user = null, isLoading = false)
+                    return@launch
+                }
+            }
+
             // 1. Instantly load from local Room DB cache on IO thread (zero UI delay)
             withContext(Dispatchers.IO) {
                 val localUser = email.takeIf { it.isNotBlank() }
                     ?.let { userDao.getUserByEmail(it) }
-                val roleName = localUser?.roleId.takeIf { !it.isNullOrBlank() } ?: "Admin"
+
+                val remoteUser = if (localUser == null && email.isNotBlank()) {
+                    try {
+                        userRemoteDataSource.getAllUsers().find { it.email.equals(email, ignoreCase = true) }
+                    } catch (e: Exception) {
+                        null
+                    }
+                } else null
+
+                // Cek apakah akun terdaftar di deleted_accounts
+                val deletedDoc = try {
+                    com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                        .collection("deleted_accounts")
+                        .document(email.lowercase())
+                        .get()
+                        .await()
+                } catch (e: Exception) {
+                    null
+                }
+
+                val isDeletedAccount = if (deletedDoc != null && deletedDoc.exists()) {
+                    val deletedAtMillis = deletedDoc.getTimestamp("deletedAt")?.toDate()?.time
+                        ?: deletedDoc.getLong("deletedAt")
+                        ?: 0L
+                    val creationMillis = firebaseUser.metadata?.creationTimestamp ?: 0L
+
+                    if (creationMillis > deletedAtMillis) {
+                        try {
+                            deletedDoc.reference.delete().await()
+                        } catch (_: Exception) {}
+                        false
+                    } else {
+                        true
+                    }
+                } else {
+                    false
+                }
+
+                if (isDeletedAccount) {
+                    try {
+                        firebaseUser.delete().await()
+                    } catch (_: Exception) {}
+                    try {
+                        deletedDoc?.reference?.delete()?.await()
+                    } catch (_: Exception) {}
+                    firebaseAuth.signOut()
+                    _sessionState.value = UserSessionState(user = null, isLoading = false)
+                    return@withContext
+                }
+
+                val activeUser = localUser?.let {
+                    User(
+                        id = it.id,
+                        fullName = it.fullName,
+                        email = it.email,
+                        roleId = it.roleId.ifBlank { "Admin" },
+                        isActive = it.isActive,
+                        photoUrl = it.photoUrl
+                    )
+                } ?: remoteUser?.let {
+                    userDao.insertOrUpdate(it.toEntity())
+                    it.toDomain()
+                } ?: run {
+                    // Akun dibuat langsung di Firebase Auth Console
+                    val newUserId = firebaseUser.uid
+                    val newFullName = firebaseUser.displayName?.takeIf { it.isNotBlank() }
+                        ?: email.substringBefore("@").ifBlank { "Pengguna" }
+                    val newPhotoUrl = firebaseUser.photoUrl?.toString().orEmpty()
+                    val newUser = User(
+                        id = newUserId,
+                        fullName = newFullName,
+                        email = email,
+                        roleId = "Admin",
+                        isActive = true,
+                        photoUrl = newPhotoUrl,
+                        createdAt = com.google.firebase.Timestamp.now(),
+                        updatedAt = com.google.firebase.Timestamp.now(),
+                        isSynced = true
+                    )
+                    try {
+                        userRemoteDataSource.saveUser(newUser.toDto())
+                    } catch (_: Exception) {}
+                    userDao.insertOrUpdate(newUser.toEntity(isSynced = true))
+                    newUser
+                }
+
+                if (activeUser != null && !activeUser.isActive) {
+                    firebaseAuth.signOut()
+                    _sessionState.value = UserSessionState(user = null, isLoading = false)
+                    return@withContext
+                }
+
+                val roleName = activeUser?.roleId.takeIf { !it.isNullOrBlank() } ?: "Admin"
                 val isAdminRole = roleName.equals("Admin", ignoreCase = true) || 
                         roleName.equals("System Administrator", ignoreCase = true) ||
                         roleName.isBlank()
@@ -90,27 +210,8 @@ class DashboardViewModel @Inject constructor(
                     else -> DEFAULT_UNASSIGNED_ROLE_ACCESS
                 }
 
-                val user = localUser?.let {
-                    User(
-                        id = it.id,
-                        fullName = it.fullName,
-                        email = it.email,
-                        roleId = it.roleId.ifBlank { "Admin" },
-                        isActive = it.isActive,
-                        photoUrl = it.photoUrl
-                    )
-                } ?: User(
-                    id = firebaseUser.uid,
-                    fullName = firebaseUser.displayName
-                        ?.takeIf { it.isNotBlank() }
-                        ?: email.substringBefore("@").ifBlank { "Pengguna" },
-                    email = email,
-                    roleId = "Admin",
-                    isActive = true
-                )
-
                 _sessionState.value = UserSessionState(
-                    user = user,
+                    user = activeUser,
                     roleName = if (isAdminRole) "Admin" else roleName,
                     menuAccess = menuAccess,
                     isLoading = false

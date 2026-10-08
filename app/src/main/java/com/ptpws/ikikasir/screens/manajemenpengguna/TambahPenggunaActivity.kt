@@ -25,7 +25,7 @@ class TambahPenggunaActivity : ComponentActivity() {
                         onBack = { finish() },
                         onSimpanPengguna = { finish() }
                     )
-                    GlobalCrudResultDialogHost()
+                    GlobalCrudResultDialogHost(showSuccess = false)
                 }
             }
         }

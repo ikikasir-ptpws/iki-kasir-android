@@ -1,14 +1,17 @@
 package com.ptpws.ikikasir.feature.auth.data.repository
 
+import android.util.Log
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
+import com.google.firebase.firestore.FirebaseFirestore
 import com.ptpws.ikikasir.feature.auth.domain.repository.AuthRepository
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.dao.UserDao
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.entity.toEntity
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.remote.datasource.UserRemoteDataSource
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.remote.dto.toDto
+import com.ptpws.ikikasir.feature.manajemenpengguna.domain.model.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
@@ -29,65 +32,132 @@ class AuthRepositoryImpl @Inject constructor(
         val cleanPassword = password.trim()
 
         try {
-            // Login ke Firebase Auth
+            // 1. Login ke Firebase Auth terlebih dahulu
             val result = firebaseAuth.signInWithEmailAndPassword(cleanEmail, cleanPassword).await()
+            val currentAuthUser = firebaseAuth.currentUser
 
-            // Verifikasi status keaktifan akun
-            val localUser = userDao.getUserByEmail(cleanEmail)
-            val isActive = if (localUser != null) {
-                localUser.isActive
-            } else {
-                try {
-                    val remoteUser = remoteDataSource.getAllUsers()
-                        .find { it.email.equals(cleanEmail, ignoreCase = true) }
-                    if (remoteUser != null) {
-                        userDao.insertOrUpdate(remoteUser.toEntity())
-                        remoteUser.isActive
-                    } else {
-                        // User terdaftar langsung di Firebase Auth (bukan via app)
-                        // Auto-simpan profilnya ke Firestore & Room DB
-                        val currentAuthUser = firebaseAuth.currentUser
-                        val newUserId = currentAuthUser?.uid ?: java.util.UUID.randomUUID().toString()
-                        val newFullName = currentAuthUser?.displayName?.takeIf { it.isNotBlank() }
-                            ?: cleanEmail.substringBefore("@").ifBlank { "User" }
-                        val newPhotoUrl = currentAuthUser?.photoUrl?.toString().orEmpty()
+            // 2. Cek apakah akun ini terdaftar di Firestore collection 'deleted_accounts'
+            val deletedDoc = try {
+                FirebaseFirestore.getInstance()
+                    .collection("deleted_accounts")
+                    .document(cleanEmail.lowercase())
+                    .get()
+                    .await()
+            } catch (e: Exception) {
+                null
+            }
 
-                        val newUser = com.ptpws.ikikasir.feature.manajemenpengguna.domain.model.User(
-                            id = newUserId,
-                            fullName = newFullName,
-                            email = cleanEmail,
-                            roleId = "Admin",
-                            isActive = true,
-                            photoUrl = newPhotoUrl,
-                            createdAt = com.google.firebase.Timestamp.now(),
-                            updatedAt = com.google.firebase.Timestamp.now(),
-                            isSynced = true
-                        )
-                        try {
-                            remoteDataSource.saveUser(newUser.toDto())
-                        } catch (e: Exception) {
-                            android.util.Log.w("AuthRepository", "Gagal auto-save ke Firestore: ${e.message}")
-                        }
-                        userDao.insertOrUpdate(newUser.toEntity(isSynced = true))
-                        true
-                    }
-                } catch (e: Exception) {
+            val isDeletedAccount = if (deletedDoc != null && deletedDoc.exists()) {
+                val deletedAtMillis = deletedDoc.getTimestamp("deletedAt")?.toDate()?.time
+                    ?: deletedDoc.getLong("deletedAt")
+                    ?: 0L
+                val creationMillis = currentAuthUser?.metadata?.creationTimestamp ?: 0L
+
+                if (creationMillis > deletedAtMillis) {
+                    // Akun ini dibuat baru di Firebase Auth SETELAH waktu penghapusan!
+                    // Berarti ini akun baru yang dibuat admin di Firebase Console.
+                    // Hapus data lama di deleted_accounts agar bersih
+                    try {
+                        deletedDoc.reference.delete().await()
+                    } catch (_: Exception) {}
+                    false
+                } else {
+                    // Akun ini dibuat SEBELUM waktu penghapusan (akun lama yang memang telah dihapus admin)
                     true
                 }
+            } else {
+                false
             }
 
-            if (!isActive) {
+            if (isDeletedAccount) {
+                // Akun ini adalah akun lama yang telah dihapus oleh Admin di aplikasi
+                // Hapus akun dari Firebase Auth secara permanen agar hilang dari Firebase Auth Console
+                try {
+                    currentAuthUser?.delete()?.await()
+                    Log.d("AuthRepository", "Akun terhapus $cleanEmail berhasil dihapus permanen dari Firebase Auth")
+                } catch (e: Exception) {
+                    Log.w("AuthRepository", "Gagal menghapus user dari Firebase Auth saat login: ${e.message}")
+                }
+
+                try {
+                    deletedDoc?.reference?.delete()?.await()
+                } catch (_: Exception) {}
+
+                firebaseAuth.signOut()
+                emit(Result.failure(Exception("Akun Anda telah dihapus dari sistem. Akses ditolak.")))
+                return@flow
+            }
+
+            // 3. Verifikasi keberadaan akun di database aplikasi (Firestore / Room DB)
+            val localUser = userDao.getUserByEmail(cleanEmail)
+            val remoteUser = try {
+                remoteDataSource.getAllUsers().find { it.email.equals(cleanEmail, ignoreCase = true) }
+            } catch (e: Exception) {
+                null
+            }
+
+            // Simpan ke cache lokal jika data ada di remote tapi belum di lokal Room,
+            // atau jika akun dibuat langsung lewat Firebase Auth Console (belum ada di Firestore/Room)
+            val activeUser: User? = localUser?.toDomain() ?: remoteUser?.let {
+                userDao.insertOrUpdate(it.toEntity())
+                it.toDomain()
+            } ?: run {
+                // Akun baru dibuat langsung di Firebase Auth Console
+                val currentAuthUser = firebaseAuth.currentUser
+                val newUserId = currentAuthUser?.uid ?: java.util.UUID.randomUUID().toString()
+                val newFullName = currentAuthUser?.displayName?.takeIf { it.isNotBlank() }
+                    ?: cleanEmail.substringBefore("@").ifBlank { "User" }
+                val newPhotoUrl = currentAuthUser?.photoUrl?.toString().orEmpty()
+
+                val newUser = User(
+                    id = newUserId,
+                    fullName = newFullName,
+                    email = cleanEmail,
+                    roleId = "Admin",
+                    isActive = true,
+                    photoUrl = newPhotoUrl,
+                    createdAt = com.google.firebase.Timestamp.now(),
+                    updatedAt = com.google.firebase.Timestamp.now(),
+                    isSynced = true
+                )
+                try {
+                    remoteDataSource.saveUser(newUser.toDto())
+                } catch (e: Exception) {
+                    Log.w("AuthRepository", "Gagal auto-save user baru Firebase Auth ke Firestore: ${e.message}")
+                }
+                userDao.insertOrUpdate(newUser.toEntity(isSynced = true))
+                newUser
+            }
+
+            if (activeUser != null && !activeUser.isActive) {
                 firebaseAuth.signOut()
                 emit(Result.failure(Exception("Akun Anda telah dinonaktifkan oleh Admin. Akses ditolak.")))
-            } else {
-                emit(Result.success(result))
+                return@flow
             }
+
+            emit(Result.success(result))
         } catch (authException: Exception) {
-            // Firebase Auth gagal — sampaikan error langsung (tidak ada fallback password tersimpan)
+            // Firebase Auth gagal
             val msg = when {
                 authException.message?.contains("no user record", ignoreCase = true) == true ||
-                authException.message?.contains("user-not-found", ignoreCase = true) == true ->
-                    "Email tidak terdaftar. Periksa kembali atau hubungi Admin."
+                authException.message?.contains("user-not-found", ignoreCase = true) == true -> {
+                    // Jika akun dihapus langsung di Firebase Auth Console, bersihkan juga dari database lokal dan Firestore
+                    try {
+                        val local = userDao.getUserByEmail(cleanEmail)
+                        if (local != null) {
+                            userDao.deletePermanently(local.id)
+                            remoteDataSource.deleteUser(local.id)
+                        } else {
+                            val remote = remoteDataSource.getAllUsers().find { it.email.equals(cleanEmail, ignoreCase = true) }
+                            if (remote != null) {
+                                remoteDataSource.deleteUser(remote.id)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.w("AuthRepository", "Gagal membersihkan data user yang dihapus di Auth Console: ${e.message}")
+                    }
+                    "Akun tidak terdaftar atau telah dihapus dari sistem. Akses ditolak."
+                }
                 authException.message?.contains("password is invalid", ignoreCase = true) == true ||
                 authException.message?.contains("wrong-password", ignoreCase = true) == true ||
                 authException.message?.contains("INVALID_LOGIN_CREDENTIALS", ignoreCase = true) == true ->
