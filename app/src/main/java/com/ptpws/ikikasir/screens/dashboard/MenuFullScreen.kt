@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -39,25 +40,24 @@ fun MenuFullScreen(
     val queryState = remember { mutableStateOf("") }
     val query = queryState.value.trim()
 
-    val showProduk = viewModel.isAllowed("Produk") && (query.isBlank() || "produk".contains(query, true))
-    val showKategori = viewModel.isAllowed("Kategori Produk") && (query.isBlank() || "kategori".contains(query, true))
-    val showStok = viewModel.isAllowed("Manajemen Stok") && (query.isBlank() || "stok".contains(query, true))
+    val showProduk = viewModel.isAllowed("Produk") && matchSearch(query, "produk", "barang", "item")
+    val showKategori = viewModel.isAllowed("Kategori Produk") && matchSearch(query, "kategori produk", "kategori")
+    val showStok = viewModel.isAllowed("Manajemen Stok") && matchSearch(query, "manajemen stok", "stok", "stock")
     val hasProdukSection = showProduk || showKategori || showStok
 
-    val showKasir = viewModel.isAllowed("Kasir") && (query.isBlank() || "kasir".contains(query, true))
-    val showTransaksi = viewModel.isAllowed("Transaksi") && (query.isBlank() || "transaksi".contains(query, true))
-    val showAntrean = viewModel.isAllowed("Antrean") && (query.isBlank() || "antrean".contains(query, true))
-    val showRiwayatAntrean = viewModel.isAllowed("Riwayat Antrean") && (query.isBlank() || "riwayat antrean".contains(query, true))
-    val showPromo = viewModel.isAllowed("Promo") && (query.isBlank() || "promo".contains(query, true))
+    val showKasir = viewModel.isAllowed("Kasir") && matchSearch(query, "kasir", "pos")
+    val showTransaksi = viewModel.isAllowed("Transaksi") && matchSearch(query, "transaksi", "riwayat")
+    val showAntrean = viewModel.isAllowed("Antrean") && matchSearch(query, "antrean", "antrian")
+    val showRiwayatAntrean = viewModel.isAllowed("Riwayat Antrean") && matchSearch(query, "riwayat antrean", "riwayat antrian")
+    val showPromo = viewModel.isAllowed("Promo") && matchSearch(query, "promo", "diskon", "voucher")
     val hasPenjualanSection = showKasir || showTransaksi || showAntrean || showRiwayatAntrean || showPromo
 
-    val showLaporanKeuangan = viewModel.isAllowed("Laporan Keuangan") && (query.isBlank() || "laporan".contains(query, true) || "keuangan".contains(query, true))
+    val showLaporanKeuangan = viewModel.isAllowed("Laporan Keuangan") && matchSearch(query, "laporan keuangan", "laporan", "keuangan")
     val hasKeuanganSection = showLaporanKeuangan
 
-    val showManajemenPengguna = viewModel.isAllowed("Manajemen Pengguna") && (query.isBlank() || "pengguna".contains(query, true))
-    val showPengaturanMenu = viewModel.isAllowed("Pengaturan Menu") && (query.isBlank() || "pengaturan".contains(query, true))
-    val showAuditLog = viewModel.isAllowed("Audit Log") && (query.isBlank() || "auditlog".contains(query, true) || "audit".contains(query, true))
-    val hasPenggunaSection = showManajemenPengguna || showPengaturanMenu || showAuditLog
+    val showManajemenPengguna = viewModel.isAllowed("Manajemen Pengguna") && matchSearch(query, "manajemen pengguna", "pengguna", "user")
+    val showAuditLog = viewModel.isAllowed("Audit Log") && matchSearch(query, "audit log", "auditlog", "audit", "log")
+    val hasPenggunaSection = showManajemenPengguna || showAuditLog
 
     Scaffold(
         containerColor = Color(0xFFF0F4FF)
@@ -97,12 +97,13 @@ fun MenuFullScreen(
             } else if (!hasProdukSection && !hasPenjualanSection && !hasKeuanganSection && !hasPenggunaSection) {
                 item {
                     Text(
-                        text = "Tidak ada menu yang tersedia untuk akun ini.",
+                        text = if (query.isNotBlank()) "Tidak ada menu yang sesuai dengan \"$query\"." else "Tidak ada menu yang tersedia untuk akun ini.",
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp, vertical = 24.dp),
                         color = Color(0xFF64748B),
-                        fontSize = 14.sp
+                        fontSize = 14.sp,
+                        fontFamily = interfamily
                     )
                 }
             }
@@ -147,7 +148,6 @@ fun MenuFullScreen(
                     PenggunaMenuSection(
                         navController = navController,
                         showPengguna = showManajemenPengguna,
-                        showPengaturan = showPengaturanMenu,
                         showAuditlog = showAuditLog
                     )
                 }
@@ -182,7 +182,6 @@ fun KeuanganMenuSection(
 fun PenggunaMenuSection(
     navController: NavController,
     showPengguna: Boolean = true,
-    showPengaturan: Boolean = true,
     showAuditlog: Boolean = true
 ) {
     val items = mutableListOf<@Composable () -> Unit>()
@@ -193,16 +192,6 @@ fun PenggunaMenuSection(
                 label = "Pengguna",
                 bgColor = Color(0xFFEFF1FF),
                 onClick = { navController.navigate(AppScreen.Pengguna.route) }
-            )
-        }
-    }
-    if (showPengaturan) {
-        items.add {
-            MenuIconItem(
-                iconRes = R.drawable.pengaturanmenu,
-                label = "Pengaturan\nMenu",
-                bgColor = Color(0xFFF4F7FF),
-                onClick = { navController.navigate(AppScreen.PengaturanMenu.route) }
             )
         }
     }
@@ -278,55 +267,75 @@ fun SearchField(query: String, onQueryChange: (String) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp)
+            .height(48.dp)
             .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(15.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF2F3F5)
+            containerColor = Color.White
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        BasicTextField(
-            value = query,
-            onValueChange = onQueryChange,
-            singleLine = true,
-            textStyle = TextStyle(
-                color = Color.Black,
-                fontSize = 12.sp,
-                fontFamily = interfamily
-            ),
-            modifier = Modifier.fillMaxSize(),
-            decorationBox = { innerTextField ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(start = 16.dp, end = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = "Cari",
+                tint = Color(0xFF6B7280),
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                singleLine = true,
+                textStyle = TextStyle(
+                    color = Color(0xFF1E293B),
+                    fontSize = 14.sp,
+                    fontFamily = interfamily
+                ),
+                modifier = Modifier.weight(1f),
+                decorationBox = { innerTextField ->
+                    if (query.isEmpty()) {
+                        Text(
+                            text = "Cari Menu...",
+                            fontSize = 14.sp,
+                            fontFamily = interfamily,
+                            color = Color(0xFF94A3B8)
+                        )
+                    }
+                    innerTextField()
+                }
+            )
+
+            if (query.isNotEmpty()) {
+                IconButton(
+                    onClick = { onQueryChange("") },
+                    modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Search,
-                        contentDescription = "Cari",
-                        tint = Color(0x80474747)
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Hapus pencarian",
+                        tint = Color(0xFF6B7280),
+                        modifier = Modifier.size(18.dp)
                     )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        if (query.isEmpty()) {
-                            Text(
-                                text = "Cari Menu",
-                                fontSize = 12.sp,
-                                color = Color(0x80474747)
-                            )
-                        }
-                        innerTextField()
-                    }
                 }
             }
-        )
+        }
+    }
+}
+
+private fun matchSearch(query: String, vararg keywords: String): Boolean {
+    if (query.isBlank()) return true
+    val cleanQuery = query.trim().lowercase()
+    return keywords.any { keyword ->
+        val cleanKeyword = keyword.trim().lowercase()
+        cleanKeyword.contains(cleanQuery) || cleanQuery.contains(cleanKeyword)
     }
 }
 
