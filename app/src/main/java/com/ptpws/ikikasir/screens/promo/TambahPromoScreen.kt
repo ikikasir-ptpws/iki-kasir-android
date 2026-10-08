@@ -42,6 +42,14 @@ import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.TambahPromoViewModel
+import android.app.Activity
+import android.content.Intent
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -776,6 +784,7 @@ fun PilihProdukPromoDialog(
     onDismiss: () -> Unit,
     onSelesai: (List<Produk>) -> Unit
 ) {
+    val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     val tempSelected = remember { mutableStateListOf<Produk>().apply { addAll(initialSelected) } }
 
@@ -786,6 +795,82 @@ fun PilihProdukPromoDialog(
                     item.barcode.contains(searchQuery, ignoreCase = true) ||
                     item.id.contains(searchQuery, ignoreCase = true)
         }
+    }
+
+    val handleScannedBarcode: (String) -> Unit = { rawCode ->
+        val clean = rawCode.trim()
+        if (clean.isNotBlank()) {
+            searchQuery = clean
+            val matched = availableProducts.firstOrNull { item ->
+                item.barcode.equals(clean, ignoreCase = true) ||
+                item.id.equals(clean, ignoreCase = true) ||
+                (item.barcode.isNotBlank() && item.barcode.trimStart('0') == clean.trimStart('0'))
+            }
+
+            if (matched != null) {
+                if (tempSelected.none { it.id == matched.id }) {
+                    tempSelected.add(matched)
+                    Toast.makeText(context, "\"${matched.name}\" berhasil dipilih ke promo", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "\"${matched.name}\" sudah dipilih sebelumnya", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(context, "Produk dengan barcode \"$clean\" tidak ditemukan", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val barcodeLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val code = result.data?.getStringExtra("SCAN_RESULT")
+            if (!code.isNullOrBlank()) {
+                handleScannedBarcode(code)
+            }
+        }
+    }
+
+    fun triggerBarcodeScanner() {
+        try {
+            val options = GmsBarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
+                .enableAutoZoom()
+                .build()
+
+            val scanner = GmsBarcodeScanning.getClient(context, options)
+            scanner.startScan()
+                .addOnSuccessListener { barcode ->
+                    val rawValue = barcode.rawValue
+                    if (!rawValue.isNullOrBlank()) {
+                        handleScannedBarcode(rawValue)
+                    }
+                }
+                .addOnFailureListener {
+                    val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
+                        putExtra("SCAN_MODE", "PRODUCT_MODE")
+                    }
+                    if (scanIntent.resolveActivity(context.packageManager) != null) {
+                        barcodeLauncher.launch(scanIntent)
+                    } else {
+                        Toast.makeText(context, "Gagal memulai scanner: ${it.localizedMessage}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+        } catch (e: Exception) {
+            val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
+                putExtra("SCAN_MODE", "PRODUCT_MODE")
+            }
+            if (scanIntent.resolveActivity(context.packageManager) != null) {
+                barcodeLauncher.launch(scanIntent)
+            } else {
+                Toast.makeText(context, "Gagal membuka scanner: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val isAllSelected = remember(tempSelected.size, filteredList, availableProducts, searchQuery) {
+        val targetList = if (searchQuery.isBlank()) availableProducts else filteredList
+        targetList.isNotEmpty() && targetList.all { item -> tempSelected.any { it.id == item.id } }
     }
 
     Dialog(
@@ -892,8 +977,21 @@ fun PilihProdukPromoDialog(
                                 )
                             }
                         }
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(
+                                onClick = { searchQuery = "" },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Hapus pencarian",
+                                    tint = Color(0xFF94A3B8),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
                         IconButton(
-                            onClick = { /* TODO: open barcode scanner */ },
+                            onClick = { triggerBarcodeScanner() },
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
@@ -901,6 +999,89 @@ fun PilihProdukPromoDialog(
                                 contentDescription = "Scan Barcode / ID Produk",
                                 tint = Color(0xFF2563EB),
                                 modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Fitur Pilih Semua Produk
+                if (availableProducts.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable {
+                                if (isAllSelected) {
+                                    if (searchQuery.isBlank()) {
+                                        tempSelected.clear()
+                                    } else {
+                                        val filteredIds = filteredList.map { it.id }.toSet()
+                                        tempSelected.removeAll { it.id in filteredIds }
+                                    }
+                                } else {
+                                    val targets = if (searchQuery.isBlank()) availableProducts else filteredList
+                                    targets.forEach { item ->
+                                        if (tempSelected.none { it.id == item.id }) {
+                                            tempSelected.add(item)
+                                        }
+                                    }
+                                }
+                            },
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (isAllSelected) Color(0xFFEFF6FF) else Color(0xFFF8FAFC),
+                        border = BorderStroke(1.dp, if (isAllSelected) Color(0xFFBFDBFE) else Color(0xFFE2E8F0))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Checkbox(
+                                    checked = isAllSelected,
+                                    onCheckedChange = { checked ->
+                                        if (checked) {
+                                            val targets = if (searchQuery.isBlank()) availableProducts else filteredList
+                                            targets.forEach { item ->
+                                                if (tempSelected.none { it.id == item.id }) {
+                                                    tempSelected.add(item)
+                                                }
+                                            }
+                                        } else {
+                                            if (searchQuery.isBlank()) {
+                                                tempSelected.clear()
+                                            } else {
+                                                val filteredIds = filteredList.map { it.id }.toSet()
+                                                tempSelected.removeAll { it.id in filteredIds }
+                                            }
+                                        }
+                                    },
+                                    colors = CheckboxDefaults.colors(
+                                        checkedColor = Color(0xFF2563EB),
+                                        uncheckedColor = Color(0xFF94A3B8)
+                                    ),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    text = "Pilih Semua Produk",
+                                    fontFamily = interfamily,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (isAllSelected) Color(0xFF1D4ED8) else Color(0xFF0F172A)
+                                )
+                            }
+
+                            Text(
+                                text = "${tempSelected.size}/${availableProducts.size} dipilih",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = if (isAllSelected) Color(0xFF2563EB) else Color(0xFF64748B)
                             )
                         }
                     }
