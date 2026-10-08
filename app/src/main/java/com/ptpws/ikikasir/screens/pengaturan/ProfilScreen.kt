@@ -1817,7 +1817,7 @@ private fun PasswordInput(
         trailingIcon = {
             IconButton(onClick = onToggleVisibility, enabled = enabled) {
                 Icon(
-                    imageVector = if (visible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                    imageVector = if (visible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                     contentDescription = if (visible) "Sembunyikan kata sandi" else "Tampilkan kata sandi"
                 )
             }
