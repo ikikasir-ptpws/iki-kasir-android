@@ -18,8 +18,6 @@ data class RoleFormState(
         "Riwayat Antrean" to false,
         "Laporan Keuangan" to false,
         "Manajemen Pengguna" to false,
-        "Manajemen Role" to false,
-        "Pengaturan Menu" to false,
         "Audit Log" to false
     ),
     val isLoading: Boolean = false,
