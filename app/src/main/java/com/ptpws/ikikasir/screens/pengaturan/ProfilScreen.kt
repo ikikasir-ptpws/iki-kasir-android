@@ -413,14 +413,7 @@ fun ProfilScreen(
                                     showSecurityDialog = true
                                 }
                             )
-                            HorizontalDivider(color = Color(0xFFF3F4F6))
-                            MenuAkunItem(
-                                icon = Icons.Outlined.History,
-                                iconBackground = Color(0xFFFFEDD5),
-                                iconTint = Color(0xFFC2410C),
-                                label = "Audit Log",
-                                onClick = onAuditLog
-                            )
+
                             HorizontalDivider(color = Color(0xFFF3F4F6))
                             MenuAkunItem(
                                 icon = Icons.Outlined.Payments,
