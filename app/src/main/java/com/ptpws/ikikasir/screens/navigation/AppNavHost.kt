@@ -209,7 +209,10 @@ fun AppNavHost() {
                 DetailTransaksiScreen()
             }
             composable(AppScreen.LaporanKeuangan.route) {
-                LaporanKeuanganScreen(navController
+                LaporanKeuanganScreen(
+                    navController = navController,
+                    onBack = { navController.popBackStack() },
+                    onLihatSemuaProduk = { navController.navigate(AppScreen.Produk.baseRoute) }
                 )
             }
             composable(AppScreen.AuditLog.route) {
