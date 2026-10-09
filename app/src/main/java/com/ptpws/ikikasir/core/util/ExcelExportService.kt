@@ -84,12 +84,12 @@ class ExcelExportService @Inject constructor() {
                 totalNominalRefund += total
             }
 
-            // Row 5: KPI Card Labels (A5:C5, D5:G5, H5:L5)
+            // Row 5: KPI Card Labels (A5:C5, D5:F5, G5:I5, J5:L5)
             rows += listOf(
                 ExcelCell("TOTAL TRANSAKSI", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("PENDAPATAN BERSIH (NET)", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("PENDAPATAN BERSIH (NET)", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel"),
                 ExcelCell("TOTAL DANA REFUND", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("TOTAL DISKON & PPN", "KpiLabel"), ExcelCell("", "KpiLabel")
+                ExcelCell("TOTAL DISKON & PPN", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel")
             )
 
             // Row 6: KPI Card Values
@@ -100,9 +100,9 @@ class ExcelExportService @Inject constructor() {
             }
             rows += listOf(
                 ExcelCell("${transaksiList.size} Transaksi (${completedTransactions.size} Berhasil)", "KpiValue"), ExcelCell("", "KpiValue"), ExcelCell("", "KpiValue"),
-                ExcelCell(totalPendapatanRiil.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
+                ExcelCell(totalPendapatanRiil.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
                 ExcelCell(refundSummaryValue, "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell("Diskon: ${totalDiskon.formatRupiah()}   |   PPN: ${totalPpn.formatRupiah()}", "KpiValue"), ExcelCell("", "KpiValue")
+                ExcelCell("Diskon: ${totalDiskon.formatRupiah()}   |   PPN: ${totalPpn.formatRupiah()}", "KpiValue"), ExcelCell("", "KpiValue"), ExcelCell("", "KpiValue")
             )
 
             // Row 7: Empty separator
@@ -124,7 +124,7 @@ class ExcelExportService @Inject constructor() {
                 ExcelCell("Status", "Header")
             )
 
-            val columnWidths = listOf(8, 26, 20, 20, 22, 12, 22, 18, 18, 22, 18, 16)
+            val columnWidths = listOf(8, 26, 20, 20, 22, 12, 22, 18, 18, 24, 20, 18)
 
             var grandSubtotal = 0.0
             var grandDiskon = 0.0
@@ -205,8 +205,8 @@ class ExcelExportService @Inject constructor() {
 
             val finalRowNumber = rows.size
             val mergeRanges = mutableListOf(
-                "A5:C5", "D5:G5", "H5:J5", "K5:L5",
-                "A6:C6", "D6:G6", "H6:J6", "K6:L6",
+                "A5:C5", "D5:F5", "G5:I5", "J5:L5",
+                "A6:C6", "D6:F6", "G6:I6", "J6:L6",
                 "A$totalRowNumber:F$totalRowNumber",
                 "K$totalRowNumber:L$totalRowNumber"
             )
@@ -647,12 +647,39 @@ class ExcelExportService @Inject constructor() {
                 ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel")
             )
 
+            val txRefundedTransactions = sortedTransactions.filter {
+                it.status.equals("REFUND", true) || it.status.equals("REFUNDED", true) || it.status.equals("BATAL", true)
+            }
+            if (txRefundedTransactions.isNotEmpty()) {
+                var txTotalNominalRefund = 0.0
+                txRefundedTransactions.forEach { tx ->
+                    val total = tx.total.takeIf { it > 0 }
+                        ?: (tx.subtotal - tx.discount + tx.ppnAmount).coerceAtLeast(0.0)
+                    txTotalNominalRefund += total
+                }
+                txRows += listOf(
+                    ExcelCell("TOTAL DANA DI-REFUND (${txRefundedTransactions.size} Transaksi)", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                    ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                    ExcelCell("-", "TotalCenter"),
+                    ExcelCell("-", "TotalCenter"),
+                    ExcelCell("-", "TotalCenter"),
+                    ExcelCell(txTotalNominalRefund.formatRupiah(), "TotalValue"),
+                    ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel")
+                )
+            }
+
+            val txFinalRow = txRows.size
+            val txMergeRanges = mutableListOf("A$txTotalRow:F$txTotalRow", "K$txTotalRow:L$txTotalRow")
+            if (txRefundedTransactions.isNotEmpty()) {
+                txMergeRanges += listOf("A$txFinalRow:F$txFinalRow", "K$txFinalRow:L$txFinalRow")
+            }
+
             sheets += ExcelSheet(
                 name = "Rincian Transaksi",
                 rows = txRows,
-                columnWidths = listOf(8, 26, 20, 20, 22, 12, 22, 18, 18, 22, 18, 16),
+                columnWidths = listOf(8, 26, 20, 20, 22, 12, 22, 18, 18, 24, 20, 18),
                 headerRowIndex = 4,
-                mergeRanges = listOf("A$txTotalRow:F$txTotalRow", "K$txTotalRow:L$txTotalRow"),
+                mergeRanges = txMergeRanges,
                 autoFilterRange = "A5:L${txTotalRow - 1}"
             )
 
@@ -1006,8 +1033,8 @@ class ExcelExportService @Inject constructor() {
         <xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="center"/></xf>
         <xf numFmtId="0" fontId="5" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="center"/></xf>
         <xf numFmtId="0" fontId="8" fillId="8" borderId="4" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
-        <xf numFmtId="0" fontId="9" fillId="8" borderId="4" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
-        <xf numFmtId="165" fontId="9" fillId="8" borderId="4" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+        <xf numFmtId="0" fontId="9" fillId="8" borderId="4" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+        <xf numFmtId="165" fontId="9" fillId="8" borderId="4" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
         <xf numFmtId="0" fontId="6" fillId="5" borderId="4" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
         <xf numFmtId="0" fontId="7" fillId="6" borderId="4" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
         <xf numFmtId="0" fontId="1" fillId="2" borderId="2" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
@@ -1052,6 +1079,7 @@ class ExcelExportService @Inject constructor() {
         "SuccessPill" -> 20
         "DangerPill" -> 21
         "TotalLabel" -> 22
+        "TotalCenter" -> 22
         "TotalValue" -> 23
         else -> 0
     }
