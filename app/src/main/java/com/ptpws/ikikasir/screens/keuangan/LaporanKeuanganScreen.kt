@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -71,7 +72,6 @@ fun LaporanKeuanganScreen(
 
     var showDateRangePicker by remember { mutableStateOf(false) }
     var selectedBarIndex by remember { mutableStateOf<Int?>(null) }
-    var showDemoInfoDialog by remember { mutableStateOf(false) }
 
     // Handle toast messages
     LaunchedEffect(state.exportMessage) {
@@ -90,47 +90,6 @@ fun LaporanKeuanganScreen(
             onDateRangeSelected = { start, end ->
                 viewModel.setCustomDateRange(start, end)
                 showDateRangePicker = false
-            }
-        )
-    }
-
-    // Dialog Info Data Demo
-    if (showDemoInfoDialog) {
-        AlertDialog(
-            onDismissRequest = { showDemoInfoDialog = false },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Info,
-                    contentDescription = null,
-                    tint = Color(0xFF2563EB),
-                    modifier = Modifier.size(32.dp)
-                )
-            },
-            title = {
-                Text(
-                    text = "Mode Pratinjau (Simulasi)",
-                    fontFamily = interfamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-            },
-            text = {
-                Text(
-                    text = "Data finansial yang Anda lihat saat ini adalah simulasi metrik bisnis startup.\n\nBegitu Anda memproses transaksi riil pertama di menu Kasir, seluruh grafik, metrik omzet, laba kotor, laba bersih, dan produk terlaris akan otomatis terisi secara langsung (real-time).",
-                    fontFamily = interfamily,
-                    fontSize = 14.sp,
-                    color = Color(0xFF475569),
-                    lineHeight = 20.sp
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = { showDemoInfoDialog = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Saya Mengerti", fontFamily = interfamily, fontWeight = FontWeight.Bold)
-                }
             }
         )
     }
@@ -221,47 +180,7 @@ fun LaporanKeuanganScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            // ── 1. Indikator Mode Demo jika Belum Ada Transaksi
-            if (state.isDemoData) {
-                item {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .clickable { showDemoInfoDialog = true },
-                        color = Color(0xFFFEF3C7),
-                        border = BorderStroke(1.dp, Color(0xFFFCD34D))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = Color(0xFFB45309),
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Text(
-                                    text = "Mode Simulasi: Menampilkan data contoh bisnis startup. Klik untuk info.",
-                                    fontFamily = interfamily,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF92400E)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // ── 2. Filter Periode Cepat (Urutan: Semua, Hari Ini, 7 Hari Terakhir, 30 Hari Terakhir, Bulan Ini, Pilih Tanggal)
+            // ── 1. Filter Periode Cepat (Urutan: Semua, Hari Ini, 7 Hari Terakhir, 30 Hari Terakhir, Bulan Ini, Pilih Tanggal)
             item {
                 LazyRow(
                     modifier = Modifier.fillMaxWidth(),
@@ -429,7 +348,7 @@ fun LaporanKeuanganScreen(
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.ReceiptLong,
+                                            imageVector = Icons.Default.ShoppingBag,
                                             contentDescription = null,
                                             tint = Color(0xFF93C5FD),
                                             modifier = Modifier.size(16.dp)
@@ -442,11 +361,13 @@ fun LaporanKeuanganScreen(
                                                 color = Color.White.copy(alpha = 0.75f)
                                             )
                                             Text(
-                                                text = "${state.totalTransaksiCount} Transaksi",
+                                                text = "${state.totalProdukTerjual} Produk Terjual",
                                                 fontFamily = interfamily,
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color.White
+                                                color = Color.White,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         }
                                     }
