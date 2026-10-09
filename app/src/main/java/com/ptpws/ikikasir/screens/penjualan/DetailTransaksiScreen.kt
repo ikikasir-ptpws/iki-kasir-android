@@ -12,13 +12,16 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import android.content.Intent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.ImageNotSupported
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Replay
@@ -28,6 +31,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
@@ -149,6 +153,8 @@ fun DetailTransaksiScreen(
         viewModel.loadTransaksi(transactionId)
     }
 
+    var showRefundConfirmDialog by remember { mutableStateOf(false) }
+
     val formatRupiah = remember {
         { amount: Double ->
             NumberFormat.getNumberInstance(Locale("id", "ID")).format(amount.toLong())
@@ -223,6 +229,7 @@ fun DetailTransaksiScreen(
             val formattedDateTime = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID")).format(dateObj)
             val kasirName = tx.createdBy.ifBlank { "Admin" }
             val isLunas = tx.status.equals("COMPLETED", ignoreCase = true) || tx.status.equals("LUNAS", ignoreCase = true)
+            val isRefunded = tx.status.equals("REFUND", ignoreCase = true) || tx.status.equals("REFUNDED", ignoreCase = true) || tx.status.equals("BATAL", ignoreCase = true)
 
             LazyColumn(
                 modifier = Modifier
@@ -286,17 +293,29 @@ fun DetailTransaksiScreen(
                                     Box(
                                         modifier = Modifier
                                             .background(
-                                                color = if (isLunas) Color(0xFFE6F4F1) else Color(0xFFFEF3C7),
+                                                color = when {
+                                                    isRefunded -> Color(0xFFFEE2E2)
+                                                    isLunas -> Color(0xFFE6F4F1)
+                                                    else -> Color(0xFFFEF3C7)
+                                                },
                                                 shape = RoundedCornerShape(20.dp)
                                             )
                                             .padding(horizontal = 12.dp, vertical = 4.dp)
-                                        ) {
+                                    ) {
                                         Text(
-                                            text = if (isLunas) "LUNAS" else tx.status,
+                                            text = when {
+                                                isRefunded -> "REFUND"
+                                                isLunas -> "LUNAS"
+                                                else -> tx.status
+                                            },
                                             fontSize = 11.sp,
                                             fontFamily = interfamily,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (isLunas) Color(0xFF0D9488) else Color(0xFFD97706)
+                                            color = when {
+                                                isRefunded -> Color(0xFFDC2626)
+                                                isLunas -> Color(0xFF0D9488)
+                                                else -> Color(0xFFD97706)
+                                            }
                                         )
                                     }
                                 }
@@ -700,34 +719,196 @@ fun DetailTransaksiScreen(
                 item {
                     OutlinedButton(
                         onClick = {
-                            Toast.makeText(context, "Proses refund...", Toast.LENGTH_SHORT).show()
-                            onRefund()
+                            if (isRefunded) {
+                                Toast.makeText(context, "Transaksi ini sudah di-refund sebelumnya.", Toast.LENGTH_SHORT).show()
+                            } else {
+                                showRefundConfirmDialog = true
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
                         shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.5.dp, Color(0xFFEF4444)),
+                        enabled = !isRefunded && !state.isRefunding,
+                        border = BorderStroke(
+                            1.5.dp,
+                            if (isRefunded) Color(0xFFCBD5E1) else Color(0xFFEF4444)
+                        ),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFFEF4444)
+                            contentColor = if (isRefunded) Color(0xFF94A3B8) else Color(0xFFEF4444),
+                            disabledContentColor = Color(0xFF94A3B8)
                         )
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Replay,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                            tint = Color(0xFFEF4444)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Refund",
-                            fontFamily = interfamily,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                            color = Color(0xFFEF4444)
-                        )
+                        if (state.isRefunding) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFFEF4444)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Memproses Refund...",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp,
+                                color = Color(0xFFEF4444)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = if (isRefunded) Icons.Default.CheckCircle else Icons.Default.Replay,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = if (isRefunded) Color(0xFF94A3B8) else Color(0xFFEF4444)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (isRefunded) "Transaksi Telah Di-refund" else "Refund",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp,
+                                color = if (isRefunded) Color(0xFF94A3B8) else Color(0xFFEF4444)
+                            )
+                        }
                     }
                 }
+            }
+
+            // ── Dialog Konfirmasi Refund Transaksi
+            if (showRefundConfirmDialog) {
+                var refundReason by remember { mutableStateOf("") }
+
+                AlertDialog(
+                    onDismissRequest = {
+                        if (!state.isRefunding) showRefundConfirmDialog = false
+                    },
+                    icon = {
+                        Box(
+                            modifier = Modifier
+                                .size(52.dp)
+                                .background(Color(0xFFFEE2E2), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Replay,
+                                contentDescription = null,
+                                tint = Color(0xFFEF4444),
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                    },
+                    title = {
+                        Text(
+                            text = "Konfirmasi Refund Transaksi",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color(0xFF0F172A),
+                            textAlign = TextAlign.Center
+                        )
+                    },
+                    text = {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "Apakah Anda yakin ingin memproses refund untuk transaksi ${tx.transactionNumber} sebesar Rp ${formatRupiah(tx.total)}?",
+                                fontFamily = interfamily,
+                                fontSize = 14.sp,
+                                color = Color(0xFF475569),
+                                lineHeight = 20.sp
+                            )
+
+                            Surface(
+                                color = Color(0xFFFFFBEB),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, Color(0xFFFDE68A))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = Color(0xFFD97706),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = "Status transaksi akan diubah menjadi REFUNDED dan stok untuk ${tx.items.sumOf { it.quantity }} produk akan otomatis dikembalikan ke inventaris.",
+                                        fontFamily = interfamily,
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF92400E),
+                                        lineHeight = 16.sp
+                                    )
+                                }
+                            }
+
+                            OutlinedTextField(
+                                value = refundReason,
+                                onValueChange = { refundReason = it },
+                                label = { Text("Alasan Refund (Opsional)", fontFamily = interfamily, fontSize = 12.sp) },
+                                placeholder = { Text("Misal: Pesanan salah / Batal beli", fontFamily = interfamily, fontSize = 12.sp) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true,
+                                enabled = !state.isRefunding
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                viewModel.refundTransaksi(
+                                    reason = refundReason,
+                                    onSuccess = {
+                                        showRefundConfirmDialog = false
+                                        Toast.makeText(
+                                            context,
+                                            "Refund berhasil! Status transaksi diperbarui & stok produk dikembalikan.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                        onRefund()
+                                    },
+                                    onError = { errorMsg ->
+                                        Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+                                    }
+                                )
+                            },
+                            enabled = !state.isRefunding,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            if (state.isRefunding) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Memproses...", fontFamily = interfamily, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            } else {
+                                Text("Ya, Proses Refund", fontFamily = interfamily, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = { showRefundConfirmDialog = false },
+                            enabled = !state.isRefunding
+                        ) {
+                            Text(
+                                text = "Batal",
+                                fontFamily = interfamily,
+                                color = Color(0xFF64748B),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    },
+                    containerColor = Color.White,
+                    shape = RoundedCornerShape(20.dp)
+                )
             }
         }
     }

@@ -13,6 +13,8 @@ data class FinancialReportExportData(
     val totalDiskon: Double,
     val totalPajak: Double,
     val totalHpp: Double,
+    val totalRefundNominal: Double = 0.0,
+    val totalRefundCount: Int = 0,
     val dailySales: List<DailySalesExportEntry> = emptyList(),
     val topProdukList: List<TopProductExportEntry> = emptyList(),
     val metodePembayaranList: List<PaymentMethodExportEntry> = emptyList()

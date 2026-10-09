@@ -101,6 +101,8 @@ class LaporanKeuanganViewModel @Inject constructor(
                 totalDiskon = st.totalDiskon,
                 totalPajak = st.totalPajak,
                 totalHpp = st.totalHpp,
+                totalRefundNominal = st.totalRefundNominal,
+                totalRefundCount = st.totalRefundCount,
                 dailySales = st.dailySales.map {
                     DailySalesExportEntry(
                         dayLabel = it.dayLabel,
@@ -188,6 +190,8 @@ class LaporanKeuanganViewModel @Inject constructor(
                 totalDiskon = st.totalDiskon,
                 totalPajak = st.totalPajak,
                 totalHpp = st.totalHpp,
+                totalRefundNominal = st.totalRefundNominal,
+                totalRefundCount = st.totalRefundCount,
                 dailySales = st.dailySales.map {
                     DailySalesExportEntry(
                         dayLabel = it.dayLabel,
@@ -317,7 +321,21 @@ class LaporanKeuanganViewModel @Inject constructor(
 
         val rangeLabel = computeRangeLabel(periode)
 
-        // Hitung Metrik Riil dari database (100% data riil)
+        val completed = filtered.filter {
+            !it.status.equals("REFUND", ignoreCase = true) &&
+            !it.status.equals("REFUNDED", ignoreCase = true) &&
+            !it.status.equals("BATAL", ignoreCase = true)
+        }
+        val refunded = filtered.filter {
+            it.status.equals("REFUND", ignoreCase = true) ||
+            it.status.equals("REFUNDED", ignoreCase = true) ||
+            it.status.equals("BATAL", ignoreCase = true)
+        }
+
+        val totalRefundNominal = refunded.sumOf { if (it.total > 0) it.total else it.subtotal }
+        val totalRefundCount = refunded.size
+
+        // Hitung Metrik Riil dari database (100% data riil dari transaksi yang tidak di-refund)
         var omzet = 0.0
         var diskon = 0.0
         var pajak = 0.0
@@ -327,7 +345,7 @@ class LaporanKeuanganViewModel @Inject constructor(
         val productMap = mutableMapOf<String, ProductAccumulator>()
         val paymentMap = mutableMapOf<String, PaymentAccumulator>()
 
-        for (tx in filtered) {
+        for (tx in completed) {
             val txTotal = if (tx.total > 0) tx.total else tx.subtotal
             omzet += txTotal
             diskon += tx.discount
@@ -377,10 +395,10 @@ class LaporanKeuanganViewModel @Inject constructor(
         val marginKotor = if (omzet > 0) ((labaKotor / omzet) * 100).toFloat() else 0f
         val labaBersih = (omzet - hpp - diskon).coerceAtLeast(0.0)
         val profitMargin = if (omzet > 0) ((labaBersih / omzet) * 100).toFloat() else 0f
-        val aov = if (filtered.isNotEmpty()) omzet / filtered.size else 0.0
+        val aov = if (completed.isNotEmpty()) omzet / completed.size else 0.0
 
-        // Buat Daily Sales buckets untuk 7 hari atau periode aktif
-        val dailyList = buildDailySalesBuckets(filtered)
+        // Buat Daily Sales buckets untuk 7 hari atau periode aktif dari transaksi sukses
+        val dailyList = buildDailySalesBuckets(completed)
 
         // Buat Top 5 Produk
         val topList = productMap.values
@@ -421,12 +439,14 @@ class LaporanKeuanganViewModel @Inject constructor(
                 marginKotorPersen = marginKotor,
                 totalLabaBersih = labaBersih,
                 profitMarginPersen = profitMargin,
-                totalTransaksiCount = filtered.size,
+                totalTransaksiCount = completed.size,
                 totalProdukTerjual = totalQtyTerjual,
                 rataRataTransaksi = aov,
                 totalDiskon = diskon,
                 totalPajak = pajak,
                 totalHpp = hpp,
+                totalRefundNominal = totalRefundNominal,
+                totalRefundCount = totalRefundCount,
                 dailySales = dailyList,
                 topProdukList = topList,
                 metodePembayaranList = paymentList

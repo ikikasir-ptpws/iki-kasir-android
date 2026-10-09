@@ -119,7 +119,7 @@ class PenjualanRepositoryImpl @Inject constructor(
 
     override suspend fun simpanTransaksi(transaksi: PenjualanTransaksi): Flow<Result<Unit>> = flow {
         val isOnline = networkMonitor.isConnected()
-        Log.d(TAG, "simpanTransaksi: id='${transaksi.transactionId}', number='${transaksi.transactionNumber}', isOnline=$isOnline")
+        Log.d(TAG, "simpanTransaksi: id='${transaksi.transactionId}', number='${transaksi.transactionNumber}', status='${transaksi.status}', isOnline=$isOnline")
 
         if (isOnline) {
             try {

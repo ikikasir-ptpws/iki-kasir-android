@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Storefront
@@ -666,6 +667,25 @@ fun LaporanKeuanganScreen(
                             borderColor = Color(0xFFFDE68A),
                             modifier = Modifier.weight(1f)
                         )
+                    }
+
+                    // Row 4: Total Refund (Muncul jika ada transaksi refund)
+                    if (state.totalRefundNominal > 0) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            KpiCard(
+                                title = "TOTAL REFUND",
+                                value = formatRupiah(state.totalRefundNominal),
+                                badge = "${state.totalRefundCount} Transaksi Batal",
+                                icon = Icons.Default.Replay,
+                                accentColor = Color(0xFFDC2626),
+                                containerColor = Color(0xFFFEF2F2),
+                                borderColor = Color(0xFFFECACA),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }

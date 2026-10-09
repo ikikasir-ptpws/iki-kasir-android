@@ -766,6 +766,7 @@ fun TransaksiCardItem(
     onDetail: () -> Unit
 ) {
     val isLunas = statusBayar.equals("COMPLETED", ignoreCase = true) || statusBayar.equals("LUNAS", ignoreCase = true) || statusBayar.equals("Berhasil", ignoreCase = true)
+    val isRefunded = statusBayar.equals("REFUND", ignoreCase = true) || statusBayar.equals("REFUNDED", ignoreCase = true) || statusBayar.equals("BATAL", ignoreCase = true)
 
     Card(
         modifier = Modifier
@@ -829,21 +830,26 @@ fun TransaksiCardItem(
                         }
                     }
 
-                    // Berhasil / LUNAS Status Badge
+                    // Berhasil / LUNAS / Refund Status Badge
+                    val (badgeBg, badgeText, badgeTextColor) = when {
+                        isRefunded -> Triple(Color(0xFFFEE2E2), "Refund", Color(0xFFDC2626))
+                        isLunas -> Triple(Color(0xFFE6F4F1), "Berhasil", Color(0xFF0D9488))
+                        else -> Triple(Color(0xFFFEF3C7), statusBayar, Color(0xFFD97706))
+                    }
                     Box(
                         modifier = Modifier
                             .background(
-                                color = if (isLunas) Color(0xFFE6F4F1) else Color(0xFFFEF3C7),
+                                color = badgeBg,
                                 shape = RoundedCornerShape(20.dp)
                             )
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Text(
-                            text = if (isLunas) "Berhasil" else statusBayar,
+                            text = badgeText,
                             fontSize = 10.sp,
                             fontFamily = interfamily,
                             fontWeight = FontWeight.Bold,
-                            color = if (isLunas) Color(0xFF0D9488) else Color(0xFFD97706)
+                            color = badgeTextColor
                         )
                     }
                 }

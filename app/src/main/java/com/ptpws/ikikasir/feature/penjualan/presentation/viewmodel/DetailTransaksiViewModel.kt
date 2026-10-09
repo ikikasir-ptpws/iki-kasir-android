@@ -8,6 +8,7 @@ import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetAllTransaksiUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetTransaksiByIdUseCase
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.DetailTransaksiState
+import com.ptpws.ikikasir.feature.penjualan.domain.usecase.RefundTransaksiUseCase
 import com.ptpws.ikikasir.feature.produk.data.local.dao.ProdukDao
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,7 @@ import javax.inject.Inject
 class DetailTransaksiViewModel @Inject constructor(
     private val getTransaksiByIdUseCase: GetTransaksiByIdUseCase,
     private val getAllTransaksiUseCase: GetAllTransaksiUseCase,
+    private val refundTransaksiUseCase: RefundTransaksiUseCase,
     private val produkDao: ProdukDao,
     private val antreanDao: AntreanDao,
     private val queueHistoryDao: QueueHistoryDao
@@ -96,5 +98,49 @@ class DetailTransaksiViewModel @Inject constructor(
         }
 
         return tx.copy(items = updatedItems, queueSequence = queueSeq)
+    }
+
+    fun refundTransaksi(
+        reason: String = "",
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        val currentTx = _state.value.transaksi ?: run {
+            onError("Data transaksi tidak tersedia.")
+            return
+        }
+
+        viewModelScope.launch {
+            _state.update { it.copy(isRefunding = true, refundErrorMessage = null) }
+            refundTransaksiUseCase(currentTx, reason).collect { result ->
+                result.fold(
+                    onSuccess = { updatedTx ->
+                        val enriched = enrichTransaction(updatedTx)
+                        _state.update {
+                            it.copy(
+                                transaksi = enriched,
+                                isRefunding = false,
+                                refundSuccessMessage = "Transaksi berhasil di-refund. Stok produk telah dikembalikan."
+                            )
+                        }
+                        onSuccess()
+                    },
+                    onFailure = { error ->
+                        val msg = error.message ?: "Gagal memproses refund transaksi."
+                        _state.update {
+                            it.copy(
+                                isRefunding = false,
+                                refundErrorMessage = msg
+                            )
+                        }
+                        onError(msg)
+                    }
+                )
+            }
+        }
+    }
+
+    fun clearRefundMessages() {
+        _state.update { it.copy(refundSuccessMessage = null, refundErrorMessage = null) }
     }
 }
