@@ -71,6 +71,7 @@ data class LaporanKeuanganState(
     val totalLabaBersih: Double = 0.0,
     val profitMarginPersen: Float = 0f,
     val totalTransaksiCount: Int = 0,
+    val totalProdukTerjual: Int = 0,
     val rataRataTransaksi: Double = 0.0, // AOV
     val totalDiskon: Double = 0.0,
     val totalPajak: Double = 0.0,
@@ -216,17 +217,12 @@ class LaporanKeuanganViewModel @Inject constructor(
 
         val rangeLabel = computeRangeLabel(periode)
 
-        if (filtered.isEmpty() && rawTransaksiList.isEmpty()) {
-            // Mode Simulasi / Data Demo Startup jika toko baru belum memiliki riwayat transaksi
-            applyStartupDemoData(rangeLabel)
-            return
-        }
-
-        // Hitung Metrik Riil dari database
+        // Hitung Metrik Riil dari database (100% data riil)
         var omzet = 0.0
         var diskon = 0.0
         var pajak = 0.0
         var hpp = 0.0
+        var totalQtyTerjual = 0
 
         val productMap = mutableMapOf<String, ProductAccumulator>()
         val paymentMap = mutableMapOf<String, PaymentAccumulator>()
@@ -237,22 +233,29 @@ class LaporanKeuanganViewModel @Inject constructor(
             diskon += tx.discount
             pajak += tx.ppnAmount
 
-            // Hitung HPP dan agregat produk
-            for (item in tx.items) {
-                val unitCost = if (item.produk.costPrice > 0) item.produk.costPrice else (item.price * 0.6)
-                hpp += (unitCost * item.quantity)
+            // Hitung HPP, kuantitas produk terjual, dan agregat produk
+            if (tx.items.isNotEmpty()) {
+                for (item in tx.items) {
+                    val qty = item.quantity
+                    totalQtyTerjual += qty
 
-                val key = if (item.produk.id.isNotBlank()) item.produk.id else item.name
-                val acc = productMap.getOrPut(key) {
-                    ProductAccumulator(
-                        productId = item.produk.id,
-                        name = item.name.ifBlank { item.produk.name },
-                        imageUrl = item.produk.imageUrl,
-                        categoryId = item.produk.categoryId
-                    )
+                    val unitCost = if (item.produk.costPrice > 0) item.produk.costPrice else (item.price * 0.6)
+                    hpp += (unitCost * qty)
+
+                    val key = if (item.produk.id.isNotBlank()) item.produk.id else item.name
+                    val acc = productMap.getOrPut(key) {
+                        ProductAccumulator(
+                            productId = item.produk.id,
+                            name = item.name.ifBlank { item.produk.name },
+                            imageUrl = item.produk.imageUrl,
+                            categoryId = item.produk.categoryId
+                        )
+                    }
+                    acc.qty += qty
+                    acc.omzet += item.totalPrice
                 }
-                acc.qty += item.quantity
-                acc.omzet += item.totalPrice
+            } else if (txTotal > 0) {
+                totalQtyTerjual += 1
             }
 
             // Agregat metode pembayaran
@@ -319,6 +322,7 @@ class LaporanKeuanganViewModel @Inject constructor(
                 totalLabaBersih = labaBersih,
                 profitMarginPersen = profitMargin,
                 totalTransaksiCount = filtered.size,
+                totalProdukTerjual = totalQtyTerjual,
                 rataRataTransaksi = aov,
                 totalDiskon = diskon,
                 totalPajak = pajak,
@@ -365,53 +369,6 @@ class LaporanKeuanganViewModel @Inject constructor(
             )
         }
         return result
-    }
-
-    private fun applyStartupDemoData(rangeLabel: String) {
-        val demoDaily = listOf(
-            DailySalesEntry("Sen", "02 Okt", 0L, 4800000.0, 1820000.0, 18),
-            DailySalesEntry("Sel", "03 Okt", 0L, 5200000.0, 1950000.0, 21),
-            DailySalesEntry("Rab", "04 Okt", 0L, 6100000.0, 2340000.0, 24),
-            DailySalesEntry("Kam", "05 Okt", 0L, 4500000.0, 1680000.0, 17),
-            DailySalesEntry("Jum", "06 Okt", 0L, 9450000.0, 3580000.0, 36),
-            DailySalesEntry("Sab", "07 Okt", 0L, 8100000.0, 3050000.0, 31),
-            DailySalesEntry("Min", "08 Okt", 0L, 4700000.0, 1710500.0, 19)
-        )
-
-        val demoTopProduk = listOf(
-            TopProdukReport(1, "1", "Kopi Susu Gula Aren", "", "", 184, 3680000.0, 24.2f),
-            TopProdukReport(2, "2", "Dimsum Mentai Special", "", "", 132, 3300000.0, 21.7f),
-            TopProdukReport(3, "3", "Matcha Latte Creamy", "", "", 98, 2450000.0, 16.1f),
-            TopProdukReport(4, "4", "Croissant Butter Almond", "", "", 85, 2125000.0, 13.9f),
-            TopProdukReport(5, "5", "French Fries Truffle", "", "", 74, 1480000.0, 9.7f)
-        )
-
-        val demoPayment = listOf(
-            MetodePembayaranReport("QRIS / E-Wallet", 24850000.0, 84, 58.0f),
-            MetodePembayaranReport("Tunai (Cash)", 13200000.0, 46, 30.8f),
-            MetodePembayaranReport("Transfer Bank", 4800000.0, 12, 11.2f)
-        )
-
-        _state.update {
-            it.copy(
-                isLoading = false,
-                isDemoData = true,
-                dateRangeLabel = rangeLabel,
-                totalOmzet = 42850000.0,
-                totalLabaKotor = 17680500.0,
-                marginKotorPersen = 41.3f,
-                totalLabaBersih = 15230500.0,
-                profitMarginPersen = 35.5f,
-                totalTransaksiCount = 142,
-                rataRataTransaksi = 301760.0,
-                totalDiskon = 2450000.0,
-                totalPajak = 4285000.0,
-                totalHpp = 25169500.0,
-                dailySales = demoDaily,
-                topProdukList = demoTopProduk,
-                metodePembayaranList = demoPayment
-            )
-        }
     }
 
     private fun computeRangeLabel(periode: PeriodeFilter): String {
