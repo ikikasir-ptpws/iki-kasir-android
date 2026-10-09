@@ -23,8 +23,10 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocalOffer
@@ -56,6 +58,12 @@ import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.keuangan.presentation.state.DailySalesEntry
+import com.ptpws.ikikasir.feature.keuangan.presentation.state.LaporanKeuanganState
+import com.ptpws.ikikasir.feature.keuangan.presentation.state.MetodePembayaranReport
+import com.ptpws.ikikasir.feature.keuangan.presentation.state.PeriodeFilter
+import com.ptpws.ikikasir.feature.keuangan.presentation.state.TopProdukReport
+import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.LaporanKeuanganViewModel
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -73,11 +81,24 @@ fun LaporanKeuanganScreen(
     var showDateRangePicker by remember { mutableStateOf(false) }
     var selectedBarIndex by remember { mutableStateOf<Int?>(null) }
 
-    // Handle toast messages
-    LaunchedEffect(state.exportMessage) {
-        state.exportMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            viewModel.clearExportMessage()
+    // State dialog unduh ekspor Excel (seperti Riwayat Transaksi & Antrean)
+    var showExportSuccessDialog by remember { mutableStateOf(false) }
+    var showExportErrorDialog by remember { mutableStateOf(false) }
+    var exportedUri by remember { mutableStateOf<Uri?>(null) }
+    var exportErrorMessage by remember { mutableStateOf("") }
+
+    // Observers export result
+    LaunchedEffect(state.exportedFileUri) {
+        if (state.exportedFileUri != null) {
+            exportedUri = state.exportedFileUri
+            showExportSuccessDialog = true
+        }
+    }
+
+    LaunchedEffect(state.exportError) {
+        if (!state.exportError.isNullOrBlank()) {
+            exportErrorMessage = state.exportError ?: ""
+            showExportErrorDialog = true
         }
     }
 
@@ -91,6 +112,157 @@ fun LaporanKeuanganScreen(
                 viewModel.setCustomDateRange(start, end)
                 showDateRangePicker = false
             }
+        )
+    }
+
+    // ── Export Success Dialog (Otomatis terunduh ke berkas HP) ─────────────────
+    if (showExportSuccessDialog && exportedUri != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showExportSuccessDialog = false
+                viewModel.clearExportState()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF10B981),
+                    modifier = Modifier.size(52.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Ekspor Excel Berhasil!",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF0F172A)
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "File Excel laporan keuangan berhasil diunduh dan tersimpan di HP Anda.",
+                        fontFamily = interfamily,
+                        fontSize = 14.sp,
+                        color = Color(0xFF475569),
+                        lineHeight = 20.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Surface(
+                        color = Color(0xFFF1F5F9),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "📁 Lokasi Simpan (Berkas HP):",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp,
+                                color = Color(0xFF334155)
+                            )
+                            Text(
+                                text = "Memori Internal > Download > IkiKasir",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = Color(0xFF4F46E5)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Laporan: ${state.dateRangeLabel} (${state.totalTransaksiCount} transaksi)",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val openIntent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(
+                                exportedUri,
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            )
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        val chooser = Intent.createChooser(openIntent, "Buka dengan")
+                        context.startActivity(chooser)
+                        showExportSuccessDialog = false
+                        viewModel.clearExportState()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Buka File", fontFamily = interfamily, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showExportSuccessDialog = false
+                        viewModel.clearExportState()
+                    }
+                ) {
+                    Text("Tutup", fontFamily = interfamily, color = Color(0xFF64748B))
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    // ── Export Error Dialog ───────────────────────────────────────────────────
+    if (showExportErrorDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showExportErrorDialog = false
+                viewModel.clearExportState()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.ErrorOutline,
+                    contentDescription = null,
+                    tint = Color(0xFFEF4444),
+                    modifier = Modifier.size(52.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Ekspor Excel Gagal",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF0F172A)
+                )
+            },
+            text = {
+                Text(
+                    text = exportErrorMessage.ifBlank { "Terjadi kesalahan saat mengekspor laporan keuangan ke Excel. Silakan coba lagi." },
+                    fontFamily = interfamily,
+                    fontSize = 14.sp,
+                    color = Color(0xFF475569)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showExportErrorDialog = false
+                        viewModel.clearExportState()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Mengerti", fontFamily = interfamily, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
         )
     }
 
@@ -128,9 +300,7 @@ fun LaporanKeuanganScreen(
                     // Tombol Ekspor Excel
                     FilledTonalButton(
                         onClick = {
-                            viewModel.exportLaporan(context) { uri ->
-                                uri?.let { shareExcel(context, it) }
-                            }
+                            viewModel.exportToExcel(context)
                         },
                         colors = ButtonDefaults.filledTonalButtonColors(
                             containerColor = Color(0xFFEFF6FF),
@@ -1002,42 +1172,6 @@ fun LaporanKeuanganScreen(
                     }
                 }
             }
-
-            // ── 9. TOMBOL BESAR EKSPOR & BAGIKAN
-            item {
-                Button(
-                    onClick = {
-                        viewModel.exportLaporan(context) { uri ->
-                            uri?.let { shareExcel(context, it) }
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                    enabled = !state.isExporting
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = if (state.isExporting) "Sedang Mengekspor..." else "Ekspor & Bagikan Laporan (Excel)",
-                            fontFamily = interfamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = Color.White
-                        )
-                    }
-                }
-            }
         }
     }
 }
@@ -1265,19 +1399,6 @@ private fun formatRupiah(nominal: Double): String {
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
     formatter.maximumFractionDigits = 0
     return formatter.format(nominal)
-}
-
-private fun shareExcel(context: Context, uri: Uri) {
-    try {
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        context.startActivity(Intent.createChooser(shareIntent, "Bagikan Laporan Keuangan"))
-    } catch (e: Exception) {
-        Toast.makeText(context, "Gagal membagikan laporan: ${e.message}", Toast.LENGTH_SHORT).show()
-    }
 }
 
 @Preview(showSystemUi = true, showBackground = true)
