@@ -29,6 +29,12 @@ class LaporanPenjualanViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
+    private val initialStartMillis: Long? = savedStateHandle.get<String>("startDate")?.toLongOrNull()
+    private val initialEndMillis: Long? = savedStateHandle.get<String>("endDate")?.toLongOrNull()
+    private val initialDateLabel: String? = if (initialStartMillis != null && initialEndMillis != null) {
+        formatDateRangeLabel(initialStartMillis, initialEndMillis)
+    } else null
+
     private val initialPeriode: PeriodeLaporanPenjualan = savedStateHandle.get<String>("initialPeriode")?.let {
         try {
             PeriodeLaporanPenjualan.valueOf(it)
@@ -37,7 +43,14 @@ class LaporanPenjualanViewModel @Inject constructor(
         }
     } ?: PeriodeLaporanPenjualan.SEMUA
 
-    private val _state = MutableStateFlow(LaporanPenjualanState(selectedPeriode = initialPeriode))
+    private val _state = MutableStateFlow(
+        LaporanPenjualanState(
+            selectedPeriode = initialPeriode,
+            customStartDateMillis = initialStartMillis,
+            customEndDateMillis = initialEndMillis,
+            customDateLabel = initialDateLabel
+        )
+    )
     val state: StateFlow<LaporanPenjualanState> = _state.asStateFlow()
 
     private var rawSummary = LaporanPenjualanSummary()
