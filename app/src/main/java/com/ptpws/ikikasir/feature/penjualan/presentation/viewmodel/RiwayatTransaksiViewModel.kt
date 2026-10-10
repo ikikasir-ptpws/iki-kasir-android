@@ -208,6 +208,13 @@ class RiwayatTransaksiViewModel @Inject constructor(
                 }.timeInMillis / 1000
                 filtered = filtered.filter { it.createdAt.seconds >= startOf7Days }
             }
+            "Refund" -> {
+                filtered = filtered.filter {
+                    it.status.equals("REFUND", ignoreCase = true) ||
+                    it.status.equals("REFUNDED", ignoreCase = true) ||
+                    it.status.equals("BATAL", ignoreCase = true)
+                }
+            }
             "Filter Tanggal" -> {
                 if (startMillis != null && endMillis != null) {
                     val startSec = getStartOfDayLocalSeconds(startMillis)
