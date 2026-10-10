@@ -240,7 +240,10 @@ fun AppNavHost() {
                     }
                 )
             }
-            composable(AppScreen.LaporanPenjualan.route) {
+            composable(
+                route = AppScreen.LaporanPenjualan.route,
+                arguments = AppScreen.LaporanPenjualan.navArguments
+            ) {
                 LaporanPenjualanScreen(
                     navController = navController,
                     onBack = { navController.popBackStack() }
