@@ -59,6 +59,7 @@ import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel.ProfilViewModel
 import com.ptpws.ikikasir.feature.auth.presentation.viewmodel.SecurityViewModel
+import com.ptpws.ikikasir.feature.tentangaplikasi.TentangAplikasiDialog
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,6 +93,7 @@ fun ProfilScreen(
     var showMejaDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showSecurityDialog by remember { mutableStateOf(false) }
+    var showTentangAplikasiDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(securityState.isSuccess) {
         if (securityState.isSuccess) {
@@ -494,7 +496,10 @@ fun ProfilScreen(
                                 iconBackground = Color(0xFFE5E7EB),
                                 iconTint = Color(0xFF4B5563),
                                 label = "Tentang Aplikasi",
-                                onClick = onTentangAplikasi
+                                onClick = {
+                                    showTentangAplikasiDialog = true
+                                    onTentangAplikasi()
+                                }
                             )
                         }
                     }
@@ -1690,6 +1695,12 @@ fun ProfilScreen(
             onNewPasswordChange = securityViewModel::updateNewPassword,
             onConfirmPasswordChange = securityViewModel::updateConfirmPassword,
             onSubmit = securityViewModel::changePassword
+        )
+    }
+
+    if (showTentangAplikasiDialog) {
+        TentangAplikasiDialog(
+            onDismiss = { showTentangAplikasiDialog = false }
         )
     }
 }
