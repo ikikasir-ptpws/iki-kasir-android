@@ -42,12 +42,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 
+import java.text.NumberFormat
+import java.util.Locale
+
 @Composable
 fun DashboardScreen(
     navController: NavController,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val sessionState by viewModel.sessionState.collectAsState()
+    val analyticsState by viewModel.analyticsState.collectAsState()
     val userName = sessionState.user?.fullName?.ifBlank { "Pengguna" } ?: "Pengguna"
 
     val showProduk = viewModel.isAllowed("Produk")
@@ -61,6 +65,7 @@ fun DashboardScreen(
     val showRiwayatAntrean = viewModel.isAllowed("Riwayat Antrean")
     val showPromo = viewModel.isAllowed("Promo")
     val hasPenjualanSection = showKasir || showTransaksi || showAntrean || showRiwayatAntrean || showPromo
+    val showLaporanKeuangan = viewModel.isAllowed("Laporan Keuangan")
 
     Scaffold(
         containerColor = Color(0xFFF0F4FF),
@@ -73,7 +78,18 @@ fun DashboardScreen(
             contentPadding = PaddingValues(bottom = 120.dp)
         ) {
             item { HeaderSection(userName = userName) }
-            item { StatCardsSection() }
+            item {
+                StatCardsSection(
+                    analytics = analyticsState,
+                    onCardClick = {
+                        if (showTransaksi) {
+                            navController.navigate(AppScreen.Riwayat.route)
+                        } else if (showLaporanKeuangan) {
+                            navController.navigate(AppScreen.LaporanKeuangan.route)
+                        }
+                    }
+                )
+            }
 
             val navigateToSemuaMenu = { navController.navigate(AppScreen.Semuamenu.route) }
 
@@ -104,8 +120,19 @@ fun DashboardScreen(
                 }
             }
 
-            item { SectionHeader(title = "Ringkasan Hari Ini", onLihatSemua = {}) }
-            item { RingkasanSection() }
+            item {
+                SectionHeader(
+                    title = "Ringkasan Hari Ini",
+                    onLihatSemua = {
+                        if (showLaporanKeuangan) {
+                            navController.navigate(AppScreen.LaporanKeuangan.route)
+                        } else if (showTransaksi) {
+                            navController.navigate(AppScreen.Riwayat.route)
+                        }
+                    }
+                )
+            }
+            item { RingkasanSection(analytics = analyticsState) }
             item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
@@ -158,7 +185,29 @@ fun HeaderSection(userName: String = "Pengguna") {
 }
 
 @Composable
-fun StatCardsSection() {
+fun StatCardsSection(
+    analytics: DashboardAnalytics = DashboardAnalytics(),
+    onCardClick: (() -> Unit)? = null
+) {
+    val formattedPenjualan = formatDashboardNominal(analytics.penjualanHariIni)
+    val salesGrowthPercent = formatDashboardPercent(analytics.pertumbuhanPenjualanPersen)
+    val salesGrowthText = if (analytics.pertumbuhanPenjualanPersen == 0.0) {
+        "0%"
+    } else if (analytics.isPertumbuhanPenjualanPositif) {
+        "+$salesGrowthPercent%"
+    } else {
+        "-$salesGrowthPercent%"
+    }
+
+    val txGrowthPercent = formatDashboardPercent(analytics.pertumbuhanTransaksiPersen)
+    val txGrowthText = if (analytics.pertumbuhanTransaksiPersen == 0.0) {
+        "0%"
+    } else if (analytics.isPertumbuhanTransaksiPositif) {
+        "+$txGrowthPercent%"
+    } else {
+        "-$txGrowthPercent%"
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -170,7 +219,10 @@ fun StatCardsSection() {
         Card(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxHeight(),
+                .fillMaxHeight()
+                .then(
+                    if (onCardClick != null) Modifier.clickable { onCardClick() } else Modifier
+                ),
             shape = RoundedCornerShape(20.dp),
             elevation = CardDefaults.cardElevation(
                 defaultElevation = 2.dp
@@ -222,10 +274,12 @@ fun StatCardsSection() {
                     )
 
                     Text(
-                        text = "10.000.000",
-                        fontSize = 24.sp,
+                        text = formattedPenjualan,
+                        fontSize = if (formattedPenjualan.length > 10) 19.sp else 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -240,7 +294,7 @@ fun StatCardsSection() {
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Text(
-                                text = "+5%",
+                                text = salesGrowthText,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White
@@ -259,12 +313,14 @@ fun StatCardsSection() {
             }
         }
 
-        //card total transaksi
-
+        // Card Total Transaksi
         Card(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxHeight(),
+                .fillMaxHeight()
+                .then(
+                    if (onCardClick != null) Modifier.clickable { onCardClick() } else Modifier
+                ),
             shape = RoundedCornerShape(20.dp),
             elevation = CardDefaults.cardElevation(
                 defaultElevation = 2.dp
@@ -298,10 +354,12 @@ fun StatCardsSection() {
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "50 trx",
+                    text = "${analytics.totalTransaksiHariIni} trx",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1A1D2E)
+                    color = Color(0xFF1A1D2E),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -309,17 +367,18 @@ fun StatCardsSection() {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val badgeColor = if (analytics.isPertumbuhanTransaksiPositif) Color(0xFF22C55E) else Color(0xFFEF4444)
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
-                            .background(Color(0xFF22C55E).copy(alpha = 0.15f))
+                            .background(badgeColor.copy(alpha = 0.15f))
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Text(
-                            text = "+5%",
+                            text = txGrowthText,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF22C55E)
+                            color = badgeColor
                         )
                     }
 
@@ -544,20 +603,38 @@ fun MenuIconItem(
 
 
 @Composable
-fun RingkasanSection() {
+fun RingkasanSection(
+    analytics: DashboardAnalytics = DashboardAnalytics()
+) {
+    val custGrowthPercent = formatDashboardPercent(analytics.pertumbuhanPelangganPersen)
+    val custGrowthText = if (analytics.pertumbuhanPelangganPersen == 0.0) {
+        "0% dari kemarin"
+    } else {
+        "${custGrowthPercent}% dari kemarin"
+    }
+
+    val soldGrowthPercent = formatDashboardPercent(analytics.pertumbuhanProdukTerjualPersen)
+    val soldGrowthText = if (analytics.pertumbuhanProdukTerjualPersen == 0.0) {
+        "0% dari kemarin"
+    } else {
+        "${soldGrowthPercent}% dari kemarin"
+    }
+
+    val formattedCust = formatDashboardInteger(analytics.totalPelangganHariIni)
+    val formattedSold = formatDashboardInteger(analytics.totalProdukTerjualHariIni)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-
         RingkasanCard(
             modifier = Modifier.weight(1f),
-            value = "142",
+            value = formattedCust,
             title = "Pelanggan",
-            growth = "8% dari kemarin",
-            isGrowthPositive = true,
+            growth = custGrowthText,
+            isGrowthPositive = analytics.isPertumbuhanPelangganPositif,
             icon = Icons.Outlined.Person,
             iconColor = Color(0xFF22C55E),
             iconBg = Color(0xFFDCFCE7)
@@ -565,15 +642,33 @@ fun RingkasanSection() {
 
         RingkasanCard(
             modifier = Modifier.weight(1f),
-            value = "1.320",
+            value = formattedSold,
             title = "Terjual",
-            growth = "15% dari kemarin",
-            isGrowthPositive = true,
+            growth = soldGrowthText,
+            isGrowthPositive = analytics.isPertumbuhanProdukTerjualPositif,
             icon = Icons.Outlined.Inventory2,
             iconColor = Color(0xFFF97316),
             iconBg = Color(0xFFFFEDD5)
         )
     }
+}
+
+private fun formatDashboardNominal(value: Double): String {
+    val formatter = NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID")).apply {
+        maximumFractionDigits = if (value % 1.0 == 0.0) 0 else 2
+    }
+    return formatter.format(value)
+}
+
+private fun formatDashboardInteger(value: Int): String {
+    return NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID")).format(value)
+}
+
+private fun formatDashboardPercent(value: Double): String {
+    val formatter = NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID")).apply {
+        maximumFractionDigits = 1
+    }
+    return formatter.format(value)
 }
 
 @Composable
