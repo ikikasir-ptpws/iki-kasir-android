@@ -1,6 +1,7 @@
 package com.ptpws.ikikasir.feature.laporanpenjualan.presentation.viewmodel
 
 import android.content.Context
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.commond.formatDateRangeLabel
@@ -24,10 +25,19 @@ import javax.inject.Inject
 class LaporanPenjualanViewModel @Inject constructor(
     private val getLaporanPenjualanUseCase: GetLaporanPenjualanUseCase,
     private val exportLaporanPenjualanUseCase: ExportLaporanPenjualanUseCase,
-    private val logActivityUseCase: LogActivityUseCase
+    private val logActivityUseCase: LogActivityUseCase,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(LaporanPenjualanState())
+    private val initialPeriode: PeriodeLaporanPenjualan = savedStateHandle.get<String>("initialPeriode")?.let {
+        try {
+            PeriodeLaporanPenjualan.valueOf(it)
+        } catch (_: Exception) {
+            PeriodeLaporanPenjualan.SEMUA
+        }
+    } ?: PeriodeLaporanPenjualan.SEMUA
+
+    private val _state = MutableStateFlow(LaporanPenjualanState(selectedPeriode = initialPeriode))
     val state: StateFlow<LaporanPenjualanState> = _state.asStateFlow()
 
     private var rawSummary = LaporanPenjualanSummary()
