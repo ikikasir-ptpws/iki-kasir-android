@@ -610,7 +610,39 @@ fun RiwayatTransaksiScreen(
                         )
                     }
 
-                    // Chip 4: Filter Tanggal (Custom Date Picker)
+                    // Chip 4: Refund
+                    item {
+                        val isSelected = state.selectedFilter == "Refund"
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { viewModel.onFilterSelect("Refund") },
+                            label = {
+                                Text(
+                                    text = "Refund",
+                                    fontFamily = interfamily,
+                                    fontSize = 13.sp,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFF4F46E5),
+                                selectedLabelColor = Color.White,
+                                containerColor = Color.White,
+                                labelColor = Color(0xFF374151)
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSelected,
+                                selectedBorderColor = Color.Transparent,
+                                borderColor = Color(0xFFE2E8F0),
+                                borderWidth = 1.dp,
+                                selectedBorderWidth = 0.dp
+                            ),
+                            shape = RoundedCornerShape(20.dp)
+                        )
+                    }
+
+                    // Chip 5: Filter Tanggal (Custom Date Picker)
                     item {
                         val isSelected = state.selectedFilter == "Filter Tanggal"
                         val chipText = if (isSelected && !state.customDateLabel.isNullOrBlank()) {
@@ -679,7 +711,7 @@ fun RiwayatTransaksiScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Belum ada riwayat transaksi",
+                            text = if (state.selectedFilter == "Refund") "Belum ada riwayat transaksi refund" else "Belum ada riwayat transaksi",
                             fontFamily = interfamily,
                             color = Color(0xFF64748B),
                             fontSize = 14.sp
