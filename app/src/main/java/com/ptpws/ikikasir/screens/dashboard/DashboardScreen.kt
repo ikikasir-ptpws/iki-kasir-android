@@ -124,11 +124,7 @@ fun DashboardScreen(
                 SectionHeader(
                     title = "Ringkasan Hari Ini",
                     onLihatSemua = {
-                        if (showLaporanKeuangan) {
-                            navController.navigate(AppScreen.LaporanKeuangan.route)
-                        } else if (showTransaksi) {
-                            navController.navigate(AppScreen.Riwayat.route)
-                        }
+                        navController.navigate(AppScreen.LaporanPenjualan.routeWith("HARI_INI"))
                     }
                 )
             }
