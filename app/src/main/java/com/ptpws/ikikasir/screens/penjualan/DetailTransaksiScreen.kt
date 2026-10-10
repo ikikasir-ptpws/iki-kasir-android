@@ -205,10 +205,9 @@ fun DetailTransaksiScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
+                    .padding(paddingValues)
             ) {
-                CircularProgressIndicator(color = Color(0xFF4F46E5))
+                com.ptpws.ikikasir.commond.DetailTransaksiShimmer()
             }
         } else if (tx == null) {
             Box(

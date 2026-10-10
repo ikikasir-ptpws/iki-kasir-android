@@ -471,7 +471,8 @@ fun PenjualanMenuSection(
     showTransaksi: Boolean = true,
     showAntrean: Boolean = true,
     showRiwayatAntrean: Boolean = true,
-    showPromo: Boolean = true
+    showPromo: Boolean = true,
+    showLaporanPenjualan: Boolean = false
 ) {
     val firstRowItems = mutableListOf<@Composable () -> Unit>()
     if (showKasir) {
@@ -515,6 +516,28 @@ fun PenjualanMenuSection(
         }
     }
 
+    val secondRowItems = mutableListOf<@Composable () -> Unit>()
+    if (showPromo) {
+        secondRowItems.add {
+            MenuIconItem(
+                iconRes = R.drawable.promo,
+                label = "Promo",
+                bgColor = Color(0xFFFFFBEB),
+                onClick = { navController.navigate(AppScreen.Promo.route) }
+            )
+        }
+    }
+    if (showLaporanPenjualan) {
+        secondRowItems.add {
+            MenuIconItem(
+                iconRes = R.drawable.laporanpenjualan,
+                label = "Laporan\nPenjualan",
+                bgColor = Color(0xFFECFEFF),
+                onClick = { navController.navigate(AppScreen.LaporanPenjualan.route) }
+            )
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -532,17 +555,15 @@ fun PenjualanMenuSection(
                 }
             }
         }
-        if (showPromo) {
+        if (secondRowItems.isNotEmpty()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Start
             ) {
-                MenuIconItem(
-                    iconRes = R.drawable.promo,
-                    label = "Promo",
-                    bgColor = Color(0xFFFFFBEB),
-                    onClick = { navController.navigate(AppScreen.Promo.route) }
-                )
+                secondRowItems.forEachIndexed { idx, item ->
+                    if (idx > 0) Spacer(modifier = Modifier.width(28.dp))
+                    item()
+                }
             }
         }
     }

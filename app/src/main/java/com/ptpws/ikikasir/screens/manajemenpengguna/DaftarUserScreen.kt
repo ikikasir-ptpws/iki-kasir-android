@@ -203,15 +203,9 @@ fun DaftarUserScreen(
             }
 
             if (state.isLoading && users.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFF4F46E5))
-                    }
+                items(6) {
+                    com.ptpws.ikikasir.commond.UserCardShimmer()
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
             } else if (users.isEmpty()) {
                 item {

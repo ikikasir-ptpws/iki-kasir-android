@@ -585,10 +585,16 @@ fun RiwayatAntreanScreen(
             ) {
                 when (val state = uiState) {
                     is QueueHistoryUiState.Loading -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.align(Alignment.Center),
-                            color = Color(0xFF3D5AF1)
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            repeat(5) {
+                                com.ptpws.ikikasir.commond.AntreanCardShimmer()
+                            }
+                        }
                     }
 
                     is QueueHistoryUiState.Error -> {

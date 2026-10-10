@@ -58,11 +58,15 @@ fun RoleIzinScreen(
         modifier = Modifier.fillMaxSize()
     ) {
         if (state.isLoading && roles.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                CircularProgressIndicator(color = Color(0xFF4F46E5))
+                repeat(5) {
+                    com.ptpws.ikikasir.commond.RoleCardShimmer()
+                }
             }
         } else if (roles.isEmpty()) {
             Box(

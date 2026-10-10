@@ -692,15 +692,9 @@ fun RiwayatTransaksiScreen(
             }
 
             if (state.isLoading) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFF4F46E5))
-                    }
+                items(5) {
+                    com.ptpws.ikikasir.commond.TransaksiCardShimmer()
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
             } else if (state.groupedTransactions.isEmpty()) {
                 item {

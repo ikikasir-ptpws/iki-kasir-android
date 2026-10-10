@@ -292,10 +292,9 @@ fun DaftarKategoriScreen(
 
             // Loading
             if (state.isLoading) {
-                item {
-                    Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color(0xFF4F46E5), modifier = Modifier.size(32.dp))
-                    }
+                items(5) {
+                    com.ptpws.ikikasir.commond.KategoriCardShimmer()
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
             }
 

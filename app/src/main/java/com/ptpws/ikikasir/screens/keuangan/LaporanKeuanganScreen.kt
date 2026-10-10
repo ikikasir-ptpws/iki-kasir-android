@@ -421,9 +421,35 @@ fun LaporanKeuanganScreen(
                 }
             }
 
-            // ── 3. HERO CARD: TOTAL OMZET PENJUALAN
-            item {
-                Card(
+            if (state.isLoading) {
+                item {
+                    com.ptpws.ikikasir.commond.LaporanKeuanganHeroShimmer()
+                }
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            com.ptpws.ikikasir.commond.LaporanKeuanganMetricCardShimmer(modifier = Modifier.weight(1f))
+                            com.ptpws.ikikasir.commond.LaporanKeuanganMetricCardShimmer(modifier = Modifier.weight(1f))
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            com.ptpws.ikikasir.commond.LaporanKeuanganMetricCardShimmer(modifier = Modifier.weight(1f))
+                            com.ptpws.ikikasir.commond.LaporanKeuanganMetricCardShimmer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+                item {
+                    com.ptpws.ikikasir.commond.LaporanKeuanganChartShimmer()
+                }
+            } else {
+                // ── 3. HERO CARD: TOTAL OMZET PENJUALAN
+                item {
+                    Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent),
@@ -1191,6 +1217,7 @@ fun LaporanKeuanganScreen(
                         }
                     }
                 }
+            }
             }
         }
     }

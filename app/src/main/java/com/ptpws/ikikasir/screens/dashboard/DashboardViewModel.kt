@@ -35,6 +35,7 @@ private val DEFAULT_UNASSIGNED_ROLE_ACCESS = listOf(
     "Kasir",
     "Transaksi",
     "Promo",
+    "Laporan Penjualan",
     "Antrean",
     "Riwayat Antrean",
     "Laporan Keuangan",

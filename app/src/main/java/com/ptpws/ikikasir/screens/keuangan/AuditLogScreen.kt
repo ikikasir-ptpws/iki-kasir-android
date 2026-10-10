@@ -314,15 +314,9 @@ fun AuditLogScreen(
 
             // Loading state
             if (state.isLoading) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFF4F46E5))
-                    }
+                items(6) {
+                    com.ptpws.ikikasir.commond.AuditLogCardShimmer()
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
             } else if (state.filteredLogs.isEmpty()) {
                 // Empty state

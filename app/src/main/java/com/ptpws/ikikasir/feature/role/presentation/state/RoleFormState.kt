@@ -16,6 +16,7 @@ data class RoleFormState(
         "Promo" to false,
         "Antrean" to false,
         "Riwayat Antrean" to false,
+        "Laporan Penjualan" to false,
         "Laporan Keuangan" to false,
         "Manajemen Pengguna" to false,
         "Audit Log" to false

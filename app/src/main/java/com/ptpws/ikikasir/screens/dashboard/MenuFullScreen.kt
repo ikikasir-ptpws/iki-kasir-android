@@ -50,7 +50,8 @@ fun MenuFullScreen(
     val showAntrean = viewModel.isAllowed("Antrean") && matchSearch(query, "antrean", "antrian")
     val showRiwayatAntrean = viewModel.isAllowed("Riwayat Antrean") && matchSearch(query, "riwayat antrean", "riwayat antrian")
     val showPromo = viewModel.isAllowed("Promo") && matchSearch(query, "promo", "diskon", "voucher")
-    val hasPenjualanSection = showKasir || showTransaksi || showAntrean || showRiwayatAntrean || showPromo
+    val showLaporanPenjualan = viewModel.isAllowed("Laporan Penjualan") && matchSearch(query, "laporan penjualan", "penjualan", "produk terjual", "terjual")
+    val hasPenjualanSection = showKasir || showTransaksi || showAntrean || showRiwayatAntrean || showPromo || showLaporanPenjualan
 
     val showLaporanKeuangan = viewModel.isAllowed("Laporan Keuangan") && matchSearch(query, "laporan keuangan", "laporan", "keuangan")
     val hasKeuanganSection = showLaporanKeuangan
@@ -130,7 +131,8 @@ fun MenuFullScreen(
                         showTransaksi = showTransaksi,
                         showAntrean = showAntrean,
                         showRiwayatAntrean = showRiwayatAntrean,
-                        showPromo = showPromo
+                        showPromo = showPromo,
+                        showLaporanPenjualan = showLaporanPenjualan
                     )
                 }
                 item { Spacer(modifier = Modifier.height(12.dp)) }

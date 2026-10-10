@@ -642,17 +642,11 @@ fun DaftarProdukScreen(
                 }
             }
 
-            // Loading Indicator
+            // Loading Indicator with Shimmer
             if (state.isLoading && state.filteredList.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFF4F46E5))
-                    }
+                items(6) {
+                    com.ptpws.ikikasir.commond.ProdukCardShimmer()
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
             }
 

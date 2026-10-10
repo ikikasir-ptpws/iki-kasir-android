@@ -9,6 +9,7 @@ import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import com.ptpws.ikikasir.feature.antrean.domain.model.QueueHistory
 import com.ptpws.ikikasir.feature.keuangan.domain.model.FinancialReportExportData
+import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.LaporanPenjualanSummary
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -830,6 +831,128 @@ class ExcelExportService @Inject constructor() {
                     )
                 ),
                 "AntreanHistory_${fileNameDateFormat.format(Date())}.xlsx"
+            )
+        }
+    }
+
+    suspend fun exportLaporanPenjualan(
+        context: Context,
+        summary: LaporanPenjualanSummary
+    ): Result<Uri> = withContext(Dispatchers.IO) {
+        runCatching {
+            val rows = mutableListOf<List<ExcelCell>>()
+
+            // Row 1: Brand Title
+            rows += listOf(ExcelCell("IKI KASIR - SMART POINT OF SALE", style = "BrandTitle"))
+
+            // Row 2: Main Report Title
+            rows += listOf(ExcelCell("LAPORAN PENJUALAN PRODUK TERJUAL", style = "ReportTitle"))
+
+            // Row 3: Subtitle Metadata Info
+            val subtitle = "Periode Filter: ${summary.filterLabel}   |   Dicetak: ${dateTimeFormat.format(Date())}   |   Total Variasi: ${summary.totalProdukUnik} Produk"
+            rows += listOf(ExcelCell(subtitle, style = "Subtitle"))
+
+            // Row 4: Empty separator
+            rows += listOf(emptyList())
+
+            // Row 5: KPI Card Labels (A5:B5, C5:D5, E5:F5, G5:H5)
+            rows += listOf(
+                ExcelCell("TOTAL UNIT TERJUAL", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("TOTAL OMZET PRODUK", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("VARIASI PRODUK", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("PRODUK TERLARIS (#1)", "KpiLabel"), ExcelCell("", "KpiLabel")
+            )
+
+            // Row 6: KPI Card Values
+            val bestSellerText = if (summary.produkTerlarisQty > 0) {
+                "${summary.produkTerlarisNama} (${summary.produkTerlarisQty} Pcs)"
+            } else {
+                "-"
+            }
+            rows += listOf(
+                ExcelCell("${summary.totalUnitTerjual} Unit", "KpiValue"), ExcelCell("", "KpiValue"),
+                ExcelCell(summary.totalOmzet.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
+                ExcelCell("${summary.totalProdukUnik} Produk", "KpiValue"), ExcelCell("", "KpiValue"),
+                ExcelCell(bestSellerText, "KpiValue"), ExcelCell("", "KpiValue")
+            )
+
+            // Row 7: Empty separator
+            rows += listOf(emptyList())
+
+            // Row 8: Table Column Headers
+            rows += listOf(
+                ExcelCell("Peringkat", "Header"),
+                ExcelCell("Nama Produk", "HeaderLeft"),
+                ExcelCell("Kategori", "HeaderLeft"),
+                ExcelCell("Harga Satuan", "HeaderRight"),
+                ExcelCell("Unit Terjual", "HeaderRight"),
+                ExcelCell("Total Omzet", "HeaderRight"),
+                ExcelCell("Kontribusi", "HeaderRight"),
+                ExcelCell("Status", "Header")
+            )
+
+            val columnWidths = listOf(12, 32, 22, 20, 16, 22, 16, 16)
+
+            summary.items.forEachIndexed { index, item ->
+                val rowStyle = if (index % 2 == 0) "Data" else "DataAlt"
+                val centerStyle = if (index % 2 == 0) "DataCenter" else "DataCenterAlt"
+                val numberStyle = if (index % 2 == 0) "Number" else "NumberAlt"
+
+                val rankBadgeStyle = when (item.rank) {
+                    1 -> "SuccessPill"
+                    2, 3 -> "Header"
+                    else -> centerStyle
+                }
+
+                val statusBadge = if (item.unitTerjual > 0) "Laris" else "Belum Terjual"
+                val statusStyle = if (item.unitTerjual > 0) "SuccessPill" else "DataCenter"
+
+                rows += listOf(
+                    ExcelCell("#${item.rank}", rankBadgeStyle),
+                    ExcelCell(item.namaProduk, rowStyle),
+                    ExcelCell(item.kategori.ifBlank { "Umum" }, rowStyle),
+                    ExcelCell(item.hargaSatuan.formatRupiah(), numberStyle),
+                    ExcelCell("${item.unitTerjual} Unit", numberStyle),
+                    ExcelCell(item.totalOmzet.formatRupiah(), numberStyle),
+                    ExcelCell(String.format(Locale.US, "%.1f%%", item.kontribusiPersen), centerStyle),
+                    ExcelCell(statusBadge, statusStyle)
+                )
+            }
+
+            // Footer Total Row
+            val totalRowNumber = rows.size + 1
+            rows += listOf(
+                ExcelCell("TOTAL PENJUALAN PRODUK", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell("${summary.totalUnitTerjual} Unit", "TotalValue"),
+                ExcelCell(summary.totalOmzet.formatRupiah(), "TotalValue"),
+                ExcelCell("100.0%", "TotalCenter"),
+                ExcelCell("", "TotalLabel")
+            )
+
+            val mergeRanges = listOf(
+                "A5:B5", "C5:D5", "E5:F5", "G5:H5",
+                "A6:B6", "C6:D6", "E6:F6", "G6:H6",
+                "A$totalRowNumber:D$totalRowNumber"
+            )
+
+            val autoFilterEndRow = totalRowNumber - 1
+            val autoFilterRange = "A8:H$autoFilterEndRow"
+
+            saveAndShare(
+                context,
+                createSpreadsheetXlsx(
+                    listOf(
+                        ExcelSheet(
+                            name = "Laporan Produk Terjual",
+                            rows = rows,
+                            columnWidths = columnWidths,
+                            headerRowIndex = 7,
+                            mergeRanges = mergeRanges,
+                            autoFilterRange = autoFilterRange
+                        )
+                    )
+                ),
+                "Laporan_Penjualan_Produk_${fileNameDateFormat.format(Date())}.xlsx"
             )
         }
     }

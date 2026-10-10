@@ -453,7 +453,12 @@ fun ManajemenStokScreen(
             }
 
             // 6. Product Stock Item Cards List
-            if (filteredList.isEmpty()) {
+            if (state.isLoading && filteredList.isEmpty()) {
+                items(6) {
+                    com.ptpws.ikikasir.commond.StokCardShimmer()
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+            } else if (filteredList.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
