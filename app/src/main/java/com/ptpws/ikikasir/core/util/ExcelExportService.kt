@@ -89,21 +89,16 @@ class ExcelExportService @Inject constructor() {
             rows += listOf(
                 ExcelCell("TOTAL TRANSAKSI", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel"),
                 ExcelCell("PENDAPATAN BERSIH (NET)", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("TOTAL DANA REFUND", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("TOTAL DISKON & PPN", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel")
+                ExcelCell("TOTAL REFUND", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("TRANSAKSI BATAL", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel")
             )
 
             // Row 6: KPI Card Values
-            val refundSummaryValue = if (refundedTransactions.isNotEmpty()) {
-                "${refundedTransactions.size} Transaksi (${totalNominalRefund.formatRupiah()})"
-            } else {
-                "Rp 0 (0 Refund)"
-            }
             rows += listOf(
-                ExcelCell("${transaksiList.size} Transaksi (${completedTransactions.size} Berhasil)", "KpiValue"), ExcelCell("", "KpiValue"), ExcelCell("", "KpiValue"),
+                ExcelCell("${transaksiList.size} Transaksi (${completedTransactions.size} Selesai)", "KpiValue"), ExcelCell("", "KpiValue"), ExcelCell("", "KpiValue"),
                 ExcelCell(totalPendapatanRiil.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell(refundSummaryValue, "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell("Diskon: ${totalDiskon.formatRupiah()}   |   PPN: ${totalPpn.formatRupiah()}", "KpiValue"), ExcelCell("", "KpiValue"), ExcelCell("", "KpiValue")
+                ExcelCell(totalNominalRefund.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
+                ExcelCell("${refundedTransactions.size} Transaksi Batal", "KpiValue"), ExcelCell("", "KpiValue"), ExcelCell("", "KpiValue")
             )
 
             // Row 7: Empty separator
@@ -194,7 +189,7 @@ class ExcelExportService @Inject constructor() {
             // Optional extra row for Total Refund if any
             if (refundedTransactions.isNotEmpty()) {
                 rows += listOf(
-                    ExcelCell("TOTAL DANA DI-REFUND (${refundedTransactions.size} Transaksi)", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                    ExcelCell("TOTAL REFUND (${refundedTransactions.size} Transaksi Batal)", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
                     ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
                     ExcelCell("-", "TotalCenter"),
                     ExcelCell("-", "TotalCenter"),
@@ -278,26 +273,31 @@ class ExcelExportService @Inject constructor() {
                 ExcelCell(reportData.totalHpp.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency")
             )
             summaryRows += listOf(
-                ExcelCell("VOLUME PENJUALAN", "KpiLabel"), ExcelCell("", "KpiLabel"),
                 ExcelCell("TOTAL PESANAN SELESAI", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("TOTAL DANA REFUND", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("TOTAL DISKON & PROMO", "KpiLabel"), ExcelCell("", "KpiLabel")
+                ExcelCell("TOTAL PPN / PAJAK", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("TOTAL REFUND", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("TRANSAKSI BATAL", "KpiLabel"), ExcelCell("", "KpiLabel")
             )
-            val refundKpiLabel = if (reportData.totalRefundCount > 0) {
-                "${reportData.totalRefundNominal.formatRupiah()} (${reportData.totalRefundCount} Tx)"
-            } else {
-                "Rp 0 (0 Refund)"
-            }
             summaryRows += listOf(
-                ExcelCell("${reportData.totalProdukTerjual} Produk Terjual", "KpiValue"), ExcelCell("", "KpiValue"),
                 ExcelCell("${reportData.totalTransaksiCount} Order Selesai", "KpiValue"), ExcelCell("", "KpiValue"),
-                ExcelCell(refundKpiLabel, "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell(reportData.totalDiskon.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency")
+                ExcelCell(reportData.totalPajak.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
+                ExcelCell(reportData.totalRefundNominal.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
+                ExcelCell("${reportData.totalRefundCount} Transaksi Batal", "KpiValue"), ExcelCell("", "KpiValue")
             )
             summaryRows += listOf(emptyList())
 
             // Section 2: Struktur Laba Rugi (P&L)
+            // Initialize merge ranges with KPI card merged blocks (Rows 6-9)
+            val summaryMergeRanges = mutableListOf<String>(
+                "A6:B6", "C6:D6", "E6:F6", "G6:H6",
+                "A7:B7", "C7:D7", "E7:F7", "G7:H7",
+                "A8:B8", "C8:D8", "E8:F8", "G8:H8",
+                "A9:B9", "C9:D9", "E9:F9", "G9:H9"
+            )
+
+            // Section 2: Struktur Laba Rugi (P&L)
             summaryRows += listOf(ExcelCell("STRUKTUR LABA & BEBAN (PROFIT & LOSS STATEMENT)", "BrandTitle"))
+            val pnlHeaderRow = summaryRows.size + 1
             summaryRows += listOf(
                 ExcelCell("No", "Header"),
                 ExcelCell("Komponen Arus Finansial", "HeaderLeft"), ExcelCell("", "HeaderLeft"),
@@ -305,41 +305,101 @@ class ExcelExportService @Inject constructor() {
                 ExcelCell("Nominal (IDR)", "HeaderRight"), ExcelCell("", "HeaderRight"),
                 ExcelCell("Keterangan Operasional", "HeaderLeft"), ExcelCell("", "HeaderLeft")
             )
+            summaryMergeRanges += listOf(
+                "B$pnlHeaderRow:C$pnlHeaderRow",
+                "E$pnlHeaderRow:F$pnlHeaderRow",
+                "G$pnlHeaderRow:H$pnlHeaderRow"
+            )
 
             val grossSales = reportData.totalOmzet + reportData.totalDiskon + reportData.totalRefundNominal
-            val pnlItems = mutableListOf<Triple<String, Double, String>>()
-            pnlItems.add(Triple("Penjualan Kotor (Gross Sales)", grossSales, "Basis nilai seluruh transaksi sebelum diskon & refund"))
-            pnlItems.add(Triple("Potongan Diskon & Promo", -reportData.totalDiskon, "Total potongan harga dan voucher promo yang diberikan"))
+            val pnlItems = mutableListOf<PnLItemData>()
+            pnlItems.add(
+                PnLItemData(
+                    label = "Penjualan Kotor (Gross Sales)",
+                    value = grossSales,
+                    description = "Basis nilai seluruh transaksi sebelum diskon & refund",
+                    customRatio = "100.0%"
+                )
+            )
+            pnlItems.add(
+                PnLItemData(
+                    label = "Potongan Diskon & Promo",
+                    value = -reportData.totalDiskon,
+                    description = "Total potongan harga dan voucher promo yang diberikan"
+                )
+            )
             if (reportData.totalRefundNominal > 0) {
-                pnlItems.add(Triple("Pengembalian Dana (Refund)", -reportData.totalRefundNominal, "Total transaksi yang dibatalkan / dana dikembalikan"))
+                pnlItems.add(
+                    PnLItemData(
+                        label = "Pengembalian Dana (Refund)",
+                        value = -reportData.totalRefundNominal,
+                        description = "Total transaksi yang dibatalkan / dana dikembalikan"
+                    )
+                )
             }
-            pnlItems.add(Triple("Penjualan Bersih (Net Sales / Omzet)", reportData.totalOmzet, "Total pendapatan riil yang masuk ke kasir"))
-            pnlItems.add(Triple("Harga Pokok Penjualan (HPP / Biaya Modal)", -reportData.totalHpp, "Biaya modal produk yang terjual"))
-            pnlItems.add(Triple("SUBTOTAL LABA KOTOR (GROSS PROFIT)", reportData.totalLabaKotor, "Laba kotor setelah dikurangi biaya modal HPP"))
-            pnlItems.add(Triple("Pajak Pertambahan Nilai (PPN)", reportData.totalPajak, "Pajak kasir yang berhasil dihimpun"))
-            pnlItems.add(Triple("TOTAL LABA BERSIH (NET PROFIT)", reportData.totalLabaBersih, "Keuntungan bersih akhir toko pada periode ini"))
+            pnlItems.add(
+                PnLItemData(
+                    label = "Penjualan Bersih (Net Sales / Omzet)",
+                    value = reportData.totalOmzet,
+                    description = "Total pendapatan riil yang masuk ke kasir",
+                    customRatio = "100.0%"
+                )
+            )
+            pnlItems.add(
+                PnLItemData(
+                    label = "Harga Pokok Penjualan (HPP / Biaya Modal)",
+                    value = -reportData.totalHpp,
+                    description = "Biaya modal produk yang terjual"
+                )
+            )
+            pnlItems.add(
+                PnLItemData(
+                    label = "SUBTOTAL LABA KOTOR (GROSS PROFIT)",
+                    value = reportData.totalLabaKotor,
+                    description = "Laba kotor setelah dikurangi biaya modal HPP",
+                    isSubtotalOrTotal = true,
+                    customRatio = "Margin ${String.format(Locale.US, "%.1f", reportData.marginKotorPersen)}%"
+                )
+            )
+            pnlItems.add(
+                PnLItemData(
+                    label = "Pajak Pertambahan Nilai (PPN)",
+                    value = reportData.totalPajak,
+                    description = "Pajak kasir yang berhasil dihimpun"
+                )
+            )
+            pnlItems.add(
+                PnLItemData(
+                    label = "TOTAL LABA BERSIH (NET PROFIT)",
+                    value = reportData.totalLabaBersih,
+                    description = "Keuntungan bersih akhir toko pada periode ini",
+                    isSubtotalOrTotal = true,
+                    customRatio = "Margin ${String.format(Locale.US, "%.1f", reportData.profitMarginPersen)}%"
+                )
+            )
 
-            pnlItems.forEachIndexed { idx, (itemLabel, itemVal, itemDesc) ->
-                val isHighlight = idx == 4 || idx == 6
+            pnlItems.forEachIndexed { idx, item ->
+                val isHighlight = item.isSubtotalOrTotal
                 val usedRowStyle = if (isHighlight) "TotalLabel" else if (idx % 2 == 0) "Data" else "DataAlt"
                 val usedCenterStyle = if (isHighlight) "TotalLabel" else if (idx % 2 == 0) "DataCenter" else "DataCenterAlt"
                 val usedNumStyle = if (isHighlight) "TotalValue" else if (idx % 2 == 0) "Number" else "NumberAlt"
 
-                val ratioText = when (idx) {
-                    0, 2 -> "100.0%"
-                    4 -> "Margin ${String.format(Locale.US, "%.1f", reportData.marginKotorPersen)}%"
-                    6 -> "Margin ${String.format(Locale.US, "%.1f", reportData.profitMarginPersen)}%"
-                    else -> if (reportData.totalOmzet > 0) {
-                        "${String.format(Locale.US, "%.1f", (kotlin.math.abs(itemVal) / reportData.totalOmzet) * 100)}%"
-                    } else "0.0%"
-                }
+                val ratioText = item.customRatio ?: if (reportData.totalOmzet > 0) {
+                    "${String.format(Locale.US, "%.1f", (kotlin.math.abs(item.value) / reportData.totalOmzet) * 100)}%"
+                } else "0.0%"
 
+                val pnlRowIndex = summaryRows.size + 1
                 summaryRows += listOf(
                     ExcelCell((idx + 1).toString(), usedCenterStyle),
-                    ExcelCell(itemLabel, usedRowStyle), ExcelCell("", usedRowStyle),
+                    ExcelCell(item.label, usedRowStyle), ExcelCell("", usedRowStyle),
                     ExcelCell(ratioText, usedCenterStyle),
-                    ExcelCell(itemVal.formatRupiah(), usedNumStyle), ExcelCell("", usedNumStyle),
-                    ExcelCell(itemDesc, usedRowStyle), ExcelCell("", usedRowStyle)
+                    ExcelCell(item.value.formatRupiah(), usedNumStyle), ExcelCell("", usedNumStyle),
+                    ExcelCell(item.description, usedRowStyle), ExcelCell("", usedRowStyle)
+                )
+                summaryMergeRanges += listOf(
+                    "B$pnlRowIndex:C$pnlRowIndex",
+                    "E$pnlRowIndex:F$pnlRowIndex",
+                    "G$pnlRowIndex:H$pnlRowIndex"
                 )
             }
             summaryRows += listOf(emptyList())
@@ -354,10 +414,16 @@ class ExcelExportService @Inject constructor() {
                 ExcelCell("Total Diterima (IDR)", "HeaderRight"), ExcelCell("", "HeaderRight"),
                 ExcelCell("Kontribusi Pembayaran (%)", "Header"), ExcelCell("", "Header")
             )
+            summaryMergeRanges += listOf(
+                "B$payHeaderRow:C$payHeaderRow",
+                "E$payHeaderRow:F$payHeaderRow",
+                "G$payHeaderRow:H$payHeaderRow"
+            )
 
             var payTotalNominal = 0.0
             var payTotalCount = 0
             if (reportData.metodePembayaranList.isEmpty()) {
+                val r = summaryRows.size + 1
                 summaryRows += listOf(
                     ExcelCell("1", "DataCenter"),
                     ExcelCell("Belum ada transaksi pembayaran", "Data"), ExcelCell("", "Data"),
@@ -365,8 +431,10 @@ class ExcelExportService @Inject constructor() {
                     ExcelCell(0.0.formatRupiah(), "Number"), ExcelCell("", "Number"),
                     ExcelCell("0.0%", "DataCenter"), ExcelCell("", "DataCenter")
                 )
+                summaryMergeRanges += listOf("B$r:C$r", "E$r:F$r", "G$r:H$r")
             } else {
                 reportData.metodePembayaranList.forEachIndexed { idx, pm ->
+                    val r = summaryRows.size + 1
                     val rowStyle = if (idx % 2 == 0) "Data" else "DataAlt"
                     val centerStyle = if (idx % 2 == 0) "DataCenter" else "DataCenterAlt"
                     val numStyle = if (idx % 2 == 0) "Number" else "NumberAlt"
@@ -378,6 +446,7 @@ class ExcelExportService @Inject constructor() {
                         ExcelCell(pm.totalNominal.formatRupiah(), numStyle), ExcelCell("", numStyle),
                         ExcelCell("${String.format(Locale.US, "%.1f", pm.persentase)}%", centerStyle), ExcelCell("", centerStyle)
                     )
+                    summaryMergeRanges += listOf("B$r:C$r", "E$r:F$r", "G$r:H$r")
                     payTotalNominal += pm.totalNominal
                     payTotalCount += pm.jumlahTransaksi
                 }
@@ -391,30 +460,10 @@ class ExcelExportService @Inject constructor() {
                 ExcelCell(payTotalNominal.formatRupiah(), "TotalValue"), ExcelCell("", "TotalValue"),
                 ExcelCell("100.0%", "TotalLabel"), ExcelCell("", "TotalLabel")
             )
-
-            val summaryMergeRanges = mutableListOf<String>()
             summaryMergeRanges += listOf(
-                "A6:B6", "C6:D6", "E6:F6", "G6:H6",
-                "A7:B7", "C7:D7", "E7:F7", "G7:H7",
-                "A8:B8", "C8:D8", "E8:F8", "G8:H8",
-                "A9:B9", "C9:D9", "E9:F9", "G9:H9",
-                "B12:C12", "E12:F12", "G12:H12",
-                "B13:C13", "E13:F13", "G13:H13",
-                "B14:C14", "E14:F14", "G14:H14",
-                "B15:C15", "E15:F15", "G15:H15",
-                "B16:C16", "E16:F16", "G16:H16",
-                "B17:C17", "E17:F17", "G17:H17",
-                "B18:C18", "E18:F18", "G18:H18",
-                "B19:C19", "E19:F19", "G19:H19",
-                "B$payHeaderRow:C$payHeaderRow", "E$payHeaderRow:F$payHeaderRow", "G$payHeaderRow:H$payHeaderRow"
-            )
-            val pCount = maxOf(reportData.metodePembayaranList.size, 1)
-            for (i in 1..pCount) {
-                val r = payHeaderRow + i
-                summaryMergeRanges += listOf("B$r:C$r", "E$r:F$r", "G$r:H$r")
-            }
-            summaryMergeRanges += listOf(
-                "A$payTotalRowIdx:C$payTotalRowIdx", "E$payTotalRowIdx:F$payTotalRowIdx", "G$payTotalRowIdx:H$payTotalRowIdx"
+                "A$payTotalRowIdx:C$payTotalRowIdx",
+                "E$payTotalRowIdx:F$payTotalRowIdx",
+                "G$payTotalRowIdx:H$payTotalRowIdx"
             )
 
             sheets += ExcelSheet(
@@ -659,7 +708,7 @@ class ExcelExportService @Inject constructor() {
                     txTotalNominalRefund += total
                 }
                 txRows += listOf(
-                    ExcelCell("TOTAL DANA DI-REFUND (${txRefundedTransactions.size} Transaksi)", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                    ExcelCell("TOTAL REFUND (${txRefundedTransactions.size} Transaksi Batal)", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
                     ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
                     ExcelCell("-", "TotalCenter"),
                     ExcelCell("-", "TotalCenter"),
@@ -1038,15 +1087,14 @@ class ExcelExportService @Inject constructor() {
             val isHeader = rowIndex == sheet.headerRowIndex
             val isTotal = row.firstOrNull()?.value?.startsWith("TOTAL") == true
             val rowHeight = when {
-                rowIndex == 0 -> """ ht="22" customHeight="1""""
-                rowIndex == 1 -> """ ht="28" customHeight="1""""
-                rowIndex == 2 -> """ ht="18" customHeight="1""""
-                rowIndex == 3 -> """ ht="12" customHeight="1""""
-                rowIndex == 4 -> """ ht="18" customHeight="1""""
-                rowIndex == 5 -> """ ht="28" customHeight="1""""
-                rowIndex == 6 -> """ ht="14" customHeight="1""""
-                isHeader -> """ ht="32" customHeight="1""""
-                isTotal -> """ ht="32" customHeight="1""""
+                row.isEmpty() -> """ ht="12" customHeight="1""""
+                row.any { it.style == "BrandTitle" } -> """ ht="22" customHeight="1""""
+                row.any { it.style == "ReportTitle" } -> """ ht="28" customHeight="1""""
+                row.any { it.style == "Subtitle" } -> """ ht="18" customHeight="1""""
+                row.any { it.style == "KpiLabel" } -> """ ht="20" customHeight="1""""
+                row.any { it.style == "KpiValue" || it.style == "KpiValueCurrency" || it.style == "KpiValueSuccess" || it.style == "KpiValueDanger" } -> """ ht="32" customHeight="1""""
+                isHeader || row.any { it.style == "Header" || it.style == "HeaderLeft" || it.style == "HeaderRight" } -> """ ht="30" customHeight="1""""
+                isTotal || row.any { it.style == "TotalLabel" || it.style == "TotalValue" || it.style == "TotalCenter" } -> """ ht="28" customHeight="1""""
                 row.isNotEmpty() -> """ ht="${row.requiredHeight(sheet.columnWidths)}" customHeight="1""""
                 else -> ""
             }
@@ -1307,5 +1355,13 @@ class ExcelExportService @Inject constructor() {
         val headerRowIndex: Int = 7,
         val mergeRanges: List<String> = emptyList(),
         val autoFilterRange: String? = null
+    )
+
+    private data class PnLItemData(
+        val label: String,
+        val value: Double,
+        val description: String,
+        val isSubtotalOrTotal: Boolean = false,
+        val customRatio: String? = null
     )
 }
