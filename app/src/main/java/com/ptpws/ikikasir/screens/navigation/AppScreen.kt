@@ -150,13 +150,32 @@ sealed class AppScreen(
     object LaporanPenjualan : AppScreen(
         R.string.screen_transaksi,
         R.drawable.laporanpenjualan,
-        "laporan_penjualan?initialPeriode={initialPeriode}"
+        "laporan_penjualan?initialPeriode={initialPeriode}&startDate={startDate}&endDate={endDate}"
     ) {
         val baseRoute = "laporan_penjualan"
-        fun routeWith(periode: String? = null) =
-            if (periode != null) "laporan_penjualan?initialPeriode=$periode" else "laporan_penjualan"
+        fun routeWith(
+            periode: String? = null,
+            startDate: Long? = null,
+            endDate: Long? = null
+        ): String {
+            val params = mutableListOf<String>()
+            if (periode != null) params.add("initialPeriode=$periode")
+            if (startDate != null) params.add("startDate=$startDate")
+            if (endDate != null) params.add("endDate=$endDate")
+            return if (params.isNotEmpty()) "laporan_penjualan?${params.joinToString("&")}" else "laporan_penjualan"
+        }
         val navArguments = listOf(
             navArgument("initialPeriode") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            },
+            navArgument("startDate") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            },
+            navArgument("endDate") {
                 type = NavType.StringType
                 nullable = true
                 defaultValue = null
