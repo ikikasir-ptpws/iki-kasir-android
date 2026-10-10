@@ -150,8 +150,19 @@ sealed class AppScreen(
     object LaporanPenjualan : AppScreen(
         R.string.screen_transaksi,
         R.drawable.laporanpenjualan,
-        "laporan_penjualan"
-    )
+        "laporan_penjualan?initialPeriode={initialPeriode}"
+    ) {
+        val baseRoute = "laporan_penjualan"
+        fun routeWith(periode: String? = null) =
+            if (periode != null) "laporan_penjualan?initialPeriode=$periode" else "laporan_penjualan"
+        val navArguments = listOf(
+            navArgument("initialPeriode") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    }
 
 
 
