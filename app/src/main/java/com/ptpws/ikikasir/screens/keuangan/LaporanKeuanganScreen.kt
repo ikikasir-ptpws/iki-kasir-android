@@ -60,6 +60,7 @@ import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.DailySalesEntry
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.LaporanKeuanganState
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.MetodePembayaranReport
@@ -74,7 +75,7 @@ import java.util.Locale
 fun LaporanKeuanganScreen(
     navController: NavController,
     onBack: () -> Unit = { navController.popBackStack() },
-    onLihatSemuaProduk: () -> Unit = {},
+    onLihatSemuaProduk: (() -> Unit)? = null,
     viewModel: LaporanKeuanganViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -1201,7 +1202,29 @@ fun LaporanKeuanganScreen(
                                 )
                             }
 
-                            TextButton(onClick = onLihatSemuaProduk) {
+                            TextButton(
+                                onClick = {
+                                    if (onLihatSemuaProduk != null) {
+                                        onLihatSemuaProduk()
+                                    } else {
+                                        val mappedPeriode = when (state.selectedPeriode) {
+                                            PeriodeFilter.SEMUA -> "SEMUA"
+                                            PeriodeFilter.HARI_INI -> "HARI_INI"
+                                            PeriodeFilter.TUJUH_HARI -> "TUJUH_HARI"
+                                            PeriodeFilter.TIGA_PULUH_HARI -> "TIGA_PULUH_HARI"
+                                            PeriodeFilter.BULAN_INI -> "BULAN_INI"
+                                            PeriodeFilter.KUSTOM -> "KUSTOM"
+                                        }
+                                        navController.navigate(
+                                            AppScreen.LaporanPenjualan.routeWith(
+                                                periode = mappedPeriode,
+                                                startDate = state.customStartDateMillis,
+                                                endDate = state.customEndDateMillis
+                                            )
+                                        )
+                                    }
+                                }
+                            ) {
                                 Text(
                                     text = "Lihat Semua",
                                     fontFamily = interfamily,
