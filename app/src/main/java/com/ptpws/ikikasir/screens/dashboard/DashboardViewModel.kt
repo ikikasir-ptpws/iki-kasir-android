@@ -22,6 +22,10 @@ import com.ptpws.ikikasir.feature.manajemenpengguna.data.remote.datasource.UserR
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.remote.dto.toDto
 import kotlinx.coroutines.tasks.await
 
+import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
+import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetAllTransaksiUseCase
+import java.util.Calendar
+
 private val DEFAULT_UNASSIGNED_ROLE_ACCESS = listOf(
     "Dashboard",
     "Profil",
@@ -45,20 +49,41 @@ data class UserSessionState(
     val isLoading: Boolean = true
 )
 
+data class DashboardAnalytics(
+    val penjualanHariIni: Double = 0.0,
+    val pertumbuhanPenjualanPersen: Double = 0.0,
+    val isPertumbuhanPenjualanPositif: Boolean = true,
+    val totalTransaksiHariIni: Int = 0,
+    val pertumbuhanTransaksiPersen: Double = 0.0,
+    val isPertumbuhanTransaksiPositif: Boolean = true,
+    val totalPelangganHariIni: Int = 0,
+    val pertumbuhanPelangganPersen: Double = 0.0,
+    val isPertumbuhanPelangganPositif: Boolean = true,
+    val totalProdukTerjualHariIni: Int = 0,
+    val pertumbuhanProdukTerjualPersen: Double = 0.0,
+    val isPertumbuhanProdukTerjualPositif: Boolean = true,
+    val isLoading: Boolean = true
+)
+
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val userDao: UserDao,
     private val roleDao: RoleDao,
     private val getRolesUseCase: GetRolesUseCase,
-    private val userRemoteDataSource: UserRemoteDataSource
+    private val userRemoteDataSource: UserRemoteDataSource,
+    private val getAllTransaksiUseCase: GetAllTransaksiUseCase
 ) : ViewModel() {
 
     private val _sessionState = MutableStateFlow(UserSessionState())
     val sessionState: StateFlow<UserSessionState> = _sessionState.asStateFlow()
 
+    private val _analyticsState = MutableStateFlow(DashboardAnalytics())
+    val analyticsState: StateFlow<DashboardAnalytics> = _analyticsState.asStateFlow()
+
     init {
         loadCurrentUserAndPermissions()
+        observeTransactions()
     }
 
     fun loadCurrentUserAndPermissions() {
@@ -276,5 +301,110 @@ class DashboardViewModel @Inject constructor(
 
         val matched = state.menuAccess.entries.find { it.key.equals(menuKey, ignoreCase = true) }
         return matched?.value ?: false
+    }
+
+    private fun observeTransactions() {
+        viewModelScope.launch {
+            getAllTransaksiUseCase().collect { transactions ->
+                calculateAnalytics(transactions)
+            }
+        }
+    }
+
+    private fun calculateAnalytics(transactions: List<PenjualanTransaksi>) {
+        val todayCal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startOfTodaySec = todayCal.timeInMillis / 1000
+        val endOfTodaySec = startOfTodaySec + 86400
+
+        val yesterdayCal = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_YEAR, -1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startOfYesterdaySec = yesterdayCal.timeInMillis / 1000
+        val endOfYesterdaySec = startOfTodaySec
+
+        // Hanya hitung transaksi yang valid / sukses dan bukan refund
+        val validTransactions = transactions.filter { tx ->
+            !tx.status.equals("REFUND", ignoreCase = true) &&
+            !tx.status.equals("REFUNDED", ignoreCase = true) &&
+            !tx.status.equals("BATAL", ignoreCase = true)
+        }
+
+        val txToday = validTransactions.filter { it.createdAt.seconds in startOfTodaySec until endOfTodaySec }
+        val txYesterday = validTransactions.filter { it.createdAt.seconds in startOfYesterdaySec until endOfYesterdaySec }
+
+        // 1. Penjualan Hari Ini (Net Sales)
+        val salesToday = txToday.sumOf { tx ->
+            if (tx.total > 0) tx.total else (tx.subtotal - tx.discount + tx.ppnAmount).coerceAtLeast(0.0)
+        }
+        val salesYesterday = txYesterday.sumOf { tx ->
+            if (tx.total > 0) tx.total else (tx.subtotal - tx.discount + tx.ppnAmount).coerceAtLeast(0.0)
+        }
+        val (growthSales, isPositiveSales) = computeGrowth(salesToday, salesYesterday)
+
+        // 2. Total Transaksi Hari Ini
+        val countToday = txToday.size
+        val countYesterday = txYesterday.size
+        val (growthCount, isPositiveCount) = computeGrowth(countToday.toDouble(), countYesterday.toDouble())
+
+        // 3. Pelanggan Hari Ini
+        val custToday = countUniqueCustomers(txToday)
+        val custYesterday = countUniqueCustomers(txYesterday)
+        val (growthCust, isPositiveCust) = computeGrowth(custToday.toDouble(), custYesterday.toDouble())
+
+        // 4. Produk Terjual Hari Ini
+        val itemsSoldToday = txToday.sumOf { tx ->
+            if (tx.items.isNotEmpty()) tx.items.sumOf { it.quantity } else 1
+        }
+        val itemsSoldYesterday = txYesterday.sumOf { tx ->
+            if (tx.items.isNotEmpty()) tx.items.sumOf { it.quantity } else 1
+        }
+        val (growthSold, isPositiveSold) = computeGrowth(itemsSoldToday.toDouble(), itemsSoldYesterday.toDouble())
+
+        _analyticsState.value = DashboardAnalytics(
+            penjualanHariIni = salesToday,
+            pertumbuhanPenjualanPersen = growthSales,
+            isPertumbuhanPenjualanPositif = isPositiveSales,
+
+            totalTransaksiHariIni = countToday,
+            pertumbuhanTransaksiPersen = growthCount,
+            isPertumbuhanTransaksiPositif = isPositiveCount,
+
+            totalPelangganHariIni = custToday,
+            pertumbuhanPelangganPersen = growthCust,
+            isPertumbuhanPelangganPositif = isPositiveCust,
+
+            totalProdukTerjualHariIni = itemsSoldToday,
+            pertumbuhanProdukTerjualPersen = growthSold,
+            isPertumbuhanProdukTerjualPositif = isPositiveSold,
+
+            isLoading = false
+        )
+    }
+
+    private fun computeGrowth(current: Double, previous: Double): Pair<Double, Boolean> {
+        if (previous <= 0.0) {
+            return if (current > 0.0) Pair(100.0, true) else Pair(0.0, true)
+        }
+        val diff = current - previous
+        val percent = (diff / previous) * 100.0
+        return Pair(kotlin.math.abs(percent), current >= previous)
+    }
+
+    private fun countUniqueCustomers(list: List<PenjualanTransaksi>): Int {
+        val namedCustomers = list.map { it.customerName.trim() }
+            .filter { it.isNotBlank() && it != "-" }
+            .distinct()
+            .size
+        val anonymousCustomers = list.count { it.customerName.isBlank() || it.customerName.trim() == "-" }
+        return namedCustomers + anonymousCustomers
     }
 }
