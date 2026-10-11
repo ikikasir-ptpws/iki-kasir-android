@@ -545,7 +545,7 @@ fun ProfilScreen(
             item {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Versi 2.4.0 • Dibuat dengan presisi",
+                    text = "Versi 1.0",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 12.dp),
@@ -1895,4 +1895,4 @@ fun ProfilScreenPreview() {
     MaterialTheme {
         ProfilScreen(navController = rememberNavController())
     }
-}
+}
