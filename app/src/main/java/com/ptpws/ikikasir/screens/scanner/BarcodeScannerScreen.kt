@@ -119,7 +119,8 @@ fun BarcodeScannerScreen(
     val scanBoxSizeDp = if (isLandscape) {
         min(configuration.screenHeightDp * 0.58f, 280f).dp
     } else {
-        min(configuration.screenWidthDp * 0.72f, 280f).dp
+        val maxBox = if (configuration.screenWidthDp >= 400) 300f else 280f
+        min(configuration.screenWidthDp * 0.72f, maxBox).dp
     }
 
     // Animasi garis laser scan
@@ -143,8 +144,26 @@ fun BarcodeScannerScreen(
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
+                var cameraInstance: Camera? = null
+                val scaleGestureDetector = android.view.ScaleGestureDetector(
+                    ctx,
+                    object : android.view.ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                        override fun onScale(detector: android.view.ScaleGestureDetector): Boolean {
+                            val cam = cameraInstance ?: return false
+                            val currentZoom = cam.cameraInfo.zoomState.value?.zoomRatio ?: 1f
+                            val delta = detector.scaleFactor
+                            cam.cameraControl.setZoomRatio(currentZoom * delta)
+                            return true
+                        }
+                    }
+                )
+
                 val previewView = PreviewView(ctx).apply {
                     scaleType = PreviewView.ScaleType.FILL_CENTER
+                    setOnTouchListener { _, event ->
+                        scaleGestureDetector.onTouchEvent(event)
+                        true
+                    }
                 }
 
                 val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
@@ -206,6 +225,7 @@ fun BarcodeScannerScreen(
                             preview,
                             imageAnalysis
                         )
+                        cameraInstance = cam
                         cameraControl = cam.cameraControl
                     } catch (e: Exception) {
                         e.printStackTrace()
@@ -358,7 +378,7 @@ fun BarcodeScannerScreen(
             Text(
                 text = "Pemindai Barcode",
                 fontFamily = interfamily,
-                fontSize = 17.sp,
+                fontSize = if (configuration.screenWidthDp >= 400) 19.sp else 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
@@ -447,7 +467,7 @@ fun BarcodeScannerScreen(
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = Color.Black.copy(alpha = 0.45f)
                 ),
-                modifier = Modifier.height(44.dp)
+                modifier = Modifier.height(if (configuration.screenWidthDp >= 400) 48.dp else 44.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Keyboard,
