@@ -50,9 +50,22 @@ fun IKIKASIRTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    // Kunci fontScale pada 1.0f agar ukuran font tidak terpengaruh oleh settingan font HP
+    val currentDensity = androidx.compose.ui.platform.LocalDensity.current
+    val fixedDensity = androidx.compose.runtime.remember(currentDensity.density) {
+        androidx.compose.ui.unit.Density(
+            density = currentDensity.density,
+            fontScale = 1.0f
+        )
+    }
+
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.ui.platform.LocalDensity provides fixedDensity
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }

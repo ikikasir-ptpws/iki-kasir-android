@@ -137,7 +137,7 @@ fun KasirCompactScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f, fill = false)) {
                             Text(
                                 text = "Subtotal ($totalItemCount Item)",
                                 fontFamily = interfamily,
@@ -154,7 +154,10 @@ fun KasirCompactScreen(
                             )
                         }
 
-                        Column(horizontalAlignment = Alignment.End) {
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            modifier = Modifier.padding(start = 8.dp)
+                        ) {
                             Text(
                                 text = "Rp ${formatRupiah(state.grandTotal)}",
                                 fontFamily = interfamily,
@@ -174,13 +177,14 @@ fun KasirCompactScreen(
                         }
                     }
 
-                    // BAYAR Button
+                    // BAYAR Button (Accessible & Responsive)
                     Button(
                         onClick = onBayar,
                         enabled = totalItemCount > 0,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(46.dp),
+                            .heightIn(min = 48.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = PrimaryRoyalBlue,
@@ -195,6 +199,7 @@ fun KasirCompactScreen(
                                 text = "BAYAR",
                                 fontFamily = interfamily,
                                 fontSize = 14.5.sp,
+                                lineHeight = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (totalItemCount > 0) Color.White else Color(0xFF94A3B8)
                             )
@@ -370,7 +375,8 @@ fun KasirCompactScreen(
                             onClick = { viewModel.openProductCatalogDialog(true) },
                             modifier = Modifier
                                 .fillMaxWidth(0.85f)
-                                .height(44.dp),
+                                .heightIn(min = 48.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = PrimaryRoyalBlue

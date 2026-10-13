@@ -24,6 +24,10 @@ import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import java.text.NumberFormat
 import java.util.Locale
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.LocalConfiguration
+
 private val PrimaryRoyalBlue = Color(0xFF3B32D1)
 
 @Composable
@@ -33,6 +37,9 @@ fun PembayaranSuccessDialog(
     onTransaksiBaru: () -> Unit
 ) {
     if (transaksi == null) return
+
+    val configuration = LocalConfiguration.current
+    val maxDialogHeight = (configuration.screenHeightDp * 0.90f).dp
 
     val formatRupiah = remember {
         { amount: Double ->
@@ -47,7 +54,7 @@ fun PembayaranSuccessDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
-                .wrapContentHeight(),
+                .heightIn(max = maxDialogHeight),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
@@ -55,6 +62,7 @@ fun PembayaranSuccessDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -81,6 +89,7 @@ fun PembayaranSuccessDialog(
                         text = "Pembayaran Berhasil!",
                         fontFamily = interfamily,
                         fontSize = 20.sp,
+                        lineHeight = 26.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF0F172A),
                         textAlign = TextAlign.Center
@@ -90,6 +99,7 @@ fun PembayaranSuccessDialog(
                         text = "Transaksi ${transaksi.kodeTransaksi} telah sukses diproses.",
                         fontFamily = interfamily,
                         fontSize = 13.sp,
+                        lineHeight = 18.sp,
                         color = Color(0xFF64748B),
                         textAlign = TextAlign.Center
                     )
@@ -128,7 +138,8 @@ fun PembayaranSuccessDialog(
                         onClick = onCetakStruk,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .heightIn(min = 48.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                         shape = RoundedCornerShape(14.dp),
                         border = ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(PrimaryRoyalBlue))
                     ) {
@@ -136,6 +147,7 @@ fun PembayaranSuccessDialog(
                             text = "Cetak Struk",
                             fontFamily = interfamily,
                             fontSize = 14.sp,
+                            lineHeight = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = PrimaryRoyalBlue
                         )
@@ -146,7 +158,8 @@ fun PembayaranSuccessDialog(
                         onClick = onTransaksiBaru,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
+                            .heightIn(min = 48.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryRoyalBlue)
                     ) {
@@ -154,6 +167,7 @@ fun PembayaranSuccessDialog(
                             text = "Selesai & Transaksi Baru",
                             fontFamily = interfamily,
                             fontSize = 14.sp,
+                            lineHeight = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
@@ -179,14 +193,17 @@ private fun DetailRow(
             text = label,
             fontFamily = interfamily,
             fontSize = 12.sp,
-            color = Color(0xFF64748B)
+            color = Color(0xFF64748B),
+            modifier = Modifier.weight(1f, fill = false)
         )
+        Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = value,
             fontFamily = interfamily,
             fontSize = 13.sp,
             fontWeight = if (isHighlight) FontWeight.Bold else FontWeight.SemiBold,
-            color = if (isHighlight) Color(0xFF16A34A) else Color(0xFF0F172A)
+            color = if (isHighlight) Color(0xFF16A34A) else Color(0xFF0F172A),
+            textAlign = TextAlign.End
         )
     }
 }

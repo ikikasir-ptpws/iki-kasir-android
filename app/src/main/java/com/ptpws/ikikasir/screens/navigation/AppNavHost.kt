@@ -4,6 +4,11 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -47,7 +52,6 @@ import com.example.app.ui.screen.DashboardScreen
 import com.example.app.ui.screen.DashboardViewModel
 import com.example.app.ui.screen.MenuFullScreen
 import com.ptpws.ikikasir.core.responsive.presentation.components.IkiKasirNavigationRail
-import com.ptpws.ikikasir.core.responsive.presentation.components.IkiKasirPermanentDrawer
 import com.ptpws.ikikasir.feature.sidebar.presentation.components.TabletSidebarDrawer
 import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
@@ -407,15 +411,18 @@ fun IkiKasirBottomBar(
         isTablet -> 24.dp
         else -> 18.dp
     }
+    val windowSizeInfo = LocalWindowSizeInfo.current
+    val isFontEnlarged = windowSizeInfo.isFontEnlarged
+
     val bottomMargin = when {
         isSmallScreen -> 10.dp
         isTablet -> 20.dp
         else -> 14.dp
     }
     val barHeight = when {
-        isSmallScreen -> 66.dp
+        isSmallScreen -> 68.dp
         isTablet -> 80.dp
-        else -> 72.dp
+        else -> 74.dp
     }
     val cornerRadius = when {
         isSmallScreen -> 24.dp
@@ -471,6 +478,7 @@ fun IkiKasirBottomBar(
                         isCenter = isCenter,
                         isSmallScreen = isSmallScreen,
                         isTablet = isTablet,
+                        isFontEnlarged = isFontEnlarged,
                         onClick = {
                             if (isSelected && screen != AppScreen.Kasir) return@BottomNavItem
 
@@ -514,6 +522,7 @@ fun BottomNavItem(
     isCenter: Boolean,
     isSmallScreen: Boolean = false,
     isTablet: Boolean = false,
+    isFontEnlarged: Boolean = false,
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -549,7 +558,11 @@ fun BottomNavItem(
                 .size(fabSize)
                 .shadow(elevation = 8.dp, shape = CircleShape)
                 .background(Color(0xFF4F46E5), CircleShape)
-                .clickable(interactionSource = interactionSource, indication = null) { onClick() },
+                .clip(CircleShape)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = ripple(bounded = true, color = Color.White.copy(alpha = 0.35f))
+                ) { onClick() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -563,12 +576,12 @@ fun BottomNavItem(
         val circleSize = when {
             isSmallScreen -> 34.dp
             isTablet -> 44.dp
-            else -> 38.dp
+            else -> 36.dp
         }
         val iconSize = when {
             isSmallScreen -> 19.dp
             isTablet -> 24.dp
-            else -> 21.dp
+            else -> 20.dp
         }
         val fontSize = when {
             isSmallScreen -> 9.5.sp
@@ -576,18 +589,40 @@ fun BottomNavItem(
             else -> 10.5.sp
         }
 
+        val animatedBoxSize by animateDpAsState(
+            targetValue = if (isSelected) circleSize else iconSize,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            ),
+            label = "nav_box_size"
+        )
+        val animatedBgColor by animateColorAsState(
+            targetValue = if (isSelected) Color(0xFFEEF2FF) else Color.Transparent,
+            animationSpec = tween(durationMillis = 200),
+            label = "nav_bg"
+        )
+        val animatedContentColor by animateColorAsState(
+            targetValue = if (isSelected) Color(0xFF4F46E5) else Color(0xFF9CA3AF),
+            animationSpec = tween(durationMillis = 200),
+            label = "nav_content"
+        )
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .clickable(interactionSource = interactionSource, indication = null) { onClick() }
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = ripple(bounded = false, radius = 28.dp, color = Color(0xFF4F46E5).copy(alpha = 0.2f))
+                ) { onClick() }
                 .padding(vertical = 2.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(circleSize)
+                    .size(animatedBoxSize)
                     .background(
-                        color = if (isSelected) Color(0xFFEEF2FF) else Color.Transparent,
+                        color = animatedBgColor,
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -595,17 +630,18 @@ fun BottomNavItem(
                 Icon(
                     imageVector = icon,
                     contentDescription = stringResource(screen.title),
-                    tint = if (isSelected) Color(0xFF4F46E5) else Color(0xFF9CA3AF),
+                    tint = animatedContentColor,
                     modifier = Modifier.size(iconSize)
                 )
             }
-            Spacer(Modifier.height(3.dp))
+            Spacer(Modifier.height(2.dp))
             Text(
                 text = stringResource(screen.title),
                 fontSize = fontSize,
+                lineHeight = 14.sp,
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                 fontFamily = interfamily,
-                color = if (isSelected) Color(0xFF4F46E5) else Color(0xFF9CA3AF),
+                color = animatedContentColor,
                 maxLines = 1,
                 softWrap = false,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis

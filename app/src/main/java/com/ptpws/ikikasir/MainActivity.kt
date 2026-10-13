@@ -19,6 +19,15 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val config = newBase.resources.configuration
+        if (config.fontScale != 1.0f) {
+            config.fontScale = 1.0f
+        }
+        val newContext = newBase.createConfigurationContext(config)
+        super.attachBaseContext(newContext)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

@@ -81,10 +81,33 @@ annotation class TabletDevicePreviews
 annotation class PosWideScreenPreviews
 
 /**
- * Matriks Preview Lengkap (Mencakup ke-9 Ukuran Perangkat Uji Sekaligus).
+ * Matriks Preview khusus untuk menguji Aksesibilitas Font Scaling Android OS:
+ * Memverifikasi bahwa tata letak tidak rusak, teks tidak terpotong vertikal,
+ * dan tombol tetap elastis saat pengguna memperbesar font sistem (1.3x & 1.5x).
+ */
+@Preview(
+    name = "10. Font Besar 1.3x (Aksesibilitas)",
+    group = "Accessibility Font Scale",
+    device = "spec:width=360dp,height=800dp,dpi=400",
+    fontScale = 1.3f,
+    showBackground = true
+)
+@Preview(
+    name = "11. Font Ekstra Besar 1.5x (Aksesibilitas)",
+    group = "Accessibility Font Scale",
+    device = "spec:width=360dp,height=800dp,dpi=400",
+    fontScale = 1.5f,
+    showBackground = true
+)
+annotation class FontAccessibilityPreviews
+
+/**
+ * Matriks Preview Lengkap (Mencakup variasi ukuran perangkat dan skala font sekaligus).
  * Gunakan anotasi ini pada Composable untuk memverifikasi responsivitas secara instan.
  */
 @PhoneDevicePreviews
 @TabletDevicePreviews
 @PosWideScreenPreviews
+@FontAccessibilityPreviews
 annotation class AllDevicesResponsivePreviews
+

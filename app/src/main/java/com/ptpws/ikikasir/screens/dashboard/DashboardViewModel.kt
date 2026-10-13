@@ -26,7 +26,11 @@ import kotlinx.coroutines.tasks.await
 
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetAllTransaksiUseCase
+import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.PeriodeLaporanPenjualan
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 private val DEFAULT_UNASSIGNED_ROLE_ACCESS = listOf(
     "Dashboard",
@@ -83,6 +87,52 @@ class DashboardViewModel @Inject constructor(
 
     private val _analyticsState = MutableStateFlow(DashboardAnalytics())
     val analyticsState: StateFlow<DashboardAnalytics> = _analyticsState.asStateFlow()
+
+    private var allTransactions: List<PenjualanTransaksi> = emptyList()
+
+    private val _selectedFilter = MutableStateFlow(PeriodeLaporanPenjualan.HARI_INI)
+    val selectedFilter: StateFlow<PeriodeLaporanPenjualan> = _selectedFilter.asStateFlow()
+
+    private val _customStartDateMillis = MutableStateFlow<Long?>(null)
+    val customStartDateMillis: StateFlow<Long?> = _customStartDateMillis.asStateFlow()
+
+    private val _customEndDateMillis = MutableStateFlow<Long?>(null)
+    val customEndDateMillis: StateFlow<Long?> = _customEndDateMillis.asStateFlow()
+
+    private val _customDateLabel = MutableStateFlow("")
+    val customDateLabel: StateFlow<String> = _customDateLabel.asStateFlow()
+
+    fun setFilter(filter: PeriodeLaporanPenjualan) {
+        _selectedFilter.value = filter
+        if (filter != PeriodeLaporanPenjualan.KUSTOM) {
+            _customStartDateMillis.value = null
+            _customEndDateMillis.value = null
+            _customDateLabel.value = ""
+        }
+        if (allTransactions.isNotEmpty()) {
+            calculateAnalytics(allTransactions, filter, _customStartDateMillis.value, _customEndDateMillis.value)
+        }
+    }
+
+    fun setCustomDateRange(startMillis: Long, endMillis: Long) {
+        val indonesianLocale = Locale.forLanguageTag("id-ID")
+        val sDate = SimpleDateFormat("dd MMM yyyy", indonesianLocale).format(Date(startMillis))
+        val eDate = SimpleDateFormat("dd MMM yyyy", indonesianLocale).format(Date(endMillis))
+        val chipLabel = if (sDate == eDate) {
+            SimpleDateFormat("dd MMM", indonesianLocale).format(Date(startMillis))
+        } else {
+            "${SimpleDateFormat("dd MMM", indonesianLocale).format(Date(startMillis))} - ${SimpleDateFormat("dd MMM", indonesianLocale).format(Date(endMillis))}"
+        }
+
+        _customStartDateMillis.value = startMillis
+        _customEndDateMillis.value = endMillis
+        _customDateLabel.value = chipLabel
+        _selectedFilter.value = PeriodeLaporanPenjualan.KUSTOM
+
+        if (allTransactions.isNotEmpty()) {
+            calculateAnalytics(allTransactions, PeriodeLaporanPenjualan.KUSTOM, startMillis, endMillis)
+        }
+    }
 
     init {
         loadCurrentUserAndPermissions()
@@ -290,30 +340,25 @@ class DashboardViewModel @Inject constructor(
     private fun observeTransactions() {
         viewModelScope.launch {
             getAllTransaksiUseCase().collect { transactions ->
-                calculateAnalytics(transactions)
+                allTransactions = transactions
+                calculateAnalytics(
+                    transactions,
+                    _selectedFilter.value,
+                    _customStartDateMillis.value,
+                    _customEndDateMillis.value
+                )
             }
         }
     }
 
-    private fun calculateAnalytics(transactions: List<PenjualanTransaksi>) {
-        val todayCal = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        val startOfTodaySec = todayCal.timeInMillis / 1000
-        val endOfTodaySec = startOfTodaySec + 86400
-
-        val yesterdayCal = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_YEAR, -1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        val startOfYesterdaySec = yesterdayCal.timeInMillis / 1000
-        val endOfYesterdaySec = startOfTodaySec
+    private fun calculateAnalytics(
+        transactions: List<PenjualanTransaksi>,
+        filter: PeriodeLaporanPenjualan = _selectedFilter.value,
+        customStart: Long? = _customStartDateMillis.value,
+        customEnd: Long? = _customEndDateMillis.value
+    ) {
+        val now = System.currentTimeMillis()
+        val nowSec = now / 1000
 
         // Hanya hitung transaksi yang valid / sukses dan bukan refund
         val validTransactions = transactions.filter { tx ->
@@ -322,51 +367,162 @@ class DashboardViewModel @Inject constructor(
             !tx.status.equals("BATAL", ignoreCase = true)
         }
 
-        val txToday = validTransactions.filter { it.createdAt.seconds in startOfTodaySec until endOfTodaySec }
-        val txYesterday = validTransactions.filter { it.createdAt.seconds in startOfYesterdaySec until endOfYesterdaySec }
+        val (currentTxs, previousTxs) = when (filter) {
+            PeriodeLaporanPenjualan.HARI_INI -> {
+                val todayCal = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val startOfTodaySec = todayCal.timeInMillis / 1000
+                val endOfTodaySec = startOfTodaySec + 86400
 
-        // 1. Penjualan Hari Ini (Net Sales)
-        val salesToday = txToday.sumOf { tx ->
+                val yesterdayCal = Calendar.getInstance().apply {
+                    add(Calendar.DAY_OF_YEAR, -1)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val startOfYesterdaySec = yesterdayCal.timeInMillis / 1000
+                val endOfYesterdaySec = startOfTodaySec
+
+                val cur = validTransactions.filter { it.createdAt.seconds in startOfTodaySec until endOfTodaySec }
+                val prev = validTransactions.filter { it.createdAt.seconds in startOfYesterdaySec until endOfYesterdaySec }
+                Pair(cur, prev)
+            }
+            PeriodeLaporanPenjualan.TUJUH_HARI -> {
+                val sevenDaysAgoCal = Calendar.getInstance().apply {
+                    add(Calendar.DAY_OF_YEAR, -7)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val fourteenDaysAgoCal = Calendar.getInstance().apply {
+                    add(Calendar.DAY_OF_YEAR, -14)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val startOf7Sec = sevenDaysAgoCal.timeInMillis / 1000
+                val startOf14Sec = fourteenDaysAgoCal.timeInMillis / 1000
+
+                val cur = validTransactions.filter { it.createdAt.seconds in startOf7Sec..nowSec }
+                val prev = validTransactions.filter { it.createdAt.seconds in startOf14Sec until startOf7Sec }
+                Pair(cur, prev)
+            }
+            PeriodeLaporanPenjualan.TIGA_PULUH_HARI -> {
+                val thirtyDaysAgoCal = Calendar.getInstance().apply {
+                    add(Calendar.DAY_OF_YEAR, -30)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val sixtyDaysAgoCal = Calendar.getInstance().apply {
+                    add(Calendar.DAY_OF_YEAR, -60)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val startOf30Sec = thirtyDaysAgoCal.timeInMillis / 1000
+                val startOf60Sec = sixtyDaysAgoCal.timeInMillis / 1000
+
+                val cur = validTransactions.filter { it.createdAt.seconds in startOf30Sec..nowSec }
+                val prev = validTransactions.filter { it.createdAt.seconds in startOf60Sec until startOf30Sec }
+                Pair(cur, prev)
+            }
+            PeriodeLaporanPenjualan.BULAN_INI -> {
+                val startOfMonthCal = Calendar.getInstance().apply {
+                    set(Calendar.DAY_OF_MONTH, 1)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val startOfPrevMonthCal = (startOfMonthCal.clone() as Calendar).apply {
+                    add(Calendar.MONTH, -1)
+                }
+                val startOfMonthSec = startOfMonthCal.timeInMillis / 1000
+                val startOfPrevMonthSec = startOfPrevMonthCal.timeInMillis / 1000
+
+                val cur = validTransactions.filter { it.createdAt.seconds in startOfMonthSec..nowSec }
+                val prev = validTransactions.filter { it.createdAt.seconds in startOfPrevMonthSec until startOfMonthSec }
+                Pair(cur, prev)
+            }
+            PeriodeLaporanPenjualan.KUSTOM -> {
+                if (customStart != null && customEnd != null) {
+                    val startSec = customStart / 1000
+                    val endCal = Calendar.getInstance().apply {
+                        timeInMillis = customEnd
+                        set(Calendar.HOUR_OF_DAY, 23)
+                        set(Calendar.MINUTE, 59)
+                        set(Calendar.SECOND, 59)
+                        set(Calendar.MILLISECOND, 999)
+                    }
+                    val endSec = endCal.timeInMillis / 1000
+                    val durationSec = (endSec - startSec).coerceAtLeast(86400)
+                    val prevStartSec = startSec - durationSec
+                    val prevEndSec = startSec
+
+                    val cur = validTransactions.filter { it.createdAt.seconds in startSec..endSec }
+                    val prev = validTransactions.filter { it.createdAt.seconds in prevStartSec until prevEndSec }
+                    Pair(cur, prev)
+                } else {
+                    Pair(validTransactions, emptyList())
+                }
+            }
+            else -> {
+                Pair(validTransactions, emptyList())
+            }
+        }
+
+        // 1. Penjualan (Net Sales)
+        val salesCurrent = currentTxs.sumOf { tx ->
             if (tx.total > 0) tx.total else (tx.subtotal - tx.discount + tx.ppnAmount).coerceAtLeast(0.0)
         }
-        val salesYesterday = txYesterday.sumOf { tx ->
+        val salesPrevious = previousTxs.sumOf { tx ->
             if (tx.total > 0) tx.total else (tx.subtotal - tx.discount + tx.ppnAmount).coerceAtLeast(0.0)
         }
-        val (growthSales, isPositiveSales) = computeGrowth(salesToday, salesYesterday)
+        val (growthSales, isPositiveSales) = computeGrowth(salesCurrent, salesPrevious)
 
-        // 2. Total Transaksi Hari Ini
-        val countToday = txToday.size
-        val countYesterday = txYesterday.size
-        val (growthCount, isPositiveCount) = computeGrowth(countToday.toDouble(), countYesterday.toDouble())
+        // 2. Total Transaksi
+        val countCurrent = currentTxs.size
+        val countPrevious = previousTxs.size
+        val (growthCount, isPositiveCount) = computeGrowth(countCurrent.toDouble(), countPrevious.toDouble())
 
-        // 3. Pelanggan Hari Ini
-        val custToday = countUniqueCustomers(txToday)
-        val custYesterday = countUniqueCustomers(txYesterday)
-        val (growthCust, isPositiveCust) = computeGrowth(custToday.toDouble(), custYesterday.toDouble())
+        // 3. Pelanggan
+        val custCurrent = countUniqueCustomers(currentTxs)
+        val custPrevious = countUniqueCustomers(previousTxs)
+        val (growthCust, isPositiveCust) = computeGrowth(custCurrent.toDouble(), custPrevious.toDouble())
 
-        // 4. Produk Terjual Hari Ini
-        val itemsSoldToday = txToday.sumOf { tx ->
+        // 4. Produk Terjual
+        val itemsSoldCurrent = currentTxs.sumOf { tx ->
             if (tx.items.isNotEmpty()) tx.items.sumOf { it.quantity } else 1
         }
-        val itemsSoldYesterday = txYesterday.sumOf { tx ->
+        val itemsSoldPrevious = previousTxs.sumOf { tx ->
             if (tx.items.isNotEmpty()) tx.items.sumOf { it.quantity } else 1
         }
-        val (growthSold, isPositiveSold) = computeGrowth(itemsSoldToday.toDouble(), itemsSoldYesterday.toDouble())
+        val (growthSold, isPositiveSold) = computeGrowth(itemsSoldCurrent.toDouble(), itemsSoldPrevious.toDouble())
 
         _analyticsState.value = DashboardAnalytics(
-            penjualanHariIni = salesToday,
+            penjualanHariIni = salesCurrent,
             pertumbuhanPenjualanPersen = growthSales,
             isPertumbuhanPenjualanPositif = isPositiveSales,
 
-            totalTransaksiHariIni = countToday,
+            totalTransaksiHariIni = countCurrent,
             pertumbuhanTransaksiPersen = growthCount,
             isPertumbuhanTransaksiPositif = isPositiveCount,
 
-            totalPelangganHariIni = custToday,
+            totalPelangganHariIni = custCurrent,
             pertumbuhanPelangganPersen = growthCust,
             isPertumbuhanPelangganPositif = isPositiveCust,
 
-            totalProdukTerjualHariIni = itemsSoldToday,
+            totalProdukTerjualHariIni = itemsSoldCurrent,
             pertumbuhanProdukTerjualPersen = growthSold,
             isPertumbuhanProdukTerjualPositif = isPositiveSold,
 

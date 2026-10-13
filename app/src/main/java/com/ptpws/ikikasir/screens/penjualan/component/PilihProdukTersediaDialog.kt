@@ -442,7 +442,8 @@ fun PilihProdukTersediaDialog(
                     onClick = onSelesai,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(if (isCompact) 46.dp else 52.dp),
+                        .heightIn(min = if (isCompact) 48.dp else 52.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF3B32D1)

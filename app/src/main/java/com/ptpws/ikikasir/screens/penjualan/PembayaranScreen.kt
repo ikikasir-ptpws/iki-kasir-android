@@ -233,7 +233,8 @@ fun PembayaranScreen(
                             modifier = Modifier
                                 .widthIn(max = 720.dp)
                                 .fillMaxWidth()
-                                .height(48.dp),
+                                .heightIn(min = 48.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = PrimaryRoyalBlue,
@@ -930,7 +931,7 @@ fun PembayaranScreen(
                             Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(50.dp),
+                                    .heightIn(min = 50.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 color = Color(0xFFF8FAFC),
                                 border = BorderStroke(1.dp, Color(0xFFE2E8F0))

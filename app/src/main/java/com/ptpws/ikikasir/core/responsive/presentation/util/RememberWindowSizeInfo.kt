@@ -11,6 +11,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import com.ptpws.ikikasir.core.responsive.domain.model.ResponsiveLayoutMode
 import com.ptpws.ikikasir.core.responsive.domain.model.WindowSizeInfo
 
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+
 /**
  * CompositionLocal untuk mengakses informasi ukuran dan mode responsif layar
  * di seluruh hierarki Composable aplikasi Iki Kasir.
@@ -28,8 +31,9 @@ fun rememberWindowSizeInfo(): WindowSizeInfo {
     val widthDp = configuration.screenWidthDp
     val heightDp = configuration.screenHeightDp
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val fontScale = configuration.fontScale
 
-    return remember(widthDp, heightDp, isLandscape) {
+    return remember(widthDp, heightDp, isLandscape, fontScale) {
         val widthClass = when {
             widthDp < 600 -> WindowWidthSizeClass.Compact
             widthDp < 840 -> WindowWidthSizeClass.Medium
@@ -54,21 +58,44 @@ fun rememberWindowSizeInfo(): WindowSizeInfo {
             widthSizeClass = widthClass,
             heightSizeClass = heightClass,
             isLandscape = isLandscape,
-            layoutMode = layoutMode
+            layoutMode = layoutMode,
+            fontScale = fontScale
         )
     }
 }
 
 /**
- * Penyedia CompositionLocal untuk WindowSizeInfo.
+ * Penyedia CompositionLocal untuk WindowSizeInfo dan Density Tetap (Normal 1.0f).
  * Tempatkan di level tertinggi (misalnya di MainActivity atau root Composable).
+ *
+ * Mengunci ukuran font pada skala normal (1.0f) sehingga tata letak, tombol, kartu produk,
+ * keranjang, dan dialog aplikasi kasir selalu tampil stabil dan rapi, tanpa terpengaruh
+ * oleh setelan ukuran font HP (baik pengguna menyetel font kecil maupun font besar di HP).
  */
 @Composable
 fun ProvideWindowSizeInfo(
     windowSizeInfo: WindowSizeInfo = rememberWindowSizeInfo(),
+    lockFontScale: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    CompositionLocalProvider(LocalWindowSizeInfo provides windowSizeInfo) {
+    val currentDensity = LocalDensity.current
+
+    // Kunci fontScale pada 1.0f agar ukuran teks selalu normal dan stabil
+    val targetDensity = remember(currentDensity.density, lockFontScale) {
+        Density(
+            density = currentDensity.density,
+            fontScale = if (lockFontScale) 1.0f else currentDensity.fontScale
+        )
+    }
+
+    val updatedWindowSizeInfo = remember(windowSizeInfo, lockFontScale) {
+        windowSizeInfo.copy(fontScale = if (lockFontScale) 1.0f else windowSizeInfo.fontScale)
+    }
+
+    CompositionLocalProvider(
+        LocalWindowSizeInfo provides updatedWindowSizeInfo,
+        LocalDensity provides targetDensity
+    ) {
         content()
     }
 }

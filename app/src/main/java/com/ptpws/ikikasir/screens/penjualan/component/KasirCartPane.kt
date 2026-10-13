@@ -283,13 +283,14 @@ fun KasirCartPane(
                     )
                 }
 
-                // Tombol BAYAR SEKARANG
+                // Tombol BAYAR SEKARANG (Accessible & Responsive)
                 Button(
                     onClick = onBayar,
                     enabled = totalItemCount > 0,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .heightIn(min = 48.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = PrimaryRoyalBlue,
@@ -304,6 +305,7 @@ fun KasirCartPane(
                             text = "BAYAR SEKARANG",
                             fontFamily = interfamily,
                             fontSize = 14.sp,
+                            lineHeight = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (totalItemCount > 0) Color.White else Color(0xFF94A3B8)
                         )

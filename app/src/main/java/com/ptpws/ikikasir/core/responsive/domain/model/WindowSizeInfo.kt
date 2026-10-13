@@ -13,8 +13,13 @@ data class WindowSizeInfo(
     val widthSizeClass: WindowWidthSizeClass,
     val heightSizeClass: WindowHeightSizeClass,
     val isLandscape: Boolean,
-    val layoutMode: ResponsiveLayoutMode
+    val layoutMode: ResponsiveLayoutMode,
+    val fontScale: Float = 1.0f
 ) {
+    /** Apakah ukuran font sistem HP sedang disetel besar oleh pengguna (> 1.1x) */
+    val isFontEnlarged: Boolean
+        get() = fontScale > 1.1f
+
     /** Apakah perangkat berada di kategori HP (< 600 dp) */
     val isCompactPhone: Boolean
         get() = layoutMode == ResponsiveLayoutMode.COMPACT_PHONE
@@ -62,6 +67,13 @@ data class WindowSizeInfo(
             else -> 5 // Layar ekstra lebar (1440dp)
         }
 
+    /**
+     * Padding horizontal adaptif yang dihitung untuk ukuran layar saat ini.
+     */
+    val horizontalPadding: androidx.compose.ui.unit.Dp
+        get() = ResponsiveDimensions.getAdaptiveHorizontalPadding(screenWidthDp)
+
+
     companion object {
         /**
          * Nilai default (fallback untuk HP standar 360x800)
@@ -72,7 +84,8 @@ data class WindowSizeInfo(
             widthSizeClass = WindowWidthSizeClass.Compact,
             heightSizeClass = WindowHeightSizeClass.Medium,
             isLandscape = false,
-            layoutMode = ResponsiveLayoutMode.COMPACT_PHONE
+            layoutMode = ResponsiveLayoutMode.COMPACT_PHONE,
+            fontScale = 1.0f
         )
     }
 }
