@@ -253,42 +253,8 @@ fun RiwayatTransaksiScreen(
         onDetailTransaksi(targetTxId)
     }
 
-    // Launcher for legacy ZXing barcode scanner fallback
-    val barcodeScanLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val contents = result.data?.getStringExtra("SCAN_RESULT")
-            if (!contents.isNullOrBlank()) {
-                handleScannedTransaction(contents)
-            }
-        }
-    }
-
-    // Trigger ML Kit GMS Code Scanner
-    fun triggerBarcodeScanner() {
-        try {
-            val options = GmsBarcodeScannerOptions.Builder()
-                .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
-                .enableAutoZoom()
-                .build()
-            val scanner = GmsBarcodeScanning.getClient(context, options)
-            scanner.startScan()
-                .addOnSuccessListener { barcode ->
-                    val rawValue = barcode.rawValue
-                    if (!rawValue.isNullOrBlank()) {
-                        handleScannedTransaction(rawValue)
-                    }
-                }
-                .addOnFailureListener {
-                    val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
-                        putExtra("SCAN_MODE", "PRODUCT_MODE")
-                    }
-                    if (scanIntent.resolveActivity(context.packageManager) != null) {
-                        barcodeScanLauncher.launch(scanIntent)
-                    }
-                }
-        } catch (e: Exception) { e.printStackTrace() }
+    val triggerBarcodeScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { contents ->
+        handleScannedTransaction(contents)
     }
 
     var showDateRangePicker by remember { mutableStateOf(false) }

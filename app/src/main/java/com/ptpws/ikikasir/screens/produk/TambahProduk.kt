@@ -107,15 +107,9 @@ fun TambahProdukScreen(
         }
     }
 
-    val barcodeScanLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val scannedCode = result.data?.getStringExtra("SCAN_RESULT")
-            if (!scannedCode.isNullOrBlank()) {
-                viewModel.onBarcodeChange(scannedCode)
-            }
-        }
+    val triggerBarcodeScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { scannedCode ->
+        viewModel.onBarcodeChange(scannedCode)
+        Toast.makeText(context, "Barcode berhasil discan: $scannedCode", Toast.LENGTH_SHORT).show()
     }
 
     LaunchedEffect(formState.isSuccess) {
@@ -338,9 +332,7 @@ fun TambahProdukScreen(
                                     modifier = Modifier
                                         .padding(end = 4.dp)
                                         .clickable {
-                                            triggerBarcodeScanner(context, barcodeScanLauncher) { code ->
-                                                viewModel.onBarcodeChange(code)
-                                            }
+                                            triggerBarcodeScanner()
                                         }
                                 ) {
                                     Row(
@@ -946,34 +938,7 @@ private fun saveBarcodeAsPdf(context: Context, barcode: String, productName: Str
     }
 }
 
-// ─── Camera Barcode Scanner Launcher (ML Kit) ────────────────────────────────
-private fun triggerBarcodeScanner(
-    context: Context,
-    launcher: androidx.activity.result.ActivityResultLauncher<Intent>,
-    onResult: (String) -> Unit
-) {
-    try {
-        val options = GmsBarcodeScannerOptions.Builder()
-            .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
-            .enableAutoZoom()
-            .build()
-        val scanner = GmsBarcodeScanning.getClient(context, options)
-        scanner.startScan()
-            .addOnSuccessListener { barcode ->
-                val rawValue = barcode.rawValue
-                if (!rawValue.isNullOrBlank()) {
-                    onResult(rawValue)
-                    Toast.makeText(context, "Barcode berhasil discan: $rawValue", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .addOnCanceledListener { }
-            .addOnFailureListener { e ->
-                Toast.makeText(context, "Gagal scan: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-    } catch (e: Exception) {
-        Toast.makeText(context, "Gagal membuka scanner: ${e.message}", Toast.LENGTH_LONG).show()
-    }
-}
+
 
 // ─── Save uploaded product image to internal storage ─────────────────────────
 private fun saveImageToInternalStorage(context: Context, uri: Uri): String {

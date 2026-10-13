@@ -86,8 +86,16 @@ dependencies {
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
 
+    // CameraX untuk Screen Scanner Kamera Mandiri & Responsif (Support Android 10 ke bawah & ke atas)
+    val cameraxVersion = "1.4.1"
+    implementation("androidx.camera:camera-core:$cameraxVersion")
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+
     // ZXing - Generate Barcode & QR Code bitmap (untuk cetak/PDF)
-    implementation("com.google.zxing:core:3.5.3")
+    implementation("com.google.zxing:core:3.3.3")
+    implementation("com.google.guava:guava:33.0.0-android")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

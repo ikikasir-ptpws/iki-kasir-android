@@ -67,16 +67,9 @@ fun ManajemenStokScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
-    // ML Kit Barcode Scanner Launcher
-    val barcodeScanLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val scannedCode = result.data?.getStringExtra("SCAN_RESULT")
-            if (!scannedCode.isNullOrBlank()) {
-                viewModel.onSearchQueryChange(scannedCode)
-            }
-        }
+    val triggerBarcodeScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { scannedCode ->
+        viewModel.onSearchQueryChange(scannedCode)
+        Toast.makeText(context, "Barcode discan: $scannedCode", Toast.LENGTH_SHORT).show()
     }
 
     LaunchedEffect(state.isSuccessRestock) {
@@ -383,9 +376,7 @@ fun ManajemenStokScreen(
                             modifier = Modifier
                                 .padding(end = 6.dp)
                                 .clickable {
-                                    triggerBarcodeScanner(context, barcodeScanLauncher) { code ->
-                                        viewModel.onSearchQueryChange(code)
-                                    }
+                                    triggerBarcodeScanner()
                                 }
                         ) {
                             Row(
@@ -674,33 +665,4 @@ fun StokProdukCardItem(
         }
     }
 }
-
-private fun triggerBarcodeScanner(
-    context: Context,
-    launcher: androidx.activity.result.ActivityResultLauncher<Intent>,
-    onResult: (String) -> Unit
-) {
-    try {
-        val options = GmsBarcodeScannerOptions.Builder()
-            .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
-            .enableAutoZoom()
-            .build()
-
-        val scanner = GmsBarcodeScanning.getClient(context, options)
-        scanner.startScan()
-            .addOnSuccessListener { barcode ->
-                val rawValue = barcode.rawValue
-                if (!rawValue.isNullOrBlank()) {
-                    onResult(rawValue)
-                    Toast.makeText(context, "Barcode discan: $rawValue", Toast.LENGTH_SHORT).show()
-                }
-            }
-    } catch (e: Exception) {
-        val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
-            putExtra("SCAN_MODE", "PRODUCT_MODE")
-        }
-        if (scanIntent.resolveActivity(context.packageManager) != null) {
-            launcher.launch(scanIntent)
-        }
-    }
-}
+

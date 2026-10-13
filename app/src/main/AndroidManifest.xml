@@ -23,6 +23,24 @@
         android:name="android.hardware.bluetooth"
         android:required="false" />
 
+    <!-- Camera permissions & features untuk scanner barcode (Android 15 ke bawah) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+
+    <!-- Queries untuk kompatibilitas intent pemindai barcode pada Android 11+ -->
+    <queries>
+        <intent>
+            <action android:name="com.google.zxing.client.android.SCAN" />
+        </intent>
+    </queries>
+
     <application
         android:name=".BaseApplication"
         android:allowBackup="true"
@@ -33,6 +51,16 @@
         android:roundIcon="@drawable/iconapk"
         android:supportsRtl="true"
         android:theme="@style/Theme.IKIKASIR">
+
+        <!-- ML Kit Barcode Scanning Module auto-download via Google Play Services -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="barcode,barcode_ui" />
+
+        <activity
+            android:name=".screens.scanner.BarcodeScannerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.IKIKASIR" />
         <activity
             android:name=".screens.penjualan.DetailTransaksiActivity"
             android:exported="false"

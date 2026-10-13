@@ -158,49 +158,8 @@ fun DaftarProdukScreen(
         }
     }
 
-    // Camera Barcode Scanner Fallback
-    val barcodeLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val code = result.data?.getStringExtra("SCAN_RESULT")
-            if (!code.isNullOrBlank()) {
-                handleScannedBarcode(code)
-            }
-        }
-    }
-
-    fun triggerScanner() {
-        try {
-            val options = GmsBarcodeScannerOptions.Builder()
-                .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
-                .enableAutoZoom()
-                .build()
-
-            val scanner = GmsBarcodeScanning.getClient(context, options)
-            scanner.startScan()
-                .addOnSuccessListener { barcode ->
-                    val rawValue = barcode.rawValue
-                    if (!rawValue.isNullOrBlank()) {
-                        handleScannedBarcode(rawValue)
-                    }
-                }
-                .addOnFailureListener {
-                    val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
-                        putExtra("SCAN_MODE", "PRODUCT_MODE")
-                    }
-                    if (scanIntent.resolveActivity(context.packageManager) != null) {
-                        barcodeLauncher.launch(scanIntent)
-                    }
-                }
-        } catch (e: Exception) {
-            val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
-                putExtra("SCAN_MODE", "PRODUCT_MODE")
-            }
-            if (scanIntent.resolveActivity(context.packageManager) != null) {
-                barcodeLauncher.launch(scanIntent)
-            }
-        }
+    val triggerScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { code ->
+        handleScannedBarcode(code)
     }
 
     Scaffold(

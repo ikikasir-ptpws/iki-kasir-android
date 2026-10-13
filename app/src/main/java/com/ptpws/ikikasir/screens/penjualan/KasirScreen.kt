@@ -79,49 +79,8 @@ fun KasirScreen(
     val totalItemCount = state.totalItemCount
     val subtotal = state.subtotal
 
-    // Barcode scanner launcher
-    val barcodeScanLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val code = result.data?.getStringExtra("SCAN_RESULT")
-            if (!code.isNullOrBlank()) {
-                viewModel.onBarcodeScanned(code)
-            }
-        }
-    }
-
-    fun triggerBarcodeScanner() {
-        try {
-            val options = GmsBarcodeScannerOptions.Builder()
-                .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
-                .enableAutoZoom()
-                .build()
-
-            val scanner = GmsBarcodeScanning.getClient(context, options)
-            scanner.startScan()
-                .addOnSuccessListener { barcode ->
-                    val rawValue = barcode.rawValue
-                    if (!rawValue.isNullOrBlank()) {
-                        viewModel.onBarcodeScanned(rawValue)
-                    }
-                }
-                .addOnFailureListener {
-                    val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
-                        putExtra("SCAN_MODE", "PRODUCT_MODE")
-                    }
-                    if (scanIntent.resolveActivity(context.packageManager) != null) {
-                        barcodeScanLauncher.launch(scanIntent)
-                    }
-                }
-        } catch (e: Exception) {
-            val scanIntent = Intent("com.google.zxing.client.android.SCAN").apply {
-                putExtra("SCAN_MODE", "PRODUCT_MODE")
-            }
-            if (scanIntent.resolveActivity(context.packageManager) != null) {
-                barcodeScanLauncher.launch(scanIntent)
-            }
-        }
+    val triggerBarcodeScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { code ->
+        viewModel.onBarcodeScanned(code)
     }
 
     LaunchedEffect(state.userMessage) {
