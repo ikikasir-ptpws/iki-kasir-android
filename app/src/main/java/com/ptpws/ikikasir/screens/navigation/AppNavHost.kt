@@ -48,6 +48,7 @@ import com.example.app.ui.screen.DashboardViewModel
 import com.example.app.ui.screen.MenuFullScreen
 import com.ptpws.ikikasir.core.responsive.presentation.components.IkiKasirNavigationRail
 import com.ptpws.ikikasir.core.responsive.presentation.components.IkiKasirPermanentDrawer
+import com.ptpws.ikikasir.feature.sidebar.presentation.components.TabletSidebarDrawer
 import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
 import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
@@ -121,10 +122,11 @@ fun AppNavHost() {
         }
     }
 
-    val onNavigateToScreen: (AppScreen) -> Unit = { screen ->
-        if (screen.route == AppScreen.Dashboard.route) {
+    val onNavigateToRoute: (String) -> Unit = { targetRoute ->
+        val cleanRoute = targetRoute.substringBefore("?")
+        if (cleanRoute == AppScreen.Dashboard.route) {
             navController.popBackStack(AppScreen.Dashboard.route, inclusive = false)
-        } else if (screen == AppScreen.Produk) {
+        } else if (cleanRoute == AppScreen.Produk.baseRoute) {
             navController.navigate(AppScreen.Produk.baseRoute) {
                 val startRoute = navController.graph.findStartDestination().route
                 if (startRoute != null) {
@@ -136,7 +138,7 @@ fun AppNavHost() {
                 restoreState = false
             }
         } else {
-            navController.navigate(screen.route) {
+            navController.navigate(targetRoute) {
                 val startRoute = navController.graph.findStartDestination().route
                 if (startRoute != null) {
                     popUpTo(startRoute) {
@@ -149,9 +151,12 @@ fun AppNavHost() {
         }
     }
 
+    val onNavigateToScreen: (AppScreen) -> Unit = { screen ->
+        onNavigateToRoute(screen.route)
+    }
+
     // Rute-rute yang menampilkan bottom bar pada mode ponsel
-    val showBottomBar = !sessionState.isLoading &&
-            (currentRoute in bottomNavItems.map { it.route } ||
+    val showBottomBar = (currentRoute in bottomNavItems.map { it.route } ||
             currentRoute?.startsWith(AppScreen.Produk.baseRoute) == true) &&
             currentRoute != AppScreen.Kasir.route &&
             currentRoute != AppScreen.Pembayaran.route
@@ -312,13 +317,12 @@ fun AppNavHost() {
         }
     }
 
-    if (isWideScreen && !sessionState.isLoading && sessionState.user != null) {
+    if (isWideScreen) {
         Row(modifier = Modifier.fillMaxSize()) {
             if (windowSizeInfo.shouldUsePermanentDrawer) {
-                IkiKasirPermanentDrawer(
-                    visibleScreens = visibleNavItems,
+                TabletSidebarDrawer(
                     currentRoute = currentRoute,
-                    onNavigate = onNavigateToScreen
+                    onNavigate = onNavigateToRoute
                 )
             } else {
                 IkiKasirNavigationRail(
@@ -391,9 +395,38 @@ fun IkiKasirBottomBar(
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
     val isSmallScreen = screenWidth <= 340.dp
-    val horizontalMargin = if (isSmallScreen) 10.dp else if (screenWidth <= 380.dp) 16.dp else 24.dp
-    val bottomMargin = if (isSmallScreen) 12.dp else 20.dp
-    val barHeight = if (isSmallScreen) 66.dp else 72.dp
+    val isTablet = screenWidth >= 600.dp
+
+    // Penyesuaian margin dan dimensi responsive:
+    // Pada HP: floating bar membentang seimbang dengan margin samping 14-18dp
+    // Pada Tablet Portrait: floating bar membentang elegan (margin 24dp) dan membatasi lebar maksimal pada layar ekstra lebar (>840dp)
+    val horizontalMargin = when {
+        isSmallScreen -> 10.dp
+        screenWidth <= 380.dp -> 14.dp
+        screenWidth > 840.dp -> ((screenWidth - 840.dp) / 2) + 24.dp
+        isTablet -> 24.dp
+        else -> 18.dp
+    }
+    val bottomMargin = when {
+        isSmallScreen -> 10.dp
+        isTablet -> 20.dp
+        else -> 14.dp
+    }
+    val barHeight = when {
+        isSmallScreen -> 66.dp
+        isTablet -> 80.dp
+        else -> 72.dp
+    }
+    val cornerRadius = when {
+        isSmallScreen -> 24.dp
+        isTablet -> 32.dp
+        else -> 28.dp
+    }
+    val contentHorizontalPadding = when {
+        isSmallScreen -> 8.dp
+        isTablet -> 20.dp
+        else -> 12.dp
+    }
 
     Box(
         modifier = Modifier
@@ -406,17 +439,17 @@ fun IkiKasirBottomBar(
                 .fillMaxWidth()
                 .height(barHeight)
                 .shadow(
-                    elevation = 10.dp,
-                    shape = RoundedCornerShape(32.dp),
+                    elevation = 8.dp,
+                    shape = RoundedCornerShape(cornerRadius),
                     clip = false
                 )
-                .background(Color.White, RoundedCornerShape(32.dp))
+                .background(Color.White, RoundedCornerShape(cornerRadius))
         )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(barHeight)
-                .padding(horizontal = 4.dp),
+                .padding(horizontal = contentHorizontalPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             visibleNavItems.forEach { screen ->
@@ -437,6 +470,7 @@ fun IkiKasirBottomBar(
                         isSelected = isSelected,
                         isCenter = isCenter,
                         isSmallScreen = isSmallScreen,
+                        isTablet = isTablet,
                         onClick = {
                             if (isSelected && screen != AppScreen.Kasir) return@BottomNavItem
 
@@ -479,6 +513,7 @@ fun BottomNavItem(
     isSelected: Boolean,
     isCenter: Boolean,
     isSmallScreen: Boolean = false,
+    isTablet: Boolean = false,
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -492,85 +527,89 @@ fun BottomNavItem(
         else                -> Icons.Outlined.Home
     }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .then(if (!isCenter) Modifier.clip(RoundedCornerShape(12.dp)) else Modifier)
-            .clickable(interactionSource = interactionSource, indication = null) { onClick() }
-            .padding(horizontal = 2.dp, vertical = 2.dp)
-    ) {
-        when {
-            isCenter -> {
-                val fabSize = if (isSmallScreen) 52.dp else 60.dp
-                val fabIconSize = if (isSmallScreen) 24.dp else 28.dp
-                val fabOffset = if (isSmallScreen) (-12).dp else (-16).dp
-                Box(
-                    modifier = Modifier
-                        .offset(y = fabOffset)
-                        .size(fabSize)
-                        .shadow(elevation = 8.dp, shape = CircleShape)
-                        .background(Color(0xFF4F46E5), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = stringResource(screen.title),
-                        tint = Color.White,
-                        modifier = Modifier.size(fabIconSize)
-                    )
-                }
-            }
+    if (isCenter) {
+        val fabSize = when {
+            isSmallScreen -> 52.dp
+            isTablet -> 64.dp
+            else -> 58.dp
+        }
+        val fabIconSize = when {
+            isSmallScreen -> 24.dp
+            isTablet -> 30.dp
+            else -> 26.dp
+        }
+        val fabOffset = when {
+            isSmallScreen -> (-12).dp
+            isTablet -> (-18).dp
+            else -> (-14).dp
+        }
+        Box(
+            modifier = Modifier
+                .offset(y = fabOffset)
+                .size(fabSize)
+                .shadow(elevation = 8.dp, shape = CircleShape)
+                .background(Color(0xFF4F46E5), CircleShape)
+                .clickable(interactionSource = interactionSource, indication = null) { onClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = stringResource(screen.title),
+                tint = Color.White,
+                modifier = Modifier.size(fabIconSize)
+            )
+        }
+    } else {
+        val circleSize = when {
+            isSmallScreen -> 34.dp
+            isTablet -> 44.dp
+            else -> 38.dp
+        }
+        val iconSize = when {
+            isSmallScreen -> 19.dp
+            isTablet -> 24.dp
+            else -> 21.dp
+        }
+        val fontSize = when {
+            isSmallScreen -> 9.5.sp
+            isTablet -> 12.sp
+            else -> 10.5.sp
+        }
 
-            isSelected -> {
-                val circleSize = if (isSmallScreen) 34.dp else 40.dp
-                val iconSize = if (isSmallScreen) 19.dp else 22.dp
-                Box(
-                    modifier = Modifier
-                        .size(circleSize)
-                        .background(Color(0xFFEEF2FF), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = stringResource(screen.title),
-                        tint = Color(0xFF4F46E5),
-                        modifier = Modifier.size(iconSize)
-                    )
-                }
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = stringResource(screen.title),
-                    fontSize = if (isSmallScreen) 9.sp else 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = interfamily,
-                    color = Color(0xFF4F46E5),
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-            }
-
-            else -> {
-                val iconSize = if (isSmallScreen) 19.dp else 22.dp
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .clickable(interactionSource = interactionSource, indication = null) { onClick() }
+                .padding(vertical = 2.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(circleSize)
+                    .background(
+                        color = if (isSelected) Color(0xFFEEF2FF) else Color.Transparent,
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = stringResource(screen.title),
-                    tint = Color(0xFF9CA3AF),
+                    tint = if (isSelected) Color(0xFF4F46E5) else Color(0xFF9CA3AF),
                     modifier = Modifier.size(iconSize)
                 )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = stringResource(screen.title),
-                    fontSize = if (isSmallScreen) 9.sp else 10.sp,
-                    fontWeight = FontWeight.Normal,
-                    fontFamily = interfamily,
-                    color = Color(0xFF9CA3AF),
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
             }
+            Spacer(Modifier.height(3.dp))
+            Text(
+                text = stringResource(screen.title),
+                fontSize = fontSize,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                fontFamily = interfamily,
+                color = if (isSelected) Color(0xFF4F46E5) else Color(0xFF9CA3AF),
+                maxLines = 1,
+                softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
         }
     }
 }

@@ -81,15 +81,26 @@ fun PilihProdukTersediaDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        val windowSizeInfo = com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo.current
-        val isCompact = windowSizeInfo.isCompactPhone
-        val dialogWidthFraction = if (isCompact) 0.96f else 0.55f
+        val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+        val screenWidth = configuration.screenWidthDp.dp
+        val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+        val isCompact = screenWidth < 600.dp
+
+        // Penyesuaian ukuran dialog adaptif sesuai layar (HP, Tablet Portrait, Tablet Landscape)
+        val (dialogWidthFraction, maxDialogWidth, dialogHeightFraction) = when {
+            // HP (< 600dp): mengisi 95% lebar layar
+            screenWidth < 600.dp -> Triple(0.95f, 480.dp, 0.92f)
+            // Tablet Portrait (600dp - 899dp): mengisi 86% lebar layar agar luas dan proporsional
+            !isLandscape -> Triple(0.86f, 720.dp, 0.88f)
+            // Tablet Landscape (>= 900dp): mengisi 70% lebar layar
+            else -> Triple(0.70f, 860.dp, 0.90f)
+        }
 
         Card(
             modifier = Modifier
-                .widthIn(min = 280.dp, max = 580.dp)
+                .widthIn(min = 320.dp, max = maxDialogWidth)
                 .fillMaxWidth(dialogWidthFraction)
-                .fillMaxHeight(if (isCompact) 0.92f else 0.88f),
+                .fillMaxHeight(dialogHeightFraction),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)

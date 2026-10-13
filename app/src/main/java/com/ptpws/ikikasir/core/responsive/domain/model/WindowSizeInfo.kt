@@ -29,23 +29,26 @@ data class WindowSizeInfo(
 
     /**
      * Menentukan apakah layar kasir harus menggunakan tata letak Dual-Pane (Split-Screen).
-     * Aktif pada mode Expanded (>= 840dp) atau mode Landscape dengan lebar minimal 720dp.
+     * Hanya aktif pada mode Landscape dengan lebar minimal 720dp.
+     * Pada mode portrait (termasuk tablet), tampilan kasir mengikuti mode HP standar.
      */
     val shouldUseSplitScreen: Boolean
-        get() = layoutMode == ResponsiveLayoutMode.EXPANDED_POS || (isLandscape && screenWidthDp >= 720)
+        get() = isLandscape && screenWidthDp >= 720
 
     /**
      * Menentukan apakah navigasi utama harus menggunakan Navigation Rail vertikal.
+     * Dinonaktifkan pada tablet portrait agar seluruh orientasi portrait menyerupai tampilan HP.
      */
     val shouldUseNavigationRail: Boolean
-        get() = layoutMode == ResponsiveLayoutMode.MEDIUM_TABLET || (isLandscape && screenWidthDp in 600..1199)
+        get() = false
 
     /**
-     * Menentukan apakah navigasi utama harus menggunakan Permanent Navigation Drawer.
-     * Aktif pada layar ekstra lebar (>= 1200dp landscape).
+     * Menentukan apakah navigasi utama harus menggunakan Permanent Navigation Drawer (Sidebar).
+     * Aktif HANYA pada Tablet Landscape (orientasi landscape dengan lebar >= 600dp).
+     * Pada mode portrait (termasuk tablet), navigasi menggunakan Bottom Navigation Bar seperti di HP.
      */
     val shouldUsePermanentDrawer: Boolean
-        get() = screenWidthDp >= 1200
+        get() = isLandscape && screenWidthDp >= 600
 
     /**
      * Rekomendasi jumlah kolom untuk katalog produk kasir.

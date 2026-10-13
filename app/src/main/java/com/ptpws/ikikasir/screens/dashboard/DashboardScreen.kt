@@ -96,7 +96,9 @@ fun DashboardScreen(
 
             val navigateToSemuaMenu = { navController.navigate(AppScreen.Semuamenu.route) }
 
-            if (hasProdukSection) {
+            // Menu Produk dan Penjualan (Gambar 1) tidak ditampilkan pada tablet layar lebar
+            // karena seluruh sub-menunya sudah dipindahkan secara lengkap ke sidebar navigasi.
+            if (!isWideScreen && hasProdukSection) {
                 item { SectionHeader(title = "Produk", onLihatSemua = navigateToSemuaMenu) }
                 item {
                     ProdukMenuSection(
@@ -108,7 +110,7 @@ fun DashboardScreen(
                 }
             }
 
-            if (hasPenjualanSection) {
+            if (!isWideScreen && hasPenjualanSection) {
                 val lihatSemuaAction = if (!hasProdukSection) navigateToSemuaMenu else null
                 item { SectionHeader(title = "Penjualan", onLihatSemua = lihatSemuaAction) }
                 item {

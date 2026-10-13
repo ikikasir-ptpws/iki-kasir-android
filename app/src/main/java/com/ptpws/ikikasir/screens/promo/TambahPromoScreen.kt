@@ -829,8 +829,16 @@ fun PilihProdukPromoDialog(
         targetList.isNotEmpty() && targetList.all { item -> tempSelected.any { it.id == item.id } }
     }
 
-    val windowSizeInfo = com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo.current
-    val isCompact = windowSizeInfo.isCompactPhone
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    val isCompact = screenWidth < 600.dp
+
+    val (dialogWidthFraction, maxDialogWidth, dialogHeightFraction) = when {
+        screenWidth < 600.dp -> Triple(0.95f, 480.dp, 0.92f)
+        !isLandscape -> Triple(0.86f, 720.dp, 0.88f)
+        else -> Triple(0.70f, 860.dp, 0.90f)
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -838,9 +846,9 @@ fun PilihProdukPromoDialog(
     ) {
         Card(
             modifier = Modifier
-                .widthIn(min = 280.dp, max = 580.dp)
-                .fillMaxWidth(if (isCompact) 0.96f else 0.55f)
-                .fillMaxHeight(if (isCompact) 0.92f else 0.85f),
+                .widthIn(min = 320.dp, max = maxDialogWidth)
+                .fillMaxWidth(dialogWidthFraction)
+                .fillMaxHeight(dialogHeightFraction),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
