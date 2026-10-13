@@ -8,7 +8,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import com.ptpws.ikikasir.screens.manajemenpengguna.DaftarUserScreen
+import com.ptpws.ikikasir.core.responsive.presentation.util.ProvideWindowSizeInfo
 import com.ptpws.ikikasir.screens.navigation.AppNavHost
 import com.ptpws.ikikasir.ui.theme.IKIKASIRTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -19,9 +23,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            IKIKASIRTheme {
-                AppNavHost()
-//                DaftarUserScreen()
+            ProvideWindowSizeInfo {
+                IKIKASIRTheme {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .navigationBarsPadding()
+                    ) {
+                        AppNavHost()
+                    }
+                }
             }
         }
     }

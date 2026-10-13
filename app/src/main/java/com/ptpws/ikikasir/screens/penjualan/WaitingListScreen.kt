@@ -242,7 +242,7 @@ fun WaitingListScreen(
                         } else {
                             LazyColumn(
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                                contentPadding = PaddingValues(bottom = 24.dp)
+                                contentPadding = PaddingValues(bottom = 56.dp)
                             ) {
                                 itemsIndexed(filteredList) { index, antrean ->
                                     val matchedTransaksi = transaksiMap[antrean.transactionId]

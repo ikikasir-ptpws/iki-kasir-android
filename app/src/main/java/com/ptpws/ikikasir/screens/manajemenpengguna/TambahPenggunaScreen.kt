@@ -72,6 +72,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -79,14 +80,17 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserViewModel
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,6 +101,9 @@ fun TambahPenggunaScreen(
     viewModel: UserViewModel = hiltViewModel(),
     roleViewModel: RoleViewModel = hiltViewModel()
 ) {
+    val windowSizeInfo = LocalWindowSizeInfo.current
+    val isCompact = windowSizeInfo.isCompactPhone
+
     val formState by viewModel.formState.collectAsState()
 
     val roleListState by roleViewModel.listState.collectAsState()
@@ -156,7 +163,7 @@ fun TambahPenggunaScreen(
                         text = if (formState.id.isBlank()) "Tambah Pengguna" else "Edit Pengguna",
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = interfamily,
-                        fontSize = 20.sp,
+                        fontSize = if (isCompact) 18.sp else 20.sp,
                         color = Color(0xFF1E293B)
                     )
                 },
@@ -183,12 +190,12 @@ fun TambahPenggunaScreen(
                 .fillMaxSize()
                 .padding(paddingValues),
             contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
+                start = if (isCompact) 12.dp else 16.dp,
+                end = if (isCompact) 12.dp else 16.dp,
                 top = 8.dp,
-                bottom = 32.dp
+                bottom = if (isCompact) 40.dp else 56.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(if (isCompact) 12.dp else 16.dp)
         ) {
 
             // ── Upload Foto Profil
@@ -196,7 +203,7 @@ fun TambahPenggunaScreen(
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Box(
                         modifier = Modifier.clickable {
@@ -205,7 +212,7 @@ fun TambahPenggunaScreen(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(90.dp)
+                                .size(if (isCompact) 76.dp else 90.dp)
                                 .clip(CircleShape)
                                 .background(Color(0xFFEFF6FF))
                                 .border(1.5.dp, Color(0xFFBFDBFE), CircleShape),
@@ -224,14 +231,14 @@ fun TambahPenggunaScreen(
                                     imageVector = Icons.Default.PersonAddAlt,
                                     contentDescription = "Unggah Foto Profil",
                                     tint = Color(0xFF3B82F6),
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(if (isCompact) 30.dp else 36.dp)
                                 )
                             }
                         }
                         Box(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
-                                .size(28.dp)
+                                .size(if (isCompact) 24.dp else 28.dp)
                                 .clip(CircleShape)
                                 .background(Color(0xFF2563EB))
                                 .border(2.dp, Color.White, CircleShape),
@@ -241,18 +248,19 @@ fun TambahPenggunaScreen(
                                 imageVector = Icons.Default.CameraAlt,
                                 contentDescription = "Ubah Foto",
                                 tint = Color.White,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(if (isCompact) 12.dp else 14.dp)
                             )
                         }
                     }
                     Text(
                         text = "Unggah Foto Profil (Maks. 2MB)",
                         fontFamily = interfamily,
-                        fontSize = 13.sp,
+                        fontSize = if (isCompact) 12.sp else 13.sp,
                         color = Color(0xFF64748B)
                     )
                 }
             }
+
 
             // ── Error Message Banner
             val errorMessage = localError ?: formState.error
@@ -286,23 +294,23 @@ fun TambahPenggunaScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                            .padding(if (isCompact) 12.dp else 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(if (isCompact) 12.dp else 16.dp)
                     ) {
 
                         // Nama Lengkap
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(if (isCompact) 4.dp else 6.dp)) {
                             Text(
                                 text = "Nama Lengkap",
                                 fontFamily = interfamily,
-                                fontSize = 13.sp,
+                                fontSize = if (isCompact) 12.sp else 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF334155)
                             )
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(48.dp),
+                                    .height(if (isCompact) 44.dp else 48.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
                                 border = BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -310,16 +318,16 @@ fun TambahPenggunaScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .padding(horizontal = 14.dp),
+                                        .padding(horizontal = if (isCompact) 10.dp else 14.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Person,
                                         contentDescription = null,
                                         tint = Color(0xFF94A3B8),
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(if (isCompact) 16.dp else 18.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Spacer(modifier = Modifier.width(if (isCompact) 8.dp else 10.dp))
                                     BasicTextField(
                                         value = formState.fullName,
                                         onValueChange = {
@@ -329,7 +337,7 @@ fun TambahPenggunaScreen(
                                         singleLine = true,
                                         textStyle = TextStyle(
                                             color = Color(0xFF0F172A),
-                                            fontSize = 14.sp,
+                                            fontSize = if (isCompact) 12.sp else 14.sp,
                                             fontFamily = interfamily
                                         ),
                                         modifier = Modifier.fillMaxWidth(),
@@ -337,9 +345,12 @@ fun TambahPenggunaScreen(
                                             if (formState.fullName.isEmpty()) {
                                                 Text(
                                                     text = "Contoh: Budi Santoso",
-                                                    fontSize = 14.sp,
+                                                    fontSize = if (isCompact) 12.sp else 14.sp,
                                                     fontFamily = interfamily,
-                                                    color = Color(0xFF94A3B8)
+                                                    color = Color(0xFF94A3B8),
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                             }
                                             innerTextField()
@@ -350,18 +361,18 @@ fun TambahPenggunaScreen(
                         }
 
                         // Alamat Email
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(if (isCompact) 4.dp else 6.dp)) {
                             Text(
                                 text = "Alamat Email",
                                 fontFamily = interfamily,
-                                fontSize = 13.sp,
+                                fontSize = if (isCompact) 12.sp else 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF334155)
                             )
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(48.dp),
+                                    .height(if (isCompact) 44.dp else 48.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
                                 border = BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -369,16 +380,16 @@ fun TambahPenggunaScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .padding(horizontal = 14.dp),
+                                        .padding(horizontal = if (isCompact) 10.dp else 14.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Email,
                                         contentDescription = null,
                                         tint = Color(0xFF94A3B8),
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(if (isCompact) 16.dp else 18.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Spacer(modifier = Modifier.width(if (isCompact) 8.dp else 10.dp))
                                     BasicTextField(
                                         value = formState.email,
                                         onValueChange = {
@@ -388,7 +399,7 @@ fun TambahPenggunaScreen(
                                         singleLine = true,
                                         textStyle = TextStyle(
                                             color = Color(0xFF0F172A),
-                                            fontSize = 14.sp,
+                                            fontSize = if (isCompact) 12.sp else 14.sp,
                                             fontFamily = interfamily
                                         ),
                                         modifier = Modifier.fillMaxWidth(),
@@ -396,9 +407,12 @@ fun TambahPenggunaScreen(
                                             if (formState.email.isEmpty()) {
                                                 Text(
                                                     text = "email@domain.com",
-                                                    fontSize = 14.sp,
+                                                    fontSize = if (isCompact) 12.sp else 14.sp,
                                                     fontFamily = interfamily,
-                                                    color = Color(0xFF94A3B8)
+                                                    color = Color(0xFF94A3B8),
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                             }
                                             innerTextField()
@@ -409,11 +423,11 @@ fun TambahPenggunaScreen(
                         }
 
                         // Role
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(if (isCompact) 4.dp else 6.dp)) {
                             Text(
                                 text = "Role",
                                 fontFamily = interfamily,
-                                fontSize = 13.sp,
+                                fontSize = if (isCompact) 12.sp else 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF334155)
                             )
@@ -426,7 +440,7 @@ fun TambahPenggunaScreen(
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(48.dp)
+                                        .height(if (isCompact) 44.dp else 48.dp)
                                         .clickable { roleDropdownExpanded = true },
                                     shape = RoundedCornerShape(12.dp),
                                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
@@ -435,13 +449,13 @@ fun TambahPenggunaScreen(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .padding(horizontal = 16.dp),
+                                            .padding(horizontal = if (isCompact) 12.dp else 16.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Text(
                                             text = if (selectedRoleName.isBlank()) "Pilih role" else selectedRoleName,
-                                            fontSize = 14.sp,
+                                            fontSize = if (isCompact) 12.sp else 14.sp,
                                             fontFamily = interfamily,
                                             color = if (selectedRoleName.isBlank()) Color(0xFF94A3B8) else Color(0xFF0F172A),
                                             fontWeight = if (selectedRoleName.isBlank()) FontWeight.Normal else FontWeight.Medium
@@ -450,7 +464,7 @@ fun TambahPenggunaScreen(
                                             imageVector = Icons.Default.KeyboardArrowDown,
                                             contentDescription = "Pilih role",
                                             tint = Color(0xFF64748B),
-                                            modifier = Modifier.size(20.dp)
+                                            modifier = Modifier.size(if (isCompact) 18.dp else 20.dp)
                                         )
                                     }
                                 }
@@ -501,18 +515,18 @@ fun TambahPenggunaScreen(
                         val isEdit = formState.id.isNotBlank()
 
                         // Kata Sandi
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(if (isCompact) 4.dp else 6.dp)) {
                             Text(
                                 text = if (isEdit) "Kata Sandi (Opsional)" else "Kata Sandi",
                                 fontFamily = interfamily,
-                                fontSize = 13.sp,
+                                fontSize = if (isCompact) 12.sp else 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF334155)
                             )
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(48.dp),
+                                    .height(if (isCompact) 44.dp else 48.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
                                 border = BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -520,16 +534,16 @@ fun TambahPenggunaScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .padding(horizontal = 14.dp),
+                                        .padding(horizontal = if (isCompact) 10.dp else 14.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Lock,
                                         contentDescription = null,
                                         tint = Color(0xFF94A3B8),
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(if (isCompact) 16.dp else 18.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Spacer(modifier = Modifier.width(if (isCompact) 8.dp else 10.dp))
                                     BasicTextField(
                                         value = formState.password,
                                         onValueChange = {
@@ -539,7 +553,7 @@ fun TambahPenggunaScreen(
                                         singleLine = true,
                                         textStyle = TextStyle(
                                             color = Color(0xFF0F172A),
-                                            fontSize = 14.sp,
+                                            fontSize = if (isCompact) 12.sp else 14.sp,
                                             fontFamily = interfamily
                                         ),
                                         visualTransformation = if (kataSandiTerlihat) VisualTransformation.None else PasswordVisualTransformation(),
@@ -547,10 +561,15 @@ fun TambahPenggunaScreen(
                                         decorationBox = { innerTextField ->
                                             if (formState.password.isEmpty()) {
                                                 Text(
-                                                    text = if (isEdit) "Kosongkan jika tidak ingin mengubah sandi" else "Min. 6 karakter",
-                                                    fontSize = 14.sp,
+                                                    text = if (isEdit) {
+                                                        if (isCompact) "Kosongkan jika tidak diubah" else "Kosongkan jika tidak ingin mengubah sandi"
+                                                    } else "Min. 6 karakter",
+                                                    fontSize = if (isCompact) 12.sp else 14.sp,
                                                     fontFamily = interfamily,
-                                                    color = Color(0xFF94A3B8)
+                                                    color = Color(0xFF94A3B8),
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                             }
                                             innerTextField()
@@ -561,7 +580,7 @@ fun TambahPenggunaScreen(
                                         contentDescription = "Tampilkan Kata Sandi",
                                         tint = Color(0xFF94A3B8),
                                         modifier = Modifier
-                                            .size(18.dp)
+                                            .size(if (isCompact) 16.dp else 18.dp)
                                             .clickable { kataSandiTerlihat = !kataSandiTerlihat }
                                     )
                                 }
@@ -569,18 +588,18 @@ fun TambahPenggunaScreen(
                         }
 
                         // Konfirmasi Kata Sandi
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(if (isCompact) 4.dp else 6.dp)) {
                             Text(
                                 text = if (isEdit) "Konfirmasi Kata Sandi (Opsional)" else "Konfirmasi Kata Sandi",
                                 fontFamily = interfamily,
-                                fontSize = 13.sp,
+                                fontSize = if (isCompact) 12.sp else 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF334155)
                             )
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(48.dp),
+                                    .height(if (isCompact) 44.dp else 48.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
                                 border = BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -588,16 +607,16 @@ fun TambahPenggunaScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .padding(horizontal = 14.dp),
+                                        .padding(horizontal = if (isCompact) 10.dp else 14.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Lock,
                                         contentDescription = null,
                                         tint = Color(0xFF94A3B8),
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(if (isCompact) 16.dp else 18.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Spacer(modifier = Modifier.width(if (isCompact) 8.dp else 10.dp))
                                     BasicTextField(
                                         value = formState.confirmPassword,
                                         onValueChange = {
@@ -607,7 +626,7 @@ fun TambahPenggunaScreen(
                                         singleLine = true,
                                         textStyle = TextStyle(
                                             color = Color(0xFF0F172A),
-                                            fontSize = 14.sp,
+                                            fontSize = if (isCompact) 12.sp else 14.sp,
                                             fontFamily = interfamily
                                         ),
                                         visualTransformation = if (konfirmasiKataSandiTerlihat) VisualTransformation.None else PasswordVisualTransformation(),
@@ -615,10 +634,15 @@ fun TambahPenggunaScreen(
                                         decorationBox = { innerTextField ->
                                             if (formState.confirmPassword.isEmpty()) {
                                                 Text(
-                                                    text = if (isEdit) "Ulangi kata sandi baru" else "Ulangi kata sandi",
-                                                    fontSize = 14.sp,
+                                                    text = if (isEdit) {
+                                                        if (isCompact) "Ulangi sandi baru" else "Ulangi kata sandi baru"
+                                                    } else "Ulangi kata sandi",
+                                                    fontSize = if (isCompact) 12.sp else 14.sp,
                                                     fontFamily = interfamily,
-                                                    color = Color(0xFF94A3B8)
+                                                    color = Color(0xFF94A3B8),
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                             }
                                             innerTextField()
@@ -629,7 +653,7 @@ fun TambahPenggunaScreen(
                                         contentDescription = "Tampilkan Konfirmasi Kata Sandi",
                                         tint = Color(0xFF94A3B8),
                                         modifier = Modifier
-                                            .size(18.dp)
+                                            .size(if (isCompact) 16.dp else 18.dp)
                                             .clickable { konfirmasiKataSandiTerlihat = !konfirmasiKataSandiTerlihat }
                                     )
                                 }
@@ -650,26 +674,26 @@ fun TambahPenggunaScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(if (isCompact) 12.dp else 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(if (isCompact) 10.dp else 12.dp),
                             modifier = Modifier.weight(1f)
                         ) {
                             Surface(
                                 shape = CircleShape,
                                 color = if (formState.isActive) Color(0xFFDCFCE7) else Color(0xFFFEE2E2),
-                                modifier = Modifier.size(40.dp)
+                                modifier = Modifier.size(if (isCompact) 36.dp else 40.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = if (formState.isActive) Icons.Outlined.CheckCircle else Icons.Outlined.Block,
                                         contentDescription = null,
                                         tint = if (formState.isActive) Color(0xFF16A34A) else Color(0xFFDC2626),
-                                        modifier = Modifier.size(22.dp)
+                                        modifier = Modifier.size(if (isCompact) 18.dp else 22.dp)
                                     )
                                 }
                             }
@@ -677,14 +701,14 @@ fun TambahPenggunaScreen(
                                 Text(
                                     text = "Status Akun",
                                     fontFamily = interfamily,
-                                    fontSize = 14.sp,
+                                    fontSize = if (isCompact) 13.sp else 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF0F172A)
                                 )
                                 Text(
                                     text = if (formState.isActive) "Akun Aktif (Dapat Login)" else "Akun Nonaktif (Akses Diblokir)",
                                     fontFamily = interfamily,
-                                    fontSize = 12.sp,
+                                    fontSize = if (isCompact) 11.sp else 12.sp,
                                     color = if (formState.isActive) Color(0xFF16A34A) else Color(0xFFDC2626)
                                 )
                             }
@@ -693,6 +717,7 @@ fun TambahPenggunaScreen(
                         Switch(
                             checked = formState.isActive,
                             onCheckedChange = { viewModel.onActiveChange(it) },
+                            modifier = Modifier.scale(if (isCompact) 0.75f else 0.85f),
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
                                 checkedTrackColor = Color(0xFF16A34A),
@@ -717,14 +742,14 @@ fun TambahPenggunaScreen(
                         imageVector = Icons.Outlined.Info,
                         contentDescription = null,
                         tint = Color(0xFF94A3B8),
-                        modifier = Modifier.size(16.dp).padding(top = 2.dp)
+                        modifier = Modifier.size(if (isCompact) 14.dp else 16.dp).padding(top = 2.dp)
                     )
                     Text(
                         text = "Pastikan alamat email yang didaftarkan aktif untuk keperluan verifikasi dan pemulihan kata sandi di masa mendatang.",
                         fontFamily = interfamily,
-                        fontSize = 12.sp,
+                        fontSize = if (isCompact) 11.sp else 12.sp,
                         color = Color(0xFF64748B),
-                        lineHeight = 16.sp
+                        lineHeight = if (isCompact) 15.sp else 16.sp
                     )
                 }
             }
@@ -799,8 +824,8 @@ fun TambahPenggunaScreen(
                     enabled = !formState.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp)
-                        .height(52.dp),
+                        .padding(top = if (isCompact) 12.dp else 16.dp)
+                        .height(if (isCompact) 46.dp else 52.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isEdit) Color(0xFF16A34A) else Color(0xFF2563EB)
@@ -813,13 +838,13 @@ fun TambahPenggunaScreen(
                             imageVector = Icons.Default.Save,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(if (isCompact) 16.dp else 18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = if (isEdit) "Simpan Perubahan" else "Simpan Pengguna",
                             fontFamily = interfamily,
-                            fontSize = 15.sp,
+                            fontSize = if (isCompact) 14.sp else 15.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White
                         )

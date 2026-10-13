@@ -368,7 +368,7 @@ fun RiwayatTransaksiScreen(
                 start = 16.dp,
                 end = 16.dp,
                 top = 8.dp,
-                bottom = 86.dp
+                bottom = 120.dp
             ),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {

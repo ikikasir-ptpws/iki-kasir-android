@@ -67,6 +67,9 @@ fun DashboardScreen(
     val hasPenjualanSection = showKasir || showTransaksi || showAntrean || showRiwayatAntrean || showPromo
     val showLaporanKeuangan = viewModel.isAllowed("Laporan Keuangan")
 
+    val windowSizeInfo = com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo.current
+    val isWideScreen = windowSizeInfo.shouldUseNavigationRail || windowSizeInfo.shouldUsePermanentDrawer
+
     Scaffold(
         containerColor = Color(0xFFF0F4FF),
     ) { paddingValues ->
@@ -75,7 +78,7 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .background(Color(0xFFF0F4FF))
                 .padding(paddingValues),
-            contentPadding = PaddingValues(bottom = 120.dp)
+            contentPadding = PaddingValues(bottom = if (isWideScreen) 56.dp else 128.dp)
         ) {
             item { HeaderSection(userName = userName) }
             item {
@@ -136,37 +139,42 @@ fun DashboardScreen(
 
 @Composable
 fun HeaderSection(userName: String = "Pengguna") {
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
+    val headerHorizontalPadding = if (isSmallScreen) 14.dp else 20.dp
+    val headerVerticalPadding = if (isSmallScreen) 14.dp else 20.dp
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 20.dp),
+            .padding(horizontal = headerHorizontalPadding, vertical = headerVerticalPadding),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
             Text(
                 text = "Selamat datang,",
-                fontSize = 14.sp,
+                fontSize = if (isSmallScreen) 13.sp else 14.sp,
                 fontFamily = interfamily,
                 fontWeight = FontWeight.Normal,
                 color = Color.Black
             )
             Text(
                 text = userName,
-                fontSize = 20.sp,
+                fontSize = if (isSmallScreen) 18.sp else 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1A1D2E)
             )
             Text(
                 text = "Kelola bisnis Anda dengan mudah",
-                fontSize = 13.sp,
+                fontSize = if (isSmallScreen) 12.sp else 13.sp,
                 fontFamily = interfamily,
                 color = Color(0xFF8A8FA8)
             )
         }
         Box(
             modifier = Modifier
-                .size(44.dp)
+                .size(if (isSmallScreen) 38.dp else 44.dp)
                 .clip(CircleShape)
                 .background(Color(0xFFFFFFFF)),
             contentAlignment = Alignment.Center
@@ -174,6 +182,7 @@ fun HeaderSection(userName: String = "Pengguna") {
             Image(
                 painter = painterResource(id = R.drawable.notif),
                 contentDescription = "Notifikasi",
+                modifier = Modifier.size(if (isSmallScreen) 20.dp else 24.dp),
                 contentScale = ContentScale.Fit
             )
         }
@@ -185,6 +194,13 @@ fun StatCardsSection(
     analytics: DashboardAnalytics = DashboardAnalytics(),
     onCardClick: (() -> Unit)? = null
 ) {
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
+    val sectionHorizontalPadding = if (isSmallScreen) 12.dp else 20.dp
+    val cardPadding = if (isSmallScreen) 12.dp else 16.dp
+    val cardCornerRadius = if (isSmallScreen) 16.dp else 20.dp
+    val iconBoxSize = if (isSmallScreen) 32.dp else 36.dp
+
     val formattedPenjualan = formatDashboardNominal(analytics.penjualanHariIni)
     val salesGrowthPercent = formatDashboardPercent(analytics.pertumbuhanPenjualanPersen)
     val salesGrowthText = if (analytics.pertumbuhanPenjualanPersen == 0.0) {
@@ -208,8 +224,8 @@ fun StatCardsSection(
         modifier = Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
-            .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = sectionHorizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 10.dp else 12.dp)
     ) {
         // Card Penjualan Hari Ini — gradient biru
         Card(
@@ -219,7 +235,7 @@ fun StatCardsSection(
                 .then(
                     if (onCardClick != null) Modifier.clickable { onCardClick() } else Modifier
                 ),
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(cardCornerRadius),
             elevation = CardDefaults.cardElevation(
                 defaultElevation = 2.dp
             ),
@@ -238,47 +254,64 @@ fun StatCardsSection(
                             )
                         )
                     )
-                    .padding(16.dp)
+                    .padding(cardPadding)
             ) {
                 Column {
                     Image(
                         painter = painterResource(id = R.drawable.grafikicon),
                         contentDescription = "Grafik",
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(iconBoxSize)
                             .clip(RoundedCornerShape(10.dp))
                             .background(Color.White.copy(alpha = 0.2f))
                             .padding(6.dp),
                         contentScale = ContentScale.Fit
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
 
-                    Text(
-                        text = "PENJUALAN HARI INI ⓘ",
-                        fontSize = 11.sp,
-                        color = Color.White.copy(alpha = 0.85f)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = "PENJUALAN HARI INI",
+                            fontSize = if (isSmallScreen) 9.5.sp else 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White.copy(alpha = 0.85f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "ⓘ",
+                            fontSize = if (isSmallScreen) 9.sp else 10.sp,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
                         text = "Rp",
-                        fontSize = 14.sp,
+                        fontSize = if (isSmallScreen) 12.sp else 14.sp,
                         color = Color.White,
                         fontWeight = FontWeight.Medium
                     )
 
                     Text(
                         text = formattedPenjualan,
-                        fontSize = if (formattedPenjualan.length > 10) 19.sp else 24.sp,
+                        fontSize = if (isSmallScreen) {
+                            if (formattedPenjualan.length > 8) 16.sp else 20.sp
+                        } else {
+                            if (formattedPenjualan.length > 10) 19.sp else 24.sp
+                        },
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(if (isSmallScreen) 6.dp else 8.dp))
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically
@@ -287,22 +320,27 @@ fun StatCardsSection(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(Color.White.copy(alpha = 0.2f))
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                                .padding(
+                                    horizontal = if (isSmallScreen) 6.dp else 8.dp,
+                                    vertical = if (isSmallScreen) 2.dp else 3.dp
+                                )
                         ) {
                             Text(
                                 text = salesGrowthText,
-                                fontSize = 11.sp,
+                                fontSize = if (isSmallScreen) 9.5.sp else 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
 
                         Text(
                             text = "dari kemarin",
-                            fontSize = 11.sp,
-                            color = Color.White.copy(alpha = 0.7f)
+                            fontSize = if (isSmallScreen) 9.5.sp else 11.sp,
+                            color = Color.White.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -317,7 +355,7 @@ fun StatCardsSection(
                 .then(
                     if (onCardClick != null) Modifier.clickable { onCardClick() } else Modifier
                 ),
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(cardCornerRadius),
             elevation = CardDefaults.cardElevation(
                 defaultElevation = 2.dp
             ),
@@ -326,39 +364,52 @@ fun StatCardsSection(
             )
         ) {
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(cardPadding)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.penjualan),
                     contentDescription = "Transaksi",
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(iconBoxSize)
                         .clip(RoundedCornerShape(10.dp))
                         .background(Color(0xFFDBEAFE))
                         .padding(6.dp),
                     contentScale = ContentScale.Fit
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
 
-                Text(
-                    text = "TOTAL TRANSAKSI ⓘ",
-                    fontSize = 10.sp,
-                    color = Color(0xFF8A8FA8)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = "TOTAL TRANSAKSI",
+                        fontSize = if (isSmallScreen) 9.5.sp else 10.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF8A8FA8),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "ⓘ",
+                        fontSize = if (isSmallScreen) 9.sp else 10.sp,
+                        color = Color(0xFF8A8FA8)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
                     text = "${analytics.totalTransaksiHariIni} trx",
-                    fontSize = 20.sp,
+                    fontSize = if (isSmallScreen) 18.sp else 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1A1D2E),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(if (isSmallScreen) 6.dp else 8.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -368,22 +419,27 @@ fun StatCardsSection(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
                             .background(badgeColor.copy(alpha = 0.15f))
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                            .padding(
+                                horizontal = if (isSmallScreen) 6.dp else 8.dp,
+                                vertical = if (isSmallScreen) 2.dp else 3.dp
+                            )
                     ) {
                         Text(
                             text = txGrowthText,
-                            fontSize = 11.sp,
+                            fontSize = if (isSmallScreen) 9.5.sp else 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = badgeColor
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
 
                     Text(
                         text = "dari kemarin",
-                        fontSize = 11.sp,
-                        color = Color(0xFF8A8FA8)
+                        fontSize = if (isSmallScreen) 9.5.sp else 11.sp,
+                        color = Color(0xFF8A8FA8),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -393,16 +449,20 @@ fun StatCardsSection(
 
 @Composable
 fun SectionHeader(title: String, onLihatSemua: (() -> Unit)? = null) {
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
+    val headerHorizontalPadding = if (isSmallScreen) 14.dp else 20.dp
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = headerHorizontalPadding, vertical = if (isSmallScreen) 12.dp else 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = title,
-            fontSize = 18.sp,
+            fontSize = if (isSmallScreen) 16.sp else 18.sp,
             fontFamily = interfamily,
             fontWeight = FontWeight.SemiBold,
             color = Color(0xFF1A1D2E)
@@ -410,7 +470,7 @@ fun SectionHeader(title: String, onLihatSemua: (() -> Unit)? = null) {
         if (onLihatSemua != null) {
             Text(
                 text = "Lihat Semua",
-                fontSize = 13.sp,
+                fontSize = if (isSmallScreen) 12.sp else 13.sp,
                 color = Color(0xFF3D5AF1),
                 modifier = Modifier.clickable { onLihatSemua() }
             )
@@ -418,6 +478,7 @@ fun SectionHeader(title: String, onLihatSemua: (() -> Unit)? = null) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProdukMenuSection(
     navController: NavController,
@@ -425,13 +486,14 @@ fun ProdukMenuSection(
     showKategori: Boolean = true,
     showStok: Boolean = true
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.Start
-    ) {
-        if (showProduk) {
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
+    val sectionHorizontalPadding = if (isSmallScreen) 14.dp else 20.dp
+    val itemSpacing = if (isSmallScreen) 16.dp else 28.dp
+
+    val items = mutableListOf<@Composable () -> Unit>()
+    if (showProduk) {
+        items.add {
             MenuIconItem(
                 iconRes = R.drawable.produk,
                 label = "Produk",
@@ -439,8 +501,9 @@ fun ProdukMenuSection(
                 onClick = { navController.navigate(AppScreen.Produk.baseRoute) }
             )
         }
-        if (showKategori) {
-            if (showProduk) Spacer(modifier = Modifier.width(28.dp))
+    }
+    if (showKategori) {
+        items.add {
             MenuIconItem(
                 iconRes = R.drawable.kategori,
                 label = "Kategori\nProduk",
@@ -448,8 +511,9 @@ fun ProdukMenuSection(
                 onClick = { navController.navigate(AppScreen.KategoriProduk.route) }
             )
         }
-        if (showStok) {
-            if (showProduk || showKategori) Spacer(modifier = Modifier.width(28.dp))
+    }
+    if (showStok) {
+        items.add {
             MenuIconItem(
                 iconRes = R.drawable.manajemenstok,
                 label = "Manajemen\nStok",
@@ -458,8 +522,21 @@ fun ProdukMenuSection(
             )
         }
     }
+
+    if (items.isEmpty()) return
+
+    FlowRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = sectionHorizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(itemSpacing),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        items.forEach { it() }
+    }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PenjualanMenuSection(
     navController: NavController,
@@ -470,9 +547,14 @@ fun PenjualanMenuSection(
     showPromo: Boolean = true,
     showLaporanPenjualan: Boolean = false
 ) {
-    val firstRowItems = mutableListOf<@Composable () -> Unit>()
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
+    val sectionHorizontalPadding = if (isSmallScreen) 14.dp else 20.dp
+    val itemSpacing = if (isSmallScreen) 16.dp else 28.dp
+
+    val items = mutableListOf<@Composable () -> Unit>()
     if (showKasir) {
-        firstRowItems.add {
+        items.add {
             MenuIconItem(
                 iconRes = R.drawable.kasirmenu,
                 label = "Kasir",
@@ -482,7 +564,7 @@ fun PenjualanMenuSection(
         }
     }
     if (showTransaksi) {
-        firstRowItems.add {
+        items.add {
             MenuIconItem(
                 iconRes = R.drawable.transaksi,
                 label = "Transaksi",
@@ -492,7 +574,7 @@ fun PenjualanMenuSection(
         }
     }
     if (showAntrean) {
-        firstRowItems.add {
+        items.add {
             MenuIconItem(
                 iconRes = R.drawable.waitinglist,
                 label = "Antrean",
@@ -502,7 +584,7 @@ fun PenjualanMenuSection(
         }
     }
     if (showRiwayatAntrean) {
-        firstRowItems.add {
+        items.add {
             MenuIconItem(
                 iconRes = R.drawable.riwayatantrean,
                 label = "Riwayat\nAntrean",
@@ -511,10 +593,8 @@ fun PenjualanMenuSection(
             )
         }
     }
-
-    val secondRowItems = mutableListOf<@Composable () -> Unit>()
     if (showPromo) {
-        secondRowItems.add {
+        items.add {
             MenuIconItem(
                 iconRes = R.drawable.promo,
                 label = "Promo",
@@ -524,7 +604,7 @@ fun PenjualanMenuSection(
         }
     }
     if (showLaporanPenjualan) {
-        secondRowItems.add {
+        items.add {
             MenuIconItem(
                 iconRes = R.drawable.laporanpenjualan,
                 label = "Laporan\nPenjualan",
@@ -534,34 +614,16 @@ fun PenjualanMenuSection(
         }
     }
 
-    Column(
+    if (items.isEmpty()) return
+
+    FlowRow(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = sectionHorizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(itemSpacing),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        if (firstRowItems.isNotEmpty()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
-            ) {
-                firstRowItems.forEachIndexed { idx, item ->
-                    if (idx > 0) Spacer(modifier = Modifier.width(28.dp))
-                    item()
-                }
-            }
-        }
-        if (secondRowItems.isNotEmpty()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
-            ) {
-                secondRowItems.forEachIndexed { idx, item ->
-                    if (idx > 0) Spacer(modifier = Modifier.width(28.dp))
-                    item()
-                }
-            }
-        }
+        items.forEach { it() }
     }
 }
 
@@ -572,21 +634,27 @@ fun MenuIconItem(
     bgColor: Color,
     onClick: () -> Unit
 ) {
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
+    val itemWidth = if (isSmallScreen) 74.dp else 80.dp
+    val cardSize = if (isSmallScreen) 54.dp else 60.dp
+    val iconSize = if (isSmallScreen) 22.dp else 25.dp
+    val fontSize = if (isSmallScreen) 11.sp else 12.sp
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(80.dp)
+        modifier = Modifier.width(itemWidth)
     ) {
-
         Card(
             onClick = onClick,
             modifier = Modifier
-                .size(60.dp)
+                .size(cardSize)
                 .shadow(
-                    elevation = 5.dp,
-                    shape = RoundedCornerShape(18.dp),
+                    elevation = if (isSmallScreen) 4.dp else 5.dp,
+                    shape = RoundedCornerShape(16.dp),
                     clip = false
                 ),
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = bgColor
             )
@@ -598,22 +666,22 @@ fun MenuIconItem(
                 Image(
                     painter = painterResource(id = iconRes),
                     contentDescription = label,
-                    modifier = Modifier.size(25.dp),
+                    modifier = Modifier.size(iconSize),
                     contentScale = ContentScale.Fit
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 6.dp else 8.dp))
 
         Text(
             text = label,
-            fontSize = 12.sp,
+            fontSize = fontSize,
             fontFamily = interfamily,
             fontWeight = FontWeight.Medium,
             color = Color.Black,
             textAlign = TextAlign.Center,
-            lineHeight = 16.sp
+            lineHeight = if (isSmallScreen) 14.sp else 16.sp
         )
     }
 }
@@ -623,6 +691,10 @@ fun MenuIconItem(
 fun RingkasanSection(
     analytics: DashboardAnalytics = DashboardAnalytics()
 ) {
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
+    val sectionHorizontalPadding = if (isSmallScreen) 12.dp else 20.dp
+
     val custGrowthPercent = formatDashboardPercent(analytics.pertumbuhanPelangganPersen)
     val custGrowthText = if (analytics.pertumbuhanPelangganPersen == 0.0) {
         "0% dari kemarin"
@@ -643,8 +715,8 @@ fun RingkasanSection(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = sectionHorizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 10.dp else 12.dp)
     ) {
         RingkasanCard(
             modifier = Modifier.weight(1f),
@@ -654,7 +726,8 @@ fun RingkasanSection(
             isGrowthPositive = analytics.isPertumbuhanPelangganPositif,
             icon = Icons.Outlined.Person,
             iconColor = Color(0xFF22C55E),
-            iconBg = Color(0xFFDCFCE7)
+            iconBg = Color(0xFFDCFCE7),
+            isSmallScreen = isSmallScreen
         )
 
         RingkasanCard(
@@ -665,7 +738,8 @@ fun RingkasanSection(
             isGrowthPositive = analytics.isPertumbuhanProdukTerjualPositif,
             icon = Icons.Outlined.Inventory2,
             iconColor = Color(0xFFF97316),
-            iconBg = Color(0xFFFFEDD5)
+            iconBg = Color(0xFFFFEDD5),
+            isSmallScreen = isSmallScreen
         )
     }
 }
@@ -697,28 +771,29 @@ fun RingkasanCard(
     isGrowthPositive: Boolean,
     icon: ImageVector,
     iconColor: Color,
-    iconBg: Color
+    iconBg: Color,
+    isSmallScreen: Boolean = false
 ) {
     Card(
-        modifier = modifier.height(115.dp),
-        shape = RoundedCornerShape(20.dp),
+        modifier = modifier.height(if (isSmallScreen) 105.dp else 115.dp),
+        shape = RoundedCornerShape(if (isSmallScreen) 16.dp else 20.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 6.dp
+            defaultElevation = if (isSmallScreen) 4.dp else 6.dp
         )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = if (isSmallScreen) 10.dp else 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
 
             Box(
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(if (isSmallScreen) 36.dp else 42.dp)
                     .clip(CircleShape)
                     .background(iconBg),
                 contentAlignment = Alignment.Center
@@ -727,11 +802,11 @@ fun RingkasanCard(
                     imageVector = icon,
                     contentDescription = title,
                     tint = iconColor,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(if (isSmallScreen) 18.dp else 22.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(if (isSmallScreen) 8.dp else 12.dp))
 
             Column(
                 verticalArrangement = Arrangement.Center
@@ -739,9 +814,9 @@ fun RingkasanCard(
 
                 Text(
                     text = value,
-                    fontSize = 22.sp,
+                    fontSize = if (isSmallScreen) 18.sp else 22.sp,
                     fontFamily = interfamily,
-                    lineHeight = 10.sp,
+                    lineHeight = if (isSmallScreen) 18.sp else 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1A1D2E)
                 )
@@ -755,7 +830,7 @@ fun RingkasanCard(
                     Text(
                         text = title,
                         fontFamily = interfamily,
-                        fontSize = 12.sp,
+                        fontSize = if (isSmallScreen) 11.sp else 12.sp,
                         color = Color(0xFF8A8FA8),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -778,21 +853,23 @@ fun RingkasanCard(
                             Color(0xFF22C55E)
                         else
                             Color(0xFFEF4444),
-                        modifier = Modifier.size(12.dp)
+                        modifier = Modifier.size(if (isSmallScreen) 10.dp else 12.dp)
                     )
 
                     Spacer(modifier = Modifier.width(2.dp))
 
                     Text(
                         text = growth,
-                        fontSize = 11.sp,
+                        fontSize = if (isSmallScreen) 9.5.sp else 11.sp,
                         fontFamily = interfamily,
-                        lineHeight = 13.sp,
+                        lineHeight = if (isSmallScreen) 11.sp else 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = if (isGrowthPositive)
                             Color(0xFF22C55E)
                         else
-                            Color(0xFFEF4444)
+                            Color(0xFFEF4444),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

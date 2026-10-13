@@ -15,10 +15,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -36,6 +38,9 @@ fun CustomDateRangePickerDialog(
     onDismissRequest: () -> Unit,
     onDateRangeSelected: (startDateMillis: Long, endDateMillis: Long) -> Unit
 ) {
+    val windowSizeInfo = LocalWindowSizeInfo.current
+    val isCompact = windowSizeInfo.isCompactPhone
+
     val dateRangePickerState = rememberDateRangePickerState(
         initialSelectedStartDateMillis = initialStartDateMillis,
         initialSelectedEndDateMillis = initialEndDateMillis
@@ -50,17 +55,17 @@ fun CustomDateRangePickerDialog(
     ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .wrapContentHeight()
-                .padding(vertical = 16.dp),
-            shape = RoundedCornerShape(24.dp),
+                .fillMaxWidth(if (isCompact) 0.95f else 0.90f)
+                .fillMaxHeight(if (isCompact) 0.92f else 0.85f)
+                .padding(vertical = if (isCompact) 8.dp else 16.dp),
+            shape = RoundedCornerShape(if (isCompact) 20.dp else 24.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
+                    .fillMaxSize()
+                    .padding(if (isCompact) 14.dp else 20.dp)
             ) {
                 // 1. Header Row (Icon + Title + Close Button)
                 Row(
@@ -70,19 +75,19 @@ fun CustomDateRangePickerDialog(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(if (isCompact) 8.dp else 10.dp)
                     ) {
                         Surface(
                             shape = CircleShape,
                             color = Color(0xFFEEF2FF),
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(if (isCompact) 32.dp else 40.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Default.CalendarMonth,
                                     contentDescription = null,
                                     tint = Color(0xFF4F46E5),
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(if (isCompact) 16.dp else 20.dp)
                                 )
                             }
                         }
@@ -91,13 +96,13 @@ fun CustomDateRangePickerDialog(
                                 text = "Filter Rentang Tanggal",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
+                                fontSize = if (isCompact) 14.sp else 16.sp,
                                 color = Color(0xFF0F172A)
                             )
                             Text(
-                                text = "Pilih tanggal mulai & tanggal akhir",
+                                text = "Pilih tanggal mulai & akhir",
                                 fontFamily = interfamily,
-                                fontSize = 12.sp,
+                                fontSize = if (isCompact) 10.5.sp else 12.sp,
                                 color = Color(0xFF64748B)
                             )
                         }
@@ -105,18 +110,18 @@ fun CustomDateRangePickerDialog(
 
                     IconButton(
                         onClick = onDismissRequest,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(if (isCompact) 28.dp else 32.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Tutup",
                             tint = Color(0xFF64748B),
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(if (isCompact) 18.dp else 20.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(if (isCompact) 10.dp else 16.dp))
 
                 // 2. Start Date & End Date Display Cards
                 val sdfDisplay = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).apply {
@@ -127,13 +132,13 @@ fun CustomDateRangePickerDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(if (isCompact) 6.dp else 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Mulai Card
                     Card(
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(10.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = if (selectedStart != null) Color(0xFFEEF2FF) else Color(0xFFF8FAFC)
                         ),
@@ -142,11 +147,11 @@ fun CustomDateRangePickerDialog(
                             if (selectedStart != null) Color(0xFF4F46E5) else Color(0xFFE2E8F0)
                         )
                     ) {
-                        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                        Column(modifier = Modifier.padding(horizontal = if (isCompact) 8.dp else 12.dp, vertical = if (isCompact) 6.dp else 10.dp)) {
                             Text(
                                 text = "DARI",
                                 fontFamily = interfamily,
-                                fontSize = 10.sp,
+                                fontSize = if (isCompact) 9.sp else 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF64748B)
                             )
@@ -154,9 +159,12 @@ fun CustomDateRangePickerDialog(
                             Text(
                                 text = startText,
                                 fontFamily = interfamily,
-                                fontSize = 13.sp,
+                                fontSize = if (isCompact) 11.5.sp else 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (selectedStart != null) Color(0xFF4F46E5) else Color(0xFF94A3B8)
+                                color = if (selectedStart != null) Color(0xFF4F46E5) else Color(0xFF94A3B8),
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -165,13 +173,13 @@ fun CustomDateRangePickerDialog(
                         imageVector = Icons.Default.ArrowForward,
                         contentDescription = null,
                         tint = Color(0xFF94A3B8),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(if (isCompact) 14.dp else 16.dp)
                     )
 
                     // Selesai Card
                     Card(
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(10.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = if (selectedEnd != null) Color(0xFFEEF2FF) else Color(0xFFF8FAFC)
                         ),
@@ -180,11 +188,11 @@ fun CustomDateRangePickerDialog(
                             if (selectedEnd != null) Color(0xFF4F46E5) else Color(0xFFE2E8F0)
                         )
                     ) {
-                        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                        Column(modifier = Modifier.padding(horizontal = if (isCompact) 8.dp else 12.dp, vertical = if (isCompact) 6.dp else 10.dp)) {
                             Text(
                                 text = "SAMPAI",
                                 fontFamily = interfamily,
-                                fontSize = 10.sp,
+                                fontSize = if (isCompact) 9.sp else 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF64748B)
                             )
@@ -192,43 +200,46 @@ fun CustomDateRangePickerDialog(
                             Text(
                                 text = endText,
                                 fontFamily = interfamily,
-                                fontSize = 13.sp,
+                                fontSize = if (isCompact) 11.5.sp else 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (selectedEnd != null) Color(0xFF4F46E5) else Color(0xFF94A3B8)
+                                color = if (selectedEnd != null) Color(0xFF4F46E5) else Color(0xFF94A3B8),
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(if (isCompact) 8.dp else 14.dp))
 
                 // 3. Quick Presets Chips Row
                 LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(if (isCompact) 6.dp else 8.dp),
                     contentPadding = PaddingValues(vertical = 2.dp)
                 ) {
                     item {
-                        QuickPresetChip(label = "Hari Ini") {
+                        QuickPresetChip(label = "Hari Ini", isCompact = isCompact) {
                             val todayUtc = getTodayUtcMillis()
                             dateRangePickerState.setSelection(todayUtc, todayUtc)
                         }
                     }
                     item {
-                        QuickPresetChip(label = "7 Hari Terakhir") {
+                        QuickPresetChip(label = "7 Hari Terakhir", isCompact = isCompact) {
                             val todayUtc = getTodayUtcMillis()
                             val startUtc = getDaysAgoUtcMillis(7)
                             dateRangePickerState.setSelection(startUtc, todayUtc)
                         }
                     }
                     item {
-                        QuickPresetChip(label = "30 Hari Terakhir") {
+                        QuickPresetChip(label = "30 Hari Terakhir", isCompact = isCompact) {
                             val todayUtc = getTodayUtcMillis()
                             val startUtc = getDaysAgoUtcMillis(30)
                             dateRangePickerState.setSelection(startUtc, todayUtc)
                         }
                     }
                     item {
-                        QuickPresetChip(label = "Bulan Ini") {
+                        QuickPresetChip(label = "Bulan Ini", isCompact = isCompact) {
                             val startOfMonthUtc = getStartOfMonthUtcMillis()
                             val todayUtc = getTodayUtcMillis()
                             dateRangePickerState.setSelection(startOfMonthUtc, todayUtc)
@@ -236,14 +247,14 @@ fun CustomDateRangePickerDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(if (isCompact) 8.dp else 12.dp))
                 HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
 
                 // 4. DateRangePicker Calendar Grid with vibrant indigo colors
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(320.dp)
+                        .weight(1f)
                 ) {
                     DateRangePicker(
                         state = dateRangePickerState,
@@ -263,21 +274,21 @@ fun CustomDateRangePickerDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(if (isCompact) 6.dp else 12.dp))
                 HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(if (isCompact) 8.dp else 14.dp))
 
                 // 5. Action Buttons (Batal & Terapkan Filter)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(if (isCompact) 8.dp else 12.dp)
                 ) {
                     OutlinedButton(
                         onClick = onDismissRequest,
                         modifier = Modifier
                             .weight(1f)
-                            .height(46.dp),
-                        shape = RoundedCornerShape(12.dp),
+                            .height(if (isCompact) 40.dp else 46.dp),
+                        shape = RoundedCornerShape(10.dp),
                         border = BorderStroke(1.dp, Color(0xFFCBD5E1))
                     ) {
                         Text(
@@ -285,7 +296,7 @@ fun CustomDateRangePickerDialog(
                             fontFamily = interfamily,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF475569),
-                            fontSize = 14.sp
+                            fontSize = if (isCompact) 12.5.sp else 14.sp
                         )
                     }
 
@@ -299,8 +310,8 @@ fun CustomDateRangePickerDialog(
                         enabled = isEnabled,
                         modifier = Modifier
                             .weight(1.4f)
-                            .height(46.dp),
-                        shape = RoundedCornerShape(12.dp),
+                            .height(if (isCompact) 40.dp else 46.dp),
+                        shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF4F46E5),
                             disabledContainerColor = Color(0xFFC7D2FE)
@@ -312,7 +323,7 @@ fun CustomDateRangePickerDialog(
                             fontFamily = interfamily,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
-                            fontSize = 14.sp
+                            fontSize = if (isCompact) 12.5.sp else 14.sp
                         )
                     }
                 }
@@ -324,6 +335,7 @@ fun CustomDateRangePickerDialog(
 @Composable
 private fun QuickPresetChip(
     label: String,
+    isCompact: Boolean = false,
     onClick: () -> Unit
 ) {
     Surface(
@@ -331,15 +343,15 @@ private fun QuickPresetChip(
         shape = RoundedCornerShape(20.dp),
         color = Color(0xFFF1F5F9),
         border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-        modifier = Modifier.height(30.dp)
+        modifier = Modifier.height(if (isCompact) 26.dp else 30.dp)
     ) {
         Box(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = if (isCompact) 8.dp else 12.dp, vertical = if (isCompact) 2.dp else 4.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = label,
-                fontSize = 11.sp,
+                fontSize = if (isCompact) 9.5.sp else 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF334155),
                 fontFamily = interfamily

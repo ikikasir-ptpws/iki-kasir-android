@@ -873,23 +873,27 @@ fun PilihProdukPromoDialog(
         targetList.isNotEmpty() && targetList.all { item -> tempSelected.any { it.id == item.id } }
     }
 
+    val windowSizeInfo = com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo.current
+    val isCompact = windowSizeInfo.isCompactPhone
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .fillMaxHeight(0.85f),
-            shape = RoundedCornerShape(24.dp),
+                .widthIn(min = 280.dp, max = 580.dp)
+                .fillMaxWidth(if (isCompact) 0.96f else 0.55f)
+                .fillMaxHeight(if (isCompact) 0.92f else 0.85f),
+            shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                    .padding(if (isCompact) 14.dp else 20.dp),
+                verticalArrangement = Arrangement.spacedBy(if (isCompact) 10.dp else 14.dp)
             ) {
                 // Header Dialog
                 Row(
@@ -901,7 +905,7 @@ fun PilihProdukPromoDialog(
                         Text(
                             text = "Pilih Produk Promo",
                             fontFamily = interfamily,
-                            fontSize = 18.sp,
+                            fontSize = if (isCompact) 16.sp else 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF0F172A)
                         )
@@ -909,14 +913,14 @@ fun PilihProdukPromoDialog(
                         Text(
                             text = "Pilih produk yang akan dimasukkan ke promo",
                             fontFamily = interfamily,
-                            fontSize = 12.sp,
+                            fontSize = if (isCompact) 11.5.sp else 12.sp,
                             color = Color(0xFF64748B)
                         )
                     }
 
                     Surface(
                         modifier = Modifier
-                            .size(34.dp)
+                            .size(32.dp)
                             .clickable { onDismiss() },
                         shape = CircleShape,
                         color = Color(0xFFF1F5F9)
@@ -926,7 +930,7 @@ fun PilihProdukPromoDialog(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Tutup",
                                 tint = Color(0xFF64748B),
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
@@ -936,14 +940,14 @@ fun PilihProdukPromoDialog(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(46.dp),
+                        .height(if (isCompact) 42.dp else 46.dp),
                     shape = RoundedCornerShape(12.dp),
                     color = Color(0xFFF1F5F9)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 14.dp),
+                            .padding(horizontal = if (isCompact) 10.dp else 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -963,42 +967,45 @@ fun PilihProdukPromoDialog(
                                 singleLine = true,
                                 textStyle = TextStyle(
                                     color = Color(0xFF0F172A),
-                                    fontSize = 13.sp,
+                                    fontSize = 12.5.sp,
                                     fontFamily = interfamily
                                 ),
                                 modifier = Modifier.fillMaxWidth()
                             )
                             if (searchQuery.isEmpty()) {
                                 Text(
-                                    text = "Cari produk / barcode / scan ID...",
+                                    text = "Cari nama / barcode...",
                                     fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    color = Color(0xFF94A3B8)
+                                    fontSize = 12.5.sp,
+                                    color = Color(0xFF94A3B8),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
                         if (searchQuery.isNotEmpty()) {
                             IconButton(
                                 onClick = { searchQuery = "" },
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(28.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Hapus pencarian",
                                     tint = Color(0xFF94A3B8),
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         }
                         IconButton(
                             onClick = { triggerBarcodeScanner() },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(28.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.QrCodeScanner,
                                 contentDescription = "Scan Barcode / ID Produk",
                                 tint = Color(0xFF2563EB),
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -1124,7 +1131,7 @@ fun PilihProdukPromoDialog(
                                             tempSelected.add(item)
                                         }
                                     },
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(14.dp),
                                 colors = CardDefaults.cardColors(containerColor = if (isChecked) Color(0xFFEFF6FF) else Color.White),
                                 border = BorderStroke(1.dp, if (isChecked) Color(0xFF93C5FD) else Color(0xFFE2E8F0)),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -1132,7 +1139,7 @@ fun PilihProdukPromoDialog(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(12.dp),
+                                        .padding(horizontal = if (isCompact) 10.dp else 12.dp, vertical = if (isCompact) 8.dp else 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     AsyncImage(
@@ -1140,18 +1147,18 @@ fun PilihProdukPromoDialog(
                                         contentDescription = item.name,
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier
-                                            .size(52.dp)
+                                            .size(if (isCompact) 44.dp else 52.dp)
                                             .clip(RoundedCornerShape(10.dp))
                                             .background(Color(0xFFF1F5F9))
                                     )
 
-                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Spacer(modifier = Modifier.width(if (isCompact) 8.dp else 12.dp))
 
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = item.name,
                                             fontFamily = interfamily,
-                                            fontSize = 14.sp,
+                                            fontSize = if (isCompact) 13.sp else 14.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFF0F172A),
                                             maxLines = 1,
@@ -1163,20 +1170,22 @@ fun PilihProdukPromoDialog(
                                                 text = item.barcode,
                                                 fontFamily = interfamily,
                                                 fontSize = 11.sp,
-                                                color = Color(0xFF94A3B8)
+                                                color = Color(0xFF94A3B8),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         }
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Spacer(modifier = Modifier.height(3.dp))
                                         Text(
                                             text = fmt.format(item.sellingPrice),
                                             fontFamily = interfamily,
-                                            fontSize = 14.sp,
+                                            fontSize = if (isCompact) 13.sp else 14.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFF2563EB)
                                         )
                                     }
 
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
 
                                     Checkbox(
                                         checked = isChecked,
@@ -1203,7 +1212,7 @@ fun PilihProdukPromoDialog(
                     onClick = { onSelesai(tempSelected.toList()) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .height(if (isCompact) 46.dp else 52.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF2563EB)
@@ -1213,7 +1222,7 @@ fun PilihProdukPromoDialog(
                         Text(
                             text = "Selesai Memilih",
                             fontFamily = interfamily,
-                            fontSize = 15.sp,
+                            fontSize = if (isCompact) 14.sp else 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
                             modifier = Modifier.align(Alignment.Center)
@@ -1228,10 +1237,10 @@ fun PilihProdukPromoDialog(
                                 Text(
                                     text = "${tempSelected.size} Terpilih",
                                     fontFamily = interfamily,
-                                    fontSize = 12.sp,
+                                    fontSize = if (isCompact) 11.sp else 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
                                 )
                             }
                         }

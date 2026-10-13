@@ -46,6 +46,7 @@ import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 import com.ptpws.ikikasir.commond.LaporanKpiCardShimmer
 import com.ptpws.ikikasir.commond.ProdukTerjualShimmerCard
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.PeriodeLaporanPenjualan
 import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.ProdukTerjualItem
 import com.ptpws.ikikasir.feature.laporanpenjualan.presentation.viewmodel.LaporanPenjualanViewModel
@@ -59,6 +60,8 @@ fun LaporanPenjualanScreen(
     onBack: () -> Unit = { navController.popBackStack() },
     viewModel: LaporanPenjualanViewModel = hiltViewModel()
 ) {
+    val windowSizeInfo = LocalWindowSizeInfo.current
+    val isCompact = windowSizeInfo.isCompactPhone
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
@@ -252,7 +255,7 @@ fun LaporanPenjualanScreen(
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
                         color = Color(0xFF0F172A),
-                        fontSize = 20.sp
+                        fontSize = if (isCompact) 18.sp else 20.sp
                     )
                 },
                 navigationIcon = {
@@ -271,9 +274,9 @@ fun LaporanPenjualanScreen(
                     ) {
                         if (state.isExporting) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(22.dp),
+                                modifier = Modifier.size(20.dp),
                                 color = Color(0xFF4F46E5),
-                                strokeWidth = 2.5.dp
+                                strokeWidth = 2.dp
                             )
                         } else {
                             Icon(
@@ -293,8 +296,8 @@ fun LaporanPenjualanScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 40.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            contentPadding = PaddingValues(start = if (isCompact) 12.dp else 16.dp, end = if (isCompact) 12.dp else 16.dp, top = 8.dp, bottom = 56.dp),
+            verticalArrangement = Arrangement.spacedBy(if (isCompact) 10.dp else 12.dp)
         ) {
 
             // Search Bar
@@ -302,7 +305,7 @@ fun LaporanPenjualanScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(44.dp),
+                        .height(if (isCompact) 40.dp else 44.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -317,7 +320,7 @@ fun LaporanPenjualanScreen(
                             imageVector = Icons.Default.Search,
                             contentDescription = null,
                             tint = Color(0xFF94A3B8),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(if (isCompact) 16.dp else 18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Box(
@@ -326,10 +329,12 @@ fun LaporanPenjualanScreen(
                         ) {
                             if (state.searchQuery.isEmpty()) {
                                 Text(
-                                    text = "Cari produk terjual atau kategori...",
+                                    text = if (isCompact) "Cari produk / kategori..." else "Cari produk terjual atau kategori...",
                                     fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    color = Color(0xFF94A3B8)
+                                    fontSize = if (isCompact) 12.sp else 13.sp,
+                                    color = Color(0xFF94A3B8),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                             BasicTextField(
@@ -338,7 +343,7 @@ fun LaporanPenjualanScreen(
                                 singleLine = true,
                                 textStyle = TextStyle(
                                     color = Color(0xFF0F172A),
-                                    fontSize = 13.sp,
+                                    fontSize = if (isCompact) 12.sp else 13.sp,
                                     fontFamily = interfamily
                                 ),
                                 modifier = Modifier.fillMaxWidth()
@@ -365,7 +370,7 @@ fun LaporanPenjualanScreen(
             item {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(vertical = 4.dp)
+                    contentPadding = PaddingValues(vertical = 2.dp)
                 ) {
                     items(PeriodeLaporanPenjualan.values()) { periode ->
                         val isSelected = state.selectedPeriode == periode
@@ -397,7 +402,7 @@ fun LaporanPenjualanScreen(
                                 Text(
                                     text = chipText,
                                     fontFamily = interfamily,
-                                    fontSize = 13.sp,
+                                    fontSize = if (isCompact) 11.5.sp else 13.sp,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                                 )
                             },
@@ -495,9 +500,9 @@ fun LaporanPenjualanScreen(
                     text = if (state.isLoading) "Memuat Produk Terjual..." else "Rincian Produk Terjual (${state.displayedItems.size})",
                     fontFamily = interfamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
+                    fontSize = if (isCompact) 13.5.sp else 15.sp,
                     color = Color(0xFF0F172A),
-                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
                 )
             }
 
@@ -549,13 +554,15 @@ fun LaporanKpiCard(
     iconBg: Color,
     iconTint: Color
 ) {
+    val isCompact = LocalWindowSizeInfo.current.isCompactPhone
+
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(if (isCompact) 12.dp else 14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(if (isCompact) 10.dp else 12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -565,12 +572,15 @@ fun LaporanKpiCard(
                     text = title,
                     fontFamily = interfamily,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 11.sp,
-                    color = Color(0xFF64748B)
+                    fontSize = if (isCompact) 9.5.sp else 11.sp,
+                    color = Color(0xFF64748B),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
                 Box(
                     modifier = Modifier
-                        .size(30.dp)
+                        .size(if (isCompact) 26.dp else 30.dp)
                         .clip(CircleShape)
                         .background(iconBg),
                     contentAlignment = Alignment.Center
@@ -579,18 +589,19 @@ fun LaporanKpiCard(
                         imageVector = icon,
                         contentDescription = null,
                         tint = iconTint,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(if (isCompact) 14.dp else 16.dp)
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(if (isCompact) 2.dp else 4.dp))
             Text(
                 text = value,
                 fontFamily = interfamily,
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+                fontSize = if (isCompact) 13.5.sp else 16.sp,
                 color = Color(0xFF0F172A),
                 maxLines = 1,
+                softWrap = false,
                 overflow = TextOverflow.Ellipsis
             )
         }
@@ -599,13 +610,15 @@ fun LaporanKpiCard(
 
 @Composable
 fun ProdukTerjualCard(item: ProdukTerjualItem) {
+    val isCompact = LocalWindowSizeInfo.current.isCompactPhone
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(if (isCompact) 12.dp else 14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(if (isCompact) 10.dp else 14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -619,7 +632,7 @@ fun ProdukTerjualCard(item: ProdukTerjualItem) {
                 }
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(if (isCompact) 26.dp else 32.dp)
                         .clip(CircleShape)
                         .background(rankBg),
                     contentAlignment = Alignment.Center
@@ -628,12 +641,12 @@ fun ProdukTerjualCard(item: ProdukTerjualItem) {
                         text = "#${item.rank}",
                         fontFamily = interfamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
+                        fontSize = if (isCompact) 11.sp else 12.sp,
                         color = rankText
                     )
                 }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(if (isCompact) 6.dp else 10.dp))
 
                 // Product Image Thumbnail
                 if (item.imageUrl.isNotBlank()) {
@@ -642,14 +655,14 @@ fun ProdukTerjualCard(item: ProdukTerjualItem) {
                         contentDescription = item.namaProduk,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .size(42.dp)
+                            .size(if (isCompact) 36.dp else 42.dp)
                             .clip(RoundedCornerShape(8.dp))
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(if (isCompact) 6.dp else 10.dp))
                 } else {
                     Box(
                         modifier = Modifier
-                            .size(42.dp)
+                            .size(if (isCompact) 36.dp else 42.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFFF1F5F9)),
                         contentAlignment = Alignment.Center
@@ -658,10 +671,10 @@ fun ProdukTerjualCard(item: ProdukTerjualItem) {
                             imageVector = Icons.Default.ShoppingBag,
                             contentDescription = null,
                             tint = Color(0xFF94A3B8),
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(if (isCompact) 18.dp else 22.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(if (isCompact) 6.dp else 10.dp))
                 }
 
                 // Name & Category
@@ -670,54 +683,61 @@ fun ProdukTerjualCard(item: ProdukTerjualItem) {
                         text = item.namaProduk,
                         fontFamily = interfamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
+                        fontSize = if (isCompact) 12.5.sp else 14.sp,
                         color = Color(0xFF0F172A),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(4.dp),
                             color = Color(0xFFF1F5F9)
                         ) {
                             Text(
                                 text = item.kategori,
                                 fontFamily = interfamily,
-                                fontSize = 10.sp,
+                                fontSize = if (isCompact) 9.sp else 10.sp,
                                 color = Color(0xFF64748B),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.5.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                         if (item.hargaSatuan > 0) {
                             Text(
                                 text = "@ ${formatRupiah(item.hargaSatuan)}",
                                 fontFamily = interfamily,
-                                fontSize = 11.sp,
-                                color = Color(0xFF94A3B8)
+                                fontSize = if (isCompact) 9.5.sp else 11.sp,
+                                color = Color(0xFF94A3B8),
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(if (isCompact) 6.dp else 8.dp))
 
                 // Unit Sold & Omzet
                 Column(horizontalAlignment = Alignment.End) {
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(6.dp),
                         color = Color(0xFFEEF2FF)
                     ) {
                         Text(
                             text = "${item.unitTerjual} Unit",
                             fontFamily = interfamily,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
+                            fontSize = if (isCompact) 11.sp else 12.sp,
                             color = Color(0xFF4F46E5),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            modifier = Modifier.padding(horizontal = if (isCompact) 6.dp else 8.dp, vertical = if (isCompact) 2.dp else 3.dp),
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                     Spacer(modifier = Modifier.height(3.dp))
@@ -725,14 +745,16 @@ fun ProdukTerjualCard(item: ProdukTerjualItem) {
                         text = formatRupiah(item.totalOmzet),
                         fontFamily = interfamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = Color(0xFF0F172A)
+                        fontSize = if (isCompact) 12.sp else 13.sp,
+                        color = Color(0xFF0F172A),
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
 
             // Sales Contribution Progress Bar
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(if (isCompact) 6.dp else 8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -742,17 +764,23 @@ fun ProdukTerjualCard(item: ProdukTerjualItem) {
                     progress = { (item.kontribusiPersen / 100.0).toFloat().coerceIn(0f, 1f) },
                     modifier = Modifier
                         .weight(1f)
-                        .height(5.dp)
+                        .height(if (isCompact) 4.dp else 5.dp)
                         .clip(RoundedCornerShape(3.dp)),
                     color = Color(0xFF4F46E5),
                     trackColor = Color(0xFFE2E8F0)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = String.format(Locale.US, "%.1f%% dari total omzet", item.kontribusiPersen),
+                    text = if (isCompact) {
+                        String.format(Locale.US, "%.1f%% omzet", item.kontribusiPersen)
+                    } else {
+                        String.format(Locale.US, "%.1f%% dari total omzet", item.kontribusiPersen)
+                    },
                     fontFamily = interfamily,
-                    fontSize = 10.sp,
-                    color = Color(0xFF64748B)
+                    fontSize = if (isCompact) 9.sp else 10.sp,
+                    color = Color(0xFF64748B),
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         }

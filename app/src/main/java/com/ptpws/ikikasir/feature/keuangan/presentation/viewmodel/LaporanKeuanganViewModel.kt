@@ -497,7 +497,7 @@ class LaporanKeuanganViewModel @Inject constructor(
         val dateFmt = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID"))
         val now = Date()
         return when (periode) {
-            PeriodeFilter.SEMUA -> "Semua Periode Transaksi"
+            PeriodeFilter.SEMUA -> "Semua Transaksi"
             PeriodeFilter.HARI_INI -> "Hari Ini (${dateFmt.format(now)})"
             PeriodeFilter.TUJUH_HARI -> "7 Hari Terakhir"
             PeriodeFilter.TIGA_PULUH_HARI -> "30 Hari Terakhir"

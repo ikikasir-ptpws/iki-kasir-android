@@ -46,7 +46,7 @@ data class LaporanKeuanganState(
     val customStartDateMillis: Long? = null,
     val customEndDateMillis: Long? = null,
     val customDateLabel: String = "",
-    val dateRangeLabel: String = "Semua Periode Transaksi",
+    val dateRangeLabel: String = "Semua Transaksi",
     val isDemoData: Boolean = false,
 
     // KPI Finansial Utama

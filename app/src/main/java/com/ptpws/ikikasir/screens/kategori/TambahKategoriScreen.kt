@@ -105,7 +105,7 @@ fun TambahKategoriScreen(
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(bottom = 32.dp)
+            contentPadding = PaddingValues(bottom = 56.dp)
         ) {
             // Header Info & Step Badge
             item {
@@ -492,7 +492,8 @@ fun TambahKategoriScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, Color(0xFFE5E7EB))
+                    border = BorderStroke(1.dp, Color(0xFFE5E7EB)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -520,51 +521,63 @@ fun TambahKategoriScreen(
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = Color(0xFFF8FAFC),
+                            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.Top
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.PointOfSale,
-                                    contentDescription = null,
-                                    tint = Color(0xFF059669),
-                                    modifier = Modifier
-                                        .size(26.dp)
-                                        .padding(top = 2.dp)
-                                )
+                                Surface(
+                                    shape = CircleShape,
+                                    color = Color(0xFFDCFCE7),
+                                    modifier = Modifier.size(38.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.PointOfSale,
+                                            contentDescription = null,
+                                            tint = Color(0xFF16A34A),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
 
-                                Spacer(modifier = Modifier.width(10.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
 
-                                Column(modifier = Modifier.weight(1f)) {
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
                                     Text(
                                         text = "Tampilkan di Kasir",
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
                                         fontFamily = interfamily,
                                         color = Color(0xFF1F2937)
                                     )
-                                    Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = "Langsung muncul pada layar pemesanan kasir",
-                                        fontSize = 11.sp,
+                                        fontSize = 11.5.sp,
                                         fontFamily = interfamily,
-                                        color = Color(0xFF6B7280)
+                                        color = Color(0xFF64748B),
+                                        lineHeight = 15.sp
                                     )
                                 }
+
+                                Spacer(modifier = Modifier.width(8.dp))
 
                                 Switch(
                                     checked = formState.isVisibleInCashier,
                                     onCheckedChange = { viewModel.onVisibilityChange(it) },
-                                    modifier = Modifier.scale(0.7f),
+                                    modifier = Modifier.scale(0.75f),
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = Color.White,
-                                        checkedTrackColor = Color(0xFF059669),
+                                        checkedTrackColor = Color(0xFF16A34A),
                                         uncheckedThumbColor = Color.White,
-                                        uncheckedTrackColor = Color(0xFFE5E7EB)
+                                        uncheckedTrackColor = Color(0xFFCBD5E1)
                                     )
                                 )
                             }

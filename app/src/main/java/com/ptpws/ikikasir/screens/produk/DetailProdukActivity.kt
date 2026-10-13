@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.ui.Modifier
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
 import com.ptpws.ikikasir.screens.produk.ui.theme.IKIKASIRTheme
@@ -19,7 +20,7 @@ class DetailProdukActivity : ComponentActivity() {
         val produkId = intent.getStringExtra("produkId")
         setContent {
             IKIKASIRTheme {
-                Box(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxSize().navigationBarsPadding()) {
                     DetailProdukScreen(
                         onBack = { finish() },
                         produkId = produkId

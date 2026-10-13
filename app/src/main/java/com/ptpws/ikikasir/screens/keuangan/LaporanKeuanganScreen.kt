@@ -62,6 +62,7 @@ import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.DailySalesEntry
+import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.LaporanKeuanganState
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.MetodePembayaranReport
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.PeriodeFilter
@@ -79,6 +80,8 @@ fun LaporanKeuanganScreen(
     viewModel: LaporanKeuanganViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val windowSizeInfo = LocalWindowSizeInfo.current
+    val isCompact = windowSizeInfo.isCompactPhone
     val state by viewModel.state.collectAsState()
 
     var showDateRangePicker by remember { mutableStateOf(false) }
@@ -349,7 +352,7 @@ fun LaporanKeuanganScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 32.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 56.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
@@ -396,7 +399,7 @@ fun LaporanKeuanganScreen(
                                     Text(
                                         text = chipText,
                                         fontFamily = interfamily,
-                                        fontSize = 13.sp,
+                                        fontSize = if (isCompact) 11.5.sp else 13.sp,
                                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                                     )
                                 },
@@ -452,158 +455,182 @@ fun LaporanKeuanganScreen(
                 // ── 3. HERO CARD: TOTAL OMZET PENJUALAN
                 item {
                     Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(
-                                        Color(0xFF0F172A),
-                                        Color(0xFF1E3A8A),
-                                        Color(0xFF2563EB)
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(if (isCompact) 20.dp else 24.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(
+                                            Color(0xFF0F172A),
+                                            Color(0xFF1E3A8A),
+                                            Color(0xFF2563EB)
+                                        )
                                     )
                                 )
-                            )
-                            .padding(20.dp)
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                            // Top Row: Title & Range Badge
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                                .padding(if (isCompact) 14.dp else 20.dp)
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(if (isCompact) 10.dp else 14.dp)) {
+                                // Top Row: Title & Range Badge
                                 Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        modifier = Modifier.weight(1f, fill = false),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(if (isCompact) 5.dp else 6.dp)
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = Color.White.copy(alpha = 0.2f),
+                                            modifier = Modifier.size(if (isCompact) 24.dp else 28.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Payments,
+                                                    contentDescription = null,
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(if (isCompact) 14.dp else 16.dp)
+                                                )
+                                            }
+                                        }
+                                        Text(
+                                            text = if (isCompact) "TOTAL OMZET" else "TOTAL OMZET PENJUALAN",
+                                            fontFamily = interfamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = if (isCompact) 10.sp else 11.sp,
+                                            color = Color.White.copy(alpha = 0.85f),
+                                            letterSpacing = if (isCompact) 0.4.sp else 0.8.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.width(6.dp))
+
+                                    Surface(
+                                        shape = RoundedCornerShape(100.dp),
+                                        color = Color.White.copy(alpha = 0.18f)
+                                    ) {
+                                        Text(
+                                            text = state.dateRangeLabel,
+                                            fontFamily = interfamily,
+                                            fontSize = if (isCompact) 9.5.sp else 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.White,
+                                            maxLines = 1,
+                                            softWrap = false,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.padding(horizontal = if (isCompact) 8.dp else 10.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
+
+                                // Big Rupiah Value
+                                Text(
+                                    text = formatRupiah(state.totalOmzet),
+                                    fontFamily = interfamily,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = if (isCompact) 25.sp else 32.sp,
+                                    color = Color.White,
+                                    letterSpacing = (-0.5).sp,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+
+                                // Bottom Sub-metrics Row
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Surface(
-                                        shape = CircleShape,
-                                        color = Color.White.copy(alpha = 0.2f),
-                                        modifier = Modifier.size(28.dp)
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color.White.copy(alpha = 0.15f),
+                                        modifier = Modifier.weight(1f)
                                     ) {
-                                        Box(contentAlignment = Alignment.Center) {
+                                        Row(
+                                            modifier = Modifier.padding(
+                                                horizontal = if (isCompact) 8.dp else 10.dp,
+                                                vertical = if (isCompact) 6.dp else 8.dp
+                                            ),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
                                             Icon(
-                                                imageVector = Icons.Default.Payments,
+                                                imageVector = Icons.Default.ShoppingBag,
                                                 contentDescription = null,
-                                                tint = Color.White,
-                                                modifier = Modifier.size(16.dp)
+                                                tint = Color(0xFF93C5FD),
+                                                modifier = Modifier.size(if (isCompact) 15.dp else 16.dp)
                                             )
+                                            Column {
+                                                Text(
+                                                    text = "Volume Penjualan",
+                                                    fontFamily = interfamily,
+                                                    fontSize = if (isCompact) 9.sp else 10.sp,
+                                                    color = Color.White.copy(alpha = 0.75f),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Text(
+                                                    text = if (isCompact) "${state.totalProdukTerjual} Produk" else "${state.totalProdukTerjual} Produk Terjual",
+                                                    fontFamily = interfamily,
+                                                    fontSize = if (isCompact) 11.sp else 12.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White,
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
                                         }
                                     }
-                                    Text(
-                                        text = "TOTAL OMZET PENJUALAN",
-                                        fontFamily = interfamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
-                                        color = Color.White.copy(alpha = 0.85f),
-                                        letterSpacing = 0.8.sp
-                                    )
-                                }
 
-                                Surface(
-                                    shape = RoundedCornerShape(100.dp),
-                                    color = Color.White.copy(alpha = 0.18f)
-                                ) {
-                                    Text(
-                                        text = state.dateRangeLabel,
-                                        fontFamily = interfamily,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = Color.White,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                                    )
-                                }
-                            }
-
-                            // Big Rupiah Value
-                            Text(
-                                text = formatRupiah(state.totalOmzet),
-                                fontFamily = interfamily,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 32.sp,
-                                color = Color.White,
-                                letterSpacing = (-0.5).sp
-                            )
-
-                            // Bottom Sub-metrics Row
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = Color.White.copy(alpha = 0.15f),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color.White.copy(alpha = 0.15f),
+                                        modifier = Modifier.weight(1f)
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.ShoppingBag,
-                                            contentDescription = null,
-                                            tint = Color(0xFF93C5FD),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Column {
-                                            Text(
-                                                text = "Volume Penjualan",
-                                                fontFamily = interfamily,
-                                                fontSize = 10.sp,
-                                                color = Color.White.copy(alpha = 0.75f)
+                                        Row(
+                                            modifier = Modifier.padding(
+                                                horizontal = if (isCompact) 8.dp else 10.dp,
+                                                vertical = if (isCompact) 6.dp else 8.dp
+                                            ),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.AccountBalanceWallet,
+                                                contentDescription = null,
+                                                tint = Color(0xFF86EFAC),
+                                                modifier = Modifier.size(if (isCompact) 15.dp else 16.dp)
                                             )
-                                            Text(
-                                                text = "${state.totalProdukTerjual} Produk Terjual",
-                                                fontFamily = interfamily,
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = Color.White.copy(alpha = 0.15f),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.AccountBalanceWallet,
-                                            contentDescription = null,
-                                            tint = Color(0xFF86EFAC),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Column {
-                                            Text(
-                                                text = "Rata-rata Order",
-                                                fontFamily = interfamily,
-                                                fontSize = 10.sp,
-                                                color = Color.White.copy(alpha = 0.75f)
-                                            )
-                                            Text(
-                                                text = formatRupiah(state.rataRataTransaksi),
-                                                fontFamily = interfamily,
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
+                                            Column {
+                                                Text(
+                                                    text = "Rata-rata Order",
+                                                    fontFamily = interfamily,
+                                                    fontSize = if (isCompact) 9.sp else 10.sp,
+                                                    color = Color.White.copy(alpha = 0.75f),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Text(
+                                                    text = formatRupiah(state.rataRataTransaksi),
+                                                    fontFamily = interfamily,
+                                                    fontSize = if (isCompact) 11.sp else 12.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White,
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -651,7 +678,7 @@ fun LaporanKeuanganScreen(
                         KpiCard(
                             title = "TOTAL PESANAN",
                             value = "${state.totalTransaksiCount} Order",
-                            badge = "100% Selesai",
+                            badge = if (isCompact) "Selesai" else "100% Selesai",
                             icon = Icons.Default.ReceiptLong,
                             accentColor = Color(0xFF2563EB),
                             containerColor = Color(0xFFEFF6FF),
@@ -661,7 +688,7 @@ fun LaporanKeuanganScreen(
                         KpiCard(
                             title = "TOTAL PPN",
                             value = formatRupiah(state.totalPajak),
-                            badge = "Pajak Terkumpul",
+                            badge = if (isCompact) "PPN" else "Pajak Terkumpul",
                             icon = Icons.Default.AccountBalance,
                             accentColor = Color(0xFF7C3AED),
                             containerColor = Color(0xFFF5F3FF),
@@ -678,7 +705,7 @@ fun LaporanKeuanganScreen(
                         KpiCard(
                             title = "BIAYA MODAL (HPP)",
                             value = formatRupiah(state.totalHpp),
-                            badge = "Beban Produk",
+                            badge = if (isCompact) "Modal" else "Beban Produk",
                             icon = Icons.Default.Storefront,
                             accentColor = Color(0xFF475569),
                             containerColor = Color(0xFFF8FAFC),
@@ -688,7 +715,7 @@ fun LaporanKeuanganScreen(
                         KpiCard(
                             title = "DISKON & PROMO",
                             value = formatRupiah(state.totalDiskon),
-                            badge = "Potongan Harga",
+                            badge = if (isCompact) "Diskon" else "Potongan Harga",
                             icon = Icons.Default.LocalOffer,
                             accentColor = Color(0xFFD97706),
                             containerColor = Color(0xFFFFFBEB),
@@ -706,7 +733,7 @@ fun LaporanKeuanganScreen(
                             KpiCard(
                                 title = "TOTAL REFUND",
                                 value = formatRupiah(state.totalRefundNominal),
-                                badge = "Pengembalian",
+                                badge = if (isCompact) "Refund" else "Pengembalian",
                                 icon = Icons.Default.Replay,
                                 accentColor = Color(0xFFDC2626),
                                 containerColor = Color(0xFFFEF2F2),
@@ -716,7 +743,7 @@ fun LaporanKeuanganScreen(
                             KpiCard(
                                 title = "TRANSAKSI BATAL",
                                 value = "${state.totalRefundCount} Transaksi",
-                                badge = "Status Void",
+                                badge = if (isCompact) "Batal" else "Status Void",
                                 icon = Icons.Default.RemoveShoppingCart,
                                 accentColor = Color(0xFFE11D48),
                                 containerColor = Color(0xFFFFF1F2),
@@ -884,7 +911,7 @@ fun LaporanKeuanganScreen(
                                     Box(
                                         modifier = Modifier
                                             .fillMaxHeight(animatedFraction)
-                                            .width(22.dp)
+                                            .width(if (isCompact) 18.dp else 22.dp)
                                             .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
                                             .background(
                                                 if (isSelected) {
@@ -905,7 +932,7 @@ fun LaporanKeuanganScreen(
                                     Text(
                                         text = entry.dayLabel,
                                         fontFamily = interfamily,
-                                        fontSize = 11.sp,
+                                        fontSize = if (isCompact) 10.sp else 11.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         color = if (isSelected) Color(0xFF2563EB) else Color(0xFF64748B)
                                     )
@@ -928,7 +955,7 @@ fun LaporanKeuanganScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(18.dp),
+                            .padding(if (isCompact) 14.dp else 18.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
@@ -940,12 +967,12 @@ fun LaporanKeuanganScreen(
                         )
 
                         PnLRow(
-                            label = "Penjualan Kotor (Gross Sales)",
+                            label = if (isCompact) "Penjualan Kotor (Gross)" else "Penjualan Kotor (Gross Sales)",
                             value = formatRupiah(state.totalOmzet + state.totalDiskon),
                             isPositive = true
                         )
                         PnLRow(
-                            label = "Harga Pokok Penjualan (HPP / Modal)",
+                            label = if (isCompact) "HPP / Modal Produk" else "Harga Pokok Penjualan (HPP / Modal)",
                             value = "- " + formatRupiah(state.totalHpp),
                             isPositive = false,
                             highlightRed = state.totalHpp > 0
@@ -960,35 +987,40 @@ fun LaporanKeuanganScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    .padding(horizontal = if (isCompact) 10.dp else 12.dp, vertical = if (isCompact) 6.dp else 8.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "LABA KOTOR (GROSS PROFIT)",
+                                    text = if (isCompact) "LABA KOTOR (GROSS)" else "LABA KOTOR (GROSS PROFIT)",
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF15803D)
+                                    fontSize = if (isCompact) 11.sp else 12.sp,
+                                    color = Color(0xFF15803D),
+                                    modifier = Modifier.weight(1f).padding(end = 6.dp),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = formatRupiah(state.totalLabaKotor),
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = Color(0xFF15803D)
+                                    fontSize = if (isCompact) 13.sp else 14.sp,
+                                    color = Color(0xFF15803D),
+                                    softWrap = false,
+                                    maxLines = 1
                                 )
                             }
                         }
 
                         PnLRow(
-                            label = "Potongan Diskon & Promo",
+                            label = if (isCompact) "Diskon & Promo" else "Potongan Diskon & Promo",
                             value = "- " + formatRupiah(state.totalDiskon),
                             isPositive = false,
                             highlightRed = state.totalDiskon > 0
                         )
                         PnLRow(
-                            label = "PPN / Pajak Terkumpul",
+                            label = if (isCompact) "PPN / Pajak" else "PPN / Pajak Terkumpul",
                             value = "+ " + formatRupiah(state.totalPajak),
                             isPositive = true
                         )
@@ -1008,32 +1040,38 @@ fun LaporanKeuanganScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                    .padding(horizontal = if (isCompact) 10.dp else 14.dp, vertical = if (isCompact) 8.dp else 10.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
+                                Column(modifier = Modifier.weight(1f).padding(end = 6.dp)) {
                                     Text(
                                         text = "LABA BERSIH DITERIMA",
                                         fontFamily = interfamily,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
+                                        fontSize = if (isCompact) 10.5.sp else 11.sp,
                                         color = Color(0xFF047857),
-                                        letterSpacing = 0.5.sp
+                                        letterSpacing = 0.5.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = "Setelah dikurangi modal, diskon & beban",
+                                        text = if (isCompact) "Setelah modal, diskon & beban" else "Setelah dikurangi modal, diskon & beban",
                                         fontFamily = interfamily,
-                                        fontSize = 11.sp,
-                                        color = Color(0xFF065F46)
+                                        fontSize = if (isCompact) 9.5.sp else 11.sp,
+                                        color = Color(0xFF065F46),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                                 Text(
                                     text = formatRupiah(state.totalLabaBersih),
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 18.sp,
-                                    color = Color(0xFF047857)
+                                    fontSize = if (isCompact) 15.sp else 18.sp,
+                                    color = Color(0xFF047857),
+                                    softWrap = false,
+                                    maxLines = 1
                                 )
                             }
                         }
@@ -1117,20 +1155,21 @@ fun LaporanKeuanganScreen(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Row(
+                                            modifier = Modifier.weight(1f).padding(end = 6.dp),
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(if (isCompact) 8.dp else 10.dp)
                                         ) {
                                             Surface(
                                                 shape = CircleShape,
                                                 color = dotColor.copy(alpha = 0.12f),
-                                                modifier = Modifier.size(32.dp)
+                                                modifier = Modifier.size(if (isCompact) 28.dp else 32.dp)
                                             ) {
                                                 Box(contentAlignment = Alignment.Center) {
                                                     Icon(
                                                         imageVector = icon,
                                                         contentDescription = null,
                                                         tint = dotColor,
-                                                        modifier = Modifier.size(16.dp)
+                                                        modifier = Modifier.size(if (isCompact) 14.dp else 16.dp)
                                                     )
                                                 }
                                             }
@@ -1139,14 +1178,19 @@ fun LaporanKeuanganScreen(
                                                     text = item.metode,
                                                     fontFamily = interfamily,
                                                     fontWeight = FontWeight.SemiBold,
-                                                    fontSize = 13.sp,
-                                                    color = Color(0xFF1E293B)
+                                                    fontSize = if (isCompact) 12.sp else 13.sp,
+                                                    color = Color(0xFF1E293B),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                                 Text(
                                                     text = "${item.jumlahTransaksi} transaksi • ${String.format(Locale.US, "%.1f", item.persentase)}%",
                                                     fontFamily = interfamily,
-                                                    fontSize = 11.sp,
-                                                    color = Color(0xFF64748B)
+                                                    fontSize = if (isCompact) 10.sp else 11.sp,
+                                                    color = Color(0xFF64748B),
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                             }
                                         }
@@ -1155,8 +1199,10 @@ fun LaporanKeuanganScreen(
                                             text = formatRupiah(item.totalNominal),
                                             fontFamily = interfamily,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 13.sp,
-                                            color = Color(0xFF0F172A)
+                                            fontSize = if (isCompact) 12.sp else 13.sp,
+                                            color = Color(0xFF0F172A),
+                                            softWrap = false,
+                                            maxLines = 1
                                         )
                                     }
                                 }
@@ -1178,7 +1224,7 @@ fun LaporanKeuanganScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(18.dp),
+                            .padding(if (isCompact) 14.dp else 18.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         Row(
@@ -1255,7 +1301,6 @@ fun LaporanKeuanganScreen(
             }
         }
     }
-}
 
 // ── Komponen Reusable
 
@@ -1270,6 +1315,8 @@ private fun KpiCard(
     borderColor: Color,
     modifier: Modifier = Modifier
 ) {
+    val isCompact = LocalWindowSizeInfo.current.isCompactPhone
+
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(18.dp),
@@ -1280,7 +1327,7 @@ private fun KpiCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(if (isCompact) 10.dp else 14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
@@ -1292,14 +1339,14 @@ private fun KpiCard(
                     shape = CircleShape,
                     color = containerColor,
                     border = BorderStroke(1.dp, borderColor),
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(if (isCompact) 26.dp else 32.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
                             tint = accentColor,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(if (isCompact) 13.dp else 16.dp)
                         )
                     }
                 }
@@ -1311,10 +1358,13 @@ private fun KpiCard(
                     Text(
                         text = badge,
                         fontFamily = interfamily,
-                        fontSize = 10.sp,
+                        fontSize = if (isCompact) 8.5.sp else 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = accentColor,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = if (isCompact) 5.dp else 6.dp, vertical = 2.dp)
                     )
                 }
             }
@@ -1324,17 +1374,20 @@ private fun KpiCard(
                     text = title,
                     fontFamily = interfamily,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 10.sp,
+                    fontSize = if (isCompact) 9.sp else 10.sp,
                     color = Color(0xFF64748B),
-                    letterSpacing = 0.5.sp
+                    letterSpacing = 0.5.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = value,
                     fontFamily = interfamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
+                    fontSize = if (isCompact) 13.5.sp else 16.sp,
                     color = Color(0xFF0F172A),
                     maxLines = 1,
+                    softWrap = false,
                     overflow = TextOverflow.Ellipsis
                 )
             }
@@ -1349,6 +1402,8 @@ private fun PnLRow(
     isPositive: Boolean,
     highlightRed: Boolean = false
 ) {
+    val isCompact = LocalWindowSizeInfo.current.isCompactPhone
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1357,14 +1412,19 @@ private fun PnLRow(
         Text(
             text = label,
             fontFamily = interfamily,
-            fontSize = 13.sp,
-            color = Color(0xFF475569)
+            fontSize = if (isCompact) 11.5.sp else 13.sp,
+            color = Color(0xFF475569),
+            modifier = Modifier.weight(1f).padding(end = 6.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
         Text(
             text = value,
             fontFamily = interfamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 13.sp,
+            fontSize = if (isCompact) 12.sp else 13.sp,
+            softWrap = false,
+            maxLines = 1,
             color = when {
                 highlightRed -> Color(0xFFDC2626)
                 isPositive -> Color(0xFF0F172A)
@@ -1376,6 +1436,8 @@ private fun PnLRow(
 
 @Composable
 private fun TopProductItemRow(produk: TopProdukReport) {
+    val isCompact = LocalWindowSizeInfo.current.isCompactPhone
+
     val rankColor = when (produk.rank) {
         1 -> Color(0xFFF59E0B) // Gold
         2 -> Color(0xFF64748B) // Silver
@@ -1393,20 +1455,20 @@ private fun TopProductItemRow(produk: TopProdukReport) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(if (isCompact) 8.dp else 10.dp)
     ) {
         // Rank Badge
         Surface(
             shape = CircleShape,
             color = rankBg,
-            modifier = Modifier.size(28.dp)
+            modifier = Modifier.size(if (isCompact) 24.dp else 28.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
                     text = "#${produk.rank}",
                     fontFamily = interfamily,
                     fontWeight = FontWeight.ExtraBold,
-                    fontSize = 11.sp,
+                    fontSize = if (isCompact) 10.sp else 11.sp,
                     color = rankColor
                 )
             }
@@ -1418,7 +1480,7 @@ private fun TopProductItemRow(produk: TopProdukReport) {
             contentDescription = produk.namaProduk,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(44.dp)
+                .size(if (isCompact) 36.dp else 44.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(Color(0xFFF1F5F9))
         )
@@ -1432,33 +1494,41 @@ private fun TopProductItemRow(produk: TopProdukReport) {
                 text = produk.namaProduk,
                 fontFamily = interfamily,
                 fontWeight = FontWeight.Bold,
-                fontSize = 13.sp,
+                fontSize = if (isCompact) 12.sp else 13.sp,
                 color = Color(0xFF0F172A),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
                     text = "${produk.unitTerjual} terjual",
                     fontFamily = interfamily,
-                    fontSize = 11.sp,
-                    color = Color(0xFF64748B)
+                    fontSize = if (isCompact) 10.sp else 11.sp,
+                    color = Color(0xFF64748B),
+                    maxLines = 1,
+                    softWrap = false
                 )
                 Text(
                     text = "•",
                     fontFamily = interfamily,
-                    fontSize = 11.sp,
+                    fontSize = if (isCompact) 10.sp else 11.sp,
                     color = Color(0xFFCBD5E1)
                 )
                 Text(
-                    text = "${String.format(Locale.US, "%.1f", produk.kontribusiPersen)}% kontribusi",
+                    text = if (isCompact) {
+                        "${String.format(Locale.US, "%.1f", produk.kontribusiPersen)}%"
+                    } else {
+                        "${String.format(Locale.US, "%.1f", produk.kontribusiPersen)}% kontribusi"
+                    },
                     fontFamily = interfamily,
-                    fontSize = 11.sp,
+                    fontSize = if (isCompact) 10.sp else 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF2563EB)
+                    color = Color(0xFF2563EB),
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         }
@@ -1468,8 +1538,10 @@ private fun TopProductItemRow(produk: TopProdukReport) {
             text = formatRupiah(produk.totalOmzet),
             fontFamily = interfamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 13.sp,
-            color = Color(0xFF0F172A)
+            fontSize = if (isCompact) 12.sp else 13.sp,
+            color = Color(0xFF0F172A),
+            maxLines = 1,
+            softWrap = false
         )
     }
 }

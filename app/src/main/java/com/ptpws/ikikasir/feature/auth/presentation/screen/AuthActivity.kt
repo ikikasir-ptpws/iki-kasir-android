@@ -29,10 +29,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.ptpws.ikikasir.commond.interfamily
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.PaddingValues
@@ -63,10 +66,15 @@ class AuthActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             IKIKASIRTheme {
-                val authState by viewModel.authState.collectAsState()
-                var showErrorDialog by remember { mutableStateOf(false) }
-                var showSuccessDialog by remember { mutableStateOf(false) }
-                var errorMessage by remember { mutableStateOf("") }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding()
+                ) {
+                    val authState by viewModel.authState.collectAsState()
+                    var showErrorDialog by remember { mutableStateOf(false) }
+                    var showSuccessDialog by remember { mutableStateOf(false) }
+                    var errorMessage by remember { mutableStateOf("") }
 
                 // Observe auth state to trigger dialogs
                 LaunchedEffect(authState) {
@@ -204,6 +212,7 @@ class AuthActivity : ComponentActivity() {
                         viewModel.sendPasswordResetEmail(email, onResult)
                     }
                 )
+                }
             }
         }
     }

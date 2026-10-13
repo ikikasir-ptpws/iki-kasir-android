@@ -641,7 +641,7 @@ fun RiwayatAntreanScreen(
                         } else {
                             LazyColumn(
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                                contentPadding = PaddingValues(bottom = 24.dp)
+                                contentPadding = PaddingValues(bottom = 56.dp)
                             ) {
                                 groupedHistory.forEach { (dateHeader, historyItems) ->
                                     item {

@@ -46,6 +46,9 @@ import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
 import com.example.app.ui.screen.DashboardScreen
 import com.example.app.ui.screen.DashboardViewModel
 import com.example.app.ui.screen.MenuFullScreen
+import com.ptpws.ikikasir.core.responsive.presentation.components.IkiKasirNavigationRail
+import com.ptpws.ikikasir.core.responsive.presentation.components.IkiKasirPermanentDrawer
+import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
 import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
 import com.ptpws.ikikasir.screens.manajemenstok.UpdateStokScreen
@@ -101,24 +104,67 @@ fun AppNavHost() {
         bluetoothPrinterViewModel.updatePermissionStatus(hasBluetoothPermission)
     }
 
-    // Rute-rute yang menampilkan bottom bar
+    val windowSizeInfo = LocalWindowSizeInfo.current
+    val isWideScreen = windowSizeInfo.shouldUseNavigationRail || windowSizeInfo.shouldUsePermanentDrawer
+
+    val showProduk = dashboardViewModel.isAllowed("Produk")
+    val showKasir = dashboardViewModel.isAllowed("Kasir")
+    val showRiwayat = dashboardViewModel.isAllowed("Transaksi") || dashboardViewModel.isAllowed("Riwayat Antrean") || dashboardViewModel.isAllowed("Antrean")
+
+    val visibleNavItems = remember(showProduk, showKasir, showRiwayat) {
+        mutableListOf<AppScreen>().apply {
+            add(AppScreen.Dashboard)
+            if (showProduk) add(AppScreen.Produk)
+            if (showKasir) add(AppScreen.Kasir)
+            if (showRiwayat) add(AppScreen.Riwayat)
+            add(AppScreen.Profil)
+        }
+    }
+
+    val onNavigateToScreen: (AppScreen) -> Unit = { screen ->
+        if (screen.route == AppScreen.Dashboard.route) {
+            navController.popBackStack(AppScreen.Dashboard.route, inclusive = false)
+        } else if (screen == AppScreen.Produk) {
+            navController.navigate(AppScreen.Produk.baseRoute) {
+                val startRoute = navController.graph.findStartDestination().route
+                if (startRoute != null) {
+                    popUpTo(startRoute) {
+                        saveState = true
+                    }
+                }
+                launchSingleTop = true
+                restoreState = false
+            }
+        } else {
+            navController.navigate(screen.route) {
+                val startRoute = navController.graph.findStartDestination().route
+                if (startRoute != null) {
+                    popUpTo(startRoute) {
+                        saveState = true
+                    }
+                }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
+
+    // Rute-rute yang menampilkan bottom bar pada mode ponsel
     val showBottomBar = !sessionState.isLoading &&
             (currentRoute in bottomNavItems.map { it.route } ||
             currentRoute?.startsWith(AppScreen.Produk.baseRoute) == true) &&
             currentRoute != AppScreen.Kasir.route &&
             currentRoute != AppScreen.Pembayaran.route
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    val navHostContent: @Composable () -> Unit = {
         NavHost(
             navController = navController,
             startDestination = AppScreen.Dashboard.route,
             modifier = Modifier.fillMaxSize()
         ) {
-            composable(AppScreen.Dashboard.route) {
-                DashboardScreen(navController, dashboardViewModel)
-            }
+                composable(AppScreen.Dashboard.route) {
+                    DashboardScreen(navController, dashboardViewModel)
+                }
 
             composable(AppScreen.Semuamenu.route) {
                 MenuFullScreen(navController, dashboardViewModel)
@@ -264,21 +310,52 @@ fun AppNavHost() {
                 BluetoothPrinterScreen(navController)
             }
         }
+    }
 
-        AnimatedVisibility(
-            visible = showBottomBar,
-            enter = slideInVertically(initialOffsetY = { it }),
-            exit = slideOutVertically(targetOffsetY = { it }),
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            IkiKasirBottomBar(
-                navController = navController,
-                currentRoute = currentRoute,
-                viewModel = dashboardViewModel
-            )
+    if (isWideScreen && !sessionState.isLoading && sessionState.user != null) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            if (windowSizeInfo.shouldUsePermanentDrawer) {
+                IkiKasirPermanentDrawer(
+                    visibleScreens = visibleNavItems,
+                    currentRoute = currentRoute,
+                    onNavigate = onNavigateToScreen
+                )
+            } else {
+                IkiKasirNavigationRail(
+                    visibleScreens = visibleNavItems,
+                    currentRoute = currentRoute,
+                    onNavigate = onNavigateToScreen
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+                navHostContent()
+                GlobalCrudResultDialogHost()
+            }
         }
+    } else {
+        Box(modifier = Modifier.fillMaxSize()) {
+            navHostContent()
 
-        GlobalCrudResultDialogHost()
+            AnimatedVisibility(
+                visible = showBottomBar,
+                enter = slideInVertically(initialOffsetY = { it }),
+                exit = slideOutVertically(targetOffsetY = { it }),
+                modifier = Modifier.align(Alignment.BottomCenter)
+            ) {
+                IkiKasirBottomBar(
+                    navController = navController,
+                    currentRoute = currentRoute,
+                    viewModel = dashboardViewModel
+                )
+            }
+
+            GlobalCrudResultDialogHost()
+        }
     }
 }
 
@@ -311,16 +388,23 @@ fun IkiKasirBottomBar(
         }
     }
 
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val isSmallScreen = screenWidth <= 340.dp
+    val horizontalMargin = if (isSmallScreen) 10.dp else if (screenWidth <= 380.dp) 16.dp else 24.dp
+    val bottomMargin = if (isSmallScreen) 12.dp else 20.dp
+    val barHeight = if (isSmallScreen) 66.dp else 72.dp
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 24.dp, end = 24.dp, bottom = 24.dp) // floating effect
+            .padding(start = horizontalMargin, end = horizontalMargin, bottom = bottomMargin) // floating effect
     ) {
         // White pill background
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(72.dp)
+                .height(barHeight)
                 .shadow(
                     elevation = 10.dp,
                     shape = RoundedCornerShape(32.dp),
@@ -331,9 +415,8 @@ fun IkiKasirBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(72.dp)
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
+                .height(barHeight)
+                .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             visibleNavItems.forEach { screen ->
@@ -345,40 +428,46 @@ fun IkiKasirBottomBar(
                 }
                 val isCenter = screen == AppScreen.Kasir
 
-                BottomNavItem(
-                    screen = screen,
-                    isSelected = isSelected,
-                    isCenter = isCenter,
-                    onClick = {
-                        if (isSelected && screen != AppScreen.Kasir) return@BottomNavItem
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    BottomNavItem(
+                        screen = screen,
+                        isSelected = isSelected,
+                        isCenter = isCenter,
+                        isSmallScreen = isSmallScreen,
+                        onClick = {
+                            if (isSelected && screen != AppScreen.Kasir) return@BottomNavItem
 
-                        if (screen.route == AppScreen.Dashboard.route) {
-                            navController.popBackStack(AppScreen.Dashboard.route, inclusive = false)
-                        } else if (screen == AppScreen.Produk) {
-                            navController.navigate(AppScreen.Produk.baseRoute) {
-                                val startRoute = navController.graph.findStartDestination().route
-                                if (startRoute != null) {
-                                    popUpTo(startRoute) {
-                                        saveState = true
+                            if (screen.route == AppScreen.Dashboard.route) {
+                                navController.popBackStack(AppScreen.Dashboard.route, inclusive = false)
+                            } else if (screen == AppScreen.Produk) {
+                                navController.navigate(AppScreen.Produk.baseRoute) {
+                                    val startRoute = navController.graph.findStartDestination().route
+                                    if (startRoute != null) {
+                                        popUpTo(startRoute) {
+                                            saveState = true
+                                        }
                                     }
+                                    launchSingleTop = true
+                                    restoreState = false
                                 }
-                                launchSingleTop = true
-                                restoreState = false
-                            }
-                        } else {
-                            navController.navigate(screen.route) {
-                                val startRoute = navController.graph.findStartDestination().route
-                                if (startRoute != null) {
-                                    popUpTo(startRoute) {
-                                        saveState = true
+                            } else {
+                                navController.navigate(screen.route) {
+                                    val startRoute = navController.graph.findStartDestination().route
+                                    if (startRoute != null) {
+                                        popUpTo(startRoute) {
+                                            saveState = true
+                                        }
                                     }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -389,6 +478,7 @@ fun BottomNavItem(
     screen: AppScreen,
     isSelected: Boolean,
     isCenter: Boolean,
+    isSmallScreen: Boolean = false,
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -408,14 +498,17 @@ fun BottomNavItem(
         modifier = Modifier
             .then(if (!isCenter) Modifier.clip(RoundedCornerShape(12.dp)) else Modifier)
             .clickable(interactionSource = interactionSource, indication = null) { onClick() }
-            .padding(horizontal = 10.dp, vertical = 6.dp)
+            .padding(horizontal = 2.dp, vertical = 2.dp)
     ) {
         when {
             isCenter -> {
+                val fabSize = if (isSmallScreen) 52.dp else 60.dp
+                val fabIconSize = if (isSmallScreen) 24.dp else 28.dp
+                val fabOffset = if (isSmallScreen) (-12).dp else (-16).dp
                 Box(
                     modifier = Modifier
-                        .offset(y = (-16).dp)
-                        .size(60.dp)
+                        .offset(y = fabOffset)
+                        .size(fabSize)
                         .shadow(elevation = 8.dp, shape = CircleShape)
                         .background(Color(0xFF4F46E5), CircleShape),
                     contentAlignment = Alignment.Center
@@ -424,15 +517,17 @@ fun BottomNavItem(
                         imageVector = icon,
                         contentDescription = stringResource(screen.title),
                         tint = Color.White,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(fabIconSize)
                     )
                 }
             }
 
             isSelected -> {
+                val circleSize = if (isSmallScreen) 34.dp else 40.dp
+                val iconSize = if (isSmallScreen) 19.dp else 22.dp
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(circleSize)
                         .background(Color(0xFFEEF2FF), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
@@ -440,33 +535,40 @@ fun BottomNavItem(
                         imageVector = icon,
                         contentDescription = stringResource(screen.title),
                         tint = Color(0xFF4F46E5),
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(iconSize)
                     )
                 }
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = stringResource(screen.title),
-                    fontSize = 10.sp,
+                    fontSize = if (isSmallScreen) 9.sp else 10.sp,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = interfamily,
-                    color = Color(0xFF4F46E5)
+                    color = Color(0xFF4F46E5),
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
 
             else -> {
+                val iconSize = if (isSmallScreen) 19.dp else 22.dp
                 Icon(
                     imageVector = icon,
                     contentDescription = stringResource(screen.title),
                     tint = Color(0xFF9CA3AF),
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(iconSize)
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = stringResource(screen.title),
-                    fontSize = 10.sp,
+                    fontSize = if (isSmallScreen) 9.sp else 10.sp,
                     fontWeight = FontWeight.Normal,
                     fontFamily = interfamily,
-                    color = Color(0xFF9CA3AF)
+                    color = Color(0xFF9CA3AF),
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
         }

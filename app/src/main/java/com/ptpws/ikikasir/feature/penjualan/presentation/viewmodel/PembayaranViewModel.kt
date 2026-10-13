@@ -174,7 +174,7 @@ class PembayaranViewModel @Inject constructor(
         _state.update { current ->
             current.copy(
                 selectedPromo = promo?.takeIf {
-                    it.isAvailableOn() && current.activePromos.any { active -> active.id == it.id }
+                    it.isAvailableOn() && current.eligiblePromos.any { eligible -> eligible.id == it.id }
                 }
             )
         }
@@ -190,7 +190,7 @@ class PembayaranViewModel @Inject constructor(
                 current.cartItems.sumOf { it.totalPrice }
             }
             val promo = current.selectedPromo?.takeIf { selected ->
-                selected.isAvailableOn() && current.activePromos.any { it.id == selected.id }
+                selected.isAvailableOn() && current.eligiblePromos.any { it.id == selected.id }
             }
 
             val promoDiscountAmount = if (

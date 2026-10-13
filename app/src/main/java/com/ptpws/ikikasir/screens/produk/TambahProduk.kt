@@ -38,10 +38,12 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -71,6 +73,10 @@ fun TambahProdukScreen(
     val formState by viewModel.formState.collectAsState()
     val kategoriState by kategoriViewModel.state.collectAsState()
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val isSmallScreen = screenWidth <= 420.dp
+    val horizontalScreenPadding = if (isSmallScreen) 12.dp else 16.dp
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var showPrintDialog by remember { mutableStateOf(false) }
 
@@ -128,7 +134,7 @@ fun TambahProdukScreen(
                         text = if (formState.isEditMode) "Edit Produk" else "Tambah Produk",
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
-                        fontSize = 18.sp,
+                        fontSize = if (isSmallScreen) 16.sp else 18.sp,
                         color = Color(0xFF111827)
                     )
                 },
@@ -152,8 +158,13 @@ fun TambahProdukScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentPadding = PaddingValues(
+                start = horizontalScreenPadding,
+                top = if (isSmallScreen) 12.dp else 16.dp,
+                end = horizontalScreenPadding,
+                bottom = if (isSmallScreen) 64.dp else 48.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(if (isSmallScreen) 12.dp else 16.dp)
         ) {
 
             // Dotted Container Upload Foto Produk
@@ -161,7 +172,7 @@ fun TambahProdukScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp)
+                        .height(if (isSmallScreen) 125.dp else 150.dp)
                         .clickable { imagePickerLauncher.launch("image/*") },
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6)),
@@ -181,11 +192,11 @@ fun TambahProdukScreen(
                         } else {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                verticalArrangement = Arrangement.spacedBy(if (isSmallScreen) 6.dp else 8.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(48.dp)
+                                        .size(if (isSmallScreen) 40.dp else 48.dp)
                                         .background(Color.White, RoundedCornerShape(24.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -193,12 +204,12 @@ fun TambahProdukScreen(
                                         imageVector = Icons.Default.CameraAlt,
                                         contentDescription = "Upload",
                                         tint = Color(0xFF6366F1),
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(if (isSmallScreen) 20.dp else 24.dp)
                                     )
                                 }
                                 Text(
-                                    text = "Tambah Foto Produk (opsional)",
-                                    fontSize = 13.sp,
+                                    text = if (isSmallScreen) "Foto Produk (opsional)" else "Tambah Foto Produk (opsional)",
+                                    fontSize = if (isSmallScreen) 12.sp else 13.sp,
                                     fontWeight = FontWeight.Medium,
                                     fontFamily = interfamily,
                                     color = Color(0xFF374151)
@@ -245,7 +256,7 @@ fun TambahProdukScreen(
                 }
             }
 
-            // Barcode / Kode Produk (opsional) + Scan + Generate Otomatis
+            // Barcode / Kode Produk + Scan + Generate Otomatis
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(
@@ -253,27 +264,22 @@ fun TambahProdukScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Barcode / Kode Produk ",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = interfamily,
-                                color = Color(0xFF374151)
-                            )
-                            Text(
-                                text = "(opsional)",
-                                fontSize = 12.sp,
-                                fontFamily = interfamily,
-                                color = Color(0xFF9CA3AF)
-                            )
-                        }
+                        Text(
+                            text = "Barcode / Kode Produk",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = interfamily,
+                            color = Color(0xFF374151),
+                            maxLines = 1
+                        )
                         Text(
                             text = "Generate Otomatis",
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = interfamily,
                             color = Color(0xFF4F46E5),
+                            maxLines = 1,
+                            softWrap = false,
                             modifier = Modifier.clickable {
                                 val randomBarcode = "899" + (100000000..999999999).random()
                                 viewModel.onBarcodeChange(randomBarcode)
@@ -284,7 +290,7 @@ fun TambahProdukScreen(
                     OutlinedTextField(
                         value = formState.barcode,
                         onValueChange = { viewModel.onBarcodeChange(it) },
-                        placeholder = { Text("Contoh: 8992753210123", fontSize = 13.sp, color = Color(0xFF9CA3AF)) },
+                        placeholder = { Text("Contoh: 8992753210123", fontSize = if (isSmallScreen) 12.sp else 13.sp, color = Color(0xFF9CA3AF)) },
                         singleLine = true,
                         leadingIcon = {
                             Icon(
@@ -305,7 +311,7 @@ fun TambahProdukScreen(
                                         .clickable { showPrintDialog = true }
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        modifier = Modifier.padding(horizontal = if (isSmallScreen) 8.dp else 10.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
@@ -317,7 +323,7 @@ fun TambahProdukScreen(
                                         )
                                         Text(
                                             text = "Cetak",
-                                            fontSize = 12.sp,
+                                            fontSize = if (isSmallScreen) 11.sp else 12.sp,
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = interfamily,
                                             color = Color(0xFF2563EB)
@@ -338,7 +344,7 @@ fun TambahProdukScreen(
                                         }
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        modifier = Modifier.padding(horizontal = if (isSmallScreen) 8.dp else 10.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
@@ -350,7 +356,7 @@ fun TambahProdukScreen(
                                         )
                                         Text(
                                             text = "Scan",
-                                            fontSize = 12.sp,
+                                            fontSize = if (isSmallScreen) 11.sp else 12.sp,
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = interfamily,
                                             color = Color(0xFF4F46E5)
@@ -380,12 +386,12 @@ fun TambahProdukScreen(
                     border = BorderStroke(1.dp, Color(0xFFF3F4F6))
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier.padding(if (isSmallScreen) 12.dp else 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(if (isSmallScreen) 10.dp else 12.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 8.dp else 12.dp)
                         ) {
                             Column(
                                 modifier = Modifier.weight(1f),
@@ -393,7 +399,7 @@ fun TambahProdukScreen(
                             ) {
                                 Text(
                                     text = "Harga Beli",
-                                    fontSize = 13.sp,
+                                    fontSize = if (isSmallScreen) 12.sp else 13.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     fontFamily = interfamily,
                                     color = Color(0xFF374151)
@@ -402,9 +408,9 @@ fun TambahProdukScreen(
                                     value = formState.costPrice,
                                     onValueChange = { viewModel.onCostPriceChange(it) },
                                     leadingIcon = {
-                                        Text("Rp", fontSize = 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
+                                        Text("Rp", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
                                     },
-                                    placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
+                                    placeholder = { Text("0", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF)) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth(),
@@ -424,7 +430,7 @@ fun TambahProdukScreen(
                             ) {
                                 Text(
                                     text = "Harga Jual",
-                                    fontSize = 13.sp,
+                                    fontSize = if (isSmallScreen) 12.sp else 13.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     fontFamily = interfamily,
                                     color = Color(0xFF374151)
@@ -433,9 +439,9 @@ fun TambahProdukScreen(
                                     value = formState.sellingPrice,
                                     onValueChange = { viewModel.onSellingPriceChange(it) },
                                     leadingIcon = {
-                                        Text("Rp", fontSize = 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
+                                        Text("Rp", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
                                     },
-                                    placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
+                                    placeholder = { Text("0", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF)) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth(),
@@ -482,37 +488,48 @@ fun TambahProdukScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(12.dp),
+                                    .padding(if (isSmallScreen) 10.dp else 12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
+                                Column(modifier = Modifier.weight(1f, fill = false)) {
                                     Text(
-                                        text = "Harga Modal (HPP)",
-                                        fontSize = 11.sp,
+                                        text = if (isSmallScreen) "Modal (HPP)" else "Harga Modal (HPP)",
+                                        fontSize = if (isSmallScreen) 10.sp else 11.sp,
                                         fontFamily = interfamily,
-                                        color = Color(0xFF6B7280)
+                                        color = Color(0xFF6B7280),
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = "Rp $formattedCostPrice",
-                                        fontSize = 14.sp,
+                                        fontSize = if (isSmallScreen) 13.sp else 14.sp,
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = interfamily,
-                                        color = Color(0xFF111827)
+                                        color = Color(0xFF111827),
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
 
-                                Column(horizontalAlignment = Alignment.End) {
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Column(
+                                    horizontalAlignment = Alignment.End,
+                                    modifier = Modifier.weight(1.2f, fill = false)
+                                ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         Text(
-                                            text = "Estimasi Laba Kotor",
-                                            fontSize = 11.sp,
+                                            text = if (isSmallScreen) "Laba Kotor" else "Estimasi Laba Kotor",
+                                            fontSize = if (isSmallScreen) 10.sp else 11.sp,
                                             fontFamily = interfamily,
-                                            color = Color(0xFF6B7280)
+                                            color = Color(0xFF6B7280),
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                         Surface(
                                             shape = RoundedCornerShape(10.dp),
@@ -520,21 +537,25 @@ fun TambahProdukScreen(
                                         ) {
                                             Text(
                                                 text = if (isProfitable) String.format(Locale.US, "+%.1f%%", marginPercent) else String.format(Locale.US, "%.1f%%", marginPercent),
-                                                fontSize = 10.sp,
+                                                fontSize = 8.5.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 fontFamily = interfamily,
                                                 color = if (isProfitable) Color(0xFF16A34A) else Color(0xFFDC2626),
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.5.dp),
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
                                     }
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = if (isProfitable) "+Rp $formattedLabaKotor / unit" else "-Rp $formattedLabaKotor / unit",
-                                        fontSize = 14.sp,
+                                        fontSize = if (isSmallScreen) 12.sp else 14.sp,
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = interfamily,
-                                        color = if (isProfitable) Color(0xFF16A34A) else Color(0xFFDC2626)
+                                        color = if (isProfitable) Color(0xFF16A34A) else Color(0xFFDC2626),
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }
@@ -547,7 +568,7 @@ fun TambahProdukScreen(
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 8.dp else 12.dp)
                 ) {
                     Column(
                         modifier = Modifier.weight(1f),
@@ -555,7 +576,7 @@ fun TambahProdukScreen(
                     ) {
                         Text(
                             text = "Stok",
-                            fontSize = 13.sp,
+                            fontSize = if (isSmallScreen) 12.sp else 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = interfamily,
                             color = Color(0xFF374151)
@@ -563,7 +584,7 @@ fun TambahProdukScreen(
                         OutlinedTextField(
                             value = formState.stock,
                             onValueChange = { viewModel.onStockChange(it) },
-                            placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
+                            placeholder = { Text("0", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF)) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
@@ -583,15 +604,15 @@ fun TambahProdukScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "Batas Stok ",
-                                fontSize = 13.sp,
+                                text = if (isSmallScreen) "Batas " else "Batas Stok ",
+                                fontSize = if (isSmallScreen) 12.sp else 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 fontFamily = interfamily,
                                 color = Color(0xFF374151)
                             )
                             Text(
-                                text = "(Default 5)",
-                                fontSize = 12.sp,
+                                text = if (isSmallScreen) "(Def. 5)" else "(Default 5)",
+                                fontSize = if (isSmallScreen) 11.sp else 12.sp,
                                 fontFamily = interfamily,
                                 color = Color(0xFF9CA3AF)
                             )
@@ -599,7 +620,7 @@ fun TambahProdukScreen(
                         OutlinedTextField(
                             value = formState.lowStockThreshold,
                             onValueChange = { viewModel.onLowStockThresholdChange(it) },
-                            placeholder = { Text("5", fontSize = 14.sp, color = Color(0xFF9CA3AF)) },
+                            placeholder = { Text("5", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF)) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
@@ -620,7 +641,7 @@ fun TambahProdukScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = "Pilih Kategori Produk",
-                        fontSize = 13.sp,
+                        fontSize = if (isSmallScreen) 12.sp else 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = interfamily,
                         color = Color(0xFF374151)
@@ -644,7 +665,7 @@ fun TambahProdukScreen(
                                 label = {
                                     Text(
                                         text = catName,
-                                        fontSize = 13.sp,
+                                        fontSize = if (isSmallScreen) 12.sp else 13.sp,
                                         fontFamily = interfamily,
                                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                                     )
@@ -670,9 +691,6 @@ fun TambahProdukScreen(
                 }
             }
 
-
-
-
             // Visibilitas Card
             item {
                 Card(
@@ -684,7 +702,7 @@ fun TambahProdukScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(if (isSmallScreen) 12.dp else 16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         // Section header
@@ -698,7 +716,7 @@ fun TambahProdukScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Visibilitas",
-                                fontSize = 14.sp,
+                                fontSize = if (isSmallScreen) 13.sp else 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = interfamily,
                                 color = Color(0xFF1F2937)
@@ -714,22 +732,20 @@ fun TambahProdukScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.Top
+                                    .padding(if (isSmallScreen) 10.dp else 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.PointOfSale,
                                     contentDescription = null,
                                     tint = Color(0xFF059669),
-                                    modifier = Modifier
-                                        .size(26.dp)
-                                        .padding(top = 2.dp)
+                                    modifier = Modifier.size(if (isSmallScreen) 22.dp else 26.dp)
                                 )
-                                Spacer(modifier = Modifier.width(10.dp))
+                                Spacer(modifier = Modifier.width(if (isSmallScreen) 8.dp else 10.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = "Tampilkan di Kasir",
-                                        fontSize = 13.sp,
+                                        fontSize = if (isSmallScreen) 12.sp else 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = interfamily,
                                         color = Color(0xFF1F2937)
@@ -737,15 +753,16 @@ fun TambahProdukScreen(
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = "Langsung muncul pada layar pemesanan kasir",
-                                        fontSize = 11.sp,
+                                        fontSize = if (isSmallScreen) 10.5.sp else 11.sp,
                                         fontFamily = interfamily,
-                                        color = Color(0xFF6B7280)
+                                        color = Color(0xFF6B7280),
+                                        lineHeight = 14.sp
                                     )
                                 }
                                 Switch(
                                     checked = formState.isVisibleInCashier,
                                     onCheckedChange = { viewModel.onVisibilityChange(it) },
-                                    modifier = Modifier.scale(scale = 0.7f),
+                                    modifier = Modifier.scale(scale = if (isSmallScreen) 0.65f else 0.7f),
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = Color.White,
                                         checkedTrackColor = Color(0xFF059669),
@@ -758,42 +775,56 @@ fun TambahProdukScreen(
                     }
                 }
             }
+
             // Bottom Buttons
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 8.dp else 12.dp)
                 ) {
                     OutlinedButton(
                         onClick = onBack,
+                        contentPadding = PaddingValues(horizontal = if (isSmallScreen) 8.dp else 16.dp, vertical = 0.dp),
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
+                            .height(if (isSmallScreen) 44.dp else 48.dp),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, Color(0xFFE5E7EB)),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF374151))
                     ) {
-                        Text("Batal", fontFamily = interfamily, fontWeight = FontWeight.Medium)
+                        Text(
+                            text = "Batal",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = if (isSmallScreen) 13.sp else 14.sp,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
 
                     Button(
                         onClick = { viewModel.simpanProduk() },
                         enabled = !formState.isLoading,
+                        contentPadding = PaddingValues(horizontal = if (isSmallScreen) 6.dp else 16.dp, vertical = 0.dp),
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
+                            .height(if (isSmallScreen) 44.dp else 48.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
                     ) {
                         if (formState.isLoading) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         } else {
                             Text(
                                 text = if (formState.isEditMode) "Perbarui Produk" else "Tambah Produk",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.White
+                                fontSize = if (isSmallScreen) 12.5.sp else 14.sp,
+                                color = Color.White,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }

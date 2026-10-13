@@ -75,7 +75,7 @@ fun MetodePembayaranScreen(
                 start = 16.dp,
                 end = 16.dp,
                 top = 8.dp,
-                bottom = 24.dp
+                bottom = 56.dp
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {

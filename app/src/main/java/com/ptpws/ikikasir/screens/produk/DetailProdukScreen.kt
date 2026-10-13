@@ -52,6 +52,11 @@ fun DetailProdukScreen(
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
 
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val isSmallScreen = screenWidth <= 420.dp
+    val screenHorizontalPadding = if (isSmallScreen) 12.dp else 16.dp
+
     LaunchedEffect(produkId) {
         if (!produkId.isNullOrBlank()) {
             viewModel.loadProduk(produkId)
@@ -105,7 +110,7 @@ fun DetailProdukScreen(
                         text = "Detail Produk",
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
-                        fontSize = 18.sp,
+                        fontSize = if (isSmallScreen) 16.sp else 18.sp,
                         color = Color(0xFF111827)
                     )
                 },
@@ -133,8 +138,11 @@ fun DetailProdukScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            .padding(
+                                horizontal = screenHorizontalPadding,
+                                vertical = if (isSmallScreen) 10.dp else 12.dp
+                            ),
+                        horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 8.dp else 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Tombol Delete Icon (Merah Soft)
@@ -143,7 +151,7 @@ fun DetailProdukScreen(
                             color = Color(0xFFFEF2F2),
                             border = BorderStroke(1.dp, Color(0xFFFEE2E2)),
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(if (isSmallScreen) 44.dp else 48.dp)
                                 .clickable { viewModel.requestDeleteDialog(true) }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -151,7 +159,7 @@ fun DetailProdukScreen(
                                     imageVector = Icons.Outlined.Delete,
                                     contentDescription = "Hapus Produk",
                                     tint = Color(0xFFEF4444),
-                                    modifier = Modifier.size(22.dp)
+                                    modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
                                 )
                             }
                         }
@@ -161,23 +169,26 @@ fun DetailProdukScreen(
                             onClick = { navigateToEditProduk(context, produk) },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(48.dp),
+                                .height(if (isSmallScreen) 44.dp else 48.dp),
                             shape = RoundedCornerShape(14.dp),
+                            contentPadding = PaddingValues(horizontal = if (isSmallScreen) 10.dp else 16.dp, vertical = 0.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(if (isSmallScreen) 16.dp else 18.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(if (isSmallScreen) 6.dp else 8.dp))
                             Text(
                                 text = "Edit Produk",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,
-                                fontSize = 15.sp
+                                fontSize = if (isSmallScreen) 14.sp else 15.sp,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -219,8 +230,13 @@ fun DetailProdukScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    contentPadding = PaddingValues(
+                        start = screenHorizontalPadding,
+                        top = 12.dp,
+                        end = screenHorizontalPadding,
+                        bottom = 84.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(if (isSmallScreen) 12.dp else 16.dp)
                 ) {
 
                     // 1. Gambar Banner + Badges Overlay
@@ -228,7 +244,7 @@ fun DetailProdukScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(210.dp),
+                                .height(if (isSmallScreen) 175.dp else 210.dp),
                             shape = RoundedCornerShape(20.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9))
                         ) {
@@ -249,7 +265,7 @@ fun DetailProdukScreen(
                                             imageVector = Icons.Outlined.Inventory2,
                                             contentDescription = null,
                                             tint = Color(0xFF94A3B8),
-                                            modifier = Modifier.size(64.dp)
+                                            modifier = Modifier.size(if (isSmallScreen) 52.dp else 64.dp)
                                         )
                                     }
                                 }
@@ -258,7 +274,7 @@ fun DetailProdukScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(14.dp),
+                                        .padding(if (isSmallScreen) 10.dp else 14.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -269,11 +285,11 @@ fun DetailProdukScreen(
                                     ) {
                                         Text(
                                             text = state.categoryName,
-                                            fontSize = 12.sp,
+                                            fontSize = if (isSmallScreen) 11.sp else 12.sp,
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = interfamily,
                                             color = Color(0xFF1E293B),
-                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                            modifier = Modifier.padding(horizontal = if (isSmallScreen) 10.dp else 14.dp, vertical = 5.dp)
                                         )
                                     }
 
@@ -292,11 +308,11 @@ fun DetailProdukScreen(
                                     ) {
                                         Text(
                                             text = badgeLabel,
-                                            fontSize = 11.sp,
+                                            fontSize = if (isSmallScreen) 10.sp else 11.sp,
                                             fontWeight = FontWeight.ExtraBold,
                                             fontFamily = interfamily,
                                             color = badgeText,
-                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                            modifier = Modifier.padding(horizontal = if (isSmallScreen) 9.dp else 12.dp, vertical = 5.dp)
                                         )
                                     }
                                 }
@@ -308,13 +324,13 @@ fun DetailProdukScreen(
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(24.dp),
+                            shape = RoundedCornerShape(20.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
                             border = BorderStroke(1.dp, Color(0xFFF1F5F9))
                         ) {
                             Column(
-                                modifier = Modifier.padding(20.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                                modifier = Modifier.padding(if (isSmallScreen) 14.dp else 20.dp),
+                                verticalArrangement = Arrangement.spacedBy(if (isSmallScreen) 8.dp else 10.dp)
                             ) {
                                 // Pills Row: Barcode & Kategori
                                 Row(
@@ -327,37 +343,41 @@ fun DetailProdukScreen(
                                         color = Color(0xFFF1F5F9)
                                     ) {
                                         Row(
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.QrCode,
                                                 contentDescription = null,
                                                 tint = Color(0xFF94A3B8),
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(14.dp)
                                             )
                                             Text(
                                                 text = produk.barcode.ifBlank { "8992753210123" },
-                                                fontSize = 13.sp,
+                                                fontSize = 11.5.sp,
                                                 fontFamily = interfamily,
                                                 fontWeight = FontWeight.Medium,
-                                                color = Color(0xFF475569)
+                                                color = Color(0xFF475569),
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
                                     }
 
                                     Surface(
-                                        shape = RoundedCornerShape(20.dp),
+                                        shape = RoundedCornerShape(12.dp),
                                         color = Color(0xFFEEF2FF)
                                     ) {
                                         Text(
-                                            text = "Kategori: ${state.categoryName}",
-                                            fontSize = 13.sp,
+                                            text = state.categoryName.ifBlank { "Umum" },
+                                            fontSize = 11.5.sp,
                                             fontFamily = interfamily,
-                                            fontWeight = FontWeight.Bold,
+                                            fontWeight = FontWeight.SemiBold,
                                             color = Color(0xFF4F46E5),
-                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                            maxLines = 1,
+                                            softWrap = false,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                         )
                                     }
                                 }
@@ -367,7 +387,7 @@ fun DetailProdukScreen(
                                 // Nama Produk
                                 Text(
                                     text = produk.name,
-                                    fontSize = 24.sp,
+                                    fontSize = if (isSmallScreen) 18.sp else 22.sp,
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = interfamily,
                                     color = Color(0xFF0F172A)
@@ -385,7 +405,7 @@ fun DetailProdukScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(IntrinsicSize.Max),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     // Left Card: HARGA JUAL
                                     Card(
@@ -399,10 +419,10 @@ fun DetailProdukScreen(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxSize()
-                                                .padding(14.dp),
+                                                .padding(10.dp),
                                             verticalArrangement = Arrangement.SpaceBetween
                                         ) {
-                                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                                 Row(
                                                     modifier = Modifier.fillMaxWidth(),
                                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -410,14 +430,16 @@ fun DetailProdukScreen(
                                                 ) {
                                                     Text(
                                                         text = "HARGA JUAL",
-                                                        fontSize = 11.sp,
+                                                        fontSize = 9.sp,
                                                         fontWeight = FontWeight.Bold,
                                                         fontFamily = interfamily,
-                                                        color = Color(0xFF64748B)
+                                                        color = Color(0xFF64748B),
+                                                        maxLines = 1,
+                                                        softWrap = false
                                                     )
                                                     if (discountAmount > 0 && activePromo != null) {
                                                         Surface(
-                                                            shape = RoundedCornerShape(6.dp),
+                                                            shape = RoundedCornerShape(4.dp),
                                                             color = Color(0xFFFEF2F2)
                                                         ) {
                                                             Text(
@@ -426,44 +448,52 @@ fun DetailProdukScreen(
                                                                 } else {
                                                                     "PROMO"
                                                                 },
-                                                                fontSize = 10.sp,
+                                                                fontSize = 8.5.sp,
                                                                 fontWeight = FontWeight.Bold,
                                                                 fontFamily = interfamily,
                                                                 color = Color(0xFFDC2626),
-                                                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                                                maxLines = 1,
+                                                                softWrap = false,
+                                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                                             )
                                                         }
                                                     }
                                                 }
                                                 Text(
                                                     text = "Rp ${formatRupiah(effectiveSellingPrice)}",
-                                                    fontSize = 20.sp,
+                                                    fontSize = 16.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     fontFamily = interfamily,
-                                                    color = Color(0xFF4F46E5)
+                                                    color = Color(0xFF4F46E5),
+                                                    maxLines = 1,
+                                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                 )
                                                 if (discountAmount > 0) {
                                                     Text(
                                                         text = "Rp ${formatRupiah(produk.sellingPrice)}",
-                                                        fontSize = 11.sp,
+                                                        fontSize = 10.sp,
                                                         fontFamily = interfamily,
                                                         color = Color(0xFF94A3B8),
-                                                        textDecoration = TextDecoration.LineThrough
+                                                        textDecoration = TextDecoration.LineThrough,
+                                                        maxLines = 1,
+                                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                     )
                                                 }
                                             }
-                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Spacer(modifier = Modifier.height(4.dp))
                                             Surface(
-                                                shape = RoundedCornerShape(8.dp),
+                                                shape = RoundedCornerShape(6.dp),
                                                 color = if (marginPercent >= 0) Color(0xFFECFDF5) else Color(0xFFFEF2F2)
                                             ) {
                                                 Text(
                                                     text = "Margin ~${String.format(Locale.US, "%.1f%%", marginPercent)}",
-                                                    fontSize = 11.sp,
+                                                    fontSize = 8.5.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     fontFamily = interfamily,
                                                     color = if (marginPercent >= 0) Color(0xFF059669) else Color(0xFFDC2626),
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                                 )
                                             }
                                         }
@@ -481,33 +511,31 @@ fun DetailProdukScreen(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxSize()
-                                                .padding(14.dp),
+                                                .padding(10.dp),
                                             verticalArrangement = Arrangement.SpaceBetween
                                         ) {
-                                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                                 Text(
-                                                    text = "HARGA BELI",
-                                                    fontSize = 11.sp,
+                                                    text = "HARGA BELI (MODAL)",
+                                                    fontSize = 9.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     fontFamily = interfamily,
-                                                    color = Color(0xFF64748B)
+                                                    color = Color(0xFF64748B),
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                 )
                                                 Text(
-                                                    text = "(MODAL)",
-                                                    fontSize = 11.sp,
+                                                    text = "Rp ${formatRupiah(produk.costPrice)}",
+                                                    fontSize = 16.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     fontFamily = interfamily,
-                                                    color = Color(0xFF64748B)
+                                                    color = Color(0xFF1E293B),
+                                                    maxLines = 1,
+                                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                 )
                                             }
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            Text(
-                                                text = "Rp ${formatRupiah(produk.costPrice)}",
-                                                fontSize = 20.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                fontFamily = interfamily,
-                                                color = Color(0xFF1E293B)
-                                            )
+                                            Spacer(modifier = Modifier.height(18.dp))
                                         }
                                     }
                                 }
@@ -524,8 +552,8 @@ fun DetailProdukScreen(
                             border = BorderStroke(1.dp, Color(0xFFF1F5F9))
                         ) {
                             Column(
-                                modifier = Modifier.padding(18.dp),
-                                verticalArrangement = Arrangement.spacedBy(14.dp)
+                                modifier = Modifier.padding(if (isSmallScreen) 14.dp else 18.dp),
+                                verticalArrangement = Arrangement.spacedBy(if (isSmallScreen) 10.dp else 14.dp)
                             ) {
                                 // Header Row dengan Icon 3D Cube
                                 Row(
@@ -538,12 +566,12 @@ fun DetailProdukScreen(
                                             painter = painterResource(id = R.drawable.ic_cube_3d),
                                             contentDescription = null,
                                             tint = Color(0xFF4F46E5),
-                                            modifier = Modifier.size(22.dp)
+                                            modifier = Modifier.size(if (isSmallScreen) 18.dp else 22.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Spacer(modifier = Modifier.width(if (isSmallScreen) 8.dp else 10.dp))
                                         Text(
                                             text = "Manajemen Inventaris",
-                                            fontSize = 15.sp,
+                                            fontSize = if (isSmallScreen) 14.sp else 15.sp,
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = interfamily,
                                             color = Color(0xFF0F172A)
@@ -552,7 +580,7 @@ fun DetailProdukScreen(
 
                                     Text(
                                         text = "Sesuaikan",
-                                        fontSize = 13.sp,
+                                        fontSize = if (isSmallScreen) 12.sp else 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = interfamily,
                                         color = Color(0xFF4F46E5),
@@ -566,7 +594,7 @@ fun DetailProdukScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(IntrinsicSize.Max),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 8.dp else 12.dp)
                                 ) {
                                     // Stok Tersedia
                                     Card(
@@ -582,13 +610,13 @@ fun DetailProdukScreen(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxSize()
-                                                .padding(14.dp),
+                                                .padding(if (isSmallScreen) 10.dp else 14.dp),
                                             verticalArrangement = Arrangement.SpaceBetween
                                         ) {
-                                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                                 Text(
                                                     text = "Stok Tersedia",
-                                                    fontSize = 12.sp,
+                                                    fontSize = if (isSmallScreen) 11.sp else 12.sp,
                                                     fontFamily = interfamily,
                                                     fontWeight = FontWeight.Medium,
                                                     color = if (isLowStock) Color(0xFFEF4444) else Color(0xFF64748B)
@@ -596,7 +624,7 @@ fun DetailProdukScreen(
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                                     Text(
                                                         text = "${produk.stock}",
-                                                        fontSize = 22.sp,
+                                                        fontSize = if (isSmallScreen) 18.sp else 22.sp,
                                                         fontWeight = FontWeight.Bold,
                                                         fontFamily = interfamily,
                                                         color = if (isLowStock) Color(0xFFEF4444) else Color(0xFF0F172A)
@@ -604,7 +632,7 @@ fun DetailProdukScreen(
                                                     Spacer(modifier = Modifier.width(4.dp))
                                                     Text(
                                                         text = "Unit",
-                                                        fontSize = 13.sp,
+                                                        fontSize = if (isSmallScreen) 11.5.sp else 13.sp,
                                                         fontFamily = interfamily,
                                                         fontWeight = FontWeight.Bold,
                                                         color = if (isLowStock) Color(0xFFEF4444) else Color(0xFF64748B)
@@ -614,18 +642,22 @@ fun DetailProdukScreen(
                                             Spacer(modifier = Modifier.height(4.dp))
                                             if (isLowStock) {
                                                 Text(
-                                                    text = "⚠️ Di bawah batas minimum",
-                                                    fontSize = 10.sp,
+                                                    text = "⚠️ Di bawah batas",
+                                                    fontSize = if (isSmallScreen) 9.5.sp else 10.sp,
                                                     fontFamily = interfamily,
                                                     fontWeight = FontWeight.SemiBold,
-                                                    color = Color(0xFFEF4444)
+                                                    color = Color(0xFFEF4444),
+                                                    maxLines = 1,
+                                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                 )
                                             } else {
                                                 Text(
                                                     text = "Stok mencukupi",
-                                                    fontSize = 10.sp,
+                                                    fontSize = if (isSmallScreen) 9.5.sp else 10.sp,
                                                     fontFamily = interfamily,
-                                                    color = Color(0xFF16A34A)
+                                                    color = Color(0xFF16A34A),
+                                                    maxLines = 1,
+                                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                 )
                                             }
                                         }
@@ -643,13 +675,13 @@ fun DetailProdukScreen(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxSize()
-                                                .padding(14.dp),
+                                                .padding(if (isSmallScreen) 10.dp else 14.dp),
                                             verticalArrangement = Arrangement.SpaceBetween
                                         ) {
-                                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                                 Text(
                                                     text = "Stok Minimum",
-                                                    fontSize = 12.sp,
+                                                    fontSize = if (isSmallScreen) 11.sp else 12.sp,
                                                     fontFamily = interfamily,
                                                     fontWeight = FontWeight.Medium,
                                                     color = Color(0xFF64748B)
@@ -657,7 +689,7 @@ fun DetailProdukScreen(
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                                     Text(
                                                         text = "${produk.lowStockThreshold}",
-                                                        fontSize = 22.sp,
+                                                        fontSize = if (isSmallScreen) 18.sp else 22.sp,
                                                         fontWeight = FontWeight.Bold,
                                                         fontFamily = interfamily,
                                                         color = Color(0xFF0F172A)
@@ -665,7 +697,7 @@ fun DetailProdukScreen(
                                                     Spacer(modifier = Modifier.width(4.dp))
                                                     Text(
                                                         text = "Unit",
-                                                        fontSize = 13.sp,
+                                                        fontSize = if (isSmallScreen) 11.5.sp else 13.sp,
                                                         fontFamily = interfamily,
                                                         color = Color(0xFF64748B)
                                                     )
@@ -674,9 +706,11 @@ fun DetailProdukScreen(
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Text(
                                                 text = "Notifikasi otomatis aktif",
-                                                fontSize = 10.sp,
+                                                fontSize = if (isSmallScreen) 9.5.sp else 10.sp,
                                                 fontFamily = interfamily,
-                                                color = Color(0xFF94A3B8)
+                                                color = Color(0xFF94A3B8),
+                                                maxLines = 1,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                             )
                                         }
                                     }
@@ -694,38 +728,40 @@ fun DetailProdukScreen(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(14.dp),
+                                            .padding(if (isSmallScreen) 10.dp else 14.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Column {
+                                        Column(modifier = Modifier.weight(1f, fill = false)) {
                                             Text(
-                                                text = "Harga Modal Pokok (HPP)",
-                                                fontSize = 11.sp,
+                                                text = if (isSmallScreen) "Modal (HPP)" else "Harga Modal Pokok (HPP)",
+                                                fontSize = if (isSmallScreen) 10.5.sp else 11.sp,
                                                 fontFamily = interfamily,
                                                 color = Color(0xFF64748B)
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = "Rp ${formatRupiah(produk.costPrice)}",
-                                                fontSize = 14.sp,
+                                                fontSize = if (isSmallScreen) 13.sp else 14.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 fontFamily = interfamily,
                                                 color = Color(0xFF0F172A)
                                             )
                                         }
 
+                                        Spacer(modifier = Modifier.width(6.dp))
+
                                         Column(horizontalAlignment = Alignment.End) {
                                             Text(
-                                                text = "Estimasi Laba Kotor",
-                                                fontSize = 11.sp,
+                                                text = if (isSmallScreen) "Estimasi Laba" else "Estimasi Laba Kotor",
+                                                fontSize = if (isSmallScreen) 10.5.sp else 11.sp,
                                                 fontFamily = interfamily,
                                                 color = Color(0xFF64748B)
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = if (isProfitable) "+Rp ${formatRupiah(labaKotor)} / unit" else "-Rp ${formatRupiah(kotlin.math.abs(labaKotor))} / unit",
-                                                fontSize = 14.sp,
+                                                fontSize = if (isSmallScreen) 12.5.sp else 14.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 fontFamily = interfamily,
                                                 color = if (isProfitable) Color(0xFF16A34A) else Color(0xFFEF4444)
@@ -749,8 +785,8 @@ fun DetailProdukScreen(
                             border = BorderStroke(1.dp, Color(0xFFF1F5F9))
                         ) {
                             Column(
-                                modifier = Modifier.padding(18.dp),
-                                verticalArrangement = Arrangement.spacedBy(14.dp)
+                                modifier = Modifier.padding(if (isSmallScreen) 14.dp else 18.dp),
+                                verticalArrangement = Arrangement.spacedBy(if (isSmallScreen) 10.dp else 14.dp)
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -762,12 +798,12 @@ fun DetailProdukScreen(
                                             imageVector = Icons.Default.LocalOffer,
                                             contentDescription = null,
                                             tint = Color(0xFF4F46E5),
-                                            modifier = Modifier.size(20.dp)
+                                            modifier = Modifier.size(if (isSmallScreen) 18.dp else 20.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Spacer(modifier = Modifier.width(if (isSmallScreen) 8.dp else 10.dp))
                                         Text(
                                             text = "Diskon",
-                                            fontSize = 15.sp,
+                                            fontSize = if (isSmallScreen) 14.sp else 15.sp,
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = interfamily,
                                             color = Color(0xFF0F172A)
@@ -782,17 +818,17 @@ fun DetailProdukScreen(
                                         ) {
                                             Text(
                                                 text = "Diskon Aktif",
-                                                fontSize = 12.sp,
+                                                fontSize = if (isSmallScreen) 11.sp else 12.sp,
                                                 fontFamily = interfamily,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color(0xFF059669),
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                                modifier = Modifier.padding(horizontal = if (isSmallScreen) 8.dp else 10.dp, vertical = 3.dp)
                                             )
                                         }
                                     } else {
                                         Text(
                                             text = "Tidak Ada Diskon",
-                                            fontSize = 12.sp,
+                                            fontSize = if (isSmallScreen) 11.sp else 12.sp,
                                             fontFamily = interfamily,
                                             fontWeight = FontWeight.Medium,
                                             color = Color(0xFF94A3B8)
@@ -823,8 +859,8 @@ fun DetailProdukScreen(
                                                 Column(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
-                                                        .padding(14.dp),
-                                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                                        .padding(if (isSmallScreen) 10.dp else 14.dp),
+                                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                                 ) {
                                                     Row(
                                                         modifier = Modifier.fillMaxWidth(),
@@ -834,10 +870,12 @@ fun DetailProdukScreen(
                                                         Column(modifier = Modifier.weight(1f)) {
                                                             Text(
                                                                 text = promo.name.ifBlank { "Promo Diskon" },
-                                                                fontSize = 14.sp,
+                                                                fontSize = if (isSmallScreen) 13.sp else 14.sp,
                                                                 fontWeight = FontWeight.Bold,
                                                                 fontFamily = interfamily,
-                                                                color = Color(0xFF0F172A)
+                                                                color = Color(0xFF0F172A),
+                                                                maxLines = 1,
+                                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                             )
                                                             if (promo.endDate.isNotBlank()) {
                                                                 Spacer(modifier = Modifier.height(2.dp))

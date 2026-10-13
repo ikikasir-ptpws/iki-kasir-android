@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.ui.Modifier
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
 import dagger.hilt.android.AndroidEntryPoint
@@ -18,7 +19,11 @@ class TambahProdukActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             IKIKASIRTheme {
-                Box(Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding()
+                ) {
                     TambahProdukScreen(onBack = { finish() })
                     GlobalCrudResultDialogHost()
                 }

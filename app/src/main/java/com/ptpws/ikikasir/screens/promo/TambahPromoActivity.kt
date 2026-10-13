@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
@@ -19,7 +20,7 @@ class TambahPromoActivity : ComponentActivity() {
         val promoId = intent.getStringExtra("PROMO_ID") ?: intent.getStringExtra("promoId")
         setContent {
             MaterialTheme {
-                Box(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxSize().navigationBarsPadding()) {
                     TambahPromoScreen(
                         promoId = promoId,
                         onBack = { finish() },

@@ -221,23 +221,25 @@ fun PembayaranScreen(
                 shadowElevation = 12.dp,
                 tonalElevation = 8.dp
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp)
-                ) {
-                    Button(
-                        onClick = { viewModel.prosesPembayaran() },
-                        enabled = !state.isLoading && state.subtotal > 0,
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = PrimaryRoyalBlue,
-                            disabledContainerColor = Color(0xFFE2E8F0)
-                        )
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        contentAlignment = Alignment.Center
                     ) {
+                        Button(
+                            onClick = { viewModel.prosesPembayaran() },
+                            enabled = !state.isLoading && state.subtotal > 0,
+                            modifier = Modifier
+                                .widthIn(max = 720.dp)
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PrimaryRoyalBlue,
+                                disabledContainerColor = Color(0xFFE2E8F0)
+                            )
+                        ) {
                         if (state.isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
@@ -252,23 +254,25 @@ fun PembayaranScreen(
                                 Text(
                                     text = "Konfirmasi Bayar",
                                     fontFamily = interfamily,
-                                    fontSize = 15.sp,
+                                    fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
                                 )
                                 Text(
                                     text = "  |  Rp ${formatRupiah(state.grandTotal)}",
                                     fontFamily = interfamily,
-                                    fontSize = 15.sp,
+                                    fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                     contentDescription = null,
                                     tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         }
@@ -277,15 +281,21 @@ fun PembayaranScreen(
             }
         }
     ) { paddingValues ->
-
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(vertical = 16.dp)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .widthIn(max = 720.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                contentPadding = PaddingValues(top = 10.dp, bottom = 24.dp)
+            ) {
             // ── 1. Total Tagihan Card (Gambar)
             item {
                 Card(
@@ -297,11 +307,11 @@ fun PembayaranScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(20.dp),
+                            .padding(18.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "TOTAL TAGIHAN (${state.totalItemCount} ITEM)",
                                 fontFamily = interfamily,
@@ -313,9 +323,11 @@ fun PembayaranScreen(
                             Text(
                                 text = "Rp ${formatRupiah(state.grandTotal)}",
                                 fontFamily = interfamily,
-                                fontSize = 26.sp,
+                                fontSize = 23.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             if (state.ppnLabel.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(2.dp))
@@ -516,6 +528,7 @@ fun PembayaranScreen(
                             )
                         }
 
+                        val eligiblePromos = state.eligiblePromos
                         Box(modifier = Modifier.fillMaxWidth()) {
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
@@ -526,7 +539,7 @@ fun PembayaranScreen(
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { promoDropdownExpanded = true }
+                                    .clickable(enabled = eligiblePromos.isNotEmpty()) { promoDropdownExpanded = true }
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -538,13 +551,15 @@ fun PembayaranScreen(
                                     if (state.selectedPromo != null) {
                                         val promo = state.selectedPromo!!
                                         val diskonLabel = if (promo.diskonType == "%") "${promo.nilaiDiskon.toInt()}%" else "Rp ${formatRupiah(promo.nilaiDiskon)}"
-                                        Column {
+                                        Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = promo.nama,
                                                 fontFamily = interfamily,
                                                 fontSize = 13.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = PrimaryRoyalBlue
+                                                color = PrimaryRoyalBlue,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                             Text(
                                                 text = "Diskon $diskonLabel (-Rp ${formatRupiah(state.promoDiscountAmount)})",
@@ -567,64 +582,68 @@ fun PembayaranScreen(
                                         }
                                     } else {
                                         Text(
-                                            text = if (state.activePromos.isEmpty()) "Tidak ada promo aktif" else "Pilih Promo",
+                                            text = if (eligiblePromos.isEmpty()) "Tidak ada promo untuk produk ini" else "Pilih Promo",
                                             fontFamily = interfamily,
                                             fontSize = 13.sp,
-                                            color = Color(0xFF94A3B8)
+                                            color = if (eligiblePromos.isEmpty()) Color(0xFF94A3B8) else Color(0xFF64748B)
                                         )
-                                        Icon(
-                                            imageVector = Icons.Default.KeyboardArrowDown,
-                                            contentDescription = "Pilih",
-                                            tint = Color(0xFF64748B)
-                                        )
+                                        if (eligiblePromos.isNotEmpty()) {
+                                            Icon(
+                                                imageVector = Icons.Default.KeyboardArrowDown,
+                                                contentDescription = "Pilih",
+                                                tint = Color(0xFF64748B)
+                                            )
+                                        }
                                     }
                                 }
                             }
 
-                            DropdownMenu(
-                                expanded = promoDropdownExpanded,
-                                onDismissRequest = { promoDropdownExpanded = false },
-                                modifier = Modifier.fillMaxWidth(0.9f)
-                            ) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            text = "Tanpa Promo",
-                                            fontFamily = interfamily,
-                                            fontSize = 13.sp,
-                                            color = Color(0xFF64748B)
-                                        )
-                                    },
-                                    onClick = {
-                                        viewModel.onSelectPromo(null)
-                                        promoDropdownExpanded = false
-                                    }
-                                )
-                                state.activePromos.forEach { promo ->
-                                    val diskonLabel = if (promo.diskonType == "%") "${promo.nilaiDiskon.toInt()}%" else "Rp ${formatRupiah(promo.nilaiDiskon)}"
+                            if (eligiblePromos.isNotEmpty()) {
+                                DropdownMenu(
+                                    expanded = promoDropdownExpanded,
+                                    onDismissRequest = { promoDropdownExpanded = false },
+                                    modifier = Modifier.fillMaxWidth(0.9f)
+                                ) {
                                     DropdownMenuItem(
                                         text = {
-                                            Column {
-                                                Text(
-                                                    text = promo.nama,
-                                                    fontFamily = interfamily,
-                                                    fontSize = 13.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color(0xFF0F172A)
-                                                )
-                                                Text(
-                                                    text = "Diskon $diskonLabel ${if (promo.tipePromo.isNotBlank()) "• ${promo.tipePromo}" else ""}",
-                                                    fontFamily = interfamily,
-                                                    fontSize = 11.sp,
-                                                    color = Color(0xFF16A34A)
-                                                )
-                                            }
+                                            Text(
+                                                text = "Tanpa Promo",
+                                                fontFamily = interfamily,
+                                                fontSize = 13.sp,
+                                                color = Color(0xFF64748B)
+                                            )
                                         },
                                         onClick = {
-                                            viewModel.onSelectPromo(promo)
+                                            viewModel.onSelectPromo(null)
                                             promoDropdownExpanded = false
                                         }
                                     )
+                                    eligiblePromos.forEach { promo ->
+                                        val diskonLabel = if (promo.diskonType == "%") "${promo.nilaiDiskon.toInt()}%" else "Rp ${formatRupiah(promo.nilaiDiskon)}"
+                                        DropdownMenuItem(
+                                            text = {
+                                                Column {
+                                                    Text(
+                                                        text = promo.nama,
+                                                        fontFamily = interfamily,
+                                                        fontSize = 13.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color(0xFF0F172A)
+                                                    )
+                                                    Text(
+                                                        text = "Diskon $diskonLabel ${if (promo.tipePromo.isNotBlank()) "• ${promo.tipePromo}" else ""}",
+                                                        fontFamily = interfamily,
+                                                        fontSize = 11.sp,
+                                                        color = Color(0xFF16A34A)
+                                                    )
+                                                }
+                                            },
+                                            onClick = {
+                                                viewModel.onSelectPromo(promo)
+                                                promoDropdownExpanded = false
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1026,7 +1045,9 @@ fun PembayaranScreen(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { viewModel.toggleCetakStrukOtomatis() }
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { viewModel.toggleCetakStrukOtomatis() }
                     ) {
                         Checkbox(
                             checked = state.isCetakStrukOtomatis,
@@ -1034,12 +1055,16 @@ fun PembayaranScreen(
                             colors = CheckboxDefaults.colors(checkedColor = PrimaryRoyalBlue)
                         )
                         Text(
-                            text = "Cetak struk belanja otomatis",
+                            text = "Cetak struk otomatis",
                             fontFamily = interfamily,
-                            fontSize = 13.sp,
-                            color = Color(0xFF475569)
+                            fontSize = 12.sp,
+                            color = Color(0xFF475569),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(6.dp))
 
                     Surface(
                         shape = RoundedCornerShape(20.dp),
@@ -1057,9 +1082,9 @@ fun PembayaranScreen(
                         }
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
                         ) {
                             Box(
                                 modifier = Modifier
@@ -1070,9 +1095,11 @@ fun PembayaranScreen(
                             Text(
                                 text = state.printerStatus.label,
                                 fontFamily = interfamily,
-                                fontSize = 11.sp,
+                                fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(state.printerStatus.dotColor)
+                                color = Color(state.printerStatus.dotColor),
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -1080,6 +1107,7 @@ fun PembayaranScreen(
             }
         }
     }
+}
 }
 
 @Composable
@@ -1095,9 +1123,9 @@ fun PaymentMethodCard(
 ) {
     Card(
         modifier = modifier
-            .height(84.dp)
+            .defaultMinSize(minHeight = 74.dp)
             .clickable { onSelect() },
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(
             width = if (isSelected) 2.dp else 1.dp,
@@ -1109,31 +1137,31 @@ fun PaymentMethodCard(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(12.dp),
+                    .padding(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(10.dp),
                     color = iconBgColor,
-                    modifier = Modifier.size(42.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = icon,
                             contentDescription = title,
                             tint = iconTint,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
                         fontFamily = interfamily,
-                        fontSize = 13.sp,
+                        fontSize = 12.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF0F172A),
                         maxLines = 1,
@@ -1156,8 +1184,8 @@ fun PaymentMethodCard(
                     shape = CircleShape,
                     color = PrimaryRoyalBlue,
                     modifier = Modifier
-                        .padding(8.dp)
-                        .size(18.dp)
+                        .padding(6.dp)
+                        .size(16.dp)
                         .align(Alignment.TopEnd)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -1165,7 +1193,7 @@ fun PaymentMethodCard(
                             imageVector = Icons.Default.Check,
                             contentDescription = "Selected",
                             tint = Color.White,
-                            modifier = Modifier.size(12.dp)
+                            modifier = Modifier.size(10.dp)
                         )
                     }
                 }

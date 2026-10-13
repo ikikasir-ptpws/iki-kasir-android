@@ -81,19 +81,24 @@ fun PilihProdukTersediaDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+        val windowSizeInfo = com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo.current
+        val isCompact = windowSizeInfo.isCompactPhone
+        val dialogWidthFraction = if (isCompact) 0.96f else 0.55f
+
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .fillMaxHeight(0.88f),
-            shape = RoundedCornerShape(24.dp),
+                .widthIn(min = 280.dp, max = 580.dp)
+                .fillMaxWidth(dialogWidthFraction)
+                .fillMaxHeight(if (isCompact) 0.92f else 0.88f),
+            shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                    .padding(if (isCompact) 14.dp else 20.dp),
+                verticalArrangement = Arrangement.spacedBy(if (isCompact) 10.dp else 14.dp)
             ) {
 
                 // ── 1. Dialog Header (Title, Subtitle & Close Button)
@@ -254,7 +259,7 @@ fun PilihProdukTersediaDialog(
 
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(14.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
                                 border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -262,14 +267,14 @@ fun PilihProdukTersediaDialog(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(12.dp),
+                                        .padding(horizontal = if (isCompact) 10.dp else 12.dp, vertical = if (isCompact) 8.dp else 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     // Product Image
                                     Surface(
-                                        shape = RoundedCornerShape(12.dp),
+                                        shape = RoundedCornerShape(10.dp),
                                         color = Color(0xFFF8FAFC),
-                                        modifier = Modifier.size(64.dp)
+                                        modifier = Modifier.size(if (isCompact) 48.dp else 60.dp)
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
                                             if (produk.imageUrl.isNotBlank()) {
@@ -284,23 +289,23 @@ fun PilihProdukTersediaDialog(
                                                     painter = painterResource(id = R.drawable.ic_box_archive),
                                                     contentDescription = null,
                                                     tint = Color(0xFF94A3B8),
-                                                    modifier = Modifier.size(28.dp)
+                                                    modifier = Modifier.size(if (isCompact) 22.dp else 26.dp)
                                                 )
                                             }
                                         }
                                     }
 
-                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Spacer(modifier = Modifier.width(if (isCompact) 8.dp else 12.dp))
 
                                     // Product Title, Category, Stock & Price
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = produk.name,
                                             fontFamily = interfamily,
-                                            fontSize = 14.sp,
+                                            fontSize = if (isCompact) 13.5.sp else 14.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFF0F172A),
-                                            maxLines = 2,
+                                            maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
 
@@ -315,58 +320,63 @@ fun PilihProdukTersediaDialog(
                                             Text(
                                                 text = categoryName.ifBlank { "Makanan" },
                                                 fontFamily = interfamily,
-                                                fontSize = 12.sp,
-                                                color = Color(0xFF94A3B8)
+                                                fontSize = 11.sp,
+                                                color = Color(0xFF94A3B8),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.weight(1f, fill = false)
                                             )
                                             Text(
                                                 text = "•",
                                                 fontFamily = interfamily,
-                                                fontSize = 12.sp,
+                                                fontSize = 11.sp,
                                                 color = Color(0xFFCBD5E1)
                                             )
                                             Surface(
-                                                shape = RoundedCornerShape(6.dp),
+                                                shape = RoundedCornerShape(4.dp),
                                                 color = Color(0xFFDCFCE7)
                                             ) {
                                                 Text(
                                                     text = "Stok ${produk.stock}",
                                                     fontFamily = interfamily,
-                                                    fontSize = 11.sp,
+                                                    fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = Color(0xFF15803D),
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
                                                 )
                                             }
                                         }
 
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Spacer(modifier = Modifier.height(3.dp))
 
                                         Text(
                                             text = "Rp ${formatRupiah(produk.getEffectivePrice(state.taxSetting))}",
                                             fontFamily = interfamily,
-                                            fontSize = 14.sp,
+                                            fontSize = if (isCompact) 13.5.sp else 14.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFF3B32D1)
                                         )
                                     }
 
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
 
                                     // Quantity Modifier Counter Container
                                     Surface(
-                                        shape = RoundedCornerShape(12.dp),
+                                        shape = RoundedCornerShape(10.dp),
                                         color = Color(0xFFF8FAFC),
                                         border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                                     ) {
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(4.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 3.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
                                             // Minus Icon Button
                                             Box(
                                                 modifier = Modifier
-                                                    .size(28.dp)
+                                                    .size(if (isCompact) 24.dp else 28.dp)
                                                     .clip(CircleShape)
                                                     .background(Color.White)
                                                     .clickable { onDecrement(produk) },
@@ -376,17 +386,17 @@ fun PilihProdukTersediaDialog(
                                                     imageVector = Icons.Default.Remove,
                                                     contentDescription = "Kurangi",
                                                     tint = Color(0xFF64748B),
-                                                    modifier = Modifier.size(16.dp)
+                                                    modifier = Modifier.size(if (isCompact) 14.dp else 16.dp)
                                                 )
                                             }
 
                                             Text(
                                                 text = "$currentQty",
                                                 fontFamily = interfamily,
-                                                fontSize = 13.sp,
+                                                fontSize = if (isCompact) 12.5.sp else 13.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color(0xFF0F172A),
-                                                modifier = Modifier.widthIn(min = 16.dp),
+                                                modifier = Modifier.widthIn(min = 14.dp),
                                                 textAlign = TextAlign.Center
                                             )
 
@@ -395,7 +405,7 @@ fun PilihProdukTersediaDialog(
                                             // Plus Icon Button (Solid Blue when available, Grayed when max stock reached)
                                             Box(
                                                 modifier = Modifier
-                                                    .size(28.dp)
+                                                    .size(if (isCompact) 24.dp else 28.dp)
                                                     .clip(CircleShape)
                                                     .background(if (canIncrement) Color(0xFF3B32D1) else Color(0xFFCBD5E1))
                                                     .clickable { onIncrement(produk) },
@@ -405,7 +415,7 @@ fun PilihProdukTersediaDialog(
                                                     imageVector = Icons.Default.Add,
                                                     contentDescription = "Tambah",
                                                     tint = Color.White,
-                                                    modifier = Modifier.size(16.dp)
+                                                    modifier = Modifier.size(if (isCompact) 14.dp else 16.dp)
                                                 )
                                             }
                                         }
@@ -421,7 +431,7 @@ fun PilihProdukTersediaDialog(
                     onClick = onSelesai,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .height(if (isCompact) 46.dp else 52.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF3B32D1)
@@ -431,7 +441,7 @@ fun PilihProdukTersediaDialog(
                         Text(
                             text = "Selesai Memilih",
                             fontFamily = interfamily,
-                            fontSize = 15.sp,
+                            fontSize = if (isCompact) 14.sp else 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
                             modifier = Modifier.align(Alignment.Center)
@@ -445,10 +455,10 @@ fun PilihProdukTersediaDialog(
                             Text(
                                 text = "${state.totalItemCount} Item",
                                 fontFamily = interfamily,
-                                fontSize = 12.sp,
+                                fontSize = if (isCompact) 11.sp else 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
                             )
                         }
                     }

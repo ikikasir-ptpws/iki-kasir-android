@@ -5,6 +5,9 @@ import com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting
 import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 
+import com.ptpws.ikikasir.feature.promo.domain.model.Promo
+import com.ptpws.ikikasir.feature.promo.domain.model.isAvailableOn
+
 enum class PrinterStatus(
     val label: String,
     val dotColor: Long,
@@ -41,12 +44,31 @@ data class PembayaranState(
     val printerName: String = "",
     val isPrinterSiap: Boolean = false,
     val isRincianExpanded: Boolean = false,
-    val activePromos: List<com.ptpws.ikikasir.feature.promo.domain.model.Promo> = emptyList(),
-    val selectedPromo: com.ptpws.ikikasir.feature.promo.domain.model.Promo? = null,
+    val activePromos: List<Promo> = emptyList(),
+    val selectedPromo: Promo? = null,
     val promoDiscountAmount: Double = 0.0,
     val isLoading: Boolean = false,
     val showSuccessDialog: Boolean = false,
     val showFailedDialog: Boolean = false,
     val errorMessage: String = "",
     val transaksiSukses: PenjualanTransaksi? = null
-)
+) {
+    /**
+     * Promo yang berhak / valid untuk produk yang dipilih saat ini di keranjang.
+     * Jika produk di keranjang tidak ada yang masuk dalam promo tersebut, promo tidak disertakan.
+     */
+    val eligiblePromos: List<Promo>
+        get() {
+            val cartProductIds = cartItems.map { it.produk.id }.toSet()
+            if (cartProductIds.isEmpty()) return emptyList()
+            return activePromos.filter { promo ->
+                promo.isAvailableOn() && (
+                    if (promo.items.isNotEmpty()) {
+                        promo.items.any { it.productId in cartProductIds }
+                    } else {
+                        true
+                    }
+                )
+            }
+        }
+}

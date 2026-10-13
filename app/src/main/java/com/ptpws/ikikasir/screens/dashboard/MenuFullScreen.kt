@@ -68,7 +68,7 @@ fun MenuFullScreen(
                 .fillMaxSize()
                 .background(Color(0xFFF0F4FF))
                 .padding(paddingValues),
-            contentPadding = PaddingValues(bottom = 24.dp)
+            contentPadding = PaddingValues(bottom = 64.dp)
         ) {
             item {
                 TopBar(
@@ -165,10 +165,14 @@ fun KeuanganMenuSection(
     showLaporan: Boolean = true
 ) {
     if (!showLaporan) return
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
+    val sectionHorizontalPadding = if (isSmallScreen) 14.dp else 20.dp
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = sectionHorizontalPadding),
         horizontalArrangement = Arrangement.Start
     ) {
         MenuIconItem(
@@ -180,6 +184,7 @@ fun KeuanganMenuSection(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PenggunaMenuSection(
     navController: NavController,
@@ -210,16 +215,19 @@ fun PenggunaMenuSection(
 
     if (items.isEmpty()) return
 
-    Row(
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
+    val sectionHorizontalPadding = if (isSmallScreen) 14.dp else 20.dp
+    val itemSpacing = if (isSmallScreen) 16.dp else 28.dp
+
+    FlowRow(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.Start
+            .padding(horizontal = sectionHorizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(itemSpacing),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items.forEachIndexed { idx, item ->
-            if (idx > 0) Spacer(modifier = Modifier.width(28.dp))
-            item()
-        }
+        items.forEach { it() }
     }
 }
 

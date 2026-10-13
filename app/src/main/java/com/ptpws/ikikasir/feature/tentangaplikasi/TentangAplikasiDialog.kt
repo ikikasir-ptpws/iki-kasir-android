@@ -122,14 +122,19 @@ fun TentangAplikasiDialog(
     val info = dummyTentangAplikasiInfo
     val scrollState = rememberScrollState()
 
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val isSmallScreen = screenWidth <= 340.dp
+    val contentHorizontalPadding = if (isSmallScreen) 14.dp else 20.dp
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .fillMaxHeight(0.88f),
+                .fillMaxWidth(if (isSmallScreen) 0.96f else 0.92f)
+                .fillMaxHeight(if (isSmallScreen) 0.92f else 0.88f),
             shape = RoundedCornerShape(24.dp),
             color = Color.White,
             tonalElevation = 6.dp
@@ -141,19 +146,20 @@ fun TentangAplikasiDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 20.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
+                        .padding(start = contentHorizontalPadding, end = 8.dp, top = 14.dp, bottom = 10.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
+                        modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(12.dp),
                             color = Color(0xFFF8FAFC),
                             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(if (isSmallScreen) 40.dp else 48.dp)
                         ) {
                             Box(
                                 contentAlignment = Alignment.Center,
@@ -170,16 +176,16 @@ fun TentangAplikasiDialog(
                             }
                         }
 
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Text(
                                     text = info.namaAplikasi,
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp,
+                                    fontSize = if (isSmallScreen) 16.sp else 18.sp,
                                     color = Color(0xFF0F172A)
                                 )
                                 Surface(
@@ -190,17 +196,19 @@ fun TentangAplikasiDialog(
                                         text = info.versi,
                                         fontFamily = interfamily,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
+                                        fontSize = if (isSmallScreen) 10.sp else 11.sp,
                                         color = Color(0xFF059669),
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                     )
                                 }
                             }
                             Text(
                                 text = info.tagline,
                                 fontFamily = interfamily,
-                                fontSize = 12.sp,
-                                color = Color(0xFF64748B)
+                                fontSize = if (isSmallScreen) 11.sp else 12.sp,
+                                color = Color(0xFF64748B),
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -225,8 +233,8 @@ fun TentangAplikasiDialog(
                     modifier = Modifier
                         .weight(1f)
                         .verticalScroll(scrollState)
-                        .padding(horizontal = 20.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(horizontal = contentHorizontalPadding, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     // Intro Card
                     Surface(
@@ -276,7 +284,7 @@ fun TentangAplikasiDialog(
 
                     // Fitur Cards
                     info.fiturList.forEach { fitur ->
-                        FiturItemCard(fitur = fitur)
+                        FiturItemCard(fitur = fitur, isSmallScreen = isSmallScreen)
                     }
 
                     // Section: Keunggulan
@@ -286,12 +294,12 @@ fun TentangAplikasiDialog(
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDCFCE7)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
+                        Column(modifier = Modifier.padding(if (isSmallScreen) 12.dp else 14.dp)) {
                             Text(
                                 text = "✨ Keunggulan Utama",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
+                                fontSize = if (isSmallScreen) 12.5.sp else 13.sp,
                                 color = Color(0xFF166534)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
@@ -308,15 +316,15 @@ fun TentangAplikasiDialog(
                                         contentDescription = null,
                                         tint = Color(0xFF16A34A),
                                         modifier = Modifier
-                                            .size(16.dp)
+                                            .size(if (isSmallScreen) 15.dp else 16.dp)
                                             .padding(top = 2.dp)
                                     )
                                     Text(
                                         text = keunggulan,
                                         fontFamily = interfamily,
-                                        fontSize = 12.sp,
+                                        fontSize = if (isSmallScreen) 11.5.sp else 12.sp,
                                         color = Color(0xFF14532D),
-                                        lineHeight = 17.sp
+                                        lineHeight = if (isSmallScreen) 16.sp else 17.sp
                                     )
                                 }
                             }
@@ -332,7 +340,7 @@ fun TentangAplikasiDialog(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp),
+                                .padding(if (isSmallScreen) 10.dp else 12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
@@ -345,14 +353,14 @@ fun TentangAplikasiDialog(
                                 text = info.pengembang,
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
+                                fontSize = if (isSmallScreen) 12.sp else 13.sp,
                                 color = Color(0xFF334155)
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = info.copyright,
                                 fontFamily = interfamily,
-                                fontSize = 11.sp,
+                                fontSize = if (isSmallScreen) 10.sp else 11.sp,
                                 color = Color(0xFF94A3B8),
                                 textAlign = TextAlign.Center
                             )
@@ -366,13 +374,13 @@ fun TentangAplikasiDialog(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 14.dp)
+                        .padding(horizontal = contentHorizontalPadding, vertical = if (isSmallScreen) 10.dp else 12.dp)
                 ) {
                     Button(
                         onClick = onDismiss,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(46.dp),
+                            .height(if (isSmallScreen) 44.dp else 46.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -391,7 +399,10 @@ fun TentangAplikasiDialog(
 }
 
 @Composable
-private fun FiturItemCard(fitur: FiturAplikasiItem) {
+private fun FiturItemCard(
+    fitur: FiturAplikasiItem,
+    isSmallScreen: Boolean = false
+) {
     val (icon, bgCol, tintCol) = when (fitur.ikonType) {
         "KASIR" -> Triple(Icons.Default.ShoppingCart, Color(0xFFEEF2FF), Color(0xFF4F46E5))
         "PRODUK" -> Triple(Icons.Default.Inventory2, Color(0xFFECFDF5), Color(0xFF10B981))
@@ -403,6 +414,11 @@ private fun FiturItemCard(fitur: FiturAplikasiItem) {
         else -> Triple(Icons.Default.Shield, Color(0xFFF1F5F9), Color(0xFF475569))
     }
 
+    val cardPadding = if (isSmallScreen) 10.dp else 12.dp
+    val iconBoxSize = if (isSmallScreen) 34.dp else 38.dp
+    val iconVectorSize = if (isSmallScreen) 18.dp else 20.dp
+    val horizontalSpacing = if (isSmallScreen) 10.dp else 12.dp
+
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = Color.White,
@@ -413,13 +429,13 @@ private fun FiturItemCard(fitur: FiturAplikasiItem) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(cardPadding),
             verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(horizontalSpacing)
         ) {
             Box(
                 modifier = Modifier
-                    .size(38.dp)
+                    .size(iconBoxSize)
                     .clip(RoundedCornerShape(10.dp))
                     .background(bgCol),
                 contentAlignment = Alignment.Center
@@ -428,7 +444,7 @@ private fun FiturItemCard(fitur: FiturAplikasiItem) {
                     imageVector = icon,
                     contentDescription = null,
                     tint = tintCol,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(iconVectorSize)
                 )
             }
 
@@ -436,15 +452,18 @@ private fun FiturItemCard(fitur: FiturAplikasiItem) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Top
                 ) {
                     Text(
                         text = fitur.judul,
                         fontFamily = interfamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = Color(0xFF0F172A)
+                        fontSize = if (isSmallScreen) 12.5.sp else 13.sp,
+                        color = Color(0xFF0F172A),
+                        lineHeight = if (isSmallScreen) 16.sp else 17.sp,
+                        modifier = Modifier.weight(1f)
                     )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Surface(
                         shape = RoundedCornerShape(6.dp),
                         color = Color(0xFFF1F5F9)
@@ -453,19 +472,21 @@ private fun FiturItemCard(fitur: FiturAplikasiItem) {
                             text = fitur.tagKategori,
                             fontFamily = interfamily,
                             fontWeight = FontWeight.Medium,
-                            fontSize = 10.sp,
+                            fontSize = if (isSmallScreen) 9.5.sp else 10.sp,
                             color = Color(0xFF64748B),
+                            maxLines = 1,
+                            softWrap = false,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = fitur.deskripsiSingkat,
                     fontFamily = interfamily,
-                    fontSize = 12.sp,
+                    fontSize = if (isSmallScreen) 11.5.sp else 12.sp,
                     color = Color(0xFF64748B),
-                    lineHeight = 17.sp
+                    lineHeight = if (isSmallScreen) 16.sp else 17.sp
                 )
             }
         }
