@@ -79,38 +79,55 @@ fun PilihProdukTersediaDialog(
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
         val configuration = androidx.compose.ui.platform.LocalConfiguration.current
         val screenWidth = configuration.screenWidthDp.dp
+        val screenHeight = configuration.screenHeightDp.dp
         val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-        val isCompact = screenWidth < 600.dp
+        val isCompactWidth = screenWidth < 600.dp
+        val isCompactHeight = screenHeight < 520.dp
 
-        // Penyesuaian ukuran dialog adaptif sesuai layar (HP, Tablet Portrait, Tablet Landscape)
+        // Penyesuaian ukuran dialog adaptif sesuai layar (HP Portrait, HP Landscape, Tablet Portrait, Tablet Landscape)
         val (dialogWidthFraction, maxDialogWidth, dialogHeightFraction) = when {
-            // HP (< 600dp): mengisi 95% lebar layar
-            screenWidth < 600.dp -> Triple(0.95f, 480.dp, 0.92f)
-            // Tablet Portrait (600dp - 899dp): mengisi 86% lebar layar agar luas dan proporsional
-            !isLandscape -> Triple(0.86f, 720.dp, 0.88f)
-            // Tablet Landscape (>= 900dp): mengisi 70% lebar layar
-            else -> Triple(0.70f, 860.dp, 0.90f)
+            // HP Landscape (pendek tapi lebar)
+            isLandscape && screenHeight < 520.dp -> Triple(0.92f, 620.dp, 0.96f)
+            // HP Portrait (< 600dp)
+            isCompactWidth -> Triple(0.95f, 480.dp, 0.90f)
+            // Tablet Portrait (600dp - 899dp)
+            !isLandscape -> Triple(0.85f, 720.dp, 0.88f)
+            // Tablet Landscape (>= 900dp)
+            else -> Triple(0.70f, 860.dp, 0.88f)
         }
 
-        Card(
+        Box(
             modifier = Modifier
-                .widthIn(min = 320.dp, max = maxDialogWidth)
-                .fillMaxWidth(dialogWidthFraction)
-                .fillMaxHeight(dialogHeightFraction),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                .fillMaxSize()
+                .imePadding()
+                .systemBarsPadding(),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            Card(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(if (isCompact) 14.dp else 20.dp),
-                verticalArrangement = Arrangement.spacedBy(if (isCompact) 10.dp else 14.dp)
+                    .widthIn(min = 280.dp, max = maxDialogWidth)
+                    .fillMaxWidth(dialogWidthFraction)
+                    .fillMaxHeight(dialogHeightFraction),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(
+                            horizontal = if (isCompactWidth) 14.dp else 20.dp,
+                            vertical = if (isCompactHeight) 10.dp else 16.dp
+                        ),
+                    verticalArrangement = Arrangement.spacedBy(if (isCompactHeight) 8.dp else 12.dp)
+                ) {
 
                 // ── 1. Dialog Header (Title, Subtitle & Close Button)
                 Row(
@@ -267,25 +284,36 @@ fun PilihProdukTersediaDialog(
                     ) {
                         items(filteredList, key = { it.id }) { produk ->
                             val currentQty = state.getItemQuantity(produk.id)
+                            val isSelected = currentQty > 0
+                            val canIncrement = currentQty < produk.stock
+                            val canDecrement = currentQty > 0
 
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isSelected) Color(0xFFF8FAFC) else Color.White
+                                ),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isSelected) Color(0xFF3B32D1).copy(alpha = 0.45f) else Color(0xFFE2E8F0)
+                                ),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                             ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = if (isCompact) 10.dp else 12.dp, vertical = if (isCompact) 8.dp else 12.dp),
+                                        .padding(
+                                            horizontal = if (isCompactWidth) 10.dp else 12.dp,
+                                            vertical = if (isCompactHeight) 6.dp else (if (isCompactWidth) 8.dp else 12.dp)
+                                        ),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     // Product Image
                                     Surface(
                                         shape = RoundedCornerShape(10.dp),
                                         color = Color(0xFFF8FAFC),
-                                        modifier = Modifier.size(if (isCompact) 48.dp else 60.dp)
+                                        modifier = Modifier.size(if (isCompactHeight) 44.dp else (if (isCompactWidth) 48.dp else 60.dp))
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
                                             if (produk.imageUrl.isNotBlank()) {
@@ -300,20 +328,20 @@ fun PilihProdukTersediaDialog(
                                                     painter = painterResource(id = R.drawable.ic_box_archive),
                                                     contentDescription = null,
                                                     tint = Color(0xFF94A3B8),
-                                                    modifier = Modifier.size(if (isCompact) 22.dp else 26.dp)
+                                                    modifier = Modifier.size(if (isCompactWidth) 22.dp else 26.dp)
                                                 )
                                             }
                                         }
                                     }
 
-                                    Spacer(modifier = Modifier.width(if (isCompact) 8.dp else 12.dp))
+                                    Spacer(modifier = Modifier.width(if (isCompactWidth) 8.dp else 12.dp))
 
                                     // Product Title, Category, Stock & Price
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = produk.name,
                                             fontFamily = interfamily,
-                                            fontSize = if (isCompact) 13.5.sp else 14.sp,
+                                            fontSize = if (isCompactWidth) 13.5.sp else 14.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFF0F172A),
                                             maxLines = 1,
@@ -365,7 +393,7 @@ fun PilihProdukTersediaDialog(
                                         Text(
                                             text = "Rp ${formatRupiah(produk.getEffectivePrice(state.taxSetting))}",
                                             fontFamily = interfamily,
-                                            fontSize = if (isCompact) 13.5.sp else 14.sp,
+                                            fontSize = if (isCompactWidth) 13.5.sp else 14.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFF3B32D1)
                                         )
@@ -384,49 +412,51 @@ fun PilihProdukTersediaDialog(
                                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 3.dp),
                                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
-                                            // Minus Icon Button
+                                            // Minus Icon Button (Disabled if qty == 0)
                                             Box(
                                                 modifier = Modifier
-                                                    .size(if (isCompact) 24.dp else 28.dp)
+                                                    .size(if (isCompactWidth) 24.dp else 28.dp)
                                                     .clip(CircleShape)
-                                                    .background(Color.White)
-                                                    .clickable { onDecrement(produk) },
+                                                    .background(if (canDecrement) Color.White else Color(0xFFF1F5F9))
+                                                    .clickable(enabled = canDecrement) {
+                                                        if (canDecrement) onDecrement(produk)
+                                                    },
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.Remove,
                                                     contentDescription = "Kurangi",
-                                                    tint = Color(0xFF64748B),
-                                                    modifier = Modifier.size(if (isCompact) 14.dp else 16.dp)
+                                                    tint = if (canDecrement) Color(0xFF64748B) else Color(0xFFCBD5E1),
+                                                    modifier = Modifier.size(if (isCompactWidth) 14.dp else 16.dp)
                                                 )
                                             }
 
                                             Text(
                                                 text = "$currentQty",
                                                 fontFamily = interfamily,
-                                                fontSize = if (isCompact) 12.5.sp else 13.sp,
+                                                fontSize = if (isCompactWidth) 12.5.sp else 13.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF0F172A),
-                                                modifier = Modifier.widthIn(min = 14.dp),
+                                                color = if (canDecrement) Color(0xFF0F172A) else Color(0xFF94A3B8),
+                                                modifier = Modifier.widthIn(min = 16.dp),
                                                 textAlign = TextAlign.Center
                                             )
 
-                                            val canIncrement = currentQty < produk.stock
-
-                                            // Plus Icon Button (Solid Blue when available, Grayed when max stock reached)
+                                            // Plus Icon Button (Solid Blue when available, Grayed & disabled when max stock reached)
                                             Box(
                                                 modifier = Modifier
-                                                    .size(if (isCompact) 24.dp else 28.dp)
+                                                    .size(if (isCompactWidth) 24.dp else 28.dp)
                                                     .clip(CircleShape)
                                                     .background(if (canIncrement) Color(0xFF3B32D1) else Color(0xFFCBD5E1))
-                                                    .clickable { onIncrement(produk) },
+                                                    .clickable(enabled = canIncrement) {
+                                                        if (canIncrement) onIncrement(produk)
+                                                    },
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.Add,
                                                     contentDescription = "Tambah",
                                                     tint = Color.White,
-                                                    modifier = Modifier.size(if (isCompact) 14.dp else 16.dp)
+                                                    modifier = Modifier.size(if (isCompactWidth) 14.dp else 16.dp)
                                                 )
                                             }
                                         }
@@ -437,23 +467,34 @@ fun PilihProdukTersediaDialog(
                     }
                 }
 
-                // ── 5. Bottom Action Button: Selesai Memilih (Matches Gambar 1)
+                // ── 5. Bottom Action Button: Selesai Memilih (Fixed & Responsive Height)
+                val buttonHeight = when {
+                    isCompactHeight -> 44.dp
+                    isCompactWidth -> 48.dp
+                    else -> 52.dp
+                }
+
                 Button(
                     onClick = onSelesai,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = if (isCompact) 48.dp else 52.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                        .height(buttonHeight),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF3B32D1)
                     )
                 ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
                             text = "Selesai Memilih",
                             fontFamily = interfamily,
-                            fontSize = if (isCompact) 14.sp else 15.sp,
+                            fontSize = if (isCompactWidth) 14.sp else 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
                             modifier = Modifier.align(Alignment.Center)
@@ -467,10 +508,10 @@ fun PilihProdukTersediaDialog(
                             Text(
                                 text = "${state.totalItemCount} Item",
                                 fontFamily = interfamily,
-                                fontSize = if (isCompact) 11.sp else 12.sp,
+                                fontSize = if (isCompactWidth) 11.sp else 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.5.dp)
                             )
                         }
                     }
@@ -478,4 +519,5 @@ fun PilihProdukTersediaDialog(
             }
         }
     }
+}
 }

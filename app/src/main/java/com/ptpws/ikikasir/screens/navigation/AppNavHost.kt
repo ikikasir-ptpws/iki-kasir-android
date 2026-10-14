@@ -100,6 +100,16 @@ fun AppNavHost() {
         }
     }
 
+    LaunchedEffect(currentRoute) {
+        // Safety guard: if backstack ever becomes empty from spammed back presses, automatically recover to Dashboard
+        if (currentRoute == null && navController.currentBackStackEntry == null) {
+            navController.navigate(AppScreen.Dashboard.route) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
         val hasBluetoothPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
             ContextCompat.checkSelfPermission(
@@ -129,7 +139,13 @@ fun AppNavHost() {
     val onNavigateToRoute: (String) -> Unit = { targetRoute ->
         val cleanRoute = targetRoute.substringBefore("?")
         if (cleanRoute == AppScreen.Dashboard.route) {
-            navController.popBackStack(AppScreen.Dashboard.route, inclusive = false)
+            val popped = navController.popBackStack(AppScreen.Dashboard.route, inclusive = false)
+            if (!popped) {
+                navController.navigate(AppScreen.Dashboard.route) {
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
         } else if (cleanRoute == AppScreen.Produk.baseRoute) {
             navController.navigate(AppScreen.Produk.baseRoute) {
                 val startRoute = navController.graph.findStartDestination().route
@@ -181,7 +197,13 @@ fun AppNavHost() {
             composable(AppScreen.Kasir.route) {
                 KasirScreen(
                     navController = navController,
-                    onBayar = { navController.navigate(AppScreen.Pembayaran.route) }
+                    onBayar = {
+                        if (navController.currentDestination?.route?.substringBefore("?") == AppScreen.Kasir.route) {
+                            navController.navigate(AppScreen.Pembayaran.route) {
+                                launchSingleTop = true
+                            }
+                        }
+                    }
                 )
             }
             composable(AppScreen.Pembayaran.route) {
@@ -483,7 +505,13 @@ fun IkiKasirBottomBar(
                             if (isSelected && screen != AppScreen.Kasir) return@BottomNavItem
 
                             if (screen.route == AppScreen.Dashboard.route) {
-                                navController.popBackStack(AppScreen.Dashboard.route, inclusive = false)
+                                val popped = navController.popBackStack(AppScreen.Dashboard.route, inclusive = false)
+                                if (!popped) {
+                                    navController.navigate(AppScreen.Dashboard.route) {
+                                        popUpTo(0) { inclusive = true }
+                                        launchSingleTop = true
+                                    }
+                                }
                             } else if (screen == AppScreen.Produk) {
                                 navController.navigate(AppScreen.Produk.baseRoute) {
                                     val startRoute = navController.graph.findStartDestination().route

@@ -40,6 +40,8 @@ import com.ptpws.ikikasir.feature.kategori.presentation.util.KategoriIconHelper
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
 import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.ProdukViewModel
 import com.ptpws.ikikasir.screens.navigation.AppScreen
+import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +51,10 @@ fun DaftarKategoriScreen(
     viewModel: KategoriViewModel = hiltViewModel(),
     produkViewModel: ProdukViewModel = hiltViewModel()
 ) {
+    BackHandler {
+        navController.popBackStackSafely(expectedRoute = AppScreen.KategoriProduk.route)
+    }
+
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val produkState by produkViewModel.state.collectAsState()
@@ -100,7 +106,9 @@ fun DaftarKategoriScreen(
                         .padding(horizontal = 4.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        navController.popBackStackSafely(expectedRoute = AppScreen.KategoriProduk.route)
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali", tint = Color(0xFF0F172A))
                     }
                     Column(modifier = Modifier.weight(1f)) {

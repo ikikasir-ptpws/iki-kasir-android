@@ -36,6 +36,9 @@ import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.KasirState
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.KasirViewModel
 import com.ptpws.ikikasir.screens.penjualan.component.PilihProdukTersediaDialog
+import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.screens.navigation.AppScreen
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -75,6 +78,15 @@ fun KasirCompactScreen(
         }
     }
 
+    // Handle system back button safely
+    BackHandler {
+        if (state.showProductCatalogDialog) {
+            viewModel.openProductCatalogDialog(false)
+        } else {
+            navController.popBackStackSafely(expectedRoute = AppScreen.Kasir.route)
+        }
+    }
+
     // Modal Sheet catalog for "+ Pilih Produk"
     if (state.showProductCatalogDialog) {
         PilihProdukTersediaDialog(
@@ -103,7 +115,9 @@ fun KasirCompactScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        navController.popBackStackSafely(expectedRoute = AppScreen.Kasir.route)
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
@@ -179,7 +193,11 @@ fun KasirCompactScreen(
 
                     // BAYAR Button (Accessible & Responsive)
                     Button(
-                        onClick = onBayar,
+                        onClick = {
+                            if (navController.currentDestination?.route?.substringBefore("?") == AppScreen.Kasir.route) {
+                                onBayar()
+                            }
+                        },
                         enabled = totalItemCount > 0,
                         modifier = Modifier
                             .fillMaxWidth()

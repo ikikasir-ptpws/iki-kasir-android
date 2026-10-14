@@ -19,6 +19,10 @@ import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.KasirViewMode
 import com.ptpws.ikikasir.screens.penjualan.component.KasirCartPane
 import com.ptpws.ikikasir.screens.penjualan.component.KasirCatalogPane
 
+import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.screens.navigation.AppScreen
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
+
 private val PrimaryRoyalBlue = Color(0xFF3B32D1)
 
 /**
@@ -35,6 +39,10 @@ fun KasirSplitScreen(
     onScanBarcode: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    BackHandler {
+        navController.popBackStackSafely(expectedRoute = AppScreen.Kasir.route)
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.White,
@@ -63,7 +71,9 @@ fun KasirSplitScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        navController.popBackStackSafely(expectedRoute = AppScreen.Kasir.route)
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",

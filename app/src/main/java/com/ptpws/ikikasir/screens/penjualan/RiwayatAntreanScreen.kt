@@ -58,6 +58,9 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.screens.navigation.AppScreen
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -69,6 +72,10 @@ fun RiwayatAntreanScreen(
     navController: NavController,
     viewModel: QueueHistoryViewModel = hiltViewModel()
 ) {
+    BackHandler {
+        navController.popBackStackSafely(expectedRoute = AppScreen.RiwayatAntrean.route)
+    }
+
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -323,7 +330,9 @@ fun RiwayatAntreanScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        navController.popBackStackSafely(expectedRoute = AppScreen.RiwayatAntrean.route)
+                    }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",

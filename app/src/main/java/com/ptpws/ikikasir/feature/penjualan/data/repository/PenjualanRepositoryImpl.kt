@@ -58,13 +58,15 @@ class PenjualanRepositoryImpl @Inject constructor(
         _cartItems.update { current ->
             val existing = current.find { it.produk.id == produk.id }
             if (existing != null) {
+                val newQty = (existing.quantity + quantity).coerceAtMost(produk.stock)
                 current.map {
                     if (it.produk.id == produk.id) {
-                        it.copy(quantity = it.quantity + quantity)
+                        it.copy(quantity = newQty)
                     } else it
                 }
             } else {
-                current + CartItem(produk = produk, quantity = quantity)
+                val initialQty = quantity.coerceAtMost(produk.stock)
+                if (initialQty > 0) current + CartItem(produk = produk, quantity = initialQty) else current
             }
         }
     }
@@ -82,7 +84,7 @@ class PenjualanRepositoryImpl @Inject constructor(
             } else {
                 current.map {
                     if (it.produk.id == produkId) {
-                        it.copy(quantity = quantity)
+                        it.copy(quantity = quantity.coerceAtMost(it.produk.stock))
                     } else it
                 }
             }

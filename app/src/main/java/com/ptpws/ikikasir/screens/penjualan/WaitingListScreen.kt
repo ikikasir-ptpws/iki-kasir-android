@@ -40,7 +40,10 @@ import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.antrean.domain.model.Antrean
 import com.ptpws.ikikasir.feature.antrean.presentation.state.AntreanUiState
 import com.ptpws.ikikasir.feature.antrean.presentation.viewmodel.AntreanViewModel
+import androidx.activity.compose.BackHandler
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
+import com.ptpws.ikikasir.screens.navigation.AppScreen
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -50,6 +53,10 @@ fun WaitingListScreen(
     navController: NavController,
     viewModel: AntreanViewModel = hiltViewModel()
 ) {
+    BackHandler {
+        navController.popBackStackSafely(expectedRoute = AppScreen.WaitingList.route)
+    }
+
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -78,7 +85,9 @@ fun WaitingListScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        navController.popBackStackSafely(expectedRoute = AppScreen.WaitingList.route)
+                    }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",

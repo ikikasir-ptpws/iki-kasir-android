@@ -50,6 +50,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
+import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import androidx.compose.material.icons.filled.ErrorOutline
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,6 +63,10 @@ fun RiwayatTransaksiScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+
+    BackHandler {
+        navController.popBackStackSafely(expectedRoute = "riwayat")
+    }
 
     // ── Handle export result ──────────────────────────────────────────────────
     var showExportSuccessDialog by remember { mutableStateOf(false) }
@@ -287,9 +293,7 @@ fun RiwayatTransaksiScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (navController.currentDestination?.route == "riwayat") {
-                            navController.popBackStack()
-                        }
+                        navController.popBackStackSafely(expectedRoute = "riwayat")
                     }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,

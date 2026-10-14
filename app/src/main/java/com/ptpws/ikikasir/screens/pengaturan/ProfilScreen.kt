@@ -61,6 +61,8 @@ import com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel.ProfilViewMo
 import com.ptpws.ikikasir.feature.auth.presentation.viewmodel.SecurityViewModel
 import com.ptpws.ikikasir.feature.tentangaplikasi.TentangAplikasiDialog
 import com.ptpws.ikikasir.screens.navigation.AppScreen
+import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,6 +79,10 @@ fun ProfilScreen(
     onTentangAplikasi: () -> Unit = {},
     onKeluar: () -> Unit = {}
 ) {
+    BackHandler {
+        navController.popBackStackSafely(expectedRoute = "profil")
+    }
+
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val userProfileState by viewModel.userProfileState.collectAsState()
@@ -245,9 +251,7 @@ fun ProfilScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (navController.currentDestination?.route == "profil") {
-                            navController.popBackStack()
-                        }
+                        navController.popBackStackSafely(expectedRoute = "profil")
                     }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,

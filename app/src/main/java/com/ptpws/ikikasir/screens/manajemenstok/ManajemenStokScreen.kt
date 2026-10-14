@@ -54,6 +54,8 @@ import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.Manajemen
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.produk.DetailProdukActivity
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
+import androidx.activity.compose.BackHandler
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -64,6 +66,12 @@ fun ManajemenStokScreen(
     onBack: () -> Unit = {},
     viewModel: ManajemenStokViewModel = hiltViewModel()
 ) {
+    BackHandler {
+        if (!navController.popBackStackSafely(expectedRoute = AppScreen.ManajemenStok.route)) {
+            onBack()
+        }
+    }
+
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
@@ -177,7 +185,7 @@ fun ManajemenStokScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (!navController.popBackStack()) {
+                        if (!navController.popBackStackSafely(expectedRoute = AppScreen.ManajemenStok.route)) {
                             onBack()
                         }
                     }) {

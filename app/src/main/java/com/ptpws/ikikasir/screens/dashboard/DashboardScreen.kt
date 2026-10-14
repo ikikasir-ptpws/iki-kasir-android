@@ -67,6 +67,19 @@ fun DashboardScreen(
     var showDateRangePicker by remember { mutableStateOf(false) }
     val userName = sessionState.user?.fullName?.ifBlank { "Pengguna" } ?: "Pengguna"
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var lastBackPressTime by remember { mutableStateOf(0L) }
+
+    androidx.activity.compose.BackHandler {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastBackPressTime < 2000L) {
+            (context as? android.app.Activity)?.finish()
+        } else {
+            lastBackPressTime = currentTime
+            android.widget.Toast.makeText(context, "Tekan sekali lagi untuk keluar", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
     if (showDateRangePicker) {
         CustomDateRangePickerDialog(
             initialStartDateMillis = customStartDateMillis,

@@ -64,6 +64,9 @@ import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.PembayaranVie
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.PrinterStatus
 import com.ptpws.ikikasir.screens.penjualan.component.PembayaranFailedDialog
 import com.ptpws.ikikasir.screens.penjualan.component.PembayaranSuccessDialog
+import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.screens.navigation.AppScreen
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import java.text.NumberFormat
 import java.util.Locale
 import kotlinx.coroutines.launch
@@ -75,10 +78,13 @@ private val PrimaryRoyalBlue = Color(0xFF3B32D1)
 fun PembayaranScreen(
     navController: NavController,
     onTransaksiSelesai: () -> Unit = {
-        navController.popBackStack()
+        navController.popBackStackSafely(expectedRoute = AppScreen.Pembayaran.route)
     },
     viewModel: PembayaranViewModel = hiltViewModel()
 ) {
+    BackHandler {
+        navController.popBackStackSafely(expectedRoute = AppScreen.Pembayaran.route)
+    }
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val printScope = rememberCoroutineScope()
@@ -197,7 +203,9 @@ fun PembayaranScreen(
                             color = Color(0xFFF1F5F9),
                             modifier = Modifier
                                 .size(38.dp)
-                                .clickable { navController.popBackStack() }
+                                .clickable {
+                                    navController.popBackStackSafely(expectedRoute = AppScreen.Pembayaran.route)
+                                }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(

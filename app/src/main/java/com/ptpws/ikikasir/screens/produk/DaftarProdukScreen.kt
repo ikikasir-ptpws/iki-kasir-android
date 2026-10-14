@@ -57,6 +57,8 @@ import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.ProdukViewModel
+import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -73,6 +75,12 @@ fun DaftarProdukScreen(
     val state by viewModel.state.collectAsState()
     val kategoriState by kategoriViewModel.state.collectAsState()
     val context = LocalContext.current
+
+    BackHandler {
+        if (!navController.popBackStackSafely()) {
+            onBack()
+        }
+    }
 
     // Apply initial category filter dari navigasi Kelola Menu
     // Jika initialCategoryId null/blank/"{categoryId}" → reset ke "Semua", jika ada ID valid → filter kategori tersebut
@@ -205,7 +213,7 @@ fun DaftarProdukScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (!navController.popBackStack()) {
+                        if (!navController.popBackStackSafely()) {
                             onBack()
                         }
                     }) {
