@@ -22,10 +22,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.activity.compose.BackHandler
 import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.screens.navigation.AppScreen
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
@@ -36,6 +38,10 @@ fun MenuFullScreen(
     navController: NavController,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
+    BackHandler {
+        navController.popBackStackSafely(AppScreen.Semuamenu.route)
+    }
+
     val sessionState by viewModel.sessionState.collectAsState()
     val queryState = remember { mutableStateOf("") }
     val query = queryState.value.trim()
@@ -240,9 +246,7 @@ fun TopBar(title: String, navController: NavController) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = {
-            if (navController.currentDestination?.route == AppScreen.Semuamenu.route || navController.currentDestination?.route == "semuamenu") {
-                navController.popBackStack()
-            }
+            navController.popBackStackSafely(AppScreen.Semuamenu.route)
         }) {
             Icon(
                 imageVector = Icons.Filled.ArrowBack,

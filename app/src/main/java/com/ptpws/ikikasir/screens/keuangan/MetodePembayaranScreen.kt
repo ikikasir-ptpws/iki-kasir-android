@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.unit.sp
 import com.ptpws.ikikasir.commond.interfamily
 
@@ -30,6 +31,15 @@ import com.ptpws.ikikasir.commond.interfamily
 fun MetodePembayaranScreen(
     onBack: () -> Unit = {}
 ) {
+    var isBackProcessing by remember { mutableStateOf(false) }
+    val handleBack = {
+        if (!isBackProcessing) {
+            isBackProcessing = true
+            onBack()
+        }
+    }
+    BackHandler(enabled = !isBackProcessing, onBack = handleBack)
+
     // State toggle masing-masing metode
     var cashAktif by remember { mutableStateOf(true) }
     var qrisAktif by remember { mutableStateOf(true) }
@@ -52,7 +62,7 @@ fun MetodePembayaranScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",

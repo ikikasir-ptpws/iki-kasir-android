@@ -21,8 +21,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.screens.navigation.AppScreen
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import com.ptpws.ikikasir.feature.role.presentation.screen.RoleIzinScreen
 import com.ptpws.ikikasir.feature.role.presentation.screen.TambahRoleActivity
 import kotlinx.coroutines.launch
@@ -34,6 +37,13 @@ fun ManajemenPenggunaScreen(
     onBack: () -> Unit = {},
     onTambahUser: () -> Unit = {}
 ) {
+    val handleBack = {
+        if (!navController.popBackStackSafely(AppScreen.Pengguna.route)) {
+            onBack()
+        }
+    }
+    BackHandler(onBack = handleBack)
+
     val context = LocalContext.current
     val pagerState = rememberPagerState(pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
@@ -52,11 +62,7 @@ fun ManajemenPenggunaScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        if (navController.currentDestination?.route == "pengguna") {
-                            navController.popBackStack()
-                        }
-                    }) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",

@@ -87,10 +87,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.commond.interfamily
+import androidx.activity.compose.BackHandler
 import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserViewModel
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,6 +101,15 @@ fun TambahPenggunaScreen(
     viewModel: UserViewModel = hiltViewModel(),
     roleViewModel: RoleViewModel = hiltViewModel()
 ) {
+    var isBackProcessing by remember { mutableStateOf(false) }
+    val handleBack = {
+        if (!isBackProcessing) {
+            isBackProcessing = true
+            onBack()
+        }
+    }
+    BackHandler(enabled = !isBackProcessing, onBack = handleBack)
+
     val windowSizeInfo = LocalWindowSizeInfo.current
     val isCompact = windowSizeInfo.isCompactPhone
 
@@ -168,7 +177,7 @@ fun TambahPenggunaScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",

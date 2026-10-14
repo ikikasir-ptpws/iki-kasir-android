@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.TambahKategoriViewModel
@@ -36,6 +37,15 @@ fun TambahKategoriScreen(
     onSimpanKategori: () -> Unit = {},
     viewModel: TambahKategoriViewModel = hiltViewModel()
 ) {
+    var isBackProcessing by remember { mutableStateOf(false) }
+    val handleBack = {
+        if (!isBackProcessing) {
+            isBackProcessing = true
+            onBack()
+        }
+    }
+    BackHandler(enabled = !isBackProcessing, onBack = handleBack)
+
     val formState by viewModel.formState.collectAsState()
     LaunchedEffect(formState.isSuccess) {
         if (formState.isSuccess) {
@@ -87,7 +97,7 @@ fun TambahKategoriScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",

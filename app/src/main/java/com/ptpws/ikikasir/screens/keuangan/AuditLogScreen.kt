@@ -31,12 +31,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.auditlog.domain.model.AuditLog
 import com.ptpws.ikikasir.feature.auditlog.presentation.viewmodel.AuditLogViewModel
+import com.ptpws.ikikasir.screens.navigation.AppScreen
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -49,6 +52,13 @@ fun AuditLogScreen(
     onBack: () -> Unit = {},
     viewModel: AuditLogViewModel = hiltViewModel()
 ) {
+    val handleBack = {
+        if (!navController.popBackStackSafely(AppScreen.AuditLog.route)) {
+            onBack()
+        }
+    }
+    BackHandler(onBack = handleBack)
+
     val state by viewModel.state.collectAsState()
     var showDateRangePicker by remember { mutableStateOf(false) }
 
@@ -78,13 +88,7 @@ fun AuditLogScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        if (navController.currentDestination?.route == "audit_log") {
-                            navController.popBackStack()
-                        } else {
-                            onBack()
-                        }
-                    }) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",

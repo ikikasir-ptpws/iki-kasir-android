@@ -33,6 +33,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
@@ -49,6 +50,15 @@ fun DetailProdukScreen(
     produkId: String? = null,
     viewModel: DetailProdukViewModel = hiltViewModel()
 ) {
+    var isBackProcessing by remember { mutableStateOf(false) }
+    val handleBack = {
+        if (!isBackProcessing) {
+            isBackProcessing = true
+            onBack()
+        }
+    }
+    BackHandler(enabled = !isBackProcessing, onBack = handleBack)
+
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
 
@@ -115,7 +125,7 @@ fun DetailProdukScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",

@@ -52,6 +52,7 @@ import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GenerateStrukPdfUseCa
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.PrintStrukUseCase
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.DetailTransaksiViewModel
 import kotlinx.coroutines.launch
+import androidx.activity.compose.BackHandler
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -65,6 +66,15 @@ fun DetailTransaksiScreen(
     onRefund: () -> Unit = {},
     viewModel: DetailTransaksiViewModel = hiltViewModel()
 ) {
+    var isBackProcessing by remember { mutableStateOf(false) }
+    val handleBack = {
+        if (!isBackProcessing) {
+            isBackProcessing = true
+            onBack()
+        }
+    }
+    BackHandler(enabled = !isBackProcessing, onBack = handleBack)
+
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val printScope = rememberCoroutineScope()
@@ -175,7 +185,7 @@ fun DetailTransaksiScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",

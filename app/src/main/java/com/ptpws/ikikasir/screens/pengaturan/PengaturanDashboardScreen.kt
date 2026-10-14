@@ -22,10 +22,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +36,13 @@ fun PengaturanDashboardScreen(
     onBack: () -> Unit = {},
     onSimpanPengaturan: () -> Unit = {}
 ) {
+    val handleBack = {
+        if (!navController.popBackStackSafely("pengaturan_menu")) {
+            onBack()
+        }
+    }
+    BackHandler(onBack = handleBack)
+
     var tampilkanPenjualanHariIni by remember { mutableStateOf(true) }
     var tampilkanTotalTransaksi by remember { mutableStateOf(true) }
     var tampilkanProdukTerlaris by remember { mutableStateOf(true) }
@@ -61,9 +70,7 @@ fun PengaturanDashboardScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { if (navController.currentDestination?.route == "pengaturan_menu") {
-                        navController.popBackStack()
-                    } }) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",

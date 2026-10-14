@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Search
+import androidx.activity.compose.BackHandler
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -53,6 +54,15 @@ fun ManajemenPromoScreen(
     var promoToDelete by remember { mutableStateOf<Promo?>(null) }
     var selectedPromoForDetail by remember { mutableStateOf<Promo?>(null) }
 
+    var isBackProcessing by remember { mutableStateOf(false) }
+    val handleBack = {
+        if (!isBackProcessing) {
+            isBackProcessing = true
+            onBack()
+        }
+    }
+    BackHandler(enabled = !isBackProcessing, onBack = handleBack)
+
     val activeCount = remember(state.promoList) { state.promoList.count { it.isAvailableOn() } }
     val endingThisWeekCount = remember(state.promoList) { state.promoList.count { it.isEndingWithinDays(7) } }
 
@@ -70,7 +80,7 @@ fun ManajemenPromoScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",

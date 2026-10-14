@@ -229,7 +229,7 @@ fun AppNavHost() {
             ) { backStackEntry ->
                 val produkId = backStackEntry.arguments?.getString("produkId")
                 DetailProdukScreen(
-                    onBack = { navController.popBackStack() },
+                    onBack = { navController.popBackStackSafely(AppScreen.DetailProduk.route) },
                     produkId = produkId
                 )
             }
@@ -278,18 +278,20 @@ fun AppNavHost() {
                 arguments = AppScreen.UpdateStok.navArguments
             ) {
                 UpdateStokScreen(
-                    onBack = { navController.popBackStack() },
-                    onSuccessUpdate = { navController.popBackStack() }
+                    onBack = { navController.popBackStackSafely(AppScreen.UpdateStok.route) },
+                    onSuccessUpdate = { navController.popBackStackSafely(AppScreen.UpdateStok.route) }
                 )
             }
 
             composable(AppScreen.DetailTransaksi.route) {
-                DetailTransaksiScreen()
+                DetailTransaksiScreen(
+                    onBack = { navController.popBackStackSafely(AppScreen.DetailTransaksi.route) }
+                )
             }
             composable(AppScreen.LaporanKeuangan.route) {
                 LaporanKeuanganScreen(
                     navController = navController,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStackSafely(AppScreen.LaporanKeuangan.route) }
                 )
             }
             composable(AppScreen.AuditLog.route) {
@@ -304,7 +306,7 @@ fun AppNavHost() {
             composable(AppScreen.Promo.route) {
                 val context = LocalContext.current
                 ManajemenPromoScreen(
-                    onBack = { navController.popBackStack() },
+                    onBack = { navController.popBackStackSafely(AppScreen.Promo.route) },
                     onTambahPromo = {
                         context.startActivity(Intent(context, TambahPromoActivity::class.java))
                     },
@@ -322,7 +324,7 @@ fun AppNavHost() {
             ) {
                 LaporanPenjualanScreen(
                     navController = navController,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStackSafely(AppScreen.LaporanPenjualan.route) }
                 )
             }
             composable(AppScreen.Pengguna.route) {

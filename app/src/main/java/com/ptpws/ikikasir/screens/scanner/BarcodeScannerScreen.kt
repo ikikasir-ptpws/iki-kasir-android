@@ -57,6 +57,7 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import com.ptpws.ikikasir.commond.interfamily
+import androidx.activity.compose.BackHandler
 import java.util.concurrent.Executors
 import kotlin.math.min
 
@@ -76,6 +77,15 @@ fun BarcodeScannerScreen(
     onBarcodeScanned: (String) -> Unit,
     onClose: () -> Unit
 ) {
+    var isClosing by remember { mutableStateOf(false) }
+    val handleClose = {
+        if (!isClosing) {
+            isClosing = true
+            onClose()
+        }
+    }
+    BackHandler(enabled = !isClosing, onBack = handleClose)
+
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val configuration = LocalConfiguration.current
@@ -363,7 +373,7 @@ fun BarcodeScannerScreen(
         ) {
             // Tombol Kembali
             IconButton(
-                onClick = onClose,
+                onClick = handleClose,
                 modifier = Modifier
                     .size(42.dp)
                     .background(Color.Black.copy(alpha = 0.5f), CircleShape)

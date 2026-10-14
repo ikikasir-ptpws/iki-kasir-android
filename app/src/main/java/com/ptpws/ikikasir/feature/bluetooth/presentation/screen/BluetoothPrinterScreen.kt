@@ -32,8 +32,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.screens.navigation.AppScreen
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import com.ptpws.ikikasir.feature.bluetooth.domain.model.BluetoothPrinterDevice
 import com.ptpws.ikikasir.feature.bluetooth.domain.model.BluetoothPrinterSetting
 import com.ptpws.ikikasir.feature.bluetooth.presentation.viewmodel.BluetoothPrinterViewModel
@@ -44,6 +47,11 @@ fun BluetoothPrinterScreen(
     navController: NavController,
     viewModel: BluetoothPrinterViewModel = hiltViewModel()
 ) {
+    val handleBack = {
+        navController.popBackStackSafely(AppScreen.BluetoothPrinter.route)
+    }
+    BackHandler(onBack = { handleBack() })
+
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
 
@@ -92,7 +100,7 @@ fun BluetoothPrinterScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { handleBack() }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",

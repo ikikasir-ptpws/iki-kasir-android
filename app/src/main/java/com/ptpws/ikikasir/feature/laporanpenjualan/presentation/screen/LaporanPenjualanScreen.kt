@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
@@ -47,6 +48,8 @@ import com.ptpws.ikikasir.commond.LaporanKpiCardShimmer
 import com.ptpws.ikikasir.commond.ProdukTerjualShimmerCard
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
+import com.ptpws.ikikasir.screens.navigation.AppScreen
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.PeriodeLaporanPenjualan
 import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.ProdukTerjualItem
 import com.ptpws.ikikasir.feature.laporanpenjualan.presentation.viewmodel.LaporanPenjualanViewModel
@@ -57,13 +60,22 @@ import java.util.Locale
 @Composable
 fun LaporanPenjualanScreen(
     navController: NavController,
-    onBack: () -> Unit = { navController.popBackStack() },
+    onBack: () -> Unit = { navController.popBackStackSafely(AppScreen.LaporanPenjualan.route) },
     viewModel: LaporanPenjualanViewModel = hiltViewModel()
 ) {
     val windowSizeInfo = LocalWindowSizeInfo.current
     val isCompact = windowSizeInfo.isCompactPhone
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+
+    var isBackProcessing by remember { mutableStateOf(false) }
+    val handleBack = {
+        if (!isBackProcessing) {
+            isBackProcessing = true
+            onBack()
+        }
+    }
+    BackHandler(enabled = !isBackProcessing, onBack = handleBack)
 
     var showDateRangePicker by remember { mutableStateOf(false) }
     var showExportSuccessDialog by remember { mutableStateOf(false) }
@@ -259,7 +271,7 @@ fun LaporanPenjualanScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",

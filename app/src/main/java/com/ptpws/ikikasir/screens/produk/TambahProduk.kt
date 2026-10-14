@@ -58,6 +58,7 @@ import com.google.zxing.common.BitMatrix
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
 import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.TambahProdukViewModel
+import androidx.activity.compose.BackHandler
 import java.io.File
 import java.io.FileOutputStream
 import java.text.NumberFormat
@@ -70,6 +71,15 @@ fun TambahProdukScreen(
     viewModel: TambahProdukViewModel = hiltViewModel(),
     kategoriViewModel: KategoriViewModel = hiltViewModel()
 ) {
+    var isBackProcessing by remember { mutableStateOf(false) }
+    val handleBack = {
+        if (!isBackProcessing) {
+            isBackProcessing = true
+            onBack()
+        }
+    }
+    BackHandler(enabled = !isBackProcessing, onBack = handleBack)
+
     val formState by viewModel.formState.collectAsState()
     val kategoriState by kategoriViewModel.state.collectAsState()
     val context = LocalContext.current
@@ -133,7 +143,7 @@ fun TambahProdukScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",

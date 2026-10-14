@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.res.painterResource
 import com.ptpws.ikikasir.R
@@ -47,6 +48,15 @@ fun UpdateStokScreen(
     onSuccessUpdate: () -> Unit = {},
     viewModel: UpdateStokViewModel = hiltViewModel()
 ) {
+    var isBackProcessing by remember { mutableStateOf(false) }
+    val handleBack = {
+        if (!isBackProcessing) {
+            isBackProcessing = true
+            onBack()
+        }
+    }
+    BackHandler(enabled = !isBackProcessing, onBack = handleBack)
+
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
@@ -96,7 +106,7 @@ fun UpdateStokScreen(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
+                        IconButton(onClick = handleBack) {
                             Icon(
                                 imageVector = Icons.Default.ArrowBack,
                                 contentDescription = "Kembali",

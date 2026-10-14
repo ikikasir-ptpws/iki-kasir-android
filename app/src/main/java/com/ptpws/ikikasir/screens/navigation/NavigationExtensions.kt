@@ -7,14 +7,21 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
  * Extension functions for safe, spam-proof navigation across the app.
  */
 
+private var lastPopTimeMillis: Long = 0L
+
 /**
  * Pops the back stack safely:
- * 1. Checks if current destination matches [expectedRoute] (if provided).
+ * 1. Debounces rapid successive calls (350ms throttle).
+ * 2. Checks if current destination matches [expectedRoute] (if provided).
  *    This prevents spammed clicks on a screen's back button from popping multiple screens.
- * 2. Never pops the root destination (Dashboard), preventing blank screens.
- * 3. Checks if there is a previous back stack entry before popping.
+ * 3. Never pops the root destination (Dashboard), preventing blank screens.
+ * 4. Checks if there is a previous back stack entry before popping.
  */
 fun NavController.popBackStackSafely(expectedRoute: String? = null): Boolean {
+    val now = System.currentTimeMillis()
+    if (now - lastPopTimeMillis < 350L) {
+        return false
+    }
     val current = currentDestination?.route?.substringBefore("?")
     if (expectedRoute != null && current != expectedRoute.substringBefore("?")) {
         return false
@@ -27,6 +34,7 @@ fun NavController.popBackStackSafely(expectedRoute: String? = null): Boolean {
     if (previousBackStackEntry == null) {
         return false
     }
+    lastPopTimeMillis = now
     return popBackStack()
 }
 

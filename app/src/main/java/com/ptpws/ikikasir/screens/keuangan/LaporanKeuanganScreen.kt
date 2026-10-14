@@ -62,6 +62,8 @@ import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.DailySalesEntry
+import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.LaporanKeuanganState
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.MetodePembayaranReport
@@ -75,7 +77,7 @@ import java.util.Locale
 @Composable
 fun LaporanKeuanganScreen(
     navController: NavController,
-    onBack: () -> Unit = { navController.popBackStack() },
+    onBack: () -> Unit = { navController.popBackStackSafely(AppScreen.LaporanKeuangan.route) },
     onLihatSemuaProduk: (() -> Unit)? = null,
     viewModel: LaporanKeuanganViewModel = hiltViewModel()
 ) {
@@ -83,6 +85,15 @@ fun LaporanKeuanganScreen(
     val windowSizeInfo = LocalWindowSizeInfo.current
     val isCompact = windowSizeInfo.isCompactPhone
     val state by viewModel.state.collectAsState()
+
+    var isBackProcessing by remember { mutableStateOf(false) }
+    val handleBack = {
+        if (!isBackProcessing) {
+            isBackProcessing = true
+            onBack()
+        }
+    }
+    BackHandler(enabled = !isBackProcessing, onBack = handleBack)
 
     var showDateRangePicker by remember { mutableStateOf(false) }
     var selectedBarIndex by remember { mutableStateOf<Int?>(null) }
@@ -294,7 +305,7 @@ fun LaporanKeuanganScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",

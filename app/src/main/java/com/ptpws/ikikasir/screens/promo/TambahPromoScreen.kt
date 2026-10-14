@@ -52,6 +52,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
+import androidx.activity.compose.BackHandler
 import java.util.Date
 import java.util.Locale
 
@@ -63,6 +64,15 @@ fun TambahPromoScreen(
     onSimpanPromo: () -> Unit = {},
     viewModel: TambahPromoViewModel = hiltViewModel()
 ) {
+    var isBackProcessing by remember { mutableStateOf(false) }
+    val handleBack = {
+        if (!isBackProcessing) {
+            isBackProcessing = true
+            onBack()
+        }
+    }
+    BackHandler(enabled = !isBackProcessing, onBack = handleBack)
+
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(promoId) {
@@ -166,7 +176,7 @@ fun TambahPromoScreen(
                     border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                     modifier = Modifier
                         .size(40.dp)
-                        .clickable { onBack() }
+                        .clickable { handleBack() }
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
