@@ -11,8 +11,10 @@ import androidx.compose.ui.Modifier
 import com.ptpws.ikikasir.screens.penjualan.ui.theme.IKIKASIRTheme
 import dagger.hilt.android.AndroidEntryPoint
 
+import com.ptpws.ikikasir.commond.BaseActivity
+
 @AndroidEntryPoint
-class DetailTransaksiActivity : ComponentActivity() {
+class DetailTransaksiActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

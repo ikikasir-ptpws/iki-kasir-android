@@ -17,16 +17,10 @@ import com.ptpws.ikikasir.screens.navigation.AppNavHost
 import com.ptpws.ikikasir.ui.theme.IKIKASIRTheme
 import dagger.hilt.android.AndroidEntryPoint
 
+import com.ptpws.ikikasir.commond.BaseActivity
+
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
-    override fun attachBaseContext(newBase: android.content.Context) {
-        val config = newBase.resources.configuration
-        if (config.fontScale != 1.0f) {
-            config.fontScale = 1.0f
-        }
-        val newContext = newBase.createConfigurationContext(config)
-        super.attachBaseContext(newContext)
-    }
+class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

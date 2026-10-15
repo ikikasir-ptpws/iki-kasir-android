@@ -12,8 +12,10 @@ import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
 import dagger.hilt.android.AndroidEntryPoint
 import com.ptpws.ikikasir.screens.produk.ui.theme.IKIKASIRTheme
 
+import com.ptpws.ikikasir.commond.BaseActivity
+
 @AndroidEntryPoint
-class TambahProdukActivity : ComponentActivity() {
+class TambahProdukActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

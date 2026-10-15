@@ -65,36 +65,87 @@ fun rememberWindowSizeInfo(): WindowSizeInfo {
 }
 
 /**
- * Penyedia CompositionLocal untuk WindowSizeInfo dan Density Tetap (Normal 1.0f).
+ * Penyedia CompositionLocal untuk WindowSizeInfo, Density Tetap (Normal), dan Configuration Tetap.
  * Tempatkan di level tertinggi (misalnya di MainActivity atau root Composable).
  *
- * Mengunci ukuran font pada skala normal (1.0f) sehingga tata letak, tombol, kartu produk,
- * keranjang, dan dialog aplikasi kasir selalu tampil stabil dan rapi, tanpa terpengaruh
- * oleh setelan ukuran font HP (baik pengguna menyetel font kecil maupun font besar di HP).
+ * Mengunci ukuran font pada skala normal (1.0f) dan ukuran tampilan (display size / density)
+ * pada standar bawaan pabrik perangkat sehingga seluruh tata letak, tombol, kartu produk,
+ * keranjang, dan dialog aplikasi kasir selalu tampil normal, rapi, dan proporsional,
+ * tanpa terpengaruh oleh setelan ukuran tampilan atau font di HP/Tablet (kecil, standar, besar, dsb).
  */
 @Composable
 fun ProvideWindowSizeInfo(
-    windowSizeInfo: WindowSizeInfo = rememberWindowSizeInfo(),
+    windowSizeInfo: WindowSizeInfo? = null,
     lockFontScale: Boolean = true,
+    lockDisplaySize: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val currentDensity = LocalDensity.current
+    val currentConfig = LocalConfiguration.current
 
-    // Kunci fontScale pada 1.0f agar ukuran teks selalu normal dan stabil
-    val targetDensity = remember(currentDensity.density, lockFontScale) {
-        Density(
-            density = currentDensity.density,
-            fontScale = if (lockFontScale) 1.0f else currentDensity.fontScale
-        )
+    // Kunci density pada standar pabrik (DisplayMetrics.DENSITY_DEVICE_STABLE) dan fontScale pada 1.0f
+    val targetDensity = remember(context, currentDensity.density, lockFontScale, lockDisplaySize) {
+        val density = if (lockDisplaySize) {
+            DisplaySizeConfig.getStableDensity(context)
+        } else {
+            currentDensity.density
+        }
+        val fontScale = if (lockFontScale) DisplaySizeConfig.FIXED_FONT_SCALE else currentDensity.fontScale
+        Density(density = density, fontScale = fontScale)
     }
 
-    val updatedWindowSizeInfo = remember(windowSizeInfo, lockFontScale) {
-        windowSizeInfo.copy(fontScale = if (lockFontScale) 1.0f else windowSizeInfo.fontScale)
+    // Kunci Configuration (screenWidthDp, screenHeightDp, densityDpi) agar normal dan stabil
+    val targetConfig = remember(context, currentConfig, lockDisplaySize, lockFontScale) {
+        val cfg = Configuration(currentConfig)
+        if (lockDisplaySize || lockFontScale) {
+            DisplaySizeConfig.applyFixedConfiguration(cfg, context)
+        }
+        cfg
+    }
+
+    val calculatedWindowInfo = remember(targetConfig, windowSizeInfo, lockFontScale) {
+        if (windowSizeInfo != null) {
+            windowSizeInfo.copy(fontScale = if (lockFontScale) DisplaySizeConfig.FIXED_FONT_SCALE else windowSizeInfo.fontScale)
+        } else {
+            val widthDp = targetConfig.screenWidthDp
+            val heightDp = targetConfig.screenHeightDp
+            val isLandscape = targetConfig.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+            val widthClass = when {
+                widthDp < 600 -> WindowWidthSizeClass.Compact
+                widthDp < 840 -> WindowWidthSizeClass.Medium
+                else -> WindowWidthSizeClass.Expanded
+            }
+
+            val heightClass = when {
+                heightDp < 480 -> WindowHeightSizeClass.Compact
+                heightDp < 900 -> WindowHeightSizeClass.Medium
+                else -> WindowHeightSizeClass.Expanded
+            }
+
+            val layoutMode = when {
+                widthDp < 600 -> ResponsiveLayoutMode.COMPACT_PHONE
+                widthDp < 840 -> ResponsiveLayoutMode.MEDIUM_TABLET
+                else -> ResponsiveLayoutMode.EXPANDED_POS
+            }
+
+            WindowSizeInfo(
+                screenWidthDp = widthDp,
+                screenHeightDp = heightDp,
+                widthSizeClass = widthClass,
+                heightSizeClass = heightClass,
+                isLandscape = isLandscape,
+                layoutMode = layoutMode,
+                fontScale = if (lockFontScale) DisplaySizeConfig.FIXED_FONT_SCALE else targetConfig.fontScale
+            )
+        }
     }
 
     CompositionLocalProvider(
-        LocalWindowSizeInfo provides updatedWindowSizeInfo,
-        LocalDensity provides targetDensity
+        LocalWindowSizeInfo provides calculatedWindowInfo,
+        LocalDensity provides targetDensity,
+        LocalConfiguration provides targetConfig
     ) {
         content()
     }

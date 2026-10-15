@@ -10,17 +10,19 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
+import com.ptpws.ikikasir.commond.BaseActivity
+import com.ptpws.ikikasir.ui.theme.IKIKASIRTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class TambahRoleActivity : ComponentActivity() {
+class TambahRoleActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val roleId = intent.getStringExtra("ROLE_ID")
         val permissionsOnly = intent.getBooleanExtra("PERMISSIONS_ONLY", false)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme {
+            IKIKASIRTheme {
                 Box(Modifier.fillMaxSize().navigationBarsPadding()) {
                     TambahRoleScreen(
                         roleId = roleId,

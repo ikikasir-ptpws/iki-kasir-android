@@ -10,15 +10,17 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
+import com.ptpws.ikikasir.commond.BaseActivity
+import com.ptpws.ikikasir.ui.theme.IKIKASIRTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class TambahKategoriActivity : ComponentActivity() {
+class TambahKategoriActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme {
+            IKIKASIRTheme {
                 Box(Modifier.fillMaxSize().navigationBarsPadding()) {
                     TambahKategoriScreen(
                         onBack = { finish() },

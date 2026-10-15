@@ -56,8 +56,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.delay
 
+import com.ptpws.ikikasir.commond.BaseActivity
+
 @AndroidEntryPoint
-class AuthActivity : ComponentActivity() {
+class AuthActivity : BaseActivity() {
 
     private val viewModel: AuthViewModel by viewModels()
 

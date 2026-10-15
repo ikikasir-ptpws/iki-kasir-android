@@ -11,7 +11,9 @@ import com.ptpws.ikikasir.screens.splash.ui.theme.IKIKASIRTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
 
-class SplashActivity : ComponentActivity() {
+import com.ptpws.ikikasir.commond.BaseActivity
+
+class SplashActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

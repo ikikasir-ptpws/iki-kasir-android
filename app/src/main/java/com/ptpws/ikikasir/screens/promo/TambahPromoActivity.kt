@@ -10,16 +10,18 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
+import com.ptpws.ikikasir.commond.BaseActivity
+import com.ptpws.ikikasir.ui.theme.IKIKASIRTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class TambahPromoActivity : ComponentActivity() {
+class TambahPromoActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val promoId = intent.getStringExtra("PROMO_ID") ?: intent.getStringExtra("promoId")
         setContent {
-            MaterialTheme {
+            IKIKASIRTheme {
                 Box(Modifier.fillMaxSize().navigationBarsPadding()) {
                     TambahPromoScreen(
                         promoId = promoId,

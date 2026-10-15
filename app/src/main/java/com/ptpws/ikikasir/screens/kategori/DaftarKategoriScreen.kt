@@ -43,6 +43,16 @@ import com.ptpws.ikikasir.screens.navigation.AppScreen
 import androidx.activity.compose.BackHandler
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 
+enum class KategoriFilterOption(val title: String) {
+    SEMUA("Semua Kategori"),
+    STOK_MENIPIS("Stok Menipis"),
+    TAMPIL_KASIR("Tampil di Kasir"),
+    SEMBUNYI_KASIR("Disembunyikan"),
+    NAMA_AZ("Nama (A - Z)"),
+    NAMA_ZA("Nama (Z - A)"),
+    MENU_TERBANYAK("Menu Terbanyak")
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DaftarKategoriScreen(
@@ -64,6 +74,8 @@ fun DaftarKategoriScreen(
     }
 
     var isMenuMenipisFilterActive by remember { mutableStateOf(false) }
+    var selectedFilterOption by remember { mutableStateOf(KategoriFilterOption.SEMUA) }
+    var showFilterDropdown by remember { mutableStateOf(false) }
 
     val totalMenu = produkState.produkList.size
     val menuMenipis = remember(produkState.produkList) {
@@ -73,72 +85,132 @@ fun DaftarKategoriScreen(
     LaunchedEffect(menuMenipis) {
         if (menuMenipis == 0) {
             isMenuMenipisFilterActive = false
+            if (selectedFilterOption == KategoriFilterOption.STOK_MENIPIS) {
+                selectedFilterOption = KategoriFilterOption.SEMUA
+            }
         }
     }
 
-    // Sort categories so those with low stock warnings appear at the top, and filter if menu menipis filter is active
-    val sortedFilteredList = remember(state.filteredList, categoryProductMap, isMenuMenipisFilterActive) {
-        val baseList = if (isMenuMenipisFilterActive) {
-            state.filteredList.filter { kategori ->
+    // Filter dan sort kategori sesuai pencarian dan opsi filter aktif
+    val sortedFilteredList = remember(
+        state.filteredList,
+        categoryProductMap,
+        isMenuMenipisFilterActive,
+        selectedFilterOption
+    ) {
+        var baseList = state.filteredList
+
+        // Filter status
+        if (isMenuMenipisFilterActive || selectedFilterOption == KategoriFilterOption.STOK_MENIPIS) {
+            baseList = baseList.filter { kategori ->
                 categoryProductMap[kategori.id]?.any { it.stock <= it.lowStockThreshold } == true
             }
-        } else {
-            state.filteredList
+        } else if (selectedFilterOption == KategoriFilterOption.TAMPIL_KASIR) {
+            baseList = baseList.filter { it.isVisibleInCashier }
+        } else if (selectedFilterOption == KategoriFilterOption.SEMBUNYI_KASIR) {
+            baseList = baseList.filter { !it.isVisibleInCashier }
         }
 
-        baseList.sortedWith(
-            compareByDescending<Kategori> { kategori ->
-                val products = categoryProductMap[kategori.id] ?: emptyList()
-                products.count { it.stock <= it.lowStockThreshold }
+        // Sorting
+        when (selectedFilterOption) {
+            KategoriFilterOption.NAMA_AZ -> baseList.sortedBy { it.name.lowercase() }
+            KategoriFilterOption.NAMA_ZA -> baseList.sortedByDescending { it.name.lowercase() }
+            KategoriFilterOption.MENU_TERBANYAK -> baseList.sortedByDescending { categoryProductMap[it.id]?.size ?: 0 }
+            else -> {
+                baseList.sortedWith(
+                    compareByDescending<Kategori> { kategori ->
+                        val products = categoryProductMap[kategori.id] ?: emptyList()
+                        products.count { it.stock <= it.lowStockThreshold }
+                    }
+                )
             }
-        )
+        }
     }
 
     Scaffold(
-        containerColor = Color(0xFFF1F5F9),
+        containerColor = Color(0xFFF8FAFC),
         topBar = {
-            Column(modifier = Modifier.background(Color.White)) {
-                // ── AppBar row ───────────────────────────────────────────────
+            Column(modifier = Modifier.background(Color(0xFFF8FAFC))) {
+                // ── AppBar row (Sesuai Gambar 2) ──────────────────────────────
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 4.dp, vertical = 8.dp),
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = {
-                        navController.popBackStackSafely(expectedRoute = AppScreen.KategoriProduk.route)
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali", tint = Color(0xFF0F172A))
+                    // Tombol Back bulat (Circular Button) dengan border halus
+                    Surface(
+                        onClick = {
+                            navController.popBackStackSafely(expectedRoute = AppScreen.KategoriProduk.route)
+                        },
+                        shape = CircleShape,
+                        color = Color.White,
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier.size(42.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Kembali",
+                                tint = Color(0xFF0F172A),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Kategori Produk", fontWeight = FontWeight.Bold, fontFamily = interfamily, fontSize = 20.sp, color = Color(0xFF0F172A))
-                        Text("Katalog POS & Manajemen Stok", fontFamily = interfamily, fontSize = 12.sp, color = Color(0xFF64748B))
+                        Text(
+                            text = "Kategori Produk",
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = interfamily,
+                            fontSize = 19.sp,
+                            color = Color(0xFF0F172A)
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Katalog POS & Manajemen Stok",
+                            fontFamily = interfamily,
+                            fontSize = 12.sp,
+                            color = Color(0xFF64748B)
+                        )
                     }
-                    // Green dot + count badge
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Badge Kategori (Pill lembut biru/lavender + titik hijau + teks indigo)
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = Color(0xFFDCFCE7),
-                        modifier = Modifier.padding(end = 12.dp)
+                        color = Color(0xFFEEF2FF),
+                        border = BorderStroke(1.dp, Color(0xFFE0E7FF))
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(Color(0xFF16A34A)))
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF10B981))
+                            )
                             Text(
                                 text = "${state.kategoriList.size} Kategori",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 12.sp,
-                                color = Color(0xFF16A34A)
+                                color = Color(0xFF4338CA)
                             )
                         }
                     }
                 }
 
-                // ── Search bar row (Full Width, Filter Icon Removed) ────────
+                Spacer(modifier = Modifier.height(2.dp))
+
+                // ── Search bar row dengan Tombol Filter di sampingnya (Sesuai Gambar) ────────
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -146,32 +218,147 @@ fun DaftarKategoriScreen(
                         .padding(bottom = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Search field full width
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFF1F5F9),
-                        modifier = Modifier.fillMaxWidth()
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White,
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 14.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(18.dp))
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = null,
+                                tint = Color(0xFF94A3B8),
+                                modifier = Modifier.size(20.dp)
+                            )
                             BasicTextField(
                                 value = state.searchQuery,
                                 onValueChange = viewModel::onSearchQueryChange,
                                 modifier = Modifier.weight(1f),
-                                textStyle = TextStyle(fontFamily = interfamily, fontSize = 13.sp, color = Color(0xFF0F172A)),
+                                textStyle = TextStyle(
+                                    fontFamily = interfamily,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF0F172A)
+                                ),
                                 cursorBrush = SolidColor(Color(0xFF4F46E5)),
                                 singleLine = true,
                                 decorationBox = { inner ->
                                     if (state.searchQuery.isEmpty()) {
-                                        Text("Cari kategori atau menu...", fontFamily = interfamily, fontSize = 13.sp, color = Color(0xFF94A3B8))
+                                        Text(
+                                            text = "Cari kategori atau menu...",
+                                            fontFamily = interfamily,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF94A3B8)
+                                        )
                                     }
                                     inner()
                                 }
                             )
+                            if (state.searchQuery.isNotEmpty()) {
+                                IconButton(
+                                    onClick = { viewModel.onSearchQueryChange("") },
+                                    modifier = Modifier.size(20.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Hapus",
+                                        tint = Color(0xFF94A3B8),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    // Tombol Filter di samping Search Bar (Sesuai Gambar)
+                    val isFilterActive = selectedFilterOption != KategoriFilterOption.SEMUA || isMenuMenipisFilterActive
+                    Box {
+                        Surface(
+                            onClick = { showFilterDropdown = !showFilterDropdown },
+                            shape = RoundedCornerShape(16.dp),
+                            color = if (isFilterActive) Color(0xFFEEF2FF) else Color.White,
+                            border = BorderStroke(
+                                1.dp,
+                                if (isFilterActive) Color(0xFF4F46E5) else Color(0xFFE2E8F0)
+                            ),
+                            modifier = Modifier.size(46.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Tune,
+                                    contentDescription = "Filter Kategori",
+                                    tint = if (isFilterActive) Color(0xFF4F46E5) else Color(0xFF334155),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded = showFilterDropdown,
+                            onDismissRequest = { showFilterDropdown = false },
+                            modifier = Modifier.background(Color.White, RoundedCornerShape(16.dp))
+                        ) {
+                            KategoriFilterOption.values().forEach { option ->
+                                val isSelected = if (option == KategoriFilterOption.STOK_MENIPIS) {
+                                    isMenuMenipisFilterActive || selectedFilterOption == KategoriFilterOption.STOK_MENIPIS
+                                } else {
+                                    !isMenuMenipisFilterActive && selectedFilterOption == option
+                                }
+
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = option.title,
+                                            fontFamily = interfamily,
+                                            fontSize = 13.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) Color(0xFF4F46E5) else Color(0xFF1E293B)
+                                        )
+                                    },
+                                    leadingIcon = {
+                                        val icon = when (option) {
+                                            KategoriFilterOption.SEMUA -> Icons.Default.Category
+                                            KategoriFilterOption.STOK_MENIPIS -> Icons.Default.Warning
+                                            KategoriFilterOption.TAMPIL_KASIR -> Icons.Default.Visibility
+                                            KategoriFilterOption.SEMBUNYI_KASIR -> Icons.Default.VisibilityOff
+                                            KategoriFilterOption.NAMA_AZ -> Icons.Default.SortByAlpha
+                                            KategoriFilterOption.NAMA_ZA -> Icons.Default.SortByAlpha
+                                            KategoriFilterOption.MENU_TERBANYAK -> Icons.Default.FormatListNumbered
+                                        }
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = null,
+                                            tint = if (isSelected) Color(0xFF4F46E5) else Color(0xFF64748B),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    },
+                                    trailingIcon = if (isSelected) {
+                                        {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = "Terpilih",
+                                                tint = Color(0xFF4F46E5),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    } else null,
+                                    onClick = {
+                                        selectedFilterOption = option
+                                        isMenuMenipisFilterActive = (option == KategoriFilterOption.STOK_MENIPIS)
+                                        showFilterDropdown = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -210,10 +397,13 @@ fun DaftarKategoriScreen(
                 ) {
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = if (!isMenuMenipisFilterActive) Color.Transparent else Color(0xFFF1F5F9),
+                        color = Color.Transparent,
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
-                            .clickable { isMenuMenipisFilterActive = false }
+                            .clickable {
+                                isMenuMenipisFilterActive = false
+                                selectedFilterOption = KategoriFilterOption.SEMUA
+                            }
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
@@ -223,15 +413,15 @@ fun DaftarKategoriScreen(
                             Icon(
                                 Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = if (!isMenuMenipisFilterActive) Color(0xFF16A34A) else Color(0xFF64748B),
+                                tint = Color(0xFF16A34A),
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
                                 text = "$totalMenu Total Menu Siap Jual",
                                 fontFamily = interfamily,
                                 fontSize = 12.sp,
-                                fontWeight = if (!isMenuMenipisFilterActive) FontWeight.Bold else FontWeight.Medium,
-                                color = if (!isMenuMenipisFilterActive) Color(0xFF374151) else Color(0xFF64748B)
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF374151)
                             )
                         }
                     }
@@ -239,11 +429,15 @@ fun DaftarKategoriScreen(
                     if (menuMenipis > 0) {
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = if (isMenuMenipisFilterActive) Color(0xFFEA580C) else Color(0xFFFFF7ED),
-                            border = BorderStroke(1.dp, if (isMenuMenipisFilterActive) Color(0xFFC2410C) else Color(0xFFFED7AA)),
+                            color = if (isMenuMenipisFilterActive || selectedFilterOption == KategoriFilterOption.STOK_MENIPIS) Color(0xFFEA580C) else Color(0xFFFFF7ED),
+                            border = BorderStroke(1.dp, if (isMenuMenipisFilterActive || selectedFilterOption == KategoriFilterOption.STOK_MENIPIS) Color(0xFFC2410C) else Color(0xFFFED7AA)),
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
-                                .clickable { isMenuMenipisFilterActive = !isMenuMenipisFilterActive }
+                                .clickable {
+                                    val newActive = !(isMenuMenipisFilterActive || selectedFilterOption == KategoriFilterOption.STOK_MENIPIS)
+                                    isMenuMenipisFilterActive = newActive
+                                    selectedFilterOption = if (newActive) KategoriFilterOption.STOK_MENIPIS else KategoriFilterOption.SEMUA
+                                }
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -253,7 +447,7 @@ fun DaftarKategoriScreen(
                                 Icon(
                                     Icons.Default.Warning,
                                     contentDescription = null,
-                                    tint = if (isMenuMenipisFilterActive) Color.White else Color(0xFFEA580C),
+                                    tint = if (isMenuMenipisFilterActive || selectedFilterOption == KategoriFilterOption.STOK_MENIPIS) Color.White else Color(0xFFEA580C),
                                     modifier = Modifier.size(13.dp)
                                 )
                                 Text(
@@ -261,9 +455,9 @@ fun DaftarKategoriScreen(
                                     fontFamily = interfamily,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = if (isMenuMenipisFilterActive) Color.White else Color(0xFFEA580C)
+                                    color = if (isMenuMenipisFilterActive || selectedFilterOption == KategoriFilterOption.STOK_MENIPIS) Color.White else Color(0xFFEA580C)
                                 )
-                                if (isMenuMenipisFilterActive) {
+                                if (isMenuMenipisFilterActive || selectedFilterOption == KategoriFilterOption.STOK_MENIPIS) {
                                     Icon(
                                         Icons.Default.Close,
                                         contentDescription = "Hapus filter",
@@ -287,11 +481,14 @@ fun DaftarKategoriScreen(
                     ) {
                         Icon(Icons.Default.Category, contentDescription = null, tint = Color(0xFFD1D5DB), modifier = Modifier.size(56.dp))
                         Text(
-                            text = if (isMenuMenipisFilterActive) "Tidak ada kategori dengan stok menipis" else if (state.searchQuery.isNotEmpty()) "Kategori tidak ditemukan" else "Belum ada kategori",
+                            text = if (isMenuMenipisFilterActive || selectedFilterOption == KategoriFilterOption.STOK_MENIPIS) "Tidak ada kategori dengan stok menipis"
+                            else if (selectedFilterOption != KategoriFilterOption.SEMUA) "Tidak ada kategori sesuai filter"
+                            else if (state.searchQuery.isNotEmpty()) "Kategori tidak ditemukan" else "Belum ada kategori",
                             fontFamily = interfamily, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF374151)
                         )
                         Text(
-                            text = if (isMenuMenipisFilterActive) "Ketuk 'Total Menu Siap Jual' untuk menampilkan semua kategori" else if (state.searchQuery.isNotEmpty()) "Coba kata kunci lain" else "Ketuk Tambah Kategori untuk memulai",
+                            text = if (isMenuMenipisFilterActive || selectedFilterOption != KategoriFilterOption.SEMUA) "Ketuk tombol filter atau 'Total Menu' untuk mereset filter"
+                            else if (state.searchQuery.isNotEmpty()) "Coba kata kunci lain" else "Ketuk Tambah Kategori untuk memulai",
                             fontFamily = interfamily, fontSize = 12.sp, color = Color(0xFF6B7280), textAlign = TextAlign.Center
                         )
                     }

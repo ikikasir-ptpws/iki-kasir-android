@@ -444,19 +444,19 @@ fun IkiKasirBottomBar(
         else -> 14.dp
     }
     val barHeight = when {
-        isSmallScreen -> 68.dp
-        isTablet -> 80.dp
-        else -> 74.dp
+        isSmallScreen -> 74.dp
+        isTablet -> 88.dp
+        else -> 82.dp
     }
     val cornerRadius = when {
-        isSmallScreen -> 24.dp
-        isTablet -> 32.dp
-        else -> 28.dp
+        isSmallScreen -> 28.dp
+        isTablet -> 36.dp
+        else -> 32.dp
     }
     val contentHorizontalPadding = when {
-        isSmallScreen -> 8.dp
-        isTablet -> 20.dp
-        else -> 12.dp
+        isSmallScreen -> 10.dp
+        isTablet -> 24.dp
+        else -> 14.dp
     }
 
     Box(
@@ -568,19 +568,19 @@ fun BottomNavItem(
 
     if (isCenter) {
         val fabSize = when {
-            isSmallScreen -> 52.dp
-            isTablet -> 64.dp
-            else -> 58.dp
+            isSmallScreen -> 58.dp
+            isTablet -> 70.dp
+            else -> 64.dp
         }
         val fabIconSize = when {
-            isSmallScreen -> 24.dp
-            isTablet -> 30.dp
-            else -> 26.dp
+            isSmallScreen -> 26.dp
+            isTablet -> 32.dp
+            else -> 28.dp
         }
         val fabOffset = when {
-            isSmallScreen -> (-12).dp
+            isSmallScreen -> (-14).dp
             isTablet -> (-18).dp
-            else -> (-14).dp
+            else -> (-16).dp
         }
         Box(
             modifier = Modifier
@@ -604,19 +604,19 @@ fun BottomNavItem(
         }
     } else {
         val circleSize = when {
-            isSmallScreen -> 34.dp
-            isTablet -> 44.dp
-            else -> 36.dp
+            isSmallScreen -> 38.dp
+            isTablet -> 48.dp
+            else -> 42.dp
         }
         val iconSize = when {
-            isSmallScreen -> 19.dp
-            isTablet -> 24.dp
-            else -> 20.dp
+            isSmallScreen -> 21.dp
+            isTablet -> 26.dp
+            else -> 23.dp
         }
         val fontSize = when {
-            isSmallScreen -> 9.5.sp
-            isTablet -> 12.sp
-            else -> 10.5.sp
+            isSmallScreen -> 10.sp
+            isTablet -> 13.sp
+            else -> 11.5.sp
         }
 
         val animatedBoxSize by animateDpAsState(
@@ -644,7 +644,7 @@ fun BottomNavItem(
             modifier = Modifier
                 .clickable(
                     interactionSource = interactionSource,
-                    indication = ripple(bounded = false, radius = 28.dp, color = Color(0xFF4F46E5).copy(alpha = 0.2f))
+                    indication = ripple(bounded = false, radius = 30.dp, color = Color(0xFF4F46E5).copy(alpha = 0.2f))
                 ) { onClick() }
                 .padding(vertical = 2.dp)
         ) {
@@ -664,11 +664,11 @@ fun BottomNavItem(
                     modifier = Modifier.size(iconSize)
                 )
             }
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(3.dp))
             Text(
                 text = stringResource(screen.title),
                 fontSize = fontSize,
-                lineHeight = 14.sp,
+                lineHeight = 15.sp,
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                 fontFamily = interfamily,
                 color = animatedContentColor,

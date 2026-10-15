@@ -18,8 +18,10 @@ import dagger.hilt.android.AndroidEntryPoint
  *
  * Mendukung Android 10 ke bawah (Android 8, 9, 10) hingga Android 15 ke atas.
  */
+import com.ptpws.ikikasir.commond.BaseActivity
+
 @AndroidEntryPoint
-class BarcodeScannerActivity : ComponentActivity() {
+class BarcodeScannerActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
