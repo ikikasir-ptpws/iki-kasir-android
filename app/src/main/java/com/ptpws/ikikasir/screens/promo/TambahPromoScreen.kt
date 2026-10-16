@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
@@ -55,6 +56,11 @@ import java.text.SimpleDateFormat
 import androidx.activity.compose.BackHandler
 import java.util.Date
 import java.util.Locale
+
+private fun formatRupiah(amount: Double): String {
+    val numberFormat = NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID"))
+    return "Rp " + numberFormat.format(amount.toLong())
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,6 +158,8 @@ fun TambahPromoScreen(
         PilihProdukPromoDialog(
             availableProducts = state.availableProducts,
             initialSelected = state.selectedProducts,
+            isRefreshing = state.isRefreshingProducts,
+            onRefresh = { viewModel.refreshProdukCatalog() },
             onDismiss = { showPilihProdukDialog = false },
             onSelesai = { selectedList ->
                 viewModel.setSelectedProducts(selectedList)
@@ -481,9 +489,8 @@ fun TambahPromoScreen(
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
                                                 )
-                                                val fmt = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
                                                 Text(
-                                                    text = fmt.format(produk.sellingPrice),
+                                                    text = formatRupiah(produk.sellingPrice),
                                                     fontFamily = interfamily,
                                                     fontSize = 13.sp,
                                                     color = Color(0xFF64748B)
@@ -791,12 +798,32 @@ fun TambahPromoScreen(
 fun PilihProdukPromoDialog(
     availableProducts: List<Produk>,
     initialSelected: List<Produk>,
+    isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
     onDismiss: () -> Unit,
     onSelesai: (List<Produk>) -> Unit
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     val tempSelected = remember { mutableStateListOf<Produk>().apply { addAll(initialSelected) } }
+
+    // Realtime synchronization saat dialog dibuka
+    LaunchedEffect(Unit) {
+        onRefresh()
+    }
+
+    // Sync data terbaru produk yang sedang terpilih jika availableProducts terupdate
+    LaunchedEffect(availableProducts) {
+        if (availableProducts.isNotEmpty()) {
+            for (i in tempSelected.indices) {
+                val current = tempSelected[i]
+                val latest = availableProducts.find { it.id == current.id }
+                if (latest != null && latest != current) {
+                    tempSelected[i] = latest
+                }
+            }
+        }
+    }
 
     val filteredList = remember(searchQuery, availableProducts) {
         availableProducts.filter { item ->
@@ -876,13 +903,42 @@ fun PilihProdukPromoDialog(
                     verticalAlignment = Alignment.Top
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Pilih Produk Promo",
-                            fontFamily = interfamily,
-                            fontSize = if (isCompact) 16.sp else 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Pilih Produk Promo",
+                                fontFamily = interfamily,
+                                fontSize = if (isCompact) 16.sp else 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F172A)
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFFECFDF5)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFF10B981))
+                                    )
+                                    Text(
+                                        text = "Realtime",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF059669),
+                                        fontFamily = interfamily
+                                    )
+                                }
+                            }
+                        }
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Pilih produk yang akan dimasukkan ke promo",
@@ -892,20 +948,50 @@ fun PilihProdukPromoDialog(
                         )
                     }
 
-                    Surface(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clickable { onDismiss() },
-                        shape = CircleShape,
-                        color = Color(0xFFF1F5F9)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Tutup",
-                                tint = Color(0xFF64748B),
-                                modifier = Modifier.size(16.dp)
-                            )
+                        Surface(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable(enabled = !isRefreshing) { onRefresh() },
+                            shape = CircleShape,
+                            color = Color(0xFFF1F5F9)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                if (isRefreshing) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp,
+                                        color = Color(0xFF2563EB)
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "Muat Ulang Realtime",
+                                        tint = Color(0xFF2563EB),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Surface(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable { onDismiss() },
+                            shape = CircleShape,
+                            color = Color(0xFFF1F5F9)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Tutup",
+                                    tint = Color(0xFF64748B),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -1093,7 +1179,6 @@ fun PilihProdukPromoDialog(
                     ) {
                         items(filteredList, key = { it.id }) { item ->
                             val isChecked = tempSelected.any { it.id == item.id }
-                            val fmt = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
 
                             Card(
                                 modifier = Modifier
@@ -1151,7 +1236,7 @@ fun PilihProdukPromoDialog(
                                         }
                                         Spacer(modifier = Modifier.height(3.dp))
                                         Text(
-                                            text = fmt.format(item.sellingPrice),
+                                            text = formatRupiah(item.sellingPrice),
                                             fontFamily = interfamily,
                                             fontSize = if (isCompact) 13.sp else 14.sp,
                                             fontWeight = FontWeight.Bold,
