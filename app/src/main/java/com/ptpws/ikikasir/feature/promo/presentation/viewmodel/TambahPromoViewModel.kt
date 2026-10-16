@@ -29,6 +29,7 @@ data class TambahPromoFormState(
     val tipePromo: String = "",
     val selectedProducts: List<Produk> = emptyList(),
     val availableProducts: List<Produk> = emptyList(),
+    val isRefreshingProducts: Boolean = false,
     val diskonType: String = "Rp", // "Rp" or "%"
     val nilaiDiskon: String = "",
     val tanggalMulai: String = "",
@@ -59,8 +60,27 @@ class TambahPromoViewModel @Inject constructor(
         viewModelScope.launch {
             getProdukUseCase().collect { products ->
                 _state.update { currentState ->
-                    currentState.copy(availableProducts = products)
+                    val updatedSelected = currentState.selectedProducts.map { sel ->
+                        products.find { it.id == sel.id } ?: sel
+                    }
+                    currentState.copy(
+                        availableProducts = products,
+                        selectedProducts = updatedSelected
+                    )
                 }
+            }
+        }
+    }
+
+    fun refreshProdukCatalog() {
+        viewModelScope.launch {
+            _state.update { it.copy(isRefreshingProducts = true) }
+            try {
+                getProdukUseCase.refresh()
+            } catch (e: Exception) {
+                // Ignore transient network errors
+            } finally {
+                _state.update { it.copy(isRefreshingProducts = false) }
             }
         }
     }
