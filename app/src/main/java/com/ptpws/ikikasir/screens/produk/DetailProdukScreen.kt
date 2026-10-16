@@ -342,6 +342,8 @@ fun DetailProdukScreen(
                                 modifier = Modifier.padding(if (isSmallScreen) 14.dp else 20.dp),
                                 verticalArrangement = Arrangement.spacedBy(if (isSmallScreen) 8.dp else 10.dp)
                             ) {
+                                val hasBarcode = produk.barcode.isNotBlank()
+
                                 // Pills Row: Barcode & Kategori
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -350,7 +352,13 @@ fun DetailProdukScreen(
                                 ) {
                                     Surface(
                                         shape = RoundedCornerShape(12.dp),
-                                        color = Color(0xFFF1F5F9)
+                                        color = if (hasBarcode) Color(0xFFF1F5F9) else Color(0xFFFEF3C7),
+                                        border = if (hasBarcode) null else BorderStroke(1.dp, Color(0xFFFDE68A)),
+                                        modifier = if (!hasBarcode) {
+                                            Modifier.clickable {
+                                                navigateToEditProduk(context, produk)
+                                            }
+                                        } else Modifier
                                     ) {
                                         Row(
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
@@ -358,17 +366,17 @@ fun DetailProdukScreen(
                                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.QrCode,
+                                                imageVector = if (hasBarcode) Icons.Default.QrCode else Icons.Default.Info,
                                                 contentDescription = null,
-                                                tint = Color(0xFF94A3B8),
+                                                tint = if (hasBarcode) Color(0xFF94A3B8) else Color(0xFFD97706),
                                                 modifier = Modifier.size(14.dp)
                                             )
                                             Text(
-                                                text = produk.barcode.ifBlank { "8992753210123" },
+                                                text = if (hasBarcode) produk.barcode else "Kode belum diisi",
                                                 fontSize = 11.5.sp,
                                                 fontFamily = interfamily,
-                                                fontWeight = FontWeight.Medium,
-                                                color = Color(0xFF475569),
+                                                fontWeight = if (hasBarcode) FontWeight.Medium else FontWeight.SemiBold,
+                                                color = if (hasBarcode) Color(0xFF475569) else Color(0xFFB45309),
                                                 maxLines = 1,
                                                 softWrap = false
                                             )
@@ -389,6 +397,37 @@ fun DetailProdukScreen(
                                             softWrap = false,
                                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                         )
+                                    }
+                                }
+
+                                if (!hasBarcode) {
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = Color(0xFFFFFBEB),
+                                        border = BorderStroke(1.dp, Color(0xFFFDE68A)),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { navigateToEditProduk(context, produk) }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Info,
+                                                contentDescription = null,
+                                                tint = Color(0xFFD97706),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Text(
+                                                text = "Barcode / Kode Produk belum diatur. Ketuk untuk mengisi.",
+                                                fontSize = 11.5.sp,
+                                                fontFamily = interfamily,
+                                                color = Color(0xFF92400E),
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
                                     }
                                 }
 
