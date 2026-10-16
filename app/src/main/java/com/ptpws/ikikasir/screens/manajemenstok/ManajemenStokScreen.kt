@@ -624,12 +624,39 @@ fun StokProdukCardItem(
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    Text(
-                        text = "SKU: ${produk.barcode.ifBlank { "ARB-TRJ-250" }}",
-                        fontSize = 11.sp,
-                        fontFamily = interfamily,
-                        color = Color(0xFF64748B)
-                    )
+                    if (produk.barcode.isNotBlank()) {
+                        Text(
+                            text = "SKU: ${produk.barcode}",
+                            fontSize = 11.sp,
+                            fontFamily = interfamily,
+                            color = Color(0xFF64748B)
+                        )
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "Kode:",
+                                fontSize = 11.sp,
+                                fontFamily = interfamily,
+                                color = Color(0xFF94A3B8)
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = Color(0xFFFEF3C7)
+                            ) {
+                                Text(
+                                    text = "Belum diisi",
+                                    fontSize = 10.sp,
+                                    fontFamily = interfamily,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFFD97706),
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                )
+                            }
+                        }
+                    }
                 }
 
                 // Right Column: Total Stock Value
