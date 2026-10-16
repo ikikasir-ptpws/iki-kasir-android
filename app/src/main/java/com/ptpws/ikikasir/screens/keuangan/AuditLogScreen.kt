@@ -35,6 +35,7 @@ import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.auditlog.domain.model.AuditLog
 import com.ptpws.ikikasir.feature.auditlog.presentation.viewmodel.AuditLogViewModel
@@ -72,6 +73,18 @@ fun AuditLogScreen(
                 showDateRangePicker = false
             }
         )
+    }
+
+    // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
+    val pageSize = 10
+    var displayedCount by remember(state.searchQuery, state.selectedCategory, state.selectedDateFilter, state.startDateMillis, state.endDateMillis) {
+        mutableIntStateOf(pageSize)
+    }
+    val displayedLogs = remember(state.filteredLogs, displayedCount) {
+        state.filteredLogs.take(displayedCount)
+    }
+    val displayedGroupedLogs = remember(displayedLogs) {
+        displayedLogs.groupBy { formatTimestampToDateHeader(it.timestamp) }
     }
 
     Scaffold(
@@ -365,10 +378,8 @@ fun AuditLogScreen(
                     }
                 }
             } else {
-                // Render Logs with Date Headers
-                val groupedLogs = state.filteredLogs.groupBy { formatTimestampToDateHeader(it.timestamp) }
-
-                groupedLogs.forEach { (dateHeader, logsInGroup) ->
+                // Render Logs with Date Headers (Scroll pagination: 10 data awal + 10 data saat scroll)
+                displayedGroupedLogs.forEach { (dateHeader, logsInGroup) ->
                     item(key = "header_$dateHeader") {
                         Row(
                             modifier = Modifier
@@ -413,6 +424,20 @@ fun AuditLogScreen(
                             isBahaya = log.isWarning
                         )
                     }
+                }
+            }
+
+            // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+            if (!state.isLoading && state.filteredLogs.isNotEmpty()) {
+                item(key = "scroll_pagination_footer") {
+                    GlobalScrollPaginationFooter(
+                        displayedCount = displayedCount,
+                        totalItems = state.filteredLogs.size,
+                        onLoadMore = {
+                            displayedCount = minOf(displayedCount + pageSize, state.filteredLogs.size)
+                        },
+                        itemName = "aktivitas log"
+                    )
                 }
             }
         }

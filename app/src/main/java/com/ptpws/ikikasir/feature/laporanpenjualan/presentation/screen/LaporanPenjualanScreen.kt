@@ -44,6 +44,7 @@ import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.LaporanKpiCardShimmer
 import com.ptpws.ikikasir.commond.ProdukTerjualShimmerCard
 import com.ptpws.ikikasir.commond.interfamily
@@ -103,6 +104,15 @@ fun LaporanPenjualanScreen(
                 showDateRangePicker = false
             }
         )
+    }
+
+    // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
+    val pageSize = 10
+    var displayedCount by remember(state.searchQuery, state.selectedPeriode, state.customStartDateMillis, state.customEndDateMillis) {
+        mutableIntStateOf(pageSize)
+    }
+    val displayedSoldItems = remember(state.displayedItems, displayedCount) {
+        state.displayedItems.take(displayedCount)
     }
 
     // Export Success Dialog
@@ -549,8 +559,23 @@ fun LaporanPenjualanScreen(
                     }
                 }
             } else {
-                items(state.displayedItems, key = { "${it.productId}_${it.namaProduk}" }) { item ->
+                // Sold Products List (Scroll pagination: 10 data awal + 10 data saat scroll)
+                items(displayedSoldItems, key = { "${it.productId}_${it.namaProduk}" }) { item ->
                     ProdukTerjualCard(item = item)
+                }
+            }
+
+            // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+            if (!state.isLoading && state.displayedItems.isNotEmpty()) {
+                item(key = "scroll_pagination_footer") {
+                    GlobalScrollPaginationFooter(
+                        displayedCount = displayedCount,
+                        totalItems = state.displayedItems.size,
+                        onLoadMore = {
+                            displayedCount = minOf(displayedCount + pageSize, state.displayedItems.size)
+                        },
+                        itemName = "produk terjual"
+                    )
                 }
             }
         }

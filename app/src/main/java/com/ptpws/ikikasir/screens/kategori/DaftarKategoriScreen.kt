@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.kategori.presentation.util.KategoriIconHelper
@@ -125,6 +126,15 @@ fun DaftarKategoriScreen(
                 )
             }
         }
+    }
+
+    // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
+    val pageSize = 10
+    var displayedCount by remember(state.searchQuery, selectedFilterOption, isMenuMenipisFilterActive) {
+        mutableIntStateOf(pageSize)
+    }
+    val displayedKategoriList = remember(sortedFilteredList, displayedCount) {
+        sortedFilteredList.take(displayedCount)
     }
 
     Scaffold(
@@ -503,8 +513,8 @@ fun DaftarKategoriScreen(
                 }
             }
 
-            // ── Category cards ───────────────────────────────────────────────
-            items(items = sortedFilteredList, key = { it.id }) { kategori ->
+            // ── Category cards (Scroll pagination: 10 data awal + 10 data saat scroll) ───────────────────────────
+            items(items = displayedKategoriList, key = { it.id }) { kategori ->
                 val iconOption = KategoriIconHelper.getIconOption(kategori.iconName)
                 val accentColor = try {
                     Color(android.graphics.Color.parseColor(kategori.colorHex))
@@ -543,6 +553,20 @@ fun DaftarKategoriScreen(
                     onToggleCashier = { viewModel.toggleCashierVisibility(kategori) }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+            if (!state.isLoading && sortedFilteredList.isNotEmpty()) {
+                item(key = "scroll_pagination_footer") {
+                    GlobalScrollPaginationFooter(
+                        displayedCount = displayedCount,
+                        totalItems = sortedFilteredList.size,
+                        onLoadMore = {
+                            displayedCount = minOf(displayedCount + pageSize, sortedFilteredList.size)
+                        },
+                        itemName = "kategori"
+                    )
+                }
             }
         }
     }

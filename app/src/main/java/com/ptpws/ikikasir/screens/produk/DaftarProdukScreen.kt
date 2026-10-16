@@ -53,6 +53,7 @@ import coil.compose.AsyncImage
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
@@ -128,6 +129,15 @@ fun DaftarProdukScreen(
             else -> filteredList
         }
         baseSorted.sortedByDescending { it.stock <= it.lowStockThreshold }
+    }
+
+    // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
+    val pageSize = 10
+    var displayedCount by remember(state.searchQuery, state.selectedCategoryId, isLowStockFilterSelected, selectedSortOption) {
+        mutableIntStateOf(pageSize)
+    }
+    val displayedProdukList = remember(sortedList, displayedCount) {
+        sortedList.take(displayedCount)
     }
 
     // Low stock count
@@ -550,9 +560,9 @@ fun DaftarProdukScreen(
                 }
             }
 
-            // Product Items List
+            // Product Items List (Scroll pagination: 10 data awal + 10 data saat scroll)
             items(
-                items = sortedList,
+                items = displayedProdukList,
                 key = { it.id }
             ) { produk ->
                 val category = categoryMap[produk.categoryId]
@@ -590,6 +600,20 @@ fun DaftarProdukScreen(
                         viewModel.requestDeleteProduk(produk)
                     }
                 )
+            }
+
+            // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+            if (!state.isLoading && sortedList.isNotEmpty()) {
+                item(key = "scroll_pagination_footer") {
+                    GlobalScrollPaginationFooter(
+                        displayedCount = displayedCount,
+                        totalItems = sortedList.size,
+                        onLoadMore = {
+                            displayedCount = minOf(displayedCount + pageSize, sortedList.size)
+                        },
+                        itemName = "produk"
+                    )
+                }
             }
         }
     }

@@ -42,8 +42,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
-import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.getEndOfDayLocalSeconds
 import com.ptpws.ikikasir.commond.getStartOfDayLocalSeconds
 import com.ptpws.ikikasir.commond.interfamily
@@ -299,8 +299,16 @@ fun RiwayatAntreanScreen(
         else -> emptyList()
     }
 
-    val groupedHistory = remember(filteredList) {
-        viewModel.groupHistoryByDate(filteredList)
+    // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
+    val pageSize = 10
+    var displayedCount by remember(searchQuery, selectedFilter, startDateMillis, endDateMillis) {
+        mutableIntStateOf(pageSize)
+    }
+    val displayedHistory = remember(filteredList, displayedCount) {
+        filteredList.take(displayedCount)
+    }
+    val displayedGroupedHistory = remember(displayedHistory) {
+        viewModel.groupHistoryByDate(displayedHistory)
     }
 
     if (showDateRangePickerDialog) {
@@ -616,7 +624,7 @@ fun RiwayatAntreanScreen(
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                                 contentPadding = PaddingValues(bottom = 56.dp)
                             ) {
-                                groupedHistory.forEach { (dateHeader, historyItems) ->
+                                displayedGroupedHistory.forEach { (dateHeader, historyItems) ->
                                     item {
                                         GroupHeaderRow(
                                             dateHeader = dateHeader,
@@ -631,6 +639,20 @@ fun RiwayatAntreanScreen(
                                         QueueHistoryCard(
                                             history = history,
                                             transaksi = matchedTransaksi
+                                        )
+                                    }
+                                }
+
+                                // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+                                if (filteredList.isNotEmpty()) {
+                                    item(key = "scroll_pagination_footer") {
+                                        GlobalScrollPaginationFooter(
+                                            displayedCount = displayedCount,
+                                            totalItems = filteredList.size,
+                                            onLoadMore = {
+                                                displayedCount = minOf(displayedCount + pageSize, filteredList.size)
+                                            },
+                                            itemName = "riwayat antrean"
                                         )
                                     }
                                 }

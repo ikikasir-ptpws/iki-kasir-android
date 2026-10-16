@@ -33,6 +33,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.role.domain.model.Role
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
@@ -53,6 +57,13 @@ fun RoleIzinScreen(
 ) {
     val state by viewModel.listState.collectAsState()
     val roles = state.roles
+
+    // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
+    val pageSize = 10
+    var displayedCount by remember { mutableIntStateOf(pageSize) }
+    val displayedRoles = remember(roles, displayedCount) {
+        roles.take(displayedCount)
+    }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -93,14 +104,29 @@ fun RoleIzinScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(roles.size) { index ->
-                    val role = roles[index]
+                // Role items (Scroll pagination: 10 data awal + 10 data saat scroll)
+                items(displayedRoles.size) { index ->
+                    val role = displayedRoles[index]
                     RoleCard(
                         role = role,
                         onEdit = { onEditRoleClick(role) },
                         onShowPermissions = { onEditPermissionsClick(role) },
                         onDelete = { viewModel.deleteRole(role.id) }
                     )
+                }
+
+                // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+                if (roles.isNotEmpty()) {
+                    item(key = "scroll_pagination_footer") {
+                        GlobalScrollPaginationFooter(
+                            displayedCount = displayedCount,
+                            totalItems = roles.size,
+                            onLoadMore = {
+                                displayedCount = minOf(displayedCount + pageSize, roles.size)
+                            },
+                            itemName = "role"
+                        )
+                    }
                 }
             }
         }

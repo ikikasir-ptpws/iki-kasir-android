@@ -41,9 +41,10 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
-import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
+import com.ptpws.ikikasir.feature.penjualan.presentation.state.GroupedTransaksi
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.RiwayatTransaksiViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -86,6 +87,28 @@ fun RiwayatTransaksiScreen(
         if (!state.exportError.isNullOrBlank()) {
             errorMessage = state.exportError ?: ""
             showExportErrorDialog = true
+        }
+    }
+
+    // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
+    val pageSize = 10
+    var displayedCount by remember(state.searchQuery, state.selectedFilter, state.startDateMillis, state.endDateMillis) {
+        mutableIntStateOf(pageSize)
+    }
+    val displayedTransactions = remember(state.filteredList, displayedCount) {
+        state.filteredList.take(displayedCount)
+    }
+    val displayedGroupedTransactions = remember(displayedTransactions) {
+        displayedTransactions.groupBy { transaksi ->
+            val date = transaksi.createdAt.toDate()
+            val format = SimpleDateFormat("EEEE, dd MMMM yyyy", Locale("id", "ID"))
+            format.format(date)
+        }.map { (dateHeader, txs) ->
+            GroupedTransaksi(
+                dateHeader = dateHeader,
+                countText = "${txs.size} Transaksi",
+                transactions = txs
+            )
         }
     }
 
@@ -666,7 +689,7 @@ fun RiwayatTransaksiScreen(
                     com.ptpws.ikikasir.commond.TransaksiCardShimmer()
                     Spacer(modifier = Modifier.height(10.dp))
                 }
-            } else if (state.groupedTransactions.isEmpty()) {
+            } else if (state.filteredList.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
@@ -683,8 +706,8 @@ fun RiwayatTransaksiScreen(
                     }
                 }
             } else {
-                // Render Grouped Transactions by Date Header
-                state.groupedTransactions.forEach { group ->
+                // Render Grouped Transactions by Date Header (10 data per halaman)
+                displayedGroupedTransactions.forEach { group ->
                     item(key = "header_${group.dateHeader}") {
                         Row(
                             modifier = Modifier
@@ -695,9 +718,9 @@ fun RiwayatTransaksiScreen(
                             // Vertical Indicator Pill
                             Box(
                                 modifier = Modifier
-                                    .width(4.dp)
-                                    .height(18.dp)
-                                    .background(Color(0xFF4F46E5), RoundedCornerShape(2.dp))
+                                .width(4.dp)
+                                .height(18.dp)
+                                .background(Color(0xFF4F46E5), RoundedCornerShape(2.dp))
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
@@ -745,6 +768,20 @@ fun RiwayatTransaksiScreen(
                             onDetail = { onDetailTransaksi(transaksi.transactionId) }
                         )
                     }
+                }
+            }
+
+            // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+            if (!state.isLoading && state.filteredList.isNotEmpty()) {
+                item(key = "scroll_pagination_footer") {
+                    GlobalScrollPaginationFooter(
+                        displayedCount = displayedCount,
+                        totalItems = state.filteredList.size,
+                        onLoadMore = {
+                            displayedCount = minOf(displayedCount + pageSize, state.filteredList.size)
+                        },
+                        itemName = "transaksi"
+                    )
                 }
             }
         }

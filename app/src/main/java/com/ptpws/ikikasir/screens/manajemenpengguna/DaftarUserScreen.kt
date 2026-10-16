@@ -34,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -74,6 +76,14 @@ fun DaftarUserScreen(
     }
 
     val users = state.filteredUsers
+    val pageSize = 10
+    var displayedCount by remember(state.searchQuery) {
+        mutableIntStateOf(pageSize)
+    }
+    val displayedUsers = remember(users, displayedCount) {
+        users.take(displayedCount)
+    }
+
     val totalPengguna = state.users.size
     val penggunaAktif = state.users.count { it.isActive }
     val penggunaNonAktif = state.users.count { !it.isActive }
@@ -224,9 +234,9 @@ fun DaftarUserScreen(
                     }
                 }
             } else {
-                // User cards
-                items(users.size) { index ->
-                    val user = users[index]
+                // User cards (Scroll pagination: 10 data awal + 10 data saat scroll)
+                items(displayedUsers.size) { index ->
+                    val user = displayedUsers[index]
                     val inisial = user.inisial
                     val role = user.roleDisplayName
                     val aktif = user.isActive
@@ -383,6 +393,20 @@ fun DaftarUserScreen(
                             }
                         }
                     }
+                }
+            }
+
+            // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+            if (!state.isLoading && users.isNotEmpty()) {
+                item(key = "scroll_pagination_footer") {
+                    GlobalScrollPaginationFooter(
+                        displayedCount = displayedCount,
+                        totalItems = users.size,
+                        onLoadMore = {
+                            displayedCount = minOf(displayedCount + pageSize, users.size)
+                        },
+                        itemName = "pengguna"
+                    )
                 }
             }
 

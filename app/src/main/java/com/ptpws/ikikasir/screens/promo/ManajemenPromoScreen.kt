@@ -34,6 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
 import com.ptpws.ikikasir.feature.promo.domain.model.isAvailableOn
@@ -65,6 +66,15 @@ fun ManajemenPromoScreen(
 
     val activeCount = remember(state.promoList) { state.promoList.count { it.isAvailableOn() } }
     val endingThisWeekCount = remember(state.promoList) { state.promoList.count { it.isEndingWithinDays(7) } }
+
+    // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
+    val pageSize = 10
+    var displayedCount by remember(state.searchQuery, state.selectedFilterTab) {
+        mutableIntStateOf(pageSize)
+    }
+    val displayedPromoList = remember(state.filteredList, displayedCount) {
+        state.filteredList.take(displayedCount)
+    }
 
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
@@ -324,7 +334,8 @@ fun ManajemenPromoScreen(
                     }
                 }
             } else {
-                items(items = state.filteredList, key = { it.id }) { promo ->
+                // Promo Items List (Scroll pagination: 10 data awal + 10 data saat scroll)
+                items(items = displayedPromoList, key = { it.id }) { promo ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -446,6 +457,20 @@ fun ManajemenPromoScreen(
                             }
                         }
                     }
+                }
+            }
+
+            // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+            if (state.filteredList.isNotEmpty()) {
+                item(key = "scroll_pagination_footer") {
+                    GlobalScrollPaginationFooter(
+                        displayedCount = displayedCount,
+                        totalItems = state.filteredList.size,
+                        onLoadMore = {
+                            displayedCount = minOf(displayedCount + pageSize, state.filteredList.size)
+                        },
+                        itemName = "promo"
+                    )
                 }
             }
         }

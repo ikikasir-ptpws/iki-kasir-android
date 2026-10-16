@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.antrean.domain.model.Antrean
 import com.ptpws.ikikasir.feature.antrean.presentation.state.AntreanUiState
@@ -69,6 +70,15 @@ fun WaitingListScreen(
                 || antrean.customerName.contains(searchQuery, ignoreCase = true)
         }
         else -> emptyList()
+    }
+
+    // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
+    val pageSize = 10
+    var displayedCount by remember(searchQuery) {
+        mutableIntStateOf(pageSize)
+    }
+    val displayedWaitingList = remember(filteredList, displayedCount) {
+        filteredList.take(displayedCount)
     }
 
     Scaffold(
@@ -253,17 +263,32 @@ fun WaitingListScreen(
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
                                 contentPadding = PaddingValues(bottom = 56.dp)
                             ) {
-                                itemsIndexed(filteredList) { index, antrean ->
+                                itemsIndexed(displayedWaitingList) { index, antrean ->
+                                    val globalNumber = index + 1
                                     val matchedTransaksi = transaksiMap[antrean.transactionId]
                                         ?: transaksiMap.values.find { it.transactionNumber == antrean.transactionId }
 
                                     AntreanCard(
-                                        nomor = index + 1,
+                                        nomor = globalNumber,
                                         antrean = antrean,
                                         transaksi = matchedTransaksi,
                                         onSelesai = { viewModel.selesaikan(antrean.id) },
                                         onBatal = { viewModel.batalkan(antrean.id) }
                                     )
+                                }
+
+                                // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+                                if (filteredList.isNotEmpty()) {
+                                    item(key = "scroll_pagination_footer") {
+                                        GlobalScrollPaginationFooter(
+                                            displayedCount = displayedCount,
+                                            totalItems = filteredList.size,
+                                            onLoadMore = {
+                                                displayedCount = minOf(displayedCount + pageSize, filteredList.size)
+                                            },
+                                            itemName = "antrean"
+                                        )
+                                    }
                                 }
                             }
                         }
