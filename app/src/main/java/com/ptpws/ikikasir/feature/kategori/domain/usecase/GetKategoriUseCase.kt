@@ -11,4 +11,8 @@ class GetKategoriUseCase @Inject constructor(
     operator fun invoke(): Flow<List<Kategori>> {
         return repository.getKategoriList()
     }
+
+    suspend fun refresh() {
+        repository.refreshKategori()
+    }
 }

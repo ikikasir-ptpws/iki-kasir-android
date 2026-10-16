@@ -10,6 +10,7 @@ import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.repository.ProdukRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -42,20 +43,56 @@ class ProdukRepositoryImpl @Inject constructor(
                 }
             }
         }
+
+        // Real-time Firestore synchronization for products
+        observeRemoteProduk()
+    }
+
+    private fun observeRemoteProduk() {
+        repositoryScope.launch {
+            while (true) {
+                try {
+                    remoteDataSource.getProdukFlow()
+                        .collect { remoteList ->
+                            Log.d(TAG, "Realtime Firestore produk update received: ${remoteList.size} items")
+                            val entities = remoteList.map { it.toEntity() }
+                            localDao.insertOrUpdateAll(entities)
+                            val remoteIds = remoteList.map { it.id }
+                            if (remoteIds.isNotEmpty()) {
+                                localDao.deleteSyncedNotInRemote(remoteIds)
+                            } else {
+                                localDao.deleteAllSynced()
+                            }
+                        }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Realtime Firestore produk stream error: ${e.message}", e)
+                }
+                delay(4000)
+            }
+        }
+    }
+
+    override suspend fun refreshProduk() {
+        if (networkMonitor.isConnected()) {
+            try {
+                val remoteList = remoteDataSource.getAllProduk()
+                if (remoteList.isNotEmpty()) {
+                    localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                    localDao.deleteSyncedNotInRemote(remoteList.map { it.id })
+                } else {
+                    localDao.deleteAllSynced()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to refresh remote produk: ${e.message}")
+            }
+        }
     }
 
     override fun getProdukList(): Flow<List<Produk>> {
         // If online, refresh local cache from remote in background
         if (networkMonitor.isConnected()) {
             repositoryScope.launch {
-                try {
-                    val remoteList = remoteDataSource.getAllProduk()
-                    if (remoteList.isNotEmpty()) {
-                        localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to fetch remote produk in background: ")
-                }
+                refreshProduk()
             }
         }
 
@@ -187,9 +224,12 @@ class ProdukRepositoryImpl @Inject constructor(
             val remoteList = remoteDataSource.getAllProduk()
             if (remoteList.isNotEmpty()) {
                 localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                localDao.deleteSyncedNotInRemote(remoteList.map { it.id })
+            } else {
+                localDao.deleteAllSynced()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to pull remote products during sync: ")
+            Log.e(TAG, "Failed to pull remote products during sync: ${e.message}")
         }
     }
 }

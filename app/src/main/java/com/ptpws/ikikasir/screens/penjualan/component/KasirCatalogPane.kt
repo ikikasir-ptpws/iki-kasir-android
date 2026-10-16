@@ -64,14 +64,19 @@ fun KasirCatalogPane(
         }
     }
 
-    val filteredList = remember(state.produkKatalog, state.catalogSearchQuery, state.selectedCategoryId) {
+    val filteredList = remember(state.produkKatalog, state.catalogSearchQuery, state.selectedCategoryId, state.kategoriList) {
         state.produkKatalog.filter { produk ->
             val matchQuery = if (state.catalogSearchQuery.isBlank()) true else {
                 produk.name.contains(state.catalogSearchQuery, ignoreCase = true) ||
                         produk.barcode.contains(state.catalogSearchQuery, ignoreCase = true)
             }
-            val matchCategory = if (state.selectedCategoryId == null) true else {
-                produk.categoryId == state.selectedCategoryId
+            val matchCategory = if (state.selectedCategoryId == null) {
+                true
+            } else {
+                val selectedCategoryName = state.kategoriList.find { it.id == state.selectedCategoryId }?.name
+                produk.categoryId.equals(state.selectedCategoryId, ignoreCase = true) ||
+                (selectedCategoryName != null && produk.categoryId.equals(selectedCategoryName, ignoreCase = true)) ||
+                state.kategoriList.find { it.name.equals(produk.categoryId, ignoreCase = true) }?.id == state.selectedCategoryId
             }
             matchQuery && matchCategory
         }

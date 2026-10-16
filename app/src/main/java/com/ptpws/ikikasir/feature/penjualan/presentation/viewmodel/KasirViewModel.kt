@@ -172,6 +172,24 @@ class KasirViewModel @Inject constructor(
 
     fun openProductCatalogDialog(show: Boolean = true) {
         _state.update { it.copy(showProductCatalogDialog = show) }
+        if (show) {
+            refreshKatalog()
+        }
+    }
+
+    fun refreshKatalog() {
+        viewModelScope.launch {
+            try {
+                getProdukUseCase.refresh()
+            } catch (e: Exception) {
+                // Ignore transient errors on background refresh
+            }
+            try {
+                getKategoriUseCase.refresh()
+            } catch (e: Exception) {
+                // Ignore transient errors on background refresh
+            }
+        }
     }
 
     fun openOrderNoteDialog(show: Boolean = true) {

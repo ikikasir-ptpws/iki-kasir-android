@@ -150,6 +150,22 @@ class TambahProdukViewModel @Inject constructor(
             return
         }
 
+        val sellingPriceVal = currentState.sellingPrice.toDoubleOrNull() ?: 0.0
+        if (sellingPriceVal <= 0.0) {
+            val message = "Harga jual harus lebih dari Rp 0"
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(errorMessage = message) }
+            return
+        }
+
+        val stockVal = currentState.stock.toIntOrNull() ?: 0
+        if (stockVal < 0) {
+            val message = "Stok produk tidak boleh bernilai negatif"
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(errorMessage = message) }
+            return
+        }
+
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, errorMessage = null) }
 

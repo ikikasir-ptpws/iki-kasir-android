@@ -10,6 +10,7 @@ import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.kategori.domain.repository.KategoriRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -42,20 +43,56 @@ class KategoriRepositoryImpl @Inject constructor(
                 }
             }
         }
+
+        // Real-time Firestore synchronization for categories
+        observeRemoteKategori()
+    }
+
+    private fun observeRemoteKategori() {
+        repositoryScope.launch {
+            while (true) {
+                try {
+                    remoteDataSource.getKategoriFlow()
+                        .collect { remoteList ->
+                            Log.d(TAG, "Realtime remote kategori snapshot received: ${remoteList.size} items")
+                            val entities = remoteList.map { it.toEntity() }
+                            localDao.insertOrUpdateAll(entities)
+                            val remoteIds = remoteList.map { it.id }
+                            if (remoteIds.isNotEmpty()) {
+                                localDao.deleteSyncedNotInRemote(remoteIds)
+                            } else {
+                                localDao.deleteAllSynced()
+                            }
+                        }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error in observeRemoteKategori, will retry in 5s: ${e.message}", e)
+                }
+                delay(4000)
+            }
+        }
+    }
+
+    override suspend fun refreshKategori() {
+        if (networkMonitor.isConnected()) {
+            try {
+                val remoteList = remoteDataSource.getAllKategori()
+                if (remoteList.isNotEmpty()) {
+                    localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                    localDao.deleteSyncedNotInRemote(remoteList.map { it.id })
+                } else {
+                    localDao.deleteAllSynced()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to refresh remote kategori: ${e.message}")
+            }
+        }
     }
 
     override fun getKategoriList(): Flow<List<Kategori>> {
         // If online, refresh local cache from remote in background
         if (networkMonitor.isConnected()) {
             repositoryScope.launch {
-                try {
-                    val remoteList = remoteDataSource.getAllKategori()
-                    if (remoteList.isNotEmpty()) {
-                        localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to fetch remote kategori in background: ${e.message}")
-                }
+                refreshKategori()
             }
         }
 
@@ -181,6 +218,9 @@ class KategoriRepositoryImpl @Inject constructor(
             val remoteList = remoteDataSource.getAllKategori()
             if (remoteList.isNotEmpty()) {
                 localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                localDao.deleteSyncedNotInRemote(remoteList.map { it.id })
+            } else {
+                localDao.deleteAllSynced()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to pull remote categories during sync: ${e.message}")

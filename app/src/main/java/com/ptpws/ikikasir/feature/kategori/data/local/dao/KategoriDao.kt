@@ -30,6 +30,12 @@ interface KategoriDao {
     @Query("DELETE FROM categories WHERE id = :id")
     suspend fun deletePermanently(id: String)
 
+    @Query("DELETE FROM categories WHERE isSynced = 1 AND id NOT IN (:remoteIds)")
+    suspend fun deleteSyncedNotInRemote(remoteIds: List<String>)
+
+    @Query("DELETE FROM categories WHERE isSynced = 1")
+    suspend fun deleteAllSynced()
+
     @Query("SELECT * FROM categories WHERE isSynced = 0")
     suspend fun getUnsyncedKategori(): List<KategoriEntity>
 

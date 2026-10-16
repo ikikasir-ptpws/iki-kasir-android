@@ -265,18 +265,20 @@ fun CartItemCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     // Category Dark Pill Badge
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = Color(0xFF525252)
-                    ) {
-                        Text(
-                            text = categoryName.ifBlank { "Makanan" },
-                            fontFamily = interfamily,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
+                    if (categoryName.isNotBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = Color(0xFF525252)
+                        ) {
+                            Text(
+                                text = categoryName,
+                                fontFamily = interfamily,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
                     }
 
                     // Stock status badge

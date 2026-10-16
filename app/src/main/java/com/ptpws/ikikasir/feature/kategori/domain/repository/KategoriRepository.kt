@@ -10,4 +10,5 @@ interface KategoriRepository {
     suspend fun updateKategori(kategori: Kategori): Flow<Result<Unit>>
     suspend fun deleteKategori(id: String): Flow<Result<Unit>>
     suspend fun syncPendingKategori(): Flow<Result<Unit>>
+    suspend fun refreshKategori()
 }

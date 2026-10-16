@@ -96,7 +96,8 @@ fun KasirCompactScreen(
             onCategoryFilterChange = { viewModel.onCategoryFilterChange(it) },
             onIncrement = { viewModel.incrementCartItem(it) },
             onDecrement = { viewModel.decrementCartItem(it) },
-            onSelesai = { viewModel.openProductCatalogDialog(false) }
+            onSelesai = { viewModel.openProductCatalogDialog(false) },
+            onRefresh = { viewModel.refreshKatalog() }
         )
     }
 
@@ -525,7 +526,10 @@ fun KasirCompactScreen(
                                 contentPadding = PaddingValues(bottom = 68.dp)
                             ) {
                                 items(filteredCartItems, key = { it.produk.id }) { item ->
-                                    val categoryName = state.kategoriList.find { it.id == item.produk.categoryId }?.name ?: "Makanan"
+                                    val categoryName = state.kategoriList.find { 
+                                        it.id.equals(item.produk.categoryId, ignoreCase = true) || 
+                                        it.name.equals(item.produk.categoryId, ignoreCase = true) 
+                                    }?.name ?: item.produk.categoryId.takeIf { it.isNotBlank() } ?: ""
 
                                     CartItemCard(
                                         item = item,

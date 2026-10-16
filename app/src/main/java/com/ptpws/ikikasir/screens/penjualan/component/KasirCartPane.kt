@@ -167,7 +167,10 @@ fun KasirCartPane(
                     contentPadding = PaddingValues(vertical = 4.dp)
                 ) {
                     items(cartItems, key = { it.produk.id }) { item ->
-                        val categoryName = state.kategoriList.find { it.id == item.produk.categoryId }?.name ?: "Produk"
+                        val categoryName = state.kategoriList.find { 
+                            it.id.equals(item.produk.categoryId, ignoreCase = true) || 
+                            it.name.equals(item.produk.categoryId, ignoreCase = true) 
+                        }?.name ?: item.produk.categoryId.takeIf { it.isNotBlank() } ?: ""
                         CartItemCard(
                             item = item,
                             categoryName = categoryName,

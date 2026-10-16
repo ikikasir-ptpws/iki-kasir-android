@@ -23,11 +23,7 @@ class ProdukRemoteDataSourceImpl @Inject constructor(
                 return@addSnapshotListener
             }
             if (snapshot != null) {
-                val list = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(ProdukDto::class.java)?.apply {
-                        if (id.isBlank()) id = doc.id
-                    }
-                }
+                val list = snapshot.documents.mapNotNull { doc -> parseProdukDoc(doc) }
                 trySend(list)
             }
         }
@@ -38,18 +34,48 @@ class ProdukRemoteDataSourceImpl @Inject constructor(
 
     override suspend fun getAllProduk(): List<ProdukDto> {
         val snapshot = collection.get().await()
-        return snapshot.documents.mapNotNull { doc ->
-            doc.toObject(ProdukDto::class.java)?.apply {
-                if (id.isBlank()) id = doc.id
-            }
-        }
+        return snapshot.documents.mapNotNull { doc -> parseProdukDoc(doc) }
     }
 
     override suspend fun getProdukById(id: String): ProdukDto? {
         val doc = collection.document(id).get().await()
-        return doc.toObject(ProdukDto::class.java)?.apply {
-            if (this.id.isBlank()) this.id = doc.id
+        return parseProdukDoc(doc)
+    }
+
+    private fun parseProdukDoc(doc: com.google.firebase.firestore.DocumentSnapshot): ProdukDto? {
+        val dto = doc.toObject(ProdukDto::class.java) ?: return null
+        if (dto.id.isBlank()) {
+            dto.id = doc.id
         }
+
+        // Resolusi harga jika sellingPrice bernilai 0 atau tersimpan dengan nama field alternatif di Firestore
+        if (dto.sellingPrice <= 0.0) {
+            val altPrice = doc.getDouble("price")
+                ?: doc.getLong("price")?.toDouble()
+                ?: doc.getString("price")?.toDoubleOrNull()
+                ?: doc.getDouble("harga")
+                ?: doc.getLong("harga")?.toDouble()
+                ?: doc.getString("harga")?.toDoubleOrNull()
+                ?: doc.getDouble("selling_price")
+                ?: doc.getLong("selling_price")?.toDouble()
+                ?: doc.getString("selling_price")?.toDoubleOrNull()
+                ?: 0.0
+            if (altPrice > 0.0) {
+                dto.sellingPrice = altPrice
+            }
+        }
+
+        // Resolusi categoryId jika kosong atau tersimpan dengan nama field alternatif di Firestore
+        if (dto.categoryId.isBlank()) {
+            val altCategory = doc.getString("category")
+                ?: doc.getString("category_id")
+                ?: doc.getString("kategori")
+                ?: doc.getString("kategoriId")
+                ?: ""
+            dto.categoryId = altCategory
+        }
+
+        return dto
     }
 
     override suspend fun saveProduk(produkDto: ProdukDto) {

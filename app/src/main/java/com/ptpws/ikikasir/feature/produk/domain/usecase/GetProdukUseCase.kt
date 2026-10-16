@@ -19,4 +19,8 @@ class GetProdukUseCase @Inject constructor(
     fun getById(id: String): Flow<Produk?> {
         return repository.getProdukById(id)
     }
+
+    suspend fun refresh() {
+        repository.refreshProduk()
+    }
 }

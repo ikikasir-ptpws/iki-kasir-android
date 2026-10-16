@@ -11,4 +11,5 @@ interface ProdukRepository {
     suspend fun updateProduk(produk: Produk): Flow<Result<Unit>>
     suspend fun deleteProduk(id: String): Flow<Result<Unit>>
     suspend fun syncPendingProduk(): Flow<Result<Unit>>
+    suspend fun refreshProduk()
 }

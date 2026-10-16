@@ -49,24 +49,36 @@ fun PilihProdukTersediaDialog(
     onCategoryFilterChange: (String?) -> Unit,
     onIncrement: (Produk) -> Unit,
     onDecrement: (Produk) -> Unit,
-    onSelesai: () -> Unit
+    onSelesai: () -> Unit,
+    onRefresh: () -> Unit = {}
 ) {
+    LaunchedEffect(Unit) {
+        onRefresh()
+    }
+
     val formatRupiah = remember {
         { amount: Double ->
-            NumberFormat.getNumberInstance(Locale("id", "ID")).format(amount.toLong())
+            NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID")).format(amount.toLong())
         }
     }
 
-    val filteredList = remember(state.produkKatalog, state.catalogSearchQuery, state.selectedCategoryId, state.cartItems) {
+    val filteredList = remember(state.produkKatalog, state.catalogSearchQuery, state.selectedCategoryId, state.cartItems, state.kategoriList) {
         state.produkKatalog
             .filter { produk ->
-                // Sembunyikan produk stok habis atau yang tidak aktif di kasir
-                val hasStock = produk.stock > 0
+                // Tampilkan produk yang memiliki stok atau sudah terpilih di keranjang
+                val hasStock = produk.stock > 0 || state.getItemQuantity(produk.id) > 0
                 val isVisible = produk.isVisibleInCashier
                 val matchesQuery = state.catalogSearchQuery.isBlank() ||
                         produk.name.contains(state.catalogSearchQuery, ignoreCase = true) ||
                         produk.barcode.contains(state.catalogSearchQuery, ignoreCase = true)
-                val matchesCategory = state.selectedCategoryId == null || produk.categoryId == state.selectedCategoryId
+                val matchesCategory = if (state.selectedCategoryId == null) {
+                    true
+                } else {
+                    val selectedCategoryName = state.kategoriList.find { it.id == state.selectedCategoryId }?.name
+                    produk.categoryId.equals(state.selectedCategoryId, ignoreCase = true) ||
+                    (selectedCategoryName != null && produk.categoryId.equals(selectedCategoryName, ignoreCase = true)) ||
+                    state.kategoriList.find { it.name.equals(produk.categoryId, ignoreCase = true) }?.id == state.selectedCategoryId
+                }
                 hasStock && isVisible && matchesQuery && matchesCategory
             }
             .sortedWith(
@@ -350,37 +362,57 @@ fun PilihProdukTersediaDialog(
 
                                         Spacer(modifier = Modifier.height(2.dp))
 
-                                        val categoryName = state.kategoriList.find { it.id == produk.categoryId }?.name ?: "Makanan"
+                                        val matchedCategory = state.kategoriList.find {
+                                            it.id.equals(produk.categoryId, ignoreCase = true) ||
+                                            it.name.equals(produk.categoryId, ignoreCase = true)
+                                        }
+                                        val categoryName = matchedCategory?.name ?: produk.categoryId.takeIf { it.isNotBlank() } ?: ""
 
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
-                                            Text(
-                                                text = categoryName.ifBlank { "Makanan" },
-                                                fontFamily = interfamily,
-                                                fontSize = 11.sp,
-                                                color = Color(0xFF94A3B8),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                                modifier = Modifier.weight(1f, fill = false)
-                                            )
-                                            Text(
-                                                text = "•",
-                                                fontFamily = interfamily,
-                                                fontSize = 11.sp,
-                                                color = Color(0xFFCBD5E1)
-                                            )
+                                            if (categoryName.isNotBlank()) {
+                                                Text(
+                                                    text = categoryName,
+                                                    fontFamily = interfamily,
+                                                    fontSize = 11.sp,
+                                                    color = Color(0xFF94A3B8),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier.weight(1f, fill = false)
+                                                )
+                                                Text(
+                                                    text = "•",
+                                                    fontFamily = interfamily,
+                                                    fontSize = 11.sp,
+                                                    color = Color(0xFFCBD5E1)
+                                                )
+                                            }
+                                            val isOutOfStock = produk.stock <= 0
+                                            val isLowStock = produk.stock <= produk.lowStockThreshold
                                             Surface(
                                                 shape = RoundedCornerShape(4.dp),
-                                                color = Color(0xFFDCFCE7)
+                                                color = when {
+                                                    isOutOfStock -> Color(0xFFFEE2E2)
+                                                    isLowStock -> Color(0xFFFEF3C7)
+                                                    else -> Color(0xFFDCFCE7)
+                                                }
                                             ) {
                                                 Text(
-                                                    text = "Stok ${produk.stock}",
+                                                    text = when {
+                                                        isOutOfStock -> "Habis"
+                                                        isLowStock -> "Sisa ${produk.stock}"
+                                                        else -> "Stok ${produk.stock}"
+                                                    },
                                                     fontFamily = interfamily,
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color(0xFF15803D),
+                                                    color = when {
+                                                        isOutOfStock -> Color(0xFFDC2626)
+                                                        isLowStock -> Color(0xFFD97706)
+                                                        else -> Color(0xFF15803D)
+                                                    },
                                                     maxLines = 1,
                                                     softWrap = false,
                                                     modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
@@ -390,13 +422,42 @@ fun PilihProdukTersediaDialog(
 
                                         Spacer(modifier = Modifier.height(3.dp))
 
-                                        Text(
-                                            text = "Rp ${formatRupiah(produk.getEffectivePrice(state.taxSetting))}",
-                                            fontFamily = interfamily,
-                                            fontSize = if (isCompactWidth) 13.5.sp else 14.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF3B32D1)
-                                        )
+                                        val effectivePrice = produk.getEffectivePrice(state.taxSetting)
+                                        if (effectivePrice <= 0.0) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                            ) {
+                                                Text(
+                                                    text = "Rp 0",
+                                                    fontFamily = interfamily,
+                                                    fontSize = if (isCompactWidth) 13.5.sp else 14.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color(0xFFDC2626)
+                                                )
+                                                Surface(
+                                                    shape = RoundedCornerShape(4.dp),
+                                                    color = Color(0xFFFEE2E2)
+                                                ) {
+                                                    Text(
+                                                        text = "Harga belum diatur",
+                                                        fontFamily = interfamily,
+                                                        fontSize = 10.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = Color(0xFFDC2626),
+                                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                    )
+                                                }
+                                            }
+                                        } else {
+                                            Text(
+                                                text = "Rp ${formatRupiah(effectivePrice)}",
+                                                fontFamily = interfamily,
+                                                fontSize = if (isCompactWidth) 13.5.sp else 14.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF3B32D1)
+                                            )
+                                        }
                                     }
 
                                     Spacer(modifier = Modifier.width(6.dp))

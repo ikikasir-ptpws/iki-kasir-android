@@ -33,6 +33,12 @@ interface ProdukDao {
     @Query("DELETE FROM products WHERE id = :id")
     suspend fun deletePermanently(id: String)
 
+    @Query("DELETE FROM products WHERE isSynced = 1 AND id NOT IN (:remoteIds)")
+    suspend fun deleteSyncedNotInRemote(remoteIds: List<String>)
+
+    @Query("DELETE FROM products WHERE isSynced = 1")
+    suspend fun deleteAllSynced()
+
     @Query("SELECT * FROM products WHERE isSynced = 0")
     suspend fun getUnsyncedProduk(): List<ProdukEntity>
 
