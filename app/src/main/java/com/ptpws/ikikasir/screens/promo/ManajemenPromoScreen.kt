@@ -42,6 +42,13 @@ import com.ptpws.ikikasir.feature.promo.domain.model.isEndingWithinDays
 import com.ptpws.ikikasir.feature.promo.domain.model.isExpiredOn
 import com.ptpws.ikikasir.feature.promo.domain.model.isUpcomingOn
 import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.PromoViewModel
+import java.text.NumberFormat
+import java.util.Locale
+
+private fun formatRupiah(amount: Double): String {
+    val numberFormat = NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID"))
+    return "Rp " + numberFormat.format(amount.toLong())
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -725,7 +732,7 @@ fun DetailPromoDialog(
                                         )
                                         if (item.price > 0) {
                                             Text(
-                                                text = "Rp ${item.price.toInt()}",
+                                                text = formatRupiah(item.price),
                                                 fontSize = 12.sp,
                                                 fontFamily = interfamily,
                                                 color = Color(0xFF64748B)
