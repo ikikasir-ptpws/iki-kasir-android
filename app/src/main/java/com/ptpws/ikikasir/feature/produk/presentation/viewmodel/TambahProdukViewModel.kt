@@ -18,6 +18,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
+import com.ptpws.ikikasir.feature.kategori.domain.usecase.GetKategoriUseCase
 
 @HiltViewModel
 class TambahProdukViewModel @Inject constructor(
@@ -25,13 +27,32 @@ class TambahProdukViewModel @Inject constructor(
     private val updateProdukUseCase: UpdateProdukUseCase,
     private val printProductBarcodeUseCase: PrintProductBarcodeUseCase,
     private val logActivityUseCase: LogActivityUseCase,
+    private val getKategoriUseCase: GetKategoriUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _formState = MutableStateFlow(ProdukFormState())
     val formState: StateFlow<ProdukFormState> = _formState.asStateFlow()
 
+    private var registeredCategories: List<Kategori> = emptyList()
+
     init {
+        viewModelScope.launch {
+            getKategoriUseCase().collect { list ->
+                registeredCategories = list
+                val currentCat = _formState.value.categoryId
+                if (currentCat.isNotBlank()) {
+                    val match = list.find { 
+                        it.id.equals(currentCat, ignoreCase = true) || 
+                        it.name.equals(currentCat, ignoreCase = true) 
+                    }
+                    if (match != null && match.id != currentCat) {
+                        _formState.update { it.copy(categoryId = match.id) }
+                    }
+                }
+            }
+        }
+
         val produkId = savedStateHandle.get<String>("produkId")
         if (!produkId.isNullOrBlank()) {
             val costPriceStr = savedStateHandle.get<String>("produkCostPrice") ?: ""
@@ -150,6 +171,25 @@ class TambahProdukViewModel @Inject constructor(
             return
         }
 
+        if (currentState.categoryId.isBlank()) {
+            val message = "Kategori produk wajib dipilih dari kategori yang terdaftar"
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(errorMessage = message) }
+            return
+        }
+
+        val matchedCategory = registeredCategories.find { 
+            it.id.equals(currentState.categoryId, ignoreCase = true) || 
+            it.name.equals(currentState.categoryId, ignoreCase = true) 
+        }
+
+        if (matchedCategory == null && registeredCategories.isNotEmpty()) {
+            val message = "Kategori tidak valid. Silakan pilih kategori yang terdaftar."
+            GlobalCrudResultDialog.failure(message)
+            _formState.update { it.copy(errorMessage = message) }
+            return
+        }
+
         val sellingPriceVal = currentState.sellingPrice.toDoubleOrNull() ?: 0.0
         if (sellingPriceVal <= 0.0) {
             val message = "Harga jual harus lebih dari Rp 0"
@@ -166,10 +206,12 @@ class TambahProdukViewModel @Inject constructor(
             return
         }
 
+        val finalCategoryId = matchedCategory?.id ?: currentState.categoryId
+
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            val produk = currentState.toProduk()
+            val produk = currentState.toProduk().copy(categoryId = finalCategoryId)
 
             val flow = if (currentState.isEditMode) {
                 updateProdukUseCase(produk)
