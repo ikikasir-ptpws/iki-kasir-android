@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.PointOfSale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -641,53 +642,99 @@ fun TambahProdukScreen(
             // Pilih Kategori Produk
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = "Pilih Kategori Produk",
-                        fontSize = if (isSmallScreen) 12.sp else 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = interfamily,
-                        color = Color(0xFF374151)
-                    )
-                    val categories = if (kategoriState.kategoriList.isNotEmpty()) {
-                        kategoriState.kategoriList.map { it.id to it.name }
-                    } else {
-                        listOf("makanan" to "Makanan", "minuman" to "Minuman", "snack" to "Snack", "dessert" to "Dessert", "buah" to "Buah")
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "Pilih Kategori Produk",
+                            fontSize = if (isSmallScreen) 12.sp else 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = interfamily,
+                            color = Color(0xFF374151)
+                        )
+                        Text(
+                            text = "*",
+                            fontSize = if (isSmallScreen) 12.sp else 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = interfamily,
+                            color = Color(0xFFEF4444)
+                        )
+                        if (formState.categoryId.isBlank()) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "(Wajib dipilih)",
+                                fontSize = 11.sp,
+                                fontFamily = interfamily,
+                                color = Color(0xFFEF4444)
+                            )
+                        }
                     }
 
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(vertical = 4.dp)
-                    ) {
-                        items(categories.size) { idx ->
-                            val (catId, catName) = categories[idx]
-                            val isSelected = catId == formState.categoryId && formState.categoryId.isNotBlank()
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = { viewModel.onCategoryIdChange(catId) },
-                                label = {
-                                    Text(
-                                        text = catName,
-                                        fontSize = if (isSmallScreen) 12.sp else 13.sp,
-                                        fontFamily = interfamily,
-                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                    )
-                                },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color(0xFF4F46E5),
-                                    selectedLabelColor = Color.White,
-                                    containerColor = Color.White,
-                                    labelColor = Color(0xFF374151)
-                                ),
-                                border = FilterChipDefaults.filterChipBorder(
-                                    enabled = true,
+                    val categories = kategoriState.kategoriList.map { it.id to it.name }
+
+                    if (categories.isEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
+                            border = BorderStroke(1.dp, Color(0xFFFECACA))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = Color(0xFFDC2626),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = "Belum ada kategori yang terdaftar. Tambahkan kategori terlebih dahulu di menu Kategori.",
+                                    fontSize = 11.5.sp,
+                                    fontFamily = interfamily,
+                                    color = Color(0xFFB91C1C)
+                                )
+                            }
+                        }
+                    } else {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(vertical = 4.dp)
+                        ) {
+                            items(categories.size) { idx ->
+                                val (catId, catName) = categories[idx]
+                                val isSelected = (catId == formState.categoryId || catName.equals(formState.categoryId, ignoreCase = true)) && formState.categoryId.isNotBlank()
+                                FilterChip(
                                     selected = isSelected,
-                                    selectedBorderColor = Color.Transparent,
-                                    borderColor = Color(0xFFE5E7EB),
-                                    borderWidth = 1.dp,
-                                    selectedBorderWidth = 0.dp
-                                ),
-                                shape = RoundedCornerShape(20.dp)
-                            )
+                                    onClick = { viewModel.onCategoryIdChange(catId) },
+                                    label = {
+                                        Text(
+                                            text = catName,
+                                            fontSize = if (isSmallScreen) 12.sp else 13.sp,
+                                            fontFamily = interfamily,
+                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                        )
+                                    },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = Color(0xFF4F46E5),
+                                        selectedLabelColor = Color.White,
+                                        containerColor = Color.White,
+                                        labelColor = Color(0xFF374151)
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        enabled = true,
+                                        selected = isSelected,
+                                        selectedBorderColor = Color.Transparent,
+                                        borderColor = Color(0xFFE5E7EB),
+                                        borderWidth = 1.dp,
+                                        selectedBorderWidth = 0.dp
+                                    ),
+                                    shape = RoundedCornerShape(20.dp)
+                                )
+                            }
                         }
                     }
                 }
