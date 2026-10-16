@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -55,6 +56,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.ProdukViewModel
@@ -99,21 +101,57 @@ fun DaftarProdukScreen(
         kategoriState.kategoriList.associateBy { it.id }
     }
 
+    // Helper untuk mencari Kategori terdaftar berdasarkan ID atau Name (case-insensitive)
+    fun findRegisteredCategory(categoryId: String): Kategori? {
+        if (categoryId.isBlank()) return null
+        return kategoriState.kategoriList.firstOrNull {
+            it.id.equals(categoryId, ignoreCase = true) || it.name.equals(categoryId, ignoreCase = true)
+        }
+    }
+
     // Map Kategori ID to Product Count
-    val productCountMap = remember(state.produkList) {
-        state.produkList.groupingBy { it.categoryId }.eachCount()
+    val productCountMap = remember(state.produkList, kategoriState.kategoriList) {
+        state.produkList.groupingBy { produk ->
+            val reg = findRegisteredCategory(produk.categoryId)
+            reg?.id ?: ""
+        }.eachCount()
+    }
+
+    // Unassigned category count (produk yang belum memiliki kategori terdaftar)
+    val unassignedCategoryCount = remember(state.produkList, kategoriState.kategoriList) {
+        state.produkList.count { produk ->
+            findRegisteredCategory(produk.categoryId) == null
+        }
     }
 
     // Filter Stok Menipis state
     var isLowStockFilterSelected by remember { mutableStateOf(false) }
 
-    // Filtered Product List by search, category filter, and low stock filter
-    val filteredList = remember(state.produkList, state.searchQuery, state.selectedCategoryId, isLowStockFilterSelected) {
+    // Filter Produk Belum Berkategori state
+    var isUnassignedFilterSelected by remember { mutableStateOf(false) }
+
+    // Dialog state untuk quick category assignment
+    var produkToAssignCategory by remember { mutableStateOf<Produk?>(null) }
+
+    // Filtered Product List by search, category filter, low stock filter, and unassigned filter
+    val filteredList = remember(
+        state.produkList,
+        state.searchQuery,
+        state.selectedCategoryId,
+        isLowStockFilterSelected,
+        isUnassignedFilterSelected,
+        kategoriState.kategoriList
+    ) {
         state.produkList.filter { produk ->
             val matchesQuery = state.searchQuery.isBlank() ||
                     produk.name.contains(state.searchQuery, ignoreCase = true) ||
                     produk.barcode.contains(state.searchQuery, ignoreCase = true)
-            val matchesCategory = state.selectedCategoryId == null || produk.categoryId == state.selectedCategoryId
+            val regCategory = findRegisteredCategory(produk.categoryId)
+            val matchesCategory = when {
+                isUnassignedFilterSelected -> regCategory == null
+                state.selectedCategoryId != null -> produk.categoryId == state.selectedCategoryId || regCategory?.id == state.selectedCategoryId
+                else -> true
+            }
             val matchesLowStock = !isLowStockFilterSelected || (produk.stock <= produk.lowStockThreshold)
             matchesQuery && matchesCategory && matchesLowStock
         }
@@ -133,7 +171,7 @@ fun DaftarProdukScreen(
 
     // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
     val pageSize = 10
-    var displayedCount by remember(state.searchQuery, state.selectedCategoryId, isLowStockFilterSelected, selectedSortOption) {
+    var displayedCount by remember(state.searchQuery, state.selectedCategoryId, isLowStockFilterSelected, isUnassignedFilterSelected, selectedSortOption) {
         mutableIntStateOf(pageSize)
     }
     val displayedProdukList = remember(sortedList, displayedCount) {
@@ -347,7 +385,7 @@ fun DaftarProdukScreen(
                 }
             }
 
-            // Filter Kategori Pills (Semua, Stok Menipis & Dynamic List with Counts)
+            // Filter Kategori Pills (Semua, Stok Menipis, Belum Berkategori & Dynamic List with Counts)
             item {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -355,10 +393,11 @@ fun DaftarProdukScreen(
                 ) {
                     // "Semua" Pill
                     item {
-                        val isSelected = state.selectedCategoryId == null && !isLowStockFilterSelected
+                        val isSelected = state.selectedCategoryId == null && !isLowStockFilterSelected && !isUnassignedFilterSelected
                         Surface(
                             onClick = {
                                 isLowStockFilterSelected = false
+                                isUnassignedFilterSelected = false
                                 viewModel.onCategoryFilterChange(null)
                             },
                             shape = RoundedCornerShape(20.dp),
@@ -381,6 +420,10 @@ fun DaftarProdukScreen(
                         Surface(
                             onClick = {
                                 isLowStockFilterSelected = !isLowStockFilterSelected
+                                if (isLowStockFilterSelected) {
+                                    isUnassignedFilterSelected = false
+                                    viewModel.onCategoryFilterChange(null)
+                                }
                             },
                             shape = RoundedCornerShape(20.dp),
                             color = if (isLowStockFilterSelected) Color(0xFFEF4444) else Color(0xFFFEF2F2),
@@ -408,13 +451,55 @@ fun DaftarProdukScreen(
                         }
                     }
 
+                    // "Belum Berkategori" Filter Pill (Tampil jika ada produk yang belum memilih kategori terdaftar)
+                    if (unassignedCategoryCount > 0) {
+                        item {
+                            Surface(
+                                onClick = {
+                                    isUnassignedFilterSelected = !isUnassignedFilterSelected
+                                    if (isUnassignedFilterSelected) {
+                                        isLowStockFilterSelected = false
+                                        viewModel.onCategoryFilterChange(null)
+                                    }
+                                },
+                                shape = RoundedCornerShape(20.dp),
+                                color = if (isUnassignedFilterSelected) Color(0xFFD97706) else Color(0xFFFEF3C7),
+                                border = if (isUnassignedFilterSelected) null else BorderStroke(1.dp, Color(0xFFFCD34D))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = null,
+                                        tint = if (isUnassignedFilterSelected) Color.White else Color(0xFFD97706),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Belum Berkategori ($unassignedCategoryCount)",
+                                        fontSize = 13.sp,
+                                        fontWeight = if (isUnassignedFilterSelected) FontWeight.SemiBold else FontWeight.Medium,
+                                        color = if (isUnassignedFilterSelected) Color.White else Color(0xFFB45309),
+                                        fontFamily = interfamily
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     // Dynamic Category Pills
                     items(kategoriState.kategoriList) { kategori ->
                         val count = productCountMap[kategori.id] ?: 0
-                        val isSelected = state.selectedCategoryId == kategori.id
+                        val isSelected = state.selectedCategoryId == kategori.id && !isUnassignedFilterSelected && !isLowStockFilterSelected
                         val isCatOff = !kategori.isVisibleInCashier
                         Surface(
-                            onClick = { viewModel.onCategoryFilterChange(kategori.id) },
+                            onClick = {
+                                isUnassignedFilterSelected = false
+                                isLowStockFilterSelected = false
+                                viewModel.onCategoryFilterChange(kategori.id)
+                            },
                             shape = RoundedCornerShape(20.dp),
                             color = when {
                                 isSelected -> Color(0xFF4F46E5)
@@ -434,6 +519,59 @@ fun DaftarProdukScreen(
                                 },
                                 fontFamily = interfamily,
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Warning Banner jika terdapat produk yang belum memiliki kategori terdaftar
+            if (unassignedCategoryCount > 0 && !isUnassignedFilterSelected) {
+                item {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFFFFBEB),
+                        border = BorderStroke(1.dp, Color(0xFFFDE68A)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                isUnassignedFilterSelected = true
+                                isLowStockFilterSelected = false
+                                viewModel.onCategoryFilterChange(null)
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = Color(0xFFD97706),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "$unassignedCategoryCount produk belum memilih kategori terdaftar",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF92400E),
+                                    fontFamily = interfamily
+                                )
+                                Text(
+                                    text = "Ketuk untuk menyaring dan menetapkan kategori",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFFB45309),
+                                    fontFamily = interfamily
+                                )
+                            }
+                            Text(
+                                text = "Pilih",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFD97706),
+                                fontFamily = interfamily
                             )
                         }
                     }
@@ -565,18 +703,23 @@ fun DaftarProdukScreen(
                 items = displayedProdukList,
                 key = { it.id }
             ) { produk ->
-                val category = categoryMap[produk.categoryId]
-                val categoryName = category?.name ?: "Umum"
-                val isCategoryActive = category?.isVisibleInCashier ?: true
+                val registeredCategory = findRegisteredCategory(produk.categoryId)
+                val hasValidCategory = registeredCategory != null
+                val categoryName = registeredCategory?.name ?: ""
+                val isCategoryActive = registeredCategory?.isVisibleInCashier ?: true
                 ProdukCardItem(
                     produk = produk,
                     categoryName = categoryName,
+                    hasValidCategory = hasValidCategory,
                     isCategoryActive = isCategoryActive,
                     onClick = {
                         val intent = Intent(context, DetailProdukActivity::class.java).apply {
                             putExtra("produkId", produk.id)
                         }
                         context.startActivity(intent)
+                    },
+                    onAssignCategory = {
+                        produkToAssignCategory = produk
                     },
                     onEdit = {
                         val intent = Intent(context, TambahProdukActivity::class.java).apply {
@@ -587,7 +730,7 @@ fun DaftarProdukScreen(
                             putExtra("produkPrice", produk.sellingPrice.toString())
                             putExtra("produkStock", produk.stock.toString())
                             putExtra("produkLowStockThreshold", produk.lowStockThreshold.toString())
-                            putExtra("produkCategoryId", produk.categoryId)
+                            putExtra("produkCategoryId", registeredCategory?.id ?: "")
                             putExtra("produkImageUrl", produk.imageUrl)
                             putExtra("produkDiscount", produk.discount.toString())
                             putExtra("produkDiscountType", produk.discountType)
@@ -651,16 +794,157 @@ fun DaftarProdukScreen(
             }
         )
     }
+
+    // Quick Category Assignment Dialog untuk produk yang belum memiliki kategori terdaftar
+    produkToAssignCategory?.let { targetProduk ->
+        AlertDialog(
+            onDismissRequest = { produkToAssignCategory = null },
+            title = {
+                Text(
+                    text = "Pilih Kategori Produk",
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = interfamily,
+                    fontSize = 18.sp,
+                    color = Color(0xFF0F172A)
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Produk \"${targetProduk.name}\" belum memiliki kategori terdaftar. Silakan pilih kategori yang terdaftar:",
+                        fontFamily = interfamily,
+                        fontSize = 13.sp,
+                        color = Color(0xFF64748B)
+                    )
+
+                    if (kategoriState.kategoriList.isEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color(0xFFFEF2F2),
+                            border = BorderStroke(1.dp, Color(0xFFFECDD3)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "Belum ada kategori yang terdaftar di sistem. Silakan tambahkan kategori terlebih dahulu melalui menu Kategori.",
+                                fontSize = 12.sp,
+                                fontFamily = interfamily,
+                                color = Color(0xFFDC2626),
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 280.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(kategoriState.kategoriList) { kat ->
+                                Surface(
+                                    onClick = {
+                                        viewModel.updateProdukCategory(targetProduk, kat.id)
+                                        produkToAssignCategory = null
+                                    },
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFFF8FAFC),
+                                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column {
+                                            Text(
+                                                text = kat.name,
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontFamily = interfamily,
+                                                color = Color(0xFF0F172A)
+                                            )
+                                            if (!kat.isVisibleInCashier) {
+                                                Text(
+                                                    text = "Nonaktif di kasir",
+                                                    fontSize = 11.sp,
+                                                    color = Color(0xFF94A3B8),
+                                                    fontFamily = interfamily
+                                                )
+                                            }
+                                        }
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = Color(0xFF4F46E5),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { produkToAssignCategory = null }) {
+                    Text("Tutup", color = Color(0xFF64748B), fontFamily = interfamily)
+                }
+            }
+        )
+    }
 }
 
 @Composable
-fun CategoryBadge(categoryName: String) {
+fun CategoryBadge(
+    categoryName: String,
+    hasValidCategory: Boolean = true,
+    onClick: (() -> Unit)? = null
+) {
+    if (!hasValidCategory || categoryName.isBlank()) {
+        Surface(
+            onClick = { onClick?.invoke() },
+            enabled = onClick != null,
+            shape = RoundedCornerShape(6.dp),
+            color = Color(0xFFFEF3C7),
+            border = BorderStroke(1.dp, Color(0xFFFCD34D))
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = Color(0xFFD97706),
+                    modifier = Modifier.size(11.dp)
+                )
+                Text(
+                    text = "Pilih Kategori",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFB45309),
+                    fontFamily = interfamily
+                )
+            }
+        }
+        return
+    }
+
     val (bgColor, textColor) = remember(categoryName) {
         val lower = categoryName.lowercase()
         when {
             lower.contains("makanan") -> Color(0xFFDCFCE7) to Color(0xFF15803D)
             lower.contains("minuman") -> Color(0xFFE0F2FE) to Color(0xFF0369A1)
             lower.contains("kopi") -> Color(0xFFFEF3C7) to Color(0xFFB45309)
+            lower.contains("desert") || lower.contains("dessert") -> Color(0xFFFCE7F3) to Color(0xFFBE185D)
+            lower.contains("snack") || lower.contains("cemilan") -> Color(0xFFEDE9FE) to Color(0xFF6D28D9)
             else -> Color(0xFFF1F5F9) to Color(0xFF475569)
         }
     }
@@ -683,8 +967,10 @@ fun CategoryBadge(categoryName: String) {
 fun ProdukCardItem(
     produk: Produk,
     categoryName: String,
+    hasValidCategory: Boolean = true,
     isCategoryActive: Boolean = true,
     onClick: () -> Unit = {},
+    onAssignCategory: () -> Unit = {},
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -711,8 +997,9 @@ fun ProdukCardItem(
             colors = CardDefaults.cardColors(containerColor = if (isNonAktif) Color(0xFFF8FAFC) else Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             border = when {
-                isNonAktif -> BorderStroke(1.dp, Color(0xFFE2E8F0))
                 isStokRendah -> BorderStroke(1.dp, Color(0xFFFECDD3))
+                !hasValidCategory -> BorderStroke(1.dp, Color(0xFFFDE68A))
+                isNonAktif -> BorderStroke(1.dp, Color(0xFFE2E8F0))
                 else -> BorderStroke(1.dp, Color(0xFFF1F5F9))
             }
         ) {
@@ -761,7 +1048,11 @@ fun ProdukCardItem(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        CategoryBadge(categoryName = categoryName)
+                        CategoryBadge(
+                            categoryName = categoryName,
+                            hasValidCategory = hasValidCategory,
+                            onClick = onAssignCategory
+                        )
 
                         if (!produk.isSynced) {
                             Surface(
@@ -779,7 +1070,7 @@ fun ProdukCardItem(
                             }
                         }
 
-                        if (isNonAktif) {
+                        if (isNonAktif && hasValidCategory) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
                                 color = Color(0xFFF1F5F9)
