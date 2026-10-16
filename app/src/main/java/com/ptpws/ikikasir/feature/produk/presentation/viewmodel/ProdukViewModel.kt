@@ -8,6 +8,7 @@ import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.DeleteProdukUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.SyncProdukUseCase
+import com.ptpws.ikikasir.feature.produk.domain.usecase.UpdateProdukUseCase
 import com.ptpws.ikikasir.feature.produk.presentation.state.ProdukListState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,7 @@ import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 @HiltViewModel
 class ProdukViewModel @Inject constructor(
     private val getProdukUseCase: GetProdukUseCase,
+    private val updateProdukUseCase: UpdateProdukUseCase,
     private val deleteProdukUseCase: DeleteProdukUseCase,
     private val syncProdukUseCase: SyncProdukUseCase,
     private val networkMonitor: NetworkMonitor,
@@ -160,6 +162,32 @@ class ProdukViewModel @Inject constructor(
                             errorMessage = result.exceptionOrNull()?.message ?: "Sinkronisasi gagal"
                         )
                     }
+                }
+            }
+        }
+    }
+
+    fun updateProdukCategory(produk: Produk, newCategoryId: String) {
+        val updated = produk.copy(
+            categoryId = newCategoryId,
+            updatedAt = com.google.firebase.Timestamp.now()
+        )
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            updateProdukUseCase(updated).collect { result ->
+                if (result.isSuccess) {
+                    GlobalCrudResultDialog.success("Kategori produk \"${produk.name}\" berhasil diperbarui.")
+                    logActivityUseCase(
+                        title = "Update Kategori Produk: ${produk.name}",
+                        description = "Kategori produk ${produk.name} telah diperbarui ke ID $newCategoryId.",
+                        category = "PRICE",
+                        action = "UPDATE"
+                    )
+                    _state.update { it.copy(isLoading = false, userMessage = "Kategori berhasil diperbarui") }
+                } else {
+                    val message = result.exceptionOrNull()?.message ?: "Gagal memperbarui kategori"
+                    GlobalCrudResultDialog.failure(message)
+                    _state.update { it.copy(isLoading = false, errorMessage = message) }
                 }
             }
         }
