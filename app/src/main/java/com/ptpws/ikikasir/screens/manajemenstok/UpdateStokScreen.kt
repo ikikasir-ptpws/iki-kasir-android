@@ -257,8 +257,9 @@ fun UpdateStokScreen(
                                                     fontWeight = FontWeight.SemiBold,
                                                     fontSize = 14.sp
                                                 )
+                                                val barcodeLabel = if (produk.barcode.isNotBlank()) "SKU: ${produk.barcode}" else "Kode: Belum diisi"
                                                 Text(
-                                                    text = "SKU: ${produk.barcode} | Stok: ${produk.stock}",
+                                                    text = "$barcodeLabel | Stok: ${produk.stock}",
                                                     fontFamily = interfamily,
                                                     fontSize = 11.sp,
                                                     color = Color(0xFF6B7280)
@@ -299,13 +300,30 @@ fun UpdateStokScreen(
                                 .padding(horizontal = 14.dp),
                             contentAlignment = Alignment.CenterStart
                         ) {
-                            Text(
-                                text = selectedProduk?.barcode?.ifBlank { "ARB-TRJ-250" } ?: "ARB-TRJ-250",
-                                fontFamily = interfamily,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0B1C30)
-                            )
+                            if (selectedProduk == null) {
+                                Text(
+                                    text = "Pilih produk terlebih dahulu",
+                                    fontFamily = interfamily,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF9CA3AF)
+                                )
+                            } else if (selectedProduk.barcode.isNotBlank()) {
+                                Text(
+                                    text = selectedProduk.barcode,
+                                    fontFamily = interfamily,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0B1C30)
+                                )
+                            } else {
+                                Text(
+                                    text = "Kode produk belum diisi",
+                                    fontFamily = interfamily,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFFD97706)
+                                )
+                            }
                         }
                     }
                 }
