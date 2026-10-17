@@ -41,6 +41,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.commond.GlobalUploadProgress
+import kotlinx.coroutines.delay
 import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting
 import android.graphics.Bitmap
@@ -141,70 +143,83 @@ fun ProfilScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            try {
-                // 1. Validasi ukuran file maksimal 2MB
-                var fileSizeInBytes: Long = 0L
+            coroutineScope.launch {
+                GlobalUploadProgress.showLogoUpload(progress = 0.15f, message = "Memvalidasi logo...")
                 try {
-                    context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use { cursor ->
-                        if (cursor.moveToFirst()) {
-                            val sizeIndex = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
-                            if (sizeIndex != -1) {
-                                fileSizeInBytes = cursor.getLong(sizeIndex)
+                    // 1. Validasi ukuran file maksimal 2MB
+                    var fileSizeInBytes: Long = 0L
+                    try {
+                        context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                val sizeIndex = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
+                                if (sizeIndex != -1) {
+                                    fileSizeInBytes = cursor.getLong(sizeIndex)
+                                }
                             }
                         }
-                    }
-                } catch (_: Exception) {}
-
-                if (fileSizeInBytes <= 0L) {
-                    try {
-                        context.contentResolver.openInputStream(uri)?.use {
-                            fileSizeInBytes = it.available().toLong()
-                        }
                     } catch (_: Exception) {}
-                }
 
-                val maxSizeBytes = 2 * 1024 * 1024L // 2 MB
-                if (fileSizeInBytes > maxSizeBytes) {
-                    Toast.makeText(context, "Ukuran gambar terlalu besar. Maksimal 2MB!", Toast.LENGTH_LONG).show()
-                    return@rememberLauncherForActivityResult
-                }
+                    if (fileSizeInBytes <= 0L) {
+                        try {
+                            context.contentResolver.openInputStream(uri)?.use {
+                                fileSizeInBytes = it.available().toLong()
+                            }
+                        } catch (_: Exception) {}
+                    }
 
-                // 2. Decode & kompresi bitmap agar tersimpan rapi di Room DB dan Firestore
-                val originalBitmap = context.contentResolver.openInputStream(uri)?.use {
-                    BitmapFactory.decodeStream(it)
-                }
+                    val maxSizeBytes = 2 * 1024 * 1024L // 2 MB
+                    if (fileSizeInBytes > maxSizeBytes) {
+                        GlobalUploadProgress.dismiss()
+                        Toast.makeText(context, "Ukuran gambar terlalu besar. Maksimal 2MB!", Toast.LENGTH_LONG).show()
+                        return@launch
+                    }
 
-                if (originalBitmap != null) {
-                    val maxDimension = 400
-                    val scale = minOf(maxDimension.toFloat() / originalBitmap.width, maxDimension.toFloat() / originalBitmap.height, 1f)
-                    val targetWidth = (originalBitmap.width * scale).toInt().coerceAtLeast(1)
-                    val targetHeight = (originalBitmap.height * scale).toInt().coerceAtLeast(1)
-                    val scaledBitmap = if (scale < 1f) {
-                        Bitmap.createScaledBitmap(originalBitmap, targetWidth, targetHeight, true)
+                    GlobalUploadProgress.updateProgress(0.45f, "Mengompresi gambar logo...")
+                    delay(120)
+
+                    // 2. Decode & kompresi bitmap agar tersimpan rapi di Room DB dan Firestore
+                    val originalBitmap = context.contentResolver.openInputStream(uri)?.use {
+                        BitmapFactory.decodeStream(it)
+                    }
+
+                    if (originalBitmap != null) {
+                        val maxDimension = 400
+                        val scale = minOf(maxDimension.toFloat() / originalBitmap.width, maxDimension.toFloat() / originalBitmap.height, 1f)
+                        val targetWidth = (originalBitmap.width * scale).toInt().coerceAtLeast(1)
+                        val targetHeight = (originalBitmap.height * scale).toInt().coerceAtLeast(1)
+                        val scaledBitmap = if (scale < 1f) {
+                            Bitmap.createScaledBitmap(originalBitmap, targetWidth, targetHeight, true)
+                        } else {
+                            originalBitmap
+                        }
+
+                        GlobalUploadProgress.updateProgress(0.8f, "Menyimpan logo nota...")
+                        val baos = ByteArrayOutputStream()
+                        scaledBitmap.compress(Bitmap.CompressFormat.PNG, 90, baos)
+                        val imageBytes = baos.toByteArray()
+
+                        // Simpan salinan file lokal di internal storage sebagai file cache
+                        val directory = File(context.filesDir, "store_logo")
+                        if (!directory.exists()) directory.mkdirs()
+                        val destinationFile = File(directory, "store_logo.png")
+                        FileOutputStream(destinationFile).use { fos ->
+                            fos.write(imageBytes)
+                        }
+
+                        // Format Base64 disimpan di Room DB dan Firestore agar persisten & multi-device
+                        val base64String = "data:image/png;base64," + android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP)
+                        logoUrl = base64String
+
+                        GlobalUploadProgress.updateProgress(1.0f, "Logo berhasil dipasang!")
+                        delay(250)
                     } else {
-                        originalBitmap
+                        Toast.makeText(context, "Gagal memproses gambar logo", Toast.LENGTH_SHORT).show()
                     }
-
-                    val baos = ByteArrayOutputStream()
-                    scaledBitmap.compress(Bitmap.CompressFormat.PNG, 90, baos)
-                    val imageBytes = baos.toByteArray()
-
-                    // Simpan salinan file lokal di internal storage sebagai file cache
-                    val directory = File(context.filesDir, "store_logo")
-                    if (!directory.exists()) directory.mkdirs()
-                    val destinationFile = File(directory, "store_logo.png")
-                    FileOutputStream(destinationFile).use { fos ->
-                        fos.write(imageBytes)
-                    }
-
-                    // Format Base64 disimpan di Room DB dan Firestore agar persisten & multi-device
-                    val base64String = "data:image/png;base64," + android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP)
-                    logoUrl = base64String
-                } else {
-                    Toast.makeText(context, "Gagal memproses gambar logo", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Terjadi kesalahan saat memproses logo: ${e.message}", Toast.LENGTH_SHORT).show()
+                } finally {
+                    GlobalUploadProgress.dismiss()
                 }
-            } catch (e: Exception) {
-                Toast.makeText(context, "Terjadi kesalahan saat memproses logo: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -1517,18 +1532,26 @@ fun ProfilScreen(
             contract = ActivityResultContracts.GetContent()
         ) { uri: Uri? ->
             uri?.let { sourceUri ->
-                try {
-                    val directory = File(context.filesDir, "user_images")
-                    if (!directory.exists()) directory.mkdirs()
-                    val destinationFile = File(directory, "user_${currentUser?.id ?: "profile"}_${System.currentTimeMillis()}.jpg")
-                    context.contentResolver.openInputStream(sourceUri)?.use { input ->
-                        FileOutputStream(destinationFile).use { output ->
-                            input.copyTo(output)
+                coroutineScope.launch {
+                    GlobalUploadProgress.showProfilePhotoUpload(progress = 0.2f, message = "Menyiapkan foto...")
+                    try {
+                        GlobalUploadProgress.updateProgress(0.6f, "Menyimpan foto ke internal storage...")
+                        val directory = File(context.filesDir, "user_images")
+                        if (!directory.exists()) directory.mkdirs()
+                        val destinationFile = File(directory, "user_${currentUser?.id ?: "profile"}_${System.currentTimeMillis()}.jpg")
+                        context.contentResolver.openInputStream(sourceUri)?.use { input ->
+                            FileOutputStream(destinationFile).use { output ->
+                                input.copyTo(output)
+                            }
                         }
+                        editPhotoUrl = Uri.fromFile(destinationFile).toString()
+                        GlobalUploadProgress.updateProgress(1.0f, "Foto profil berhasil dimuat")
+                        delay(200)
+                    } catch (e: Exception) {
+                        editPhotoUrl = sourceUri.toString()
+                    } finally {
+                        GlobalUploadProgress.dismiss()
                     }
-                    editPhotoUrl = Uri.fromFile(destinationFile).toString()
-                } catch (e: Exception) {
-                    editPhotoUrl = sourceUri.toString()
                 }
             }
         }
