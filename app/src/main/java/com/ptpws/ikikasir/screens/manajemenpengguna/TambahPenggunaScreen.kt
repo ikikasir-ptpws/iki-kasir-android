@@ -58,6 +58,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import com.ptpws.ikikasir.commond.GlobalImageUploadOverlay
+import com.ptpws.ikikasir.commond.ImageUploadType
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -68,6 +72,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -134,31 +139,49 @@ fun TambahPenggunaScreen(
         }
     }
 
+    val coroutineScope = rememberCoroutineScope()
+    var isUploadingImage by remember { mutableStateOf(false) }
+    var uploadProgress by remember { mutableStateOf<Float?>(null) }
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            try {
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val fileSizeInBytes = inputStream?.available() ?: 0
-                inputStream?.close()
+            coroutineScope.launch {
+                isUploadingImage = true
+                uploadProgress = 0.2f
+                try {
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                    val fileSizeInBytes = inputStream?.available() ?: 0
+                    inputStream?.close()
 
-                val maxSizeBytes = 2 * 1024 * 1024 // 2MB
-                if (fileSizeInBytes > maxSizeBytes) {
-                    localError = "Ukuran gambar maksimal 2MB"
-                } else {
+                    val maxSizeBytes = 2 * 1024 * 1024 // 2MB
+                    if (fileSizeInBytes > maxSizeBytes) {
+                        localError = "Ukuran gambar maksimal 2MB"
+                        isUploadingImage = false
+                        uploadProgress = null
+                        return@launch
+                    }
+
+                    uploadProgress = 0.6f
+                    delay(120)
+                    val permanentUriString = saveUserImageToInternalStorage(context, uri)
+                    uploadProgress = 1.0f
+                    delay(100)
+                    val permanentUri = Uri.parse(permanentUriString)
+                    profileImageUri = permanentUri
+                    viewModel.onPhotoUrlChange(permanentUriString)
+                    localError = null
+                } catch (e: Exception) {
                     val permanentUriString = saveUserImageToInternalStorage(context, uri)
                     val permanentUri = Uri.parse(permanentUriString)
                     profileImageUri = permanentUri
                     viewModel.onPhotoUrlChange(permanentUriString)
                     localError = null
+                } finally {
+                    isUploadingImage = false
+                    uploadProgress = null
                 }
-            } catch (e: Exception) {
-                val permanentUriString = saveUserImageToInternalStorage(context, uri)
-                val permanentUri = Uri.parse(permanentUriString)
-                profileImageUri = permanentUri
-                viewModel.onPhotoUrlChange(permanentUriString)
-                localError = null
             }
         }
     }
@@ -215,7 +238,7 @@ fun TambahPenggunaScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Box(
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.clickable(enabled = !isUploadingImage) {
                             imagePickerLauncher.launch("image/*")
                         }
                     ) {
@@ -243,6 +266,18 @@ fun TambahPenggunaScreen(
                                     modifier = Modifier.size(if (isCompact) 30.dp else 36.dp)
                                 )
                             }
+
+                            // Circular Progress Indicator Overlay untuk Foto Profil
+                            GlobalImageUploadOverlay(
+                                isUploading = isUploadingImage,
+                                progress = uploadProgress,
+                                shape = CircleShape,
+                                size = if (isCompact) 56.dp else 66.dp,
+                                type = ImageUploadType.FOTO_PROFIL,
+                                title = null,
+                                message = null,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         }
                         Box(
                             modifier = Modifier
