@@ -32,6 +32,10 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.PointOfSale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.ptpws.ikikasir.commond.GlobalImageUploadOverlay
+import com.ptpws.ikikasir.commond.ImageUploadType
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -90,30 +94,48 @@ fun TambahProdukScreen(
     val horizontalScreenPadding = if (isSmallScreen) 12.dp else 16.dp
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var showPrintDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    var isUploadingImage by remember { mutableStateOf(false) }
+    var uploadProgress by remember { mutableStateOf<Float?>(null) }
 
-        val imagePickerLauncher = rememberLauncherForActivityResult(
+    val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            try {
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val fileSizeInBytes = inputStream?.available() ?: 0
-                inputStream?.close()
+            coroutineScope.launch {
+                isUploadingImage = true
+                uploadProgress = 0.15f
+                try {
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                    val fileSizeInBytes = inputStream?.available() ?: 0
+                    inputStream?.close()
 
-                val maxSizeBytes = 2 * 1024 * 1024 // 2MB
-                if (fileSizeInBytes > maxSizeBytes) {
-                    Toast.makeText(context, "Ukuran foto terlalu besar. Maksimal 2MB!", Toast.LENGTH_LONG).show()
-                } else {
+                    val maxSizeBytes = 2 * 1024 * 1024 // 2MB
+                    if (fileSizeInBytes > maxSizeBytes) {
+                        Toast.makeText(context, "Ukuran foto terlalu besar. Maksimal 2MB!", Toast.LENGTH_LONG).show()
+                        isUploadingImage = false
+                        uploadProgress = null
+                        return@launch
+                    }
+
+                    uploadProgress = 0.45f
+                    delay(150)
+                    uploadProgress = 0.85f
+                    val permanentUriString = saveImageToInternalStorage(context, uri)
+                    uploadProgress = 1.0f
+                    delay(120)
+                    val permanentUri = Uri.parse(permanentUriString)
+                    imageUri = permanentUri
+                    viewModel.onImageUrlChange(permanentUriString)
+                } catch (e: Exception) {
                     val permanentUriString = saveImageToInternalStorage(context, uri)
                     val permanentUri = Uri.parse(permanentUriString)
                     imageUri = permanentUri
                     viewModel.onImageUrlChange(permanentUriString)
+                } finally {
+                    isUploadingImage = false
+                    uploadProgress = null
                 }
-            } catch (e: Exception) {
-                val permanentUriString = saveImageToInternalStorage(context, uri)
-                val permanentUri = Uri.parse(permanentUriString)
-                imageUri = permanentUri
-                viewModel.onImageUrlChange(permanentUriString)
             }
         }
     }
@@ -178,7 +200,7 @@ fun TambahProdukScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(if (isSmallScreen) 125.dp else 150.dp)
-                        .clickable { imagePickerLauncher.launch("image/*") },
+                        .clickable(enabled = !isUploadingImage) { imagePickerLauncher.launch("image/*") },
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6)),
                     border = BorderStroke(1.dp, Color(0xFFC7D2FE))
@@ -221,6 +243,15 @@ fun TambahProdukScreen(
                                 )
                             }
                         }
+
+                        // Circular Progress Overlay untuk upload/proses foto produk
+                        GlobalImageUploadOverlay(
+                            isUploading = isUploadingImage,
+                            progress = uploadProgress,
+                            title = "Memproses Foto...",
+                            type = ImageUploadType.PRODUK,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(4.dp))
