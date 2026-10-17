@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.ui.Modifier
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
+import com.ptpws.ikikasir.commond.GlobalUploadProgressHost
 import dagger.hilt.android.AndroidEntryPoint
 import com.ptpws.ikikasir.screens.produk.ui.theme.IKIKASIRTheme
 
@@ -28,6 +29,7 @@ class TambahProdukActivity : BaseActivity() {
                 ) {
                     TambahProdukScreen(onBack = { finish() })
                     GlobalCrudResultDialogHost()
+                    GlobalUploadProgressHost()
                 }
             }
         }
