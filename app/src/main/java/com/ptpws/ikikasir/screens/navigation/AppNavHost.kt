@@ -48,6 +48,7 @@ import com.ptpws.ikikasir.screens.produk.DaftarProdukScreen
 import com.ptpws.ikikasir.screens.produk.DetailProdukScreen
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
+import com.ptpws.ikikasir.commond.GlobalUploadProgressHost
 import com.example.app.ui.screen.DashboardScreen
 import com.example.app.ui.screen.DashboardViewModel
 import com.example.app.ui.screen.MenuFullScreen
@@ -367,6 +368,7 @@ fun AppNavHost() {
             ) {
                 navHostContent()
                 GlobalCrudResultDialogHost()
+                GlobalUploadProgressHost()
             }
         }
     } else {
@@ -387,6 +389,7 @@ fun AppNavHost() {
             }
 
             GlobalCrudResultDialogHost()
+            GlobalUploadProgressHost()
         }
     }
 }
