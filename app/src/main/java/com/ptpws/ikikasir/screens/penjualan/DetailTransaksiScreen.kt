@@ -196,15 +196,6 @@ fun DetailTransaksiScreen(
                         )
                     }
                 },
-                actions = {
-                    IconButton(onClick = onSavePdf) {
-                        Icon(
-                            imageVector = Icons.Default.PictureAsPdf,
-                            contentDescription = "Simpan PDF",
-                            tint = Color(0xFF4F46E5)
-                        )
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFFF8FAFC)
                 )
