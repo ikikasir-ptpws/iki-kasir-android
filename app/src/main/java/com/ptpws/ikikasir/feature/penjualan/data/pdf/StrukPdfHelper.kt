@@ -18,7 +18,7 @@ import java.util.Locale
 
 /**
  * Helper for drawing receipt onto Canvas and generating PDF files.
- * Output is 100% IDENTICAL to StrukReceiptCard preview screen:
+ * Output matches standard receipt format:
  * - Store Name & Address from [NotaSetting]
  * - Queue Sequence badge (#01, #02, etc.) matching Riwayat Antrean
  * - Transaction metadata, items, subtotal, discount, total tagihan, payment method, payment/change
