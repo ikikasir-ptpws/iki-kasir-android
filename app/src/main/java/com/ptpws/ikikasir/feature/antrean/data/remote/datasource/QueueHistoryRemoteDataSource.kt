@@ -6,5 +6,6 @@ import kotlinx.coroutines.flow.Flow
 interface QueueHistoryRemoteDataSource {
     suspend fun getAllHistory(): List<QueueHistoryDto>
     suspend fun saveHistory(dto: QueueHistoryDto)
+    suspend fun deleteHistory(id: String)
     fun getHistoryFlow(): Flow<List<QueueHistoryDto>>
 }

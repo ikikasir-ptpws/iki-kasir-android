@@ -83,7 +83,12 @@ class QueueHistoryViewModel @Inject constructor(
                     _uiState.value = QueueHistoryUiState.Error(e.message ?: "Terjadi kesalahan")
                 }
                 .collectLatest { list ->
-                    _uiState.value = QueueHistoryUiState.Success(list)
+                    val validList = list.filterNot { history ->
+                        history.status.equals("REFUND", ignoreCase = true) ||
+                        history.status.equals("REFUNDED", ignoreCase = true) ||
+                        history.status.equals("BATAL", ignoreCase = true)
+                    }
+                    _uiState.value = QueueHistoryUiState.Success(validList)
                 }
         }
     }
@@ -93,7 +98,17 @@ class QueueHistoryViewModel @Inject constructor(
             getAllTransaksiUseCase()
                 .catch { e -> Log.e(TAG, "Error loading transactions: ${e.message}") }
                 .collectLatest { list ->
-                    val map = list.associateBy { it.transactionId }
+                    val map = mutableMapOf<String, PenjualanTransaksi>()
+                    list.forEach { tx ->
+                        if (tx.transactionId.isNotBlank()) {
+                            map[tx.transactionId] = tx
+                            map[tx.transactionId.removePrefix("#")] = tx
+                        }
+                        if (tx.transactionNumber.isNotBlank()) {
+                            map[tx.transactionNumber] = tx
+                            map[tx.transactionNumber.removePrefix("#")] = tx
+                        }
+                    }
                     _transaksiMap.value = map
                 }
         }

@@ -261,6 +261,29 @@ fun RiwayatAntreanScreen(
     // Filter items based on searchQuery & selectedFilter
     val filteredList = when (val state = uiState) {
         is QueueHistoryUiState.Success -> state.data.filter { item ->
+            // Cek apakah transaksi atau antrean sudah di-refund / dibatalkan
+            val matchedTx = transaksiMap[item.transactionId]
+                ?: transaksiMap[item.transactionId.removePrefix("#")]
+                ?: transaksiMap.values.find { tx ->
+                    tx.transactionId.equals(item.transactionId, ignoreCase = true) ||
+                    tx.transactionNumber.equals(item.transactionId, ignoreCase = true) ||
+                    tx.transactionNumber.removePrefix("#").equals(item.transactionId.removePrefix("#"), ignoreCase = true)
+                }
+
+            val isRefunded = item.status.equals("REFUND", ignoreCase = true) ||
+                item.status.equals("REFUNDED", ignoreCase = true) ||
+                item.status.equals("BATAL", ignoreCase = true) ||
+                (matchedTx != null && (
+                    matchedTx.status.equals("REFUND", ignoreCase = true) ||
+                    matchedTx.status.equals("REFUNDED", ignoreCase = true) ||
+                    matchedTx.status.equals("BATAL", ignoreCase = true) ||
+                    matchedTx.refundReason.isNotBlank()
+                ))
+
+            if (isRefunded) {
+                return@filter false
+            }
+
             // Search filter
             val matchesSearch = if (searchQuery.isBlank()) true
             else item.transactionId.contains(searchQuery, ignoreCase = true)
@@ -634,7 +657,12 @@ fun RiwayatAntreanScreen(
 
                                     items(historyItems) { history ->
                                         val matchedTransaksi = transaksiMap[history.transactionId]
-                                            ?: transaksiMap.values.find { it.transactionNumber == history.transactionId }
+                                            ?: transaksiMap[history.transactionId.removePrefix("#")]
+                                            ?: transaksiMap.values.find { tx ->
+                                                tx.transactionNumber.equals(history.transactionId, ignoreCase = true) ||
+                                                tx.transactionId.equals(history.transactionId, ignoreCase = true) ||
+                                                tx.transactionNumber.removePrefix("#").equals(history.transactionId.removePrefix("#"), ignoreCase = true)
+                                            }
 
                                         QueueHistoryCard(
                                             history = history,

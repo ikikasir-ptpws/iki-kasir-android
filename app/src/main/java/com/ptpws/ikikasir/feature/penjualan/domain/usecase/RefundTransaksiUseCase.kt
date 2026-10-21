@@ -3,7 +3,9 @@ package com.ptpws.ikikasir.feature.penjualan.domain.usecase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.ptpws.ikikasir.feature.antrean.data.local.dao.AntreanDao
+import com.ptpws.ikikasir.feature.antrean.data.local.dao.QueueHistoryDao
 import com.ptpws.ikikasir.feature.antrean.domain.repository.AntreanRepository
+import com.ptpws.ikikasir.feature.antrean.domain.repository.QueueHistoryRepository
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.manajemenstok.domain.model.MovementType
 import com.ptpws.ikikasir.feature.manajemenstok.domain.model.StockMovement
@@ -24,6 +26,8 @@ class RefundTransaksiUseCase @Inject constructor(
     private val saveStokAdjustmentUseCase: SaveStokAdjustmentUseCase,
     private val antreanDao: AntreanDao,
     private val antreanRepository: AntreanRepository,
+    private val queueHistoryDao: QueueHistoryDao,
+    private val queueHistoryRepository: QueueHistoryRepository,
     private val logActivityUseCase: LogActivityUseCase,
     private val firebaseAuth: FirebaseAuth
 ) {
@@ -82,6 +86,8 @@ class RefundTransaksiUseCase @Inject constructor(
             // 2. Batalkan antrean jika masih ada di daftar antrean
             try {
                 val antrean = antreanDao.getAntreanByTransactionId(transaksi.transactionId)
+                    ?: (if (transaksi.transactionNumber.isNotBlank()) antreanDao.getAntreanByTransactionId(transaksi.transactionNumber) else null)
+                    ?: (if (transaksi.transactionNumber.isNotBlank()) antreanDao.getAntreanByTransactionId(transaksi.transactionNumber.removePrefix("#")) else null)
                 if (antrean != null) {
                     antreanRepository.deleteAntrean(antrean.id).collect { /* batalkan antrean */ }
                 }
@@ -89,9 +95,22 @@ class RefundTransaksiUseCase @Inject constructor(
                 // Ignore jika antrean tidak ditemukan
             }
 
-            // 3. Update status transaksi pada data transactions: hanya field status yang berubah menjadi "REFUND"
+            // Hapus dari riwayat antrean jika sudah selesai / masuk riwayat antrean
+            try {
+                val history = queueHistoryDao.getHistoryByTransactionId(transaksi.transactionId)
+                    ?: (if (transaksi.transactionNumber.isNotBlank()) queueHistoryDao.getHistoryByTransactionId(transaksi.transactionNumber) else null)
+                    ?: (if (transaksi.transactionNumber.isNotBlank()) queueHistoryDao.getHistoryByTransactionId(transaksi.transactionNumber.removePrefix("#")) else null)
+                if (history != null) {
+                    queueHistoryRepository.deleteHistory(history.id).collect { /* hapus dari riwayat */ }
+                }
+            } catch (e: Exception) {
+                // Ignore jika history tidak ditemukan
+            }
+
+            // 3. Update status transaksi pada data transactions: status berubah menjadi "REFUND" dan simpan alasan refund
             val refundedTransaksi = transaksi.copy(
                 status = "REFUND",
+                refundReason = reason,
                 updatedAt = Timestamp.now()
             )
 

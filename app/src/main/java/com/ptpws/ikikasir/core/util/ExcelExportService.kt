@@ -748,7 +748,21 @@ class ExcelExportService @Inject constructor() {
         filterLabel: String = "Semua"
     ): Result<Uri> = withContext(Dispatchers.IO) {
         runCatching {
-            val sortedHistory = historyList.sortedByDescending { it.completedAt.seconds }
+            val nonRefundedHistory = historyList.filterNot { history ->
+                val tx = transaksiMap[history.transactionId]
+                    ?: transaksiMap[history.transactionId.removePrefix("#")]
+                    ?: transaksiMap.values.find {
+                        it.transactionNumber.equals(history.transactionId, true) ||
+                        it.transactionId.equals(history.transactionId, true)
+                    }
+                history.status.equals("REFUND", true) || history.status.equals("REFUNDED", true) ||
+                history.status.equals("BATAL", true) ||
+                (tx != null && (
+                    tx.status.equals("REFUND", true) || tx.status.equals("REFUNDED", true) ||
+                    tx.status.equals("BATAL", true) || tx.refundReason.isNotBlank()
+                ))
+            }
+            val sortedHistory = nonRefundedHistory.sortedByDescending { it.completedAt.seconds }
             val rows = mutableListOf<List<ExcelCell>>()
 
             // Row 1: Brand Title
@@ -758,7 +772,7 @@ class ExcelExportService @Inject constructor() {
             rows += listOf(ExcelCell("LAPORAN RIWAYAT ANTREAN", style = "ReportTitle"))
 
             // Row 3: Subtitle Metadata Info
-            val subtitle = "Periode Filter: $filterLabel   |   Dicetak: ${dateTimeFormat.format(Date())}   |   Total Data: ${historyList.size} Antrean"
+            val subtitle = "Periode Filter: $filterLabel   |   Dicetak: ${dateTimeFormat.format(Date())}   |   Total Data: ${sortedHistory.size} Antrean"
             rows += listOf(ExcelCell(subtitle, style = "Subtitle"))
 
             // Row 4: Empty separator

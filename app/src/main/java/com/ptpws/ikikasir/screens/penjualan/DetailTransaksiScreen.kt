@@ -438,6 +438,36 @@ fun DetailTransaksiScreen(
                                     )
                                 }
                             }
+
+                            if (isRefunded && tx.refundReason.isNotBlank()) {
+                                HorizontalDivider(
+                                    color = Color(0xFFF1F5F9),
+                                    thickness = 1.dp,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Text(
+                                        text = "Alasan Refund",
+                                        fontFamily = interfamily,
+                                        fontSize = 11.sp,
+                                        color = Color(0xFFEF4444),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = tx.refundReason,
+                                        fontFamily = interfamily,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 13.sp,
+                                        color = Color(0xFFDC2626),
+                                        textAlign = TextAlign.End,
+                                        modifier = Modifier.fillMaxWidth(0.7f)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -557,6 +587,7 @@ fun DetailTransaksiScreen(
                         }
                     }
                 }
+
 
                 // ── Card 4: Ringkasan Pembayaran (Gambar 1 Layout)
                 item {

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.feature.antrean.data.local.dao.AntreanDao
 import com.ptpws.ikikasir.feature.antrean.data.local.dao.QueueHistoryDao
+import com.ptpws.ikikasir.feature.auditlog.data.local.dao.AuditLogDao
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetAllTransaksiUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetTransaksiByIdUseCase
@@ -25,7 +26,8 @@ class DetailTransaksiViewModel @Inject constructor(
     private val refundTransaksiUseCase: RefundTransaksiUseCase,
     private val produkDao: ProdukDao,
     private val antreanDao: AntreanDao,
-    private val queueHistoryDao: QueueHistoryDao
+    private val queueHistoryDao: QueueHistoryDao,
+    private val auditLogDao: AuditLogDao
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DetailTransaksiState())
@@ -97,7 +99,23 @@ class DetailTransaksiViewModel @Inject constructor(
             antrean?.queueSequence ?: history?.queueSequence ?: tx.queueSequence
         }
 
-        return tx.copy(items = updatedItems, queueSequence = queueSeq)
+        val resolvedRefundReason = if (tx.refundReason.isNotBlank()) {
+            tx.refundReason
+        } else {
+            val isRefund = tx.status.equals("REFUND", ignoreCase = true) ||
+                    tx.status.equals("REFUNDED", ignoreCase = true) ||
+                    tx.status.equals("BATAL", ignoreCase = true)
+            if (isRefund) {
+                val cleanNumber = tx.transactionNumber.removePrefix("#").trim()
+                val log = if (cleanNumber.isNotBlank()) {
+                    auditLogDao.getRefundAuditLogForTransaction(cleanNumber)
+                } else null
+                val extracted = log?.description?.substringAfter("Alasan:", "")?.trim() ?: ""
+                if (extracted.isNotBlank() && extracted != "-") extracted else ""
+            } else ""
+        }
+
+        return tx.copy(items = updatedItems, queueSequence = queueSeq, refundReason = resolvedRefundReason)
     }
 
     fun refundTransaksi(

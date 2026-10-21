@@ -28,6 +28,9 @@ interface AuditLogDao {
     @Query("UPDATE audit_logs SET actorRole = :actorRole, isSynced = :isSynced WHERE id = :id AND isSynced = 1")
     suspend fun updateSyncedActorRole(id: String, actorRole: String, isSynced: Boolean)
 
+    @Query("SELECT * FROM audit_logs WHERE action = 'REFUND' AND description LIKE '%' || :txNumber || '%' ORDER BY timestamp DESC LIMIT 1")
+    suspend fun getRefundAuditLogForTransaction(txNumber: String): AuditLogEntity?
+
     @Query("DELETE FROM audit_logs")
     suspend fun clearAll()
 }

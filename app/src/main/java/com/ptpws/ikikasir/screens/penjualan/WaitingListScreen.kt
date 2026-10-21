@@ -65,9 +65,33 @@ fun WaitingListScreen(
 
     val filteredList = when (val state = uiState) {
         is AntreanUiState.Success -> state.data.filter { antrean ->
-            if (searchQuery.isBlank()) true
-            else antrean.transactionId.contains(searchQuery, ignoreCase = true)
-                || antrean.customerName.contains(searchQuery, ignoreCase = true)
+            // Cek apakah transaksi atau antrean sudah di-refund / dibatalkan
+            val matchedTransaksi = transaksiMap[antrean.transactionId]
+                ?: transaksiMap[antrean.transactionId.removePrefix("#")]
+                ?: transaksiMap.values.find { tx ->
+                    tx.transactionId.equals(antrean.transactionId, ignoreCase = true) ||
+                    tx.transactionNumber.equals(antrean.transactionId, ignoreCase = true) ||
+                    tx.transactionNumber.removePrefix("#").equals(antrean.transactionId.removePrefix("#"), ignoreCase = true)
+                }
+
+            val isRefunded = antrean.status.equals("REFUND", ignoreCase = true) ||
+                antrean.status.equals("REFUNDED", ignoreCase = true) ||
+                antrean.status.equals("BATAL", ignoreCase = true) ||
+                (matchedTransaksi != null && (
+                    matchedTransaksi.status.equals("REFUND", ignoreCase = true) ||
+                    matchedTransaksi.status.equals("REFUNDED", ignoreCase = true) ||
+                    matchedTransaksi.status.equals("BATAL", ignoreCase = true) ||
+                    matchedTransaksi.refundReason.isNotBlank()
+                ))
+
+            if (isRefunded) {
+                false
+            } else if (searchQuery.isBlank()) {
+                true
+            } else {
+                antrean.transactionId.contains(searchQuery, ignoreCase = true)
+                    || antrean.customerName.contains(searchQuery, ignoreCase = true)
+            }
         }
         else -> emptyList()
     }
@@ -266,7 +290,12 @@ fun WaitingListScreen(
                                 itemsIndexed(displayedWaitingList) { index, antrean ->
                                     val globalNumber = index + 1
                                     val matchedTransaksi = transaksiMap[antrean.transactionId]
-                                        ?: transaksiMap.values.find { it.transactionNumber == antrean.transactionId }
+                                        ?: transaksiMap[antrean.transactionId.removePrefix("#")]
+                                        ?: transaksiMap.values.find { tx ->
+                                            tx.transactionNumber.equals(antrean.transactionId, ignoreCase = true) ||
+                                            tx.transactionId.equals(antrean.transactionId, ignoreCase = true) ||
+                                            tx.transactionNumber.removePrefix("#").equals(antrean.transactionId.removePrefix("#"), ignoreCase = true)
+                                        }
 
                                     AntreanCard(
                                         nomor = globalNumber,

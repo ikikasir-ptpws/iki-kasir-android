@@ -7,5 +7,6 @@ interface QueueHistoryRepository {
     fun getHistoryList(): Flow<List<QueueHistory>>
     fun getHistoryById(id: String): Flow<QueueHistory?>
     suspend fun insertHistory(history: QueueHistory): Flow<Result<Unit>>
+    suspend fun deleteHistory(id: String): Flow<Result<Unit>>
     suspend fun syncHistory(): Flow<Result<Unit>>
 }

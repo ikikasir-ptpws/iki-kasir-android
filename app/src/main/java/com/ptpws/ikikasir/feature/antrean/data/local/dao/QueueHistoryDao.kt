@@ -36,4 +36,7 @@ interface QueueHistoryDao {
 
     @Query("SELECT COALESCE(MAX(queueSequence), 0) FROM queue_history WHERE isDeleted = 0 AND createdAt >= :startOfDayMillis")
     suspend fun getMaxQueueSequenceToday(startOfDayMillis: Long): Int
+
+    @Query("DELETE FROM queue_history WHERE id = :id OR transactionId = :id")
+    suspend fun deleteById(id: String)
 }

@@ -57,8 +57,13 @@ class AntreanViewModel @Inject constructor(
                     _uiState.value = AntreanUiState.Error(e.message ?: "Terjadi kesalahan")
                 }
                 .collectLatest { list ->
-                    // Order by sequence ASC
-                    val sortedList = list.sortedBy { it.queueSequence }
+                    // Order by sequence ASC, filter out any antrean with status REFUND / REFUNDED / BATAL
+                    val validList = list.filterNot { antrean ->
+                        antrean.status.equals("REFUND", ignoreCase = true) ||
+                        antrean.status.equals("REFUNDED", ignoreCase = true) ||
+                        antrean.status.equals("BATAL", ignoreCase = true)
+                    }
+                    val sortedList = validList.sortedBy { it.queueSequence }
                     _uiState.value = AntreanUiState.Success(sortedList)
                 }
         }
@@ -69,7 +74,17 @@ class AntreanViewModel @Inject constructor(
             getAllTransaksiUseCase()
                 .catch { e -> Log.e(TAG, "Error loading transactions: ${e.message}") }
                 .collectLatest { list ->
-                    val map = list.associateBy { it.transactionId }
+                    val map = mutableMapOf<String, PenjualanTransaksi>()
+                    list.forEach { tx ->
+                        if (tx.transactionId.isNotBlank()) {
+                            map[tx.transactionId] = tx
+                            map[tx.transactionId.removePrefix("#")] = tx
+                        }
+                        if (tx.transactionNumber.isNotBlank()) {
+                            map[tx.transactionNumber] = tx
+                            map[tx.transactionNumber.removePrefix("#")] = tx
+                        }
+                    }
                     _uiState.value = _uiState.value // trigger update if needed
                     _transaksiMap.value = map
                 }

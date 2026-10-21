@@ -95,6 +95,20 @@ class QueueHistoryRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteHistory(id: String): Flow<Result<Unit>> = flow {
+        val isOnline = networkMonitor.isConnected()
+        Log.d(TAG, "deleteHistory: id='$id', isOnline=$isOnline")
+        if (isOnline) {
+            try {
+                remoteDataSource.deleteHistory(id)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed deleting from Firestore: ${e.message}", e)
+            }
+        }
+        localDao.deleteById(id)
+        emit(Result.success(Unit))
+    }
+
     override suspend fun syncHistory(): Flow<Result<Unit>> = flow {
         try {
             syncInternal()

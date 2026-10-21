@@ -44,6 +44,20 @@ class QueueHistoryRemoteDataSourceImpl @Inject constructor(
         Log.d(TAG, "QueueHistory saved to Firestore with ID '${dto.id}'")
     }
 
+    override suspend fun deleteHistory(id: String) {
+        if (id.isBlank()) return
+        try {
+            collectionRef.document(id).delete().await()
+            val querySnapshot = collectionRef.whereEqualTo("transactionId", id).get().await()
+            for (doc in querySnapshot.documents) {
+                doc.reference.delete().await()
+            }
+            Log.d(TAG, "QueueHistory deleted from Firestore with ID or transactionId '$id'")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting queueHistory from Firestore: ${e.message}", e)
+        }
+    }
+
     override fun getHistoryFlow(): Flow<List<QueueHistoryDto>> = callbackFlow {
         val listener = collectionRef
             .orderBy("completedAt", Query.Direction.DESCENDING)

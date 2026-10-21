@@ -22,6 +22,7 @@ data class PenjualanTransaksi(
     val customerName: String = "",        // Nama Pelanggan
     val tableNumber: String = "",         // Nomor Meja
     val queueSequence: Int = 1,           // Nomor Antrean Real
+    val refundReason: String = "",        // Alasan refund transaksi
     val createdAt: Timestamp = Timestamp.now(),
     val updatedAt: Timestamp = Timestamp.now(),
     val isSynced: Boolean = false
