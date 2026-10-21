@@ -159,7 +159,7 @@ fun ProfilScreen(
                     GlobalUploadProgress.updateProgress(0.7f, "Menyesuaikan format logo...")
                     val compressedBitmap = BitmapFactory.decodeFile(compressedFile.absolutePath)
                     if (compressedBitmap != null) {
-                        val maxDimension = 400
+                        val maxDimension = 800
                         val scale = minOf(maxDimension.toFloat() / compressedBitmap.width, maxDimension.toFloat() / compressedBitmap.height, 1f)
                         val targetWidth = (compressedBitmap.width * scale).toInt().coerceAtLeast(1)
                         val targetHeight = (compressedBitmap.height * scale).toInt().coerceAtLeast(1)
@@ -171,7 +171,7 @@ fun ProfilScreen(
 
                         GlobalUploadProgress.updateProgress(0.85f, "Menyimpan logo nota...")
                         val baos = ByteArrayOutputStream()
-                        scaledBitmap.compress(Bitmap.CompressFormat.PNG, 90, baos)
+                        scaledBitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
                         val imageBytes = baos.toByteArray()
 
                         // Format Base64 disimpan di Room DB dan Firestore agar persisten & multi-device
