@@ -40,7 +40,7 @@ object StrukPdfHelper {
         if (transaksi.discount > 0) calculatedHeight += 20
         if (transaksi.notes.isNotBlank()) calculatedHeight += 50
         if (notaSetting.wifiName.isNotBlank() || notaSetting.wifiPassword.isNotBlank()) calculatedHeight += 40
-        if (notaSetting.logoUrl.isNotBlank()) calculatedHeight += 70
+        if (notaSetting.logoUrl.isNotBlank()) calculatedHeight += 85
 
         val pageInfo = PdfDocument.PageInfo.Builder(width, calculatedHeight, 1).create()
         val page = pdfDoc.startPage(pageInfo)
@@ -98,11 +98,28 @@ object StrukPdfHelper {
 
         // ── 0. Logo Toko ────────
         if (notaSetting.logoUrl.isNotBlank()) {
-            val logoBitmap = loadLogoBitmap(context, notaSetting.logoUrl, maxWidth = 120, maxHeight = 60)
+            val logoBitmap = loadLogoBitmap(context, notaSetting.logoUrl, maxResolution = 1024)
             if (logoBitmap != null) {
-                val logoX = (width - logoBitmap.width) / 2f
-                canvas.drawBitmap(logoBitmap, logoX, y, null)
-                y += logoBitmap.height + 10f
+                val maxDisplayWidth = 100f
+                val maxDisplayHeight = 65f
+                val aspect = logoBitmap.width.toFloat() / logoBitmap.height.toFloat()
+                val (displayWidth, displayHeight) = if (aspect > maxDisplayWidth / maxDisplayHeight) {
+                    Pair(maxDisplayWidth, maxDisplayWidth / aspect)
+                } else {
+                    Pair(maxDisplayHeight * aspect, maxDisplayHeight)
+                }
+
+                val logoX = (width - displayWidth) / 2f
+                val dstRect = RectF(logoX, y, logoX + displayWidth, y + displayHeight)
+
+                val imagePaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG).apply {
+                    isAntiAlias = true
+                    isFilterBitmap = true
+                    isDither = true
+                }
+
+                canvas.drawBitmap(logoBitmap, null, dstRect, imagePaint)
+                y += displayHeight + 28f
             }
         }
 
@@ -397,11 +414,16 @@ object StrukPdfHelper {
 
         // ── 7. QR Code Verification ──
         val qrContent = transaksi.transactionNumber.ifBlank { transaksi.transactionId }.ifBlank { "IKIKASIR-STRUK" }
-        val qrBitmap = generateQrBitmap(qrContent, 120)
+        val qrBitmap = generateQrBitmap(qrContent, 300)
         if (qrBitmap != null) {
-            val qrBox = RectF((width - 120) / 2f, y, (width + 120) / 2f, y + 120f)
-            canvas.drawBitmap(qrBitmap, null, qrBox, paint)
-            y += 130f
+            val displayQrSize = 110f
+            val qrBox = RectF((width - displayQrSize) / 2f, y, (width + displayQrSize) / 2f, y + displayQrSize)
+            val qrPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+                isAntiAlias = true
+                isFilterBitmap = true
+            }
+            canvas.drawBitmap(qrBitmap, null, qrBox, qrPaint)
+            y += displayQrSize + 10f
 
             paint.color = Color.parseColor("#64748B")
             paint.textSize = 8f
@@ -439,10 +461,11 @@ object StrukPdfHelper {
         canvas.drawPath(path, paint)
     }
 
-    private fun generateQrBitmap(content: String, size: Int): Bitmap? {
+    private fun generateQrBitmap(content: String, size: Int = 300): Bitmap? {
         return try {
             val writer = QRCodeWriter()
-            val bitMatrix = writer.encode(content, BarcodeFormat.QR_CODE, size, size)
+            val hints = mapOf(com.google.zxing.EncodeHintType.MARGIN to 1)
+            val bitMatrix = writer.encode(content, BarcodeFormat.QR_CODE, size, size, hints)
             val w = bitMatrix.width
             val h = bitMatrix.height
             val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
@@ -458,7 +481,7 @@ object StrukPdfHelper {
         }
     }
 
-    private fun loadLogoBitmap(context: Context, logoUrl: String, maxWidth: Int, maxHeight: Int): Bitmap? {
+    private fun loadLogoBitmap(context: Context, logoUrl: String, maxResolution: Int = 1024): Bitmap? {
         if (logoUrl.isBlank()) return null
         return try {
             val bitmap = if (logoUrl.startsWith("data:image") || logoUrl.startsWith("data:application")) {
@@ -477,10 +500,15 @@ object StrukPdfHelper {
                 }
             } ?: return null
 
-            val scale = minOf(maxWidth.toFloat() / bitmap.width, maxHeight.toFloat() / bitmap.height, 1f)
-            val targetWidth = (bitmap.width * scale).toInt().coerceAtLeast(1)
-            val targetHeight = (bitmap.height * scale).toInt().coerceAtLeast(1)
-            Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+            // Pertahankan resolusi tinggi (HD hingga 1024px) agar logo di PDF tidak pecah/blur saat diperbesar
+            if (bitmap.width > maxResolution || bitmap.height > maxResolution) {
+                val scale = minOf(maxResolution.toFloat() / bitmap.width, maxResolution.toFloat() / bitmap.height)
+                val targetW = (bitmap.width * scale).toInt().coerceAtLeast(1)
+                val targetH = (bitmap.height * scale).toInt().coerceAtLeast(1)
+                Bitmap.createScaledBitmap(bitmap, targetW, targetH, true)
+            } else {
+                bitmap
+            }
         } catch (e: Exception) {
             null
         }
