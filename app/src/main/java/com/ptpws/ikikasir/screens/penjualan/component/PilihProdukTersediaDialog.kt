@@ -33,6 +33,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectivePrice
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.KasirState
@@ -87,6 +88,15 @@ fun PilihProdukTersediaDialog(
                     .thenByDescending { state.getItemQuantity(it.id) }
                     .thenBy { it.name }
             )
+    }
+
+    // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
+    val pageSize = 10
+    var displayedCount by remember(state.catalogSearchQuery, state.selectedCategoryId) {
+        mutableIntStateOf(pageSize)
+    }
+    val displayedList = remember(filteredList, displayedCount) {
+        filteredList.take(displayedCount)
     }
 
     Dialog(
@@ -294,7 +304,7 @@ fun PilihProdukTersediaDialog(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         contentPadding = PaddingValues(vertical = 4.dp)
                     ) {
-                        items(filteredList, key = { it.id }) { produk ->
+                        items(displayedList, key = { it.id }) { produk ->
                             val currentQty = state.getItemQuantity(produk.id)
                             val isSelected = currentQty > 0
                             val canIncrement = currentQty < produk.stock
@@ -523,6 +533,20 @@ fun PilihProdukTersediaDialog(
                                         }
                                     }
                                 }
+                            }
+                        }
+
+                        // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+                        if (filteredList.isNotEmpty()) {
+                            item(key = "scroll_pagination_footer") {
+                                GlobalScrollPaginationFooter(
+                                    displayedCount = displayedCount,
+                                    totalItems = filteredList.size,
+                                    onLoadMore = {
+                                        displayedCount = minOf(displayedCount + pageSize, filteredList.size)
+                                    },
+                                    itemName = "produk"
+                                )
                             }
                         }
                     }
