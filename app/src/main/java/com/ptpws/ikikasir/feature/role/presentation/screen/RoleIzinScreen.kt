@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.ManageAccounts
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -30,16 +31,19 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -63,6 +67,59 @@ fun RoleIzinScreen(
     var displayedCount by remember { mutableIntStateOf(pageSize) }
     val displayedRoles = remember(roles, displayedCount) {
         roles.take(displayedCount)
+    }
+
+    var roleToDelete by remember { mutableStateOf<Role?>(null) }
+
+    // Dialog Konfirmasi Hapus Role
+    if (roleToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { roleToDelete = null },
+            title = {
+                Text(
+                    text = "Hapus Role",
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = interfamily,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Text(
+                    text = "Apakah Anda yakin ingin menghapus role \"${roleToDelete?.name}\"? Role ini dan hak aksesnya akan dihapus dari sistem.",
+                    fontFamily = interfamily,
+                    fontSize = 14.sp,
+                    color = Color(0xFF4B5563)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        roleToDelete?.let { viewModel.deleteRole(it.id) }
+                        roleToDelete = null
+                    }
+                ) {
+                    Text(
+                        text = "Hapus",
+                        color = Color(0xFFEF4444),
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = interfamily
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { roleToDelete = null }
+                ) {
+                    Text(
+                        text = "Batal",
+                        color = Color(0xFF6B7280),
+                        fontFamily = interfamily
+                    )
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = Color.White
+        )
     }
 
     Box(
@@ -111,7 +168,7 @@ fun RoleIzinScreen(
                         role = role,
                         onEdit = { onEditRoleClick(role) },
                         onShowPermissions = { onEditPermissionsClick(role) },
-                        onDelete = { viewModel.deleteRole(role.id) }
+                        onDelete = { roleToDelete = role }
                     )
                 }
 
@@ -179,7 +236,7 @@ fun RoleCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 14.dp),
+                .padding(horizontal = 12.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Icon role
@@ -197,7 +254,7 @@ fun RoleCard(
                 )
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(10.dp))
 
             // Nama dan jumlah pengguna
             Column(modifier = Modifier.weight(1f)) {
@@ -206,7 +263,9 @@ fun RoleCard(
                     fontFamily = interfamily,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp,
-                    color = Color(0xFF111827)
+                    color = Color(0xFF111827),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -226,7 +285,7 @@ fun RoleCard(
                 }
             }
 
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(6.dp))
 
             // Status badge
             Box(
@@ -235,7 +294,7 @@ fun RoleCard(
                         if (role.isActive) Color(0xFFDDF7E5) else Color(0xFFF3F4F6),
                         RoundedCornerShape(8.dp)
                     )
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = if (role.isActive) "AKTIF" else "NONAKTIF",
@@ -246,44 +305,47 @@ fun RoleCard(
                 )
             }
 
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(4.dp))
 
-            // Action icons
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // Action icons (Edit, Izin/Key, Hapus)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 // Edit
                 IconButton(
                     onClick = onEdit,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Edit,
-                        contentDescription = "Edit",
+                        contentDescription = "Edit Role",
                         tint = Color(0xFF4338CA),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(25.dp)
                     )
                 }
                 // Izin/Permissions
                 IconButton(
                     onClick = onShowPermissions,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Key,
-                        contentDescription = "Izin",
+                        contentDescription = "Izin Role",
                         tint = Color(0xFFF59E0B),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(25.dp)
                     )
                 }
                 // Hapus
                 IconButton(
                     onClick = onDelete,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Delete,
-                        contentDescription = "Hapus",
+                        contentDescription = "Hapus Role",
                         tint = Color(0xFFEF4444),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(25.dp)
                     )
                 }
             }
