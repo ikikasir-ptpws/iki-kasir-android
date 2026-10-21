@@ -40,6 +40,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.TambahPromoViewModel
@@ -834,6 +835,15 @@ fun PilihProdukPromoDialog(
         }
     }
 
+    // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
+    val pageSize = 10
+    var displayedCount by remember(searchQuery) {
+        mutableIntStateOf(pageSize)
+    }
+    val displayedList = remember(filteredList, displayedCount) {
+        filteredList.take(displayedCount)
+    }
+
     val handleScannedBarcode: (String) -> Unit = { rawCode ->
         val clean = rawCode.trim()
         if (clean.isNotBlank()) {
@@ -1177,7 +1187,7 @@ fun PilihProdukPromoDialog(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                         contentPadding = PaddingValues(vertical = 4.dp)
                     ) {
-                        items(filteredList, key = { it.id }) { item ->
+                        items(displayedList, key = { it.id }) { item ->
                             val isChecked = tempSelected.any { it.id == item.id }
 
                             Card(
@@ -1261,6 +1271,20 @@ fun PilihProdukPromoDialog(
                                         )
                                     )
                                 }
+                            }
+                        }
+
+                        // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+                        if (filteredList.isNotEmpty()) {
+                            item(key = "scroll_pagination_footer") {
+                                GlobalScrollPaginationFooter(
+                                    displayedCount = displayedCount,
+                                    totalItems = filteredList.size,
+                                    onLoadMore = {
+                                        displayedCount = minOf(displayedCount + pageSize, filteredList.size)
+                                    },
+                                    itemName = "produk"
+                                )
                             }
                         }
                     }
