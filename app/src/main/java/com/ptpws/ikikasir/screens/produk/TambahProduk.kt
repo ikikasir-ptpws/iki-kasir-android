@@ -33,7 +33,9 @@ import androidx.compose.material.icons.outlined.PointOfSale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.ptpws.ikikasir.commond.GlobalImageUploadOverlay
+import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.commond.ImageUploadType
+import com.ptpws.ikikasir.core.util.ImageCompressorHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
@@ -105,36 +107,27 @@ fun TambahProdukScreen(
             coroutineScope.launch {
                 isUploadingImage = true
                 uploadProgress = 0.15f
+                GlobalUploadProgress.showProductImageUpload(progress = 0.15f, message = "Memeriksa ukuran foto produk...")
                 try {
-                    val inputStream = context.contentResolver.openInputStream(uri)
-                    val fileSizeInBytes = inputStream?.available() ?: 0
-                    inputStream?.close()
-
-                    val maxSizeBytes = 2 * 1024 * 1024 // 2MB
-                    if (fileSizeInBytes > maxSizeBytes) {
-                        Toast.makeText(context, "Ukuran foto terlalu besar. Maksimal 2MB!", Toast.LENGTH_LONG).show()
-                        isUploadingImage = false
-                        uploadProgress = null
-                        return@launch
-                    }
-
-                    uploadProgress = 0.45f
-                    delay(150)
-                    uploadProgress = 0.85f
-                    val permanentUriString = saveImageToInternalStorage(context, uri)
-                    uploadProgress = 1.0f
-                    delay(120)
-                    val permanentUri = Uri.parse(permanentUriString)
+                    val compressedFile = ImageCompressorHelper.processAndCompressImage(
+                        context = context,
+                        sourceUri = uri,
+                        targetSubfolder = "product_images",
+                        onProgress = { p, msg ->
+                            uploadProgress = p
+                            GlobalUploadProgress.updateProgress(p, msg)
+                        }
+                    )
+                    val permanentUri = Uri.fromFile(compressedFile)
                     imageUri = permanentUri
-                    viewModel.onImageUrlChange(permanentUriString)
+                    viewModel.onImageUrlChange(permanentUri.toString())
                 } catch (e: Exception) {
-                    val permanentUriString = saveImageToInternalStorage(context, uri)
-                    val permanentUri = Uri.parse(permanentUriString)
-                    imageUri = permanentUri
-                    viewModel.onImageUrlChange(permanentUriString)
+                    Toast.makeText(context, "Gagal memproses foto: ${e.message}", Toast.LENGTH_SHORT).show()
                 } finally {
+                    delay(150)
                     isUploadingImage = false
                     uploadProgress = null
+                    GlobalUploadProgress.dismiss()
                 }
             }
         }
@@ -256,7 +249,7 @@ fun TambahProdukScreen(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Format JPG, PNG atau HEIC. Maks 2MB.",
+                    text = "Format JPG, PNG atau HEIC. Maks 2MB (Auto Kompresi).",
                     fontSize = 11.sp,
                     fontFamily = interfamily,
                     color = Color(0xFF9CA3AF),

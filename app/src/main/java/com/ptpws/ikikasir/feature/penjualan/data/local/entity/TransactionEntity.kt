@@ -70,6 +70,9 @@ data class TransactionEntity(
     @ColumnInfo(name = "refundReason")
     val refundReason: String = "",
 
+    @ColumnInfo(name = "paymentProofUrl")
+    val paymentProofUrl: String = "",
+
     @ColumnInfo(name = "createdAt")
     val createdAt: Timestamp = Timestamp.now(),
 
@@ -126,6 +129,7 @@ data class TransactionEntity(
             tableNumber = tableNumber,
             queueSequence = queueSequence,
             refundReason = refundReason,
+            paymentProofUrl = paymentProofUrl,
             createdAt = createdAt,
             updatedAt = updatedAt,
             isSynced = isSynced
@@ -167,6 +171,7 @@ fun PenjualanTransaksi.toEntity(isSynced: Boolean = false): TransactionEntity {
         tableNumber = tableNumber,
         queueSequence = queueSequence,
         refundReason = refundReason,
+        paymentProofUrl = paymentProofUrl,
         createdAt = createdAt,
         updatedAt = updatedAt,
         isSynced = isSynced

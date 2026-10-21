@@ -1,6 +1,7 @@
 package com.ptpws.ikikasir.screens.penjualan
 
 import android.Manifest
+import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -24,15 +25,19 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Sell
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.TableBar
 import androidx.compose.material3.*
@@ -42,7 +47,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
+import com.ptpws.ikikasir.commond.GlobalImageUploadOverlay
+import com.ptpws.ikikasir.commond.GlobalUploadProgress
+import com.ptpws.ikikasir.commond.ImageUploadType
+import com.ptpws.ikikasir.core.util.ImageCompressorHelper
+import kotlinx.coroutines.delay
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -132,6 +144,101 @@ fun PembayaranScreen(
             bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
         } else {
             printReceipt()
+        }
+    }
+
+    // ─── Bukti Pembayaran (Kamera & Galeri) Launchers ──────────────────────────
+    val coroutineScope = rememberCoroutineScope()
+    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && tempCameraUri != null) {
+            val sourceUri = tempCameraUri!!
+            coroutineScope.launch {
+                viewModel.setUploadingBukti(true, 0.15f, "Memproses hasil foto...")
+                GlobalUploadProgress.showBuktiPembayaranUpload(progress = 0.15f, message = "Memeriksa ukuran foto...")
+                try {
+                    val compressedFile = ImageCompressorHelper.processAndCompressImage(
+                        context = context,
+                        sourceUri = sourceUri,
+                        targetSubfolder = "payment_proofs",
+                        onProgress = { p, msg ->
+                            viewModel.setUploadingBukti(true, p, msg)
+                            GlobalUploadProgress.updateProgress(p, msg)
+                        }
+                    )
+                    val fileUri = Uri.fromFile(compressedFile).toString()
+                    viewModel.onBuktiPembayaranChange(fileUri)
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Gagal memproses foto: ${e.message}", Toast.LENGTH_SHORT).show()
+                } finally {
+                    delay(150)
+                    viewModel.setUploadingBukti(false)
+                    GlobalUploadProgress.dismiss()
+                }
+            }
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            try {
+                val (_, uri) = ImageCompressorHelper.createCameraTempFileUri(context)
+                tempCameraUri = uri
+                cameraLauncher.launch(uri)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Gagal membuka kamera: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "Izin kamera diperlukan untuk mengambil foto bukti pembayaran.", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    val launchCamera = {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            try {
+                val (_, uri) = ImageCompressorHelper.createCameraTempFileUri(context)
+                tempCameraUri = uri
+                cameraLauncher.launch(uri)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Gagal membuka kamera: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            coroutineScope.launch {
+                viewModel.setUploadingBukti(true, 0.15f, "Memeriksa ukuran gambar...")
+                GlobalUploadProgress.showBuktiPembayaranUpload(progress = 0.15f, message = "Memeriksa ukuran gambar...")
+                try {
+                    val compressedFile = ImageCompressorHelper.processAndCompressImage(
+                        context = context,
+                        sourceUri = uri,
+                        targetSubfolder = "payment_proofs",
+                        onProgress = { p, msg ->
+                            viewModel.setUploadingBukti(true, p, msg)
+                            GlobalUploadProgress.updateProgress(p, msg)
+                        }
+                    )
+                    val fileUri = Uri.fromFile(compressedFile).toString()
+                    viewModel.onBuktiPembayaranChange(fileUri)
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Gagal memproses gambar: ${e.message}", Toast.LENGTH_SHORT).show()
+                } finally {
+                    delay(150)
+                    viewModel.setUploadingBukti(false)
+                    GlobalUploadProgress.dismiss()
+                }
+            }
         }
     }
 
@@ -1045,6 +1152,22 @@ fun PembayaranScreen(
                 }
             }
 
+            // ── 4b. Bukti Pembayaran (Non-Tunai: QRIS, Transfer, Kartu Debit, dll.)
+            if (!state.metodePembayaran.equals("Tunai", ignoreCase = true)) {
+                item {
+                    BuktiPembayaranCard(
+                        metodePembayaran = state.metodePembayaran,
+                        buktiUri = state.buktiPembayaranUri,
+                        isUploading = state.isUploadingBukti,
+                        uploadProgress = state.uploadBuktiProgress,
+                        uploadMessage = state.uploadBuktiMessage,
+                        onPickGallery = { galleryLauncher.launch("image/*") },
+                        onCaptureCamera = launchCamera,
+                        onRemoveBukti = { viewModel.onBuktiPembayaranChange(null) }
+                    )
+                }
+            }
+
             // ── 5. Cetak Struk & Printer Status Row
             item {
                 Row(
@@ -1211,7 +1334,339 @@ fun PaymentMethodCard(
     }
 }
 
+@Composable
+private fun BuktiPembayaranCard(
+    metodePembayaran: String,
+    buktiUri: String?,
+    isUploading: Boolean,
+    uploadProgress: Float?,
+    uploadMessage: String,
+    onPickGallery: () -> Unit,
+    onCaptureCamera: () -> Unit,
+    onRemoveBukti: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Header Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFFEEF2FF),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Outlined.Payments,
+                                contentDescription = null,
+                                tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    Column {
+                        Text(
+                            text = "Bukti Pembayaran ($metodePembayaran)",
+                            fontFamily = interfamily,
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1E293B)
+                        )
+                        Text(
+                            text = "Maks. 2MB • Kompresi Otomatis",
+                            fontFamily = interfamily,
+                            fontSize = 11.5.sp,
+                            color = Color(0xFF64748B)
+                        )
+                    }
+                }
 
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (buktiUri != null) Color(0xFFECFDF5) else Color(0xFFF1F5F9)
+                ) {
+                    Text(
+                        text = if (buktiUri != null) "Terlampir" else "Opsional",
+                        fontFamily = interfamily,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (buktiUri != null) Color(0xFF059669) else Color(0xFF64748B),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            // Main Upload Area / Preview
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 120.dp)
+            ) {
+                if (buktiUri != null) {
+                    // Preview Image View
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(14.dp))
+                        ) {
+                            AsyncImage(
+                                model = buktiUri,
+                                contentDescription = "Bukti Pembayaran",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+
+                            // Status Tag on top-right
+                            Surface(
+                                shape = RoundedCornerShape(bottomStart = 10.dp),
+                                color = Color(0xFF0F172A).copy(alpha = 0.75f),
+                                modifier = Modifier.align(Alignment.TopEnd)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Color(0xFF10B981),
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Text(
+                                        text = "Bukti Valid",
+                                        fontFamily = interfamily,
+                                        fontSize = 11.sp,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+
+                        // Action Buttons: Ganti Foto (Galeri/Kamera) & Hapus
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = onPickGallery,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(42.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+                                contentPadding = PaddingValues(horizontal = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Image,
+                                    contentDescription = null,
+                                    tint = Color(0xFF475569),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Ubah (Galeri)",
+                                    fontFamily = interfamily,
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF334155),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            OutlinedButton(
+                                onClick = onCaptureCamera,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(42.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+                                contentPadding = PaddingValues(horizontal = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CameraAlt,
+                                    contentDescription = null,
+                                    tint = Color(0xFF475569),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Ubah (Kamera)",
+                                    fontFamily = interfamily,
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF334155),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            IconButton(
+                                onClick = onRemoveBukti,
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .background(Color(0xFFFEE2E2), RoundedCornerShape(10.dp))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Hapus Bukti",
+                                    tint = Color(0xFFDC2626),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Empty State: Dua Tombol Pilihan (Galeri & Foto Kamera)
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        color = Color(0xFFF8FAFC),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Text(
+                                text = "Pilih sumber bukti transaksi non-tunai:",
+                                fontFamily = interfamily,
+                                fontSize = 12.5.sp,
+                                color = Color(0xFF64748B),
+                                textAlign = TextAlign.Center
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                // Opsi 1: Galeri / File
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(86.dp)
+                                        .clickable { onPickGallery() },
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color.White,
+                                    border = BorderStroke(1.2.dp, Color(0xFFE0E7FF))
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(8.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = Color(0xFFEEF2FF),
+                                            modifier = Modifier.size(34.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Image,
+                                                    contentDescription = null,
+                                                    tint = Color(0xFF4F46E5),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = "Galeri",
+                                            fontFamily = interfamily,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color(0xFF1E293B)
+                                        )
+                                    }
+                                }
+
+                                // Opsi 2: Ambil Foto Kamera
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(86.dp)
+                                        .clickable { onCaptureCamera() },
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFF4F46E5),
+                                    border = BorderStroke(1.2.dp, Color(0xFF4F46E5))
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(8.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = Color.White.copy(alpha = 0.2f),
+                                            modifier = Modifier.size(34.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    imageVector = Icons.Default.CameraAlt,
+                                                    contentDescription = null,
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = "Kamera",
+                                            fontFamily = interfamily,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.White
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // In-place Progress Animation Overlay
+                GlobalImageUploadOverlay(
+                    isUploading = isUploading,
+                    modifier = Modifier.matchParentSize(),
+                    progress = uploadProgress,
+                    title = "Memproses Bukti Pembayaran...",
+                    message = uploadMessage.ifBlank { "Mengompresi otomatis (Maks. 2MB)..." },
+                    type = ImageUploadType.BUKTI_PEMBAYARAN,
+                    shape = RoundedCornerShape(14.dp)
+                )
+            }
+        }
+    }
+}
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

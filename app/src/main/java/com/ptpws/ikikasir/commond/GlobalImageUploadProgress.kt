@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.*
@@ -53,6 +54,7 @@ enum class ImageUploadType {
     PRODUK,
     LOGO_STRUK,
     FOTO_PROFIL,
+    BUKTI_PEMBAYARAN,
     GENERAL
 }
 
@@ -131,6 +133,15 @@ object GlobalUploadProgress {
         )
     }
 
+    fun showBuktiPembayaranUpload(progress: Float? = null, message: String = "Sedang memproses bukti pembayaran...") {
+        show(
+            title = "Upload Bukti Pembayaran",
+            message = message,
+            progress = progress,
+            type = ImageUploadType.BUKTI_PEMBAYARAN
+        )
+    }
+
     fun dismiss() {
         _state.value = null
     }
@@ -176,6 +187,7 @@ fun GlobalImageUploadCircleIndicator(
         ImageUploadType.PRODUK -> Icons.Outlined.Image
         ImageUploadType.LOGO_STRUK -> Icons.Outlined.Storefront
         ImageUploadType.FOTO_PROFIL -> Icons.Outlined.Upload
+        ImageUploadType.BUKTI_PEMBAYARAN -> Icons.Outlined.Payments
         ImageUploadType.GENERAL -> Icons.Outlined.Upload
     }
 

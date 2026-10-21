@@ -58,6 +58,17 @@
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="barcode,barcode_ui" />
 
+        <!-- FileProvider for Camera captures & Secure File Sharing -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <activity
             android:name=".screens.scanner.BarcodeScannerActivity"
             android:exported="false"

@@ -85,6 +85,9 @@ data class TransactionDto(
     @get:PropertyName("refundReason") @set:PropertyName("refundReason")
     var refundReason: String = "",
 
+    @get:PropertyName("paymentProofUrl") @set:PropertyName("paymentProofUrl")
+    var paymentProofUrl: String = "",
+
     @get:PropertyName("createdAt") @set:PropertyName("createdAt")
     @get:ServerTimestamp
     var createdAt: Timestamp? = null,
@@ -131,6 +134,7 @@ data class TransactionDto(
             tableNumber = tableNumber,
             queueSequence = queueSequence,
             refundReason = refundReason,
+            paymentProofUrl = paymentProofUrl,
             createdAt = createdAt ?: Timestamp.now(),
             updatedAt = updatedAt ?: Timestamp.now(),
             isSynced = true
@@ -170,6 +174,7 @@ fun PenjualanTransaksi.toDto(): TransactionDto {
         tableNumber = tableNumber,
         queueSequence = queueSequence,
         refundReason = refundReason,
+        paymentProofUrl = paymentProofUrl,
         createdAt = null,
         updatedAt = null
     )

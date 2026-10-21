@@ -59,7 +59,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import com.ptpws.ikikasir.commond.GlobalImageUploadOverlay
+import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.commond.ImageUploadType
+import com.ptpws.ikikasir.core.util.ImageCompressorHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.material3.Switch
@@ -149,38 +151,29 @@ fun TambahPenggunaScreen(
         if (uri != null) {
             coroutineScope.launch {
                 isUploadingImage = true
-                uploadProgress = 0.2f
+                uploadProgress = 0.15f
+                GlobalUploadProgress.showProfilePhotoUpload(progress = 0.15f, message = "Memeriksa foto profil...")
                 try {
-                    val inputStream = context.contentResolver.openInputStream(uri)
-                    val fileSizeInBytes = inputStream?.available() ?: 0
-                    inputStream?.close()
-
-                    val maxSizeBytes = 2 * 1024 * 1024 // 2MB
-                    if (fileSizeInBytes > maxSizeBytes) {
-                        localError = "Ukuran gambar maksimal 2MB"
-                        isUploadingImage = false
-                        uploadProgress = null
-                        return@launch
-                    }
-
-                    uploadProgress = 0.6f
-                    delay(120)
-                    val permanentUriString = saveUserImageToInternalStorage(context, uri)
-                    uploadProgress = 1.0f
-                    delay(100)
-                    val permanentUri = Uri.parse(permanentUriString)
+                    val compressedFile = ImageCompressorHelper.processAndCompressImage(
+                        context = context,
+                        sourceUri = uri,
+                        targetSubfolder = "user_images",
+                        onProgress = { p, msg ->
+                            uploadProgress = p
+                            GlobalUploadProgress.updateProgress(p, msg)
+                        }
+                    )
+                    val permanentUri = Uri.fromFile(compressedFile)
                     profileImageUri = permanentUri
-                    viewModel.onPhotoUrlChange(permanentUriString)
+                    viewModel.onPhotoUrlChange(permanentUri.toString())
                     localError = null
                 } catch (e: Exception) {
-                    val permanentUriString = saveUserImageToInternalStorage(context, uri)
-                    val permanentUri = Uri.parse(permanentUriString)
-                    profileImageUri = permanentUri
-                    viewModel.onPhotoUrlChange(permanentUriString)
-                    localError = null
+                    localError = "Gagal memproses gambar: ${e.message}"
                 } finally {
+                    delay(150)
                     isUploadingImage = false
                     uploadProgress = null
+                    GlobalUploadProgress.dismiss()
                 }
             }
         }
@@ -297,7 +290,7 @@ fun TambahPenggunaScreen(
                         }
                     }
                     Text(
-                        text = "Unggah Foto Profil (Maks. 2MB)",
+                        text = "Unggah Foto Profil (Maks. 2MB - Auto Kompresi)",
                         fontFamily = interfamily,
                         fontSize = if (isCompact) 12.sp else 13.sp,
                         color = Color(0xFF64748B)

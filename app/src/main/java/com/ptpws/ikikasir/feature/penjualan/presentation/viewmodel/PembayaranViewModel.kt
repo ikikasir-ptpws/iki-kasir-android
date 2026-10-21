@@ -312,6 +312,20 @@ class PembayaranViewModel @Inject constructor(
         _state.update { it.copy(tableNumber = tableNumber) }
     }
 
+    fun onBuktiPembayaranChange(uri: String?) {
+        _state.update { it.copy(buktiPembayaranUri = uri) }
+    }
+
+    fun setUploadingBukti(isUploading: Boolean, progress: Float? = null, message: String = "") {
+        _state.update {
+            it.copy(
+                isUploadingBukti = isUploading,
+                uploadBuktiProgress = progress,
+                uploadBuktiMessage = message
+            )
+        }
+    }
+
     fun toggleRincianExpanded() {
         _state.update { it.copy(isRincianExpanded = !it.isRincianExpanded) }
     }
@@ -448,6 +462,7 @@ class PembayaranViewModel @Inject constructor(
                 notes = currentState.notes,
                 customerName = currentState.customerName,
                 tableNumber = currentState.tableNumber,
+                paymentProofUrl = currentState.buktiPembayaranUri ?: "",
                 isTaxInclusive = isTaxInclusive
             ).collect { result ->
                 _state.update { it.copy(isLoading = false) }

@@ -37,6 +37,7 @@ class ProsesPembayaranUseCase @Inject constructor(
         notes: String = "",
         customerName: String = "",
         tableNumber: String = "",
+        paymentProofUrl: String = "",
         isTaxInclusive: Boolean = false
     ): Flow<Result<PenjualanTransaksi>> = flow {
         if (items.isEmpty()) {
@@ -120,6 +121,7 @@ class ProsesPembayaranUseCase @Inject constructor(
             customerName = customerName,
             tableNumber = tableNumber,
             queueSequence = realQueueSeq,
+            paymentProofUrl = paymentProofUrl,
             createdAt = Timestamp.now(),
             updatedAt = Timestamp.now()
         )

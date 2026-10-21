@@ -39,6 +39,10 @@ data class PembayaranState(
     val notes: String = "", // Catatan pesanan kasir/user
     val customerName: String = "", // Nama Pelanggan (Opsional)
     val tableNumber: String = "", // Nomor Meja (Opsional)
+    val buktiPembayaranUri: String? = null, // URI Bukti Pembayaran Non-Tunai
+    val isUploadingBukti: Boolean = false,
+    val uploadBuktiProgress: Float? = null,
+    val uploadBuktiMessage: String = "",
     val isCetakStrukOtomatis: Boolean = false,
     val printerStatus: PrinterStatus = PrinterStatus.BELUM_TERHUBUNG,
     val printerName: String = "",

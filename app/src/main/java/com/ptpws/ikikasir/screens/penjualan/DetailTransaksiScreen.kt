@@ -9,6 +9,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.ImageNotSupported
 import androidx.compose.material.icons.filled.Info
@@ -164,6 +166,7 @@ fun DetailTransaksiScreen(
     }
 
     var showRefundConfirmDialog by remember { mutableStateOf(false) }
+    var showProofImageDialog by remember { mutableStateOf(false) }
 
     val formatRupiah = remember {
         { amount: Double ->
@@ -687,6 +690,71 @@ fun DetailTransaksiScreen(
                                     )
                                 }
                             }
+
+                            // ── Bukti Pembayaran (jika ada)
+                            if (tx.paymentProofUrl.isNotBlank()) {
+                                HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Bukti Pembayaran",
+                                            fontFamily = interfamily,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF64748B)
+                                        )
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = Color(0xFFECFDF5)
+                                        ) {
+                                            Text(
+                                                text = "Terlampir",
+                                                fontFamily = interfamily,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color(0xFF059669),
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(170.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                            .clickable { showProofImageDialog = true }
+                                    ) {
+                                        AsyncImage(
+                                            model = tx.paymentProofUrl,
+                                            contentDescription = "Bukti Pembayaran",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                        Surface(
+                                            shape = RoundedCornerShape(topStart = 8.dp),
+                                            color = Color(0xFF0F172A).copy(alpha = 0.75f),
+                                            modifier = Modifier.align(Alignment.BottomEnd)
+                                        ) {
+                                            Text(
+                                                text = "Ketuk untuk melihat",
+                                                fontFamily = interfamily,
+                                                fontSize = 10.5.sp,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -808,6 +876,82 @@ fun DetailTransaksiScreen(
                                 fontSize = 15.sp,
                                 color = if (isRefunded) Color(0xFF94A3B8) else Color(0xFFEF4444)
                             )
+                        }
+                    }
+                }
+            }
+
+            // ── Dialog Preview Bukti Pembayaran Full Screen
+            if (showProofImageDialog && tx.paymentProofUrl.isNotBlank()) {
+                androidx.compose.ui.window.Dialog(
+                    onDismissRequest = { showProofImageDialog = false }
+                ) {
+                    Card(
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Bukti Pembayaran",
+                                    fontFamily = interfamily,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
+                                )
+                                IconButton(
+                                    onClick = { showProofImageDialog = false },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Tutup",
+                                        tint = Color(0xFF64748B),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 420.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                            ) {
+                                AsyncImage(
+                                    model = tx.paymentProofUrl,
+                                    contentDescription = "Bukti Pembayaran Full",
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+
+                            Button(
+                                onClick = { showProofImageDialog = false },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                            ) {
+                                Text(
+                                    text = "Tutup",
+                                    fontFamily = interfamily,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
                 }

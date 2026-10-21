@@ -23,6 +23,7 @@ data class PenjualanTransaksi(
     val tableNumber: String = "",         // Nomor Meja
     val queueSequence: Int = 1,           // Nomor Antrean Real
     val refundReason: String = "",        // Alasan refund transaksi
+    val paymentProofUrl: String = "",     // URL / Path Bukti Pembayaran (Non-Tunai)
     val createdAt: Timestamp = Timestamp.now(),
     val updatedAt: Timestamp = Timestamp.now(),
     val isSynced: Boolean = false
