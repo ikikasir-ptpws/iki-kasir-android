@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -88,6 +89,13 @@ fun RiwayatTransaksiScreen(
             errorMessage = state.exportError ?: ""
             showExportErrorDialog = true
         }
+    }
+
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(Unit) {
+        viewModel.resetToDefault()
+        listState.scrollToItem(0, 0)
     }
 
     // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
@@ -353,336 +361,293 @@ fun RiwayatTransaksiScreen(
         }
     ) { paddingValues ->
 
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = 8.dp,
-                bottom = 120.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(paddingValues)
         ) {
 
             // Barcode Scan Icon + Search Bar
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Search Input Box
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    // Search Input Box
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(44.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        BasicTextField(
-                            value = state.searchQuery,
-                            onValueChange = viewModel::onSearchQueryChange,
-                            singleLine = true,
-                            textStyle = TextStyle(
-                                color = Color(0xFF0F172A),
-                                fontSize = 13.sp,
-                                fontFamily = interfamily
-                            ),
-                            modifier = Modifier.fillMaxSize(),
-                            decorationBox = { innerTextField ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Search,
-                                        contentDescription = null,
-                                        tint = Color(0xFF94A3B8),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Box(
-                                        modifier = Modifier.weight(1f),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        if (state.searchQuery.isEmpty()) {
-                                            Text(
-                                                text = "Cari kode transaksi...",
-                                                fontFamily = interfamily,
-                                                fontSize = 13.sp,
-                                                color = Color(0xFF94A3B8)
-                                            )
-                                        }
-                                        innerTextField()
-                                    }
-                                }
-                            }
-                        )
-                    }
-
-                    // Barcode Scanner Icon Button
-                    Card(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clickable { triggerBarcodeScanner() },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.QrCodeScanner,
-                                contentDescription = "Scan Barcode Transaksi",
-                                tint = Color(0xFF4F46E5),
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Export Info Banner
-            if (state.filteredList.isNotEmpty()) {
-                item {
-                    AnimatedVisibility(
-                        visible = true,
-                        enter = fadeIn(tween(300)),
-                        exit = fadeOut(tween(300))
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color(0xFFEEF2FF), RoundedCornerShape(10.dp))
-                                .clickable(enabled = !state.isExporting) {
-                                    viewModel.exportToExcel(context)
-                                }
-                                .padding(horizontal = 14.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.FileDownload,
-                                contentDescription = null,
-                                tint = Color(0xFF4F46E5),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Ekspor ${state.filteredList.size} transaksi ke Excel",
-                                    fontFamily = interfamily,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 13.sp,
-                                    color = Color(0xFF3730A3)
-                                )
-                                Text(
-                                    text = "Tekan untuk mengunduh file .xlsx",
-                                    fontFamily = interfamily,
-                                    fontSize = 11.sp,
-                                    color = Color(0xFF6366F1)
-                                )
-                            }
-                            if (state.isExporting) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(18.dp),
-                                    color = Color(0xFF4F46E5),
-                                    strokeWidth = 2.dp
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Filter Chips (Semua, Hari Ini, 7 Hari Terakhir, Filter Tanggal)
-            item {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(vertical = 4.dp)
-                ) {
-                    // Chip 1: Semua
-                    item {
-                        val isSelected = state.selectedFilter == "Semua"
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { viewModel.onFilterSelect("Semua") },
-                            label = {
-                                Text(
-                                    text = "Semua",
-                                    fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFF4F46E5),
-                                selectedLabelColor = Color.White,
-                                containerColor = Color.White,
-                                labelColor = Color(0xFF374151)
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = isSelected,
-                                selectedBorderColor = Color.Transparent,
-                                borderColor = Color(0xFFE2E8F0),
-                                borderWidth = 1.dp,
-                                selectedBorderWidth = 0.dp
-                            ),
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                    }
-
-                    // Chip 2: Hari Ini
-                    item {
-                        val isSelected = state.selectedFilter == "Hari Ini"
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { viewModel.onFilterSelect("Hari Ini") },
-                            label = {
-                                Text(
-                                    text = "Hari Ini",
-                                    fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFF4F46E5),
-                                selectedLabelColor = Color.White,
-                                containerColor = Color.White,
-                                labelColor = Color(0xFF374151)
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = isSelected,
-                                selectedBorderColor = Color.Transparent,
-                                borderColor = Color(0xFFE2E8F0),
-                                borderWidth = 1.dp,
-                                selectedBorderWidth = 0.dp
-                            ),
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                    }
-
-                    // Chip 3: 7 Hari Terakhir
-                    item {
-                        val isSelected = state.selectedFilter == "7 Hari Terakhir"
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { viewModel.onFilterSelect("7 Hari Terakhir") },
-                            label = {
-                                Text(
-                                    text = "7 Hari Terakhir",
-                                    fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFF4F46E5),
-                                selectedLabelColor = Color.White,
-                                containerColor = Color.White,
-                                labelColor = Color(0xFF374151)
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = isSelected,
-                                selectedBorderColor = Color.Transparent,
-                                borderColor = Color(0xFFE2E8F0),
-                                borderWidth = 1.dp,
-                                selectedBorderWidth = 0.dp
-                            ),
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                    }
-
-                    // Chip 4: Refund
-                    item {
-                        val isSelected = state.selectedFilter == "Refund"
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { viewModel.onFilterSelect("Refund") },
-                            label = {
-                                Text(
-                                    text = "Refund",
-                                    fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFF4F46E5),
-                                selectedLabelColor = Color.White,
-                                containerColor = Color.White,
-                                labelColor = Color(0xFF374151)
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = isSelected,
-                                selectedBorderColor = Color.Transparent,
-                                borderColor = Color(0xFFE2E8F0),
-                                borderWidth = 1.dp,
-                                selectedBorderWidth = 0.dp
-                            ),
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                    }
-
-                    // Chip 5: Filter Tanggal (Custom Date Picker)
-                    item {
-                        val isSelected = state.selectedFilter == "Filter Tanggal"
-                        val chipText = if (isSelected && !state.customDateLabel.isNullOrBlank()) {
-                            state.customDateLabel!!
-                        } else {
-                            "Filter Tanggal"
-                        }
-
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { showDateRangePicker = true },
-                            leadingIcon = {
+                    BasicTextField(
+                        value = state.searchQuery,
+                        onValueChange = viewModel::onSearchQueryChange,
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            color = Color(0xFF0F172A),
+                            fontSize = 13.sp,
+                            fontFamily = interfamily
+                        ),
+                        modifier = Modifier.fillMaxSize(),
+                        decorationBox = { innerTextField ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Icon(
-                                    imageVector = Icons.Default.CalendarMonth,
-                                    contentDescription = "Pilih Tanggal",
-                                    modifier = Modifier.size(15.dp)
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = null,
+                                    tint = Color(0xFF94A3B8),
+                                    modifier = Modifier.size(18.dp)
                                 )
-                            },
-                            label = {
-                                Text(
-                                    text = chipText,
-                                    fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFF4F46E5),
-                                selectedLabelColor = Color.White,
-                                selectedLeadingIconColor = Color.White,
-                                containerColor = Color.White,
-                                labelColor = Color(0xFF374151),
-                                iconColor = Color(0xFF374151)
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = isSelected,
-                                selectedBorderColor = Color.Transparent,
-                                borderColor = Color(0xFFE2E8F0),
-                                borderWidth = 1.dp,
-                                selectedBorderWidth = 0.dp
-                            ),
-                            shape = RoundedCornerShape(20.dp)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Box(
+                                    modifier = Modifier.weight(1f),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    if (state.searchQuery.isEmpty()) {
+                                        Text(
+                                            text = "Cari kode transaksi...",
+                                            fontFamily = interfamily,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF94A3B8)
+                                        )
+                                    }
+                                    innerTextField()
+                                }
+                            }
+                        }
+                    )
+                }
+
+                // Barcode Scanner Icon Button
+                Card(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clickable { triggerBarcodeScanner() },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.QrCodeScanner,
+                            contentDescription = "Scan Barcode Transaksi",
+                            tint = Color(0xFF4F46E5),
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            // Filter Chips (Semua, Hari Ini, 7 Hari Terakhir, Refund, Filter Tanggal)
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
+            ) {
+                // Chip 1: Semua
+                item {
+                    val isSelected = state.selectedFilter == "Semua"
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.onFilterSelect("Semua") },
+                        label = {
+                            Text(
+                                text = "Semua",
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF4F46E5),
+                            selectedLabelColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = Color(0xFF374151)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = Color.Transparent,
+                            borderColor = Color(0xFFE2E8F0),
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 0.dp
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                }
+
+                // Chip 2: Hari Ini
+                item {
+                    val isSelected = state.selectedFilter == "Hari Ini"
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.onFilterSelect("Hari Ini") },
+                        label = {
+                            Text(
+                                text = "Hari Ini",
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF4F46E5),
+                            selectedLabelColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = Color(0xFF374151)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = Color.Transparent,
+                            borderColor = Color(0xFFE2E8F0),
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 0.dp
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                }
+
+                // Chip 3: 7 Hari Terakhir
+                item {
+                    val isSelected = state.selectedFilter == "7 Hari Terakhir"
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.onFilterSelect("7 Hari Terakhir") },
+                        label = {
+                            Text(
+                                text = "7 Hari Terakhir",
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF4F46E5),
+                            selectedLabelColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = Color(0xFF374151)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = Color.Transparent,
+                            borderColor = Color(0xFFE2E8F0),
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 0.dp
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                }
+
+                // Chip 4: Refund
+                item {
+                    val isSelected = state.selectedFilter == "Refund"
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.onFilterSelect("Refund") },
+                        label = {
+                            Text(
+                                text = "Refund",
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF4F46E5),
+                            selectedLabelColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = Color(0xFF374151)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = Color.Transparent,
+                            borderColor = Color(0xFFE2E8F0),
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 0.dp
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                }
+
+                // Chip 5: Filter Tanggal (Custom Date Picker)
+                item {
+                    val isSelected = state.selectedFilter == "Filter Tanggal"
+                    val chipText = if (isSelected && !state.customDateLabel.isNullOrBlank()) {
+                        state.customDateLabel!!
+                    } else {
+                        "Filter Tanggal"
+                    }
+
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { showDateRangePicker = true },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "Pilih Tanggal",
+                                modifier = Modifier.size(15.dp)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = chipText,
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF4F46E5),
+                            selectedLabelColor = Color.White,
+                            selectedLeadingIconColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = Color(0xFF374151),
+                            iconColor = Color(0xFF374151)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = Color.Transparent,
+                            borderColor = Color(0xFFE2E8F0),
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 0.dp
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 4.dp,
+                    bottom = 120.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
 
             if (state.isLoading) {
                 items(5) {
@@ -786,6 +751,7 @@ fun RiwayatTransaksiScreen(
             }
         }
     }
+}
 }
 
 @Composable

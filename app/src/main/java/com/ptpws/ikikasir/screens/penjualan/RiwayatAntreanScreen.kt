@@ -15,11 +15,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -322,6 +324,13 @@ fun RiwayatAntreanScreen(
         else -> emptyList()
     }
 
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(Unit) {
+        viewModel.resetToDefault()
+        listState.scrollToItem(0, 0)
+    }
+
     // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
     val pageSize = 10
     var displayedCount by remember(searchQuery, selectedFilter, startDateMillis, endDateMillis) {
@@ -481,105 +490,159 @@ fun RiwayatAntreanScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // ── Filter Chips Row (Semua, Hari Ini, 7 Hari Terakhir, Filter Tanggal) ────
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 16.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Chip 1: Semua
                 item {
-                    FilterPill(
-                        label = "Semua",
-                        isSelected = selectedFilter == "SEMUA",
-                        onClick = { viewModel.setFilter("SEMUA") }
+                    val isSelected = selectedFilter == "SEMUA"
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.setFilter("SEMUA") },
+                        label = {
+                            Text(
+                                text = "Semua",
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF4F46E5),
+                            selectedLabelColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = Color(0xFF374151)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = Color.Transparent,
+                            borderColor = Color(0xFFE2E8F0),
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 0.dp
+                        ),
+                        shape = RoundedCornerShape(20.dp)
                     )
                 }
+
+                // Chip 2: Hari Ini
                 item {
-                    FilterPill(
-                        label = "Hari Ini",
-                        isSelected = selectedFilter == "HARI_INI",
-                        onClick = { viewModel.setFilter("HARI_INI") }
+                    val isSelected = selectedFilter == "HARI_INI"
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.setFilter("HARI_INI") },
+                        label = {
+                            Text(
+                                text = "Hari Ini",
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF4F46E5),
+                            selectedLabelColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = Color(0xFF374151)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = Color.Transparent,
+                            borderColor = Color(0xFFE2E8F0),
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 0.dp
+                        ),
+                        shape = RoundedCornerShape(20.dp)
                     )
                 }
+
+                // Chip 3: 7 Hari Terakhir
                 item {
-                    FilterPill(
-                        label = "7 Hari Terakhir",
-                        isSelected = selectedFilter == "7_HARI_TERAKHIR",
-                        onClick = { viewModel.setFilter("7_HARI_TERAKHIR") }
+                    val isSelected = selectedFilter == "7_HARI_TERAKHIR"
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.setFilter("7_HARI_TERAKHIR") },
+                        label = {
+                            Text(
+                                text = "7 Hari Terakhir",
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF4F46E5),
+                            selectedLabelColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = Color(0xFF374151)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = Color.Transparent,
+                            borderColor = Color(0xFFE2E8F0),
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 0.dp
+                        ),
+                        shape = RoundedCornerShape(20.dp)
                     )
                 }
+
+                // Chip 4: Filter Tanggal
                 item {
-                    val filterTanggalLabel = if (selectedFilter == "FILTER_TANGGAL" && !customDateLabel.isNullOrBlank()) {
+                    val isSelected = selectedFilter == "FILTER_TANGGAL"
+                    val filterTanggalLabel = if (isSelected && !customDateLabel.isNullOrBlank()) {
                         customDateLabel!!
                     } else {
                         "Filter Tanggal"
                     }
 
-                    FilterPill(
-                        label = filterTanggalLabel,
-                        isSelected = selectedFilter == "FILTER_TANGGAL",
-                        onClick = {
-                            showDateRangePickerDialog = true
-                        }
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { showDateRangePickerDialog = true },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "Pilih Tanggal",
+                                modifier = Modifier.size(15.dp)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = filterTanggalLabel,
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF4F46E5),
+                            selectedLabelColor = Color.White,
+                            selectedLeadingIconColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = Color(0xFF374151),
+                            iconColor = Color(0xFF374151)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = Color.Transparent,
+                            borderColor = Color(0xFFE2E8F0),
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 0.dp
+                        ),
+                        shape = RoundedCornerShape(20.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ── Export Banner ────────────────────────────────────────────────
-            if (filteredList.isNotEmpty()) {
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(tween(300)),
-                    exit = fadeOut(tween(300)),
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color(0xFFEEF2FF), RoundedCornerShape(12.dp))
-                            .clickable(enabled = !isExporting) {
-                                viewModel.exportToExcel(context, filteredList)
-                            }
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FileDownload,
-                            contentDescription = null,
-                            tint = Color(0xFF4F46E5),
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Ekspor ${filteredList.size} antrean ke Excel",
-                                fontFamily = interfamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 13.sp,
-                                color = Color(0xFF3730A3)
-                            )
-                            Text(
-                                text = "Tekan untuk mengunduh file .xlsx",
-                                fontFamily = interfamily,
-                                fontSize = 11.sp,
-                                color = Color(0xFF6366F1)
-                            )
-                        }
-                        if (isExporting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                color = Color(0xFF4F46E5),
-                                strokeWidth = 2.dp
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
+            Spacer(modifier = Modifier.height(10.dp))
 
             // ── Main Grouped List ─────────────────────────────────────
             Box(
@@ -644,6 +707,7 @@ fun RiwayatAntreanScreen(
                             }
                         } else {
                             LazyColumn(
+                                state = listState,
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                                 contentPadding = PaddingValues(bottom = 56.dp)
                             ) {
@@ -693,33 +757,7 @@ fun RiwayatAntreanScreen(
     }
 }
 
-@Composable
-private fun FilterPill(
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = if (isSelected) Color(0xFF0066FF) else Color.White,
-        shadowElevation = if (isSelected) 2.dp else 1.dp,
-        modifier = Modifier.height(36.dp)
-    ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = label,
-                fontSize = 13.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) Color.White else Color(0xFF4B5563),
-                fontFamily = interfamily
-            )
-        }
-    }
-}
+
 
 @Composable
 private fun GroupHeaderRow(

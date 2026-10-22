@@ -592,3 +592,215 @@ fun DetailTransaksiShimmer() {
     }
 }
 
+/**
+ * Skeleton Shimmer untuk Header Dashboard
+ */
+@Composable
+fun DashboardHeaderShimmer(
+    isSmallScreen: Boolean = false
+) {
+    val horizontalPadding = if (isSmallScreen) 14.dp else 20.dp
+    val verticalPadding = if (isSmallScreen) 14.dp else 20.dp
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            ShimmerBox(modifier = Modifier.size(width = 110.dp, height = if (isSmallScreen) 12.dp else 14.dp))
+            ShimmerBox(modifier = Modifier.size(width = 160.dp, height = if (isSmallScreen) 18.dp else 22.dp))
+            ShimmerBox(modifier = Modifier.size(width = 190.dp, height = if (isSmallScreen) 11.dp else 13.dp))
+        }
+        ShimmerBox(
+            modifier = Modifier.size(if (isSmallScreen) 38.dp else 44.dp),
+            shape = CircleShape
+        )
+    }
+}
+
+/**
+ * Skeleton Shimmer untuk Baris Filter Dashboard
+ */
+@Composable
+fun DashboardFilterRowShimmer(
+    isSmallScreen: Boolean = false
+) {
+    val horizontalPadding = if (isSmallScreen) 12.dp else 20.dp
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = horizontalPadding, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(4) { index ->
+            val chipWidth = when (index) {
+                0 -> 72.dp
+                1 -> 80.dp
+                2 -> 86.dp
+                else -> 92.dp
+            }
+            ShimmerBox(
+                modifier = Modifier.size(width = chipWidth, height = 34.dp),
+                shape = RoundedCornerShape(20.dp)
+            )
+        }
+    }
+}
+
+/**
+ * Skeleton Shimmer untuk Kartu Statistik Utama Dashboard
+ */
+@Composable
+fun DashboardStatCardsShimmer(
+    isSmallScreen: Boolean = false
+) {
+    val sectionHorizontalPadding = if (isSmallScreen) 12.dp else 20.dp
+    val cardCornerRadius = if (isSmallScreen) 16.dp else 20.dp
+    val cardPadding = if (isSmallScreen) 12.dp else 16.dp
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = sectionHorizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 10.dp else 12.dp)
+    ) {
+        // Card 1
+        Card(
+            modifier = Modifier
+                .weight(1f)
+                .height(if (isSmallScreen) 130.dp else 140.dp),
+            shape = RoundedCornerShape(cardCornerRadius),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(cardPadding),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ShimmerBox(modifier = Modifier.size(width = 80.dp, height = 11.dp))
+                    ShimmerBox(modifier = Modifier.size(if (isSmallScreen) 32.dp else 36.dp), shape = CircleShape)
+                }
+                ShimmerBox(modifier = Modifier.size(width = 110.dp, height = 22.dp))
+                ShimmerBox(modifier = Modifier.size(width = 85.dp, height = 14.dp), shape = RoundedCornerShape(100.dp))
+            }
+        }
+
+        // Card 2
+        Card(
+            modifier = Modifier
+                .weight(1f)
+                .height(if (isSmallScreen) 130.dp else 140.dp),
+            shape = RoundedCornerShape(cardCornerRadius),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(cardPadding),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ShimmerBox(modifier = Modifier.size(width = 80.dp, height = 11.dp))
+                    ShimmerBox(modifier = Modifier.size(if (isSmallScreen) 32.dp else 36.dp), shape = CircleShape)
+                }
+                ShimmerBox(modifier = Modifier.size(width = 65.dp, height = 22.dp))
+                ShimmerBox(modifier = Modifier.size(width = 85.dp, height = 14.dp), shape = RoundedCornerShape(100.dp))
+            }
+        }
+    }
+}
+
+/**
+ * Skeleton Shimmer untuk Section Menu Dashboard (Produk / Penjualan)
+ */
+@Composable
+fun DashboardMenuSectionShimmer(
+    itemCount: Int = 3,
+    isSmallScreen: Boolean = false
+) {
+    val sectionHorizontalPadding = if (isSmallScreen) 12.dp else 20.dp
+    val itemWidth = if (isSmallScreen) 64.dp else 72.dp
+    val cardSize = if (isSmallScreen) 56.dp else 64.dp
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = sectionHorizontalPadding, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 10.dp else 16.dp)
+    ) {
+        repeat(itemCount) {
+            Column(
+                modifier = Modifier.width(itemWidth),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                ShimmerBox(
+                    modifier = Modifier.size(cardSize),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                Spacer(modifier = Modifier.height(if (isSmallScreen) 6.dp else 8.dp))
+                ShimmerBox(modifier = Modifier.size(width = 48.dp, height = 12.dp))
+            }
+        }
+    }
+}
+
+/**
+ * Skeleton Shimmer untuk Kartu Ringkasan (Pelanggan & Terjual)
+ */
+@Composable
+fun DashboardRingkasanShimmer(
+    isSmallScreen: Boolean = false
+) {
+    val sectionHorizontalPadding = if (isSmallScreen) 12.dp else 20.dp
+    val cardCornerRadius = if (isSmallScreen) 16.dp else 20.dp
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = sectionHorizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 10.dp else 12.dp)
+    ) {
+        repeat(2) {
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(if (isSmallScreen) 90.dp else 100.dp),
+                shape = RoundedCornerShape(cardCornerRadius),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(if (isSmallScreen) 12.dp else 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    ShimmerBox(modifier = Modifier.size(if (isSmallScreen) 38.dp else 44.dp), shape = CircleShape)
+                    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        ShimmerBox(modifier = Modifier.size(width = 55.dp, height = 11.dp))
+                        ShimmerBox(modifier = Modifier.size(width = 65.dp, height = 18.dp))
+                        ShimmerBox(modifier = Modifier.size(width = 75.dp, height = 11.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+

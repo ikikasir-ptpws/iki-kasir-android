@@ -134,6 +134,14 @@ class QueueHistoryViewModel @Inject constructor(
         _selectedFilter.value = "FILTER_TANGGAL"
     }
 
+    fun resetToDefault() {
+        _searchQuery.value = ""
+        _selectedFilter.value = "SEMUA"
+        _startDateMillis.value = null
+        _endDateMillis.value = null
+        _customDateLabel.value = null
+    }
+
     // ── Export to Excel ───────────────────────────────────────────────────────
     fun exportToExcel(context: Context, filteredItems: List<QueueHistory>) {
         val filterLabel = buildFilterLabel()

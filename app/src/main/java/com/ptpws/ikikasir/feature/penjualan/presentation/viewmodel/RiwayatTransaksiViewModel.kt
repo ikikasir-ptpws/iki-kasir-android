@@ -125,6 +125,30 @@ class RiwayatTransaksiViewModel @Inject constructor(
         }
     }
 
+    fun resetToDefault() {
+        _state.update { current ->
+            val filtered = filterTransactions(
+                list = current.transaksiList,
+                query = "",
+                filter = "Semua",
+                startMillis = null,
+                endMillis = null,
+                customDateMillis = null
+            )
+            val grouped = groupTransactions(filtered)
+            current.copy(
+                searchQuery = "",
+                selectedFilter = "Semua",
+                startDateMillis = null,
+                endDateMillis = null,
+                selectedCustomDateMillis = null,
+                customDateLabel = "",
+                filteredList = filtered,
+                groupedTransactions = grouped
+            )
+        }
+    }
+
     // ── Export to Excel ───────────────────────────────────────────────────────
     fun exportToExcel(context: Context) {
         val currentState = _state.value

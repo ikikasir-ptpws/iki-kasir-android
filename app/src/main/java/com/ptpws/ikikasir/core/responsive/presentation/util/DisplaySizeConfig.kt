@@ -160,6 +160,7 @@ object DisplaySizeConfig {
 
         config.densityDpi = stdDpi
         config.fontScale = FIXED_FONT_SCALE
+        config.uiMode = (config.uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_NO
 
         val (widthPx, heightPx) = getScreenPixels(context)
         if (widthPx > 0 && heightPx > 0 && stdDensity > 0f) {
@@ -224,6 +225,7 @@ object DisplaySizeConfig {
         val config = resources.configuration
         config.densityDpi = stdDpi
         config.fontScale = FIXED_FONT_SCALE
+        config.uiMode = (config.uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_NO
 
         metrics.densityDpi = stdDpi
         metrics.density = stdDensity

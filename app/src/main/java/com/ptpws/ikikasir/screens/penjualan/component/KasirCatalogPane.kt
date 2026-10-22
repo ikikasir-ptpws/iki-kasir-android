@@ -17,9 +17,14 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,6 +85,15 @@ fun KasirCatalogPane(
             }
             matchQuery && matchCategory
         }
+    }
+
+    // Scroll Pagination State (Tampilkan 12 data awal, muat 12 data berikutnya saat scroll)
+    val pageSize = 12
+    var displayedCount by remember(state.catalogSearchQuery, state.selectedCategoryId) {
+        mutableIntStateOf(pageSize)
+    }
+    val displayedList = remember(filteredList, displayedCount) {
+        filteredList.take(displayedCount)
     }
 
     Column(
@@ -239,7 +253,7 @@ fun KasirCatalogPane(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(bottom = 12.dp)
             ) {
-                items(filteredList, key = { it.id }) { produk ->
+                items(displayedList, key = { it.id }) { produk ->
                     val currentQty = state.getItemQuantity(produk.id)
                     val effectivePrice = produk.getEffectivePrice(state.taxSetting)
 
@@ -410,6 +424,20 @@ fun KasirCatalogPane(
                                 }
                             }
                         }
+                    }
+                }
+
+                // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+                if (filteredList.isNotEmpty()) {
+                    item(key = "scroll_pagination_footer", span = { GridItemSpan(maxLineSpan) }) {
+                        GlobalScrollPaginationFooter(
+                            displayedCount = displayedCount,
+                            totalItems = filteredList.size,
+                            onLoadMore = {
+                                displayedCount = minOf(displayedCount + pageSize, filteredList.size)
+                            },
+                            itemName = "produk"
+                        )
                     }
                 }
             }

@@ -2,6 +2,7 @@ package com.ptpws.ikikasir
 
 import android.app.Application
 import android.content.res.Configuration
+import androidx.appcompat.app.AppCompatDelegate
 import com.ptpws.ikikasir.core.responsive.presentation.util.DisplaySizeConfig
 import dagger.hilt.android.HiltAndroidApp
 
@@ -9,11 +10,13 @@ import dagger.hilt.android.HiltAndroidApp
 class BaseApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         DisplaySizeConfig.applyToResources(resources)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         DisplaySizeConfig.applyToResources(resources)
     }
 }

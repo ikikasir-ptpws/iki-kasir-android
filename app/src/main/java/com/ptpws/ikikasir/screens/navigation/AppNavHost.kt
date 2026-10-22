@@ -148,8 +148,11 @@ fun AppNavHost() {
                     launchSingleTop = true
                 }
             }
-        } else if (cleanRoute == AppScreen.Produk.baseRoute) {
-            navController.navigate(AppScreen.Produk.baseRoute) {
+        } else if (cleanRoute == AppScreen.Produk.baseRoute ||
+            cleanRoute == AppScreen.Riwayat.route ||
+            cleanRoute == AppScreen.RiwayatAntrean.route
+        ) {
+            navController.navigate(targetRoute) {
                 val startRoute = navController.graph.findStartDestination().route
                 if (startRoute != null) {
                     popUpTo(startRoute) {

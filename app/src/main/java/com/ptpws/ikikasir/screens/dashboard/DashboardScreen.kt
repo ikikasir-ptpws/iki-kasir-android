@@ -50,9 +50,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.PeriodeLaporanPenjualan
 import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import com.ptpws.ikikasir.commond.DashboardHeaderShimmer
+import com.ptpws.ikikasir.commond.DashboardFilterRowShimmer
+import com.ptpws.ikikasir.commond.DashboardStatCardsShimmer
+import com.ptpws.ikikasir.commond.DashboardMenuSectionShimmer
+import com.ptpws.ikikasir.commond.DashboardRingkasanShimmer
+
 import java.text.NumberFormat
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     navController: NavController,
@@ -60,6 +68,10 @@ fun DashboardScreen(
 ) {
     val sessionState by viewModel.sessionState.collectAsState()
     val analyticsState by viewModel.analyticsState.collectAsState()
+    val isInitialLoading by viewModel.isInitialLoading.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val isShimmerActive = isInitialLoading || isRefreshing
+
     val selectedFilter by viewModel.selectedFilter.collectAsState()
     val customStartDateMillis by viewModel.customStartDateMillis.collectAsState()
     val customEndDateMillis by viewModel.customEndDateMillis.collectAsState()
@@ -105,99 +117,125 @@ fun DashboardScreen(
     val hasPenjualanSection = showKasir || showTransaksi || showAntrean || showRiwayatAntrean || showPromo
     val showLaporanKeuangan = viewModel.isAllowed("Laporan Keuangan")
 
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
     val windowSizeInfo = com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo.current
     val isWideScreen = windowSizeInfo.shouldUseNavigationRail || windowSizeInfo.shouldUsePermanentDrawer
 
     Scaffold(
         containerColor = Color(0xFFF0F4FF),
     ) { paddingValues ->
-        LazyColumn(
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refreshDashboard() },
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF0F4FF))
-                .padding(paddingValues),
-            contentPadding = PaddingValues(bottom = if (isWideScreen) 56.dp else 128.dp)
+                .padding(paddingValues)
         ) {
-            item { HeaderSection(userName = userName) }
-            item {
-                DashboardFilterRow(
-                    selectedFilter = selectedFilter,
-                    customDateLabel = customDateLabel,
-                    onFilterSelected = { viewModel.setFilter(it) },
-                    onOpenDatePicker = { showDateRangePicker = true }
-                )
-            }
-            item {
-                StatCardsSection(
-                    analytics = analyticsState,
-                    selectedFilter = selectedFilter,
-                    customDateLabel = customDateLabel,
-                    onCardClick = {
-                        if (showTransaksi) {
-                            navController.navigate(AppScreen.Riwayat.route)
-                        } else if (showLaporanKeuangan) {
-                            navController.navigate(AppScreen.LaporanKeuangan.route)
-                        }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF0F4FF)),
+                contentPadding = PaddingValues(bottom = if (isWideScreen) 56.dp else 128.dp)
+            ) {
+                if (isShimmerActive) {
+                    item { DashboardHeaderShimmer(isSmallScreen = isSmallScreen) }
+                    item { DashboardFilterRowShimmer(isSmallScreen = isSmallScreen) }
+                    item { DashboardStatCardsShimmer(isSmallScreen = isSmallScreen) }
+
+                    if (!isWideScreen) {
+                        item { SectionHeader(title = "Produk", onLihatSemua = null) }
+                        item { DashboardMenuSectionShimmer(itemCount = 3, isSmallScreen = isSmallScreen) }
+                        item { SectionHeader(title = "Penjualan", onLihatSemua = null) }
+                        item { DashboardMenuSectionShimmer(itemCount = 4, isSmallScreen = isSmallScreen) }
                     }
-                )
-            }
 
-            val navigateToSemuaMenu = { navController.navigate(AppScreen.Semuamenu.route) }
+                    item { SectionHeader(title = "Total Penjualan", onLihatSemua = null) }
+                    item { DashboardRingkasanShimmer(isSmallScreen = isSmallScreen) }
+                    item { Spacer(modifier = Modifier.height(16.dp)) }
+                } else {
+                    item { HeaderSection(userName = userName) }
+                    item {
+                        DashboardFilterRow(
+                            selectedFilter = selectedFilter,
+                            customDateLabel = customDateLabel,
+                            onFilterSelected = { viewModel.setFilter(it) },
+                            onOpenDatePicker = { showDateRangePicker = true }
+                        )
+                    }
+                    item {
+                        StatCardsSection(
+                            analytics = analyticsState,
+                            selectedFilter = selectedFilter,
+                            customDateLabel = customDateLabel,
+                            onCardClick = {
+                                if (showTransaksi) {
+                                    navController.navigate(AppScreen.Riwayat.route)
+                                } else if (showLaporanKeuangan) {
+                                    navController.navigate(AppScreen.LaporanKeuangan.route)
+                                }
+                            }
+                        )
+                    }
 
-            // Menu Produk dan Penjualan (Gambar 1) tidak ditampilkan pada tablet layar lebar
-            // karena seluruh sub-menunya sudah dipindahkan secara lengkap ke sidebar navigasi.
-            if (!isWideScreen && hasProdukSection) {
-                item { SectionHeader(title = "Produk", onLihatSemua = navigateToSemuaMenu) }
-                item {
-                    ProdukMenuSection(
-                        navController = navController,
-                        showProduk = showProduk,
-                        showKategori = showKategori,
-                        showStok = showStok
-                    )
-                }
-            }
+                    val navigateToSemuaMenu = { navController.navigate(AppScreen.Semuamenu.route) }
 
-            if (!isWideScreen && hasPenjualanSection) {
-                val lihatSemuaAction = if (!hasProdukSection) navigateToSemuaMenu else null
-                item { SectionHeader(title = "Penjualan", onLihatSemua = lihatSemuaAction) }
-                item {
-                    PenjualanMenuSection(
-                        navController = navController,
-                        showKasir = showKasir,
-                        showTransaksi = showTransaksi,
-                        showAntrean = showAntrean,
-                        showRiwayatAntrean = showRiwayatAntrean,
-                        showPromo = showPromo
-                    )
-                }
-            }
-
-            item {
-                SectionHeader(
-                    title = "Total Penjualan",
-                    onLihatSemua = {
-                        val route = if (selectedFilter == PeriodeLaporanPenjualan.KUSTOM &&
-                            customStartDateMillis != null && customEndDateMillis != null) {
-                            AppScreen.LaporanPenjualan.routeWith(
-                                periode = "KUSTOM",
-                                startDate = customStartDateMillis,
-                                endDate = customEndDateMillis
+                    // Menu Produk dan Penjualan (Gambar 1) tidak ditampilkan pada tablet layar lebar
+                    // karena seluruh sub-menunya sudah dipindahkan secara lengkap ke sidebar navigasi.
+                    if (!isWideScreen && hasProdukSection) {
+                        item { SectionHeader(title = "Produk", onLihatSemua = navigateToSemuaMenu) }
+                        item {
+                            ProdukMenuSection(
+                                navController = navController,
+                                showProduk = showProduk,
+                                showKategori = showKategori,
+                                showStok = showStok
                             )
-                        } else {
-                            AppScreen.LaporanPenjualan.routeWith(selectedFilter.name)
                         }
-                        navController.navigate(route)
                     }
-                )
+
+                    if (!isWideScreen && hasPenjualanSection) {
+                        val lihatSemuaAction = if (!hasProdukSection) navigateToSemuaMenu else null
+                        item { SectionHeader(title = "Penjualan", onLihatSemua = lihatSemuaAction) }
+                        item {
+                            PenjualanMenuSection(
+                                navController = navController,
+                                showKasir = showKasir,
+                                showTransaksi = showTransaksi,
+                                showAntrean = showAntrean,
+                                showRiwayatAntrean = showRiwayatAntrean,
+                                showPromo = showPromo
+                            )
+                        }
+                    }
+
+                    item {
+                        SectionHeader(
+                            title = "Total Penjualan",
+                            onLihatSemua = {
+                                val route = if (selectedFilter == PeriodeLaporanPenjualan.KUSTOM &&
+                                    customStartDateMillis != null && customEndDateMillis != null) {
+                                    AppScreen.LaporanPenjualan.routeWith(
+                                        periode = "KUSTOM",
+                                        startDate = customStartDateMillis,
+                                        endDate = customEndDateMillis
+                                    )
+                                } else {
+                                    AppScreen.LaporanPenjualan.routeWith(selectedFilter.name)
+                                }
+                                navController.navigate(route)
+                            }
+                        )
+                    }
+                    item {
+                        RingkasanSection(
+                            analytics = analyticsState,
+                            selectedFilter = selectedFilter
+                        )
+                    }
+                    item { Spacer(modifier = Modifier.height(16.dp)) }
+                }
             }
-            item {
-                RingkasanSection(
-                    analytics = analyticsState,
-                    selectedFilter = selectedFilter
-                )
-            }
-            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }

@@ -10,6 +10,7 @@ import com.ptpws.ikikasir.feature.role.domain.model.Role
 import com.ptpws.ikikasir.feature.role.domain.usecase.GetRolesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -88,6 +89,12 @@ class DashboardViewModel @Inject constructor(
     private val _analyticsState = MutableStateFlow(DashboardAnalytics())
     val analyticsState: StateFlow<DashboardAnalytics> = _analyticsState.asStateFlow()
 
+    private val _isInitialLoading = MutableStateFlow(true)
+    val isInitialLoading: StateFlow<Boolean> = _isInitialLoading.asStateFlow()
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     private var allTransactions: List<PenjualanTransaksi> = emptyList()
 
     private val _selectedFilter = MutableStateFlow(PeriodeLaporanPenjualan.HARI_INI)
@@ -137,6 +144,26 @@ class DashboardViewModel @Inject constructor(
     init {
         loadCurrentUserAndPermissions()
         observeTransactions()
+        viewModelScope.launch {
+            // Ketika aplikasi benar-benar ditutup (di-swipe ke atas dari recent apps) lalu dibuka kembali,
+            // beri durasi shimmer yang halus (900ms) agar skeleton shimmer terlihat jelas dan tidak berkedip instan
+            delay(900L)
+            _isInitialLoading.value = false
+        }
+    }
+
+    fun refreshDashboard() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            loadCurrentUserAndPermissions()
+            try {
+                // Trigger re-observasi / fetch transaksi
+                observeTransactions()
+            } catch (_: Exception) {}
+            // Berikan jeda shimmer agar animasi refresh terasa halus dan responsif
+            delay(800L)
+            _isRefreshing.value = false
+        }
     }
 
     fun loadCurrentUserAndPermissions() {
