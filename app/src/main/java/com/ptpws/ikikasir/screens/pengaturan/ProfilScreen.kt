@@ -80,6 +80,7 @@ fun ProfilScreen(
     onSettingPpn: () -> Unit = {},
     onSettingStruk: () -> Unit = {},
     onTentangAplikasi: () -> Unit = {},
+    onReferral: () -> Unit = {},
     onKeluar: () -> Unit = {}
 ) {
     BackHandler {
@@ -454,6 +455,17 @@ fun ProfilScreen(
                                 label = "Printer Bluetooth",
                                 onClick = {
                                     navController.navigate(AppScreen.BluetoothPrinter.route)
+                                }
+                            )
+                            HorizontalDivider(color = Color(0xFFF3F4F6))
+                            MenuAkunItem(
+                                icon = Icons.Outlined.CardGiftcard,
+                                iconBackground = Color(0xFFE0F2FE),
+                                iconTint = Color(0xFF0284C7),
+                                label = "Referral",
+                                onClick = {
+                                    onReferral()
+                                    navController.navigate(AppScreen.Referral.route)
                                 }
                             )
                         }
