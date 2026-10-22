@@ -61,6 +61,7 @@ import com.ptpws.ikikasir.screens.manajemenstok.UpdateStokScreen
 
 import com.ptpws.ikikasir.feature.bluetooth.presentation.screen.BluetoothPrinterScreen
 import com.ptpws.ikikasir.feature.bluetooth.presentation.viewmodel.BluetoothPrinterViewModel
+import com.ptpws.ikikasir.feature.referral.presentation.screen.ReferralScreen
 import com.ptpws.ikikasir.screens.pengaturan.ProfilScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
 import com.ptpws.ikikasir.screens.kategori.TambahKategoriActivity
@@ -342,6 +343,9 @@ fun AppNavHost() {
             }
             composable(AppScreen.BluetoothPrinter.route) {
                 BluetoothPrinterScreen(navController)
+            }
+            composable(AppScreen.Referral.route) {
+                ReferralScreen(navController = navController)
             }
         }
     }
