@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -95,7 +96,7 @@ fun TabletSidebarDrawer(
                     )
                     Column {
                         Text(
-                            text = "IKI KASIR",
+                            text = "IKIKASIR",
                             fontFamily = interfamily,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
@@ -134,9 +135,10 @@ fun TabletSidebarDrawer(
 
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(38.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFFEEF2FF)),
+                                .background(Color(0xFFEEF2FF))
+                                .border(1.5.dp, Color(0xFFE2E8F0), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             if (!uiState.userPhotoUrl.isNullOrBlank() && !avatarError) {
@@ -145,7 +147,9 @@ fun TabletSidebarDrawer(
                                     contentDescription = uiState.userName,
                                     contentScale = ContentScale.Crop,
                                     onError = { avatarError = true },
-                                    modifier = Modifier.fillMaxSize()
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
                                 )
                             } else {
                                 Text(
@@ -257,7 +261,7 @@ fun TabletSidebarDrawer(
                 )
 
                 Text(
-                    text = "v1.0.0 • IKI KASIR POS",
+                    text = "Versi 1.0 • IKIKASIR POS",
                     fontSize = 11.sp,
                     fontFamily = interfamily,
                     color = Color(0xFF94A3B8),
