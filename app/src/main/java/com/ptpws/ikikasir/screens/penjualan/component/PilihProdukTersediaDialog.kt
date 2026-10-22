@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +35,8 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
+import com.ptpws.ikikasir.commond.ProdukCardShimmer
+import com.ptpws.ikikasir.commond.ShimmerBox
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectivePrice
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.KasirState
@@ -98,6 +101,15 @@ fun PilihProdukTersediaDialog(
     val displayedList = remember(filteredList, displayedCount) {
         filteredList.take(displayedCount)
     }
+
+    // Dialog Loading State (800ms durasi shimmer saat popup dibuka)
+    var isDialogLoading by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        onRefresh()
+        delay(800L)
+        isDialogLoading = false
+    }
+    val isShimmerActive = isDialogLoading || state.isLoading
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -244,45 +256,68 @@ fun PilihProdukTersediaDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 2.dp)
                 ) {
-                    item {
-                        val isSelected = state.selectedCategoryId == null
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (isSelected) Color(0xFF3B32D1) else Color(0xFFF1F5F9),
-                            modifier = Modifier.clickable { onCategoryFilterChange(null) }
-                        ) {
-                            Text(
-                                text = "Semua",
-                                fontFamily = interfamily,
-                                fontSize = 13.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) Color.White else Color(0xFF475569),
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp)
+                    if (isShimmerActive) {
+                        items(5) {
+                            ShimmerBox(
+                                modifier = Modifier
+                                    .width(76.dp)
+                                    .height(30.dp),
+                                shape = RoundedCornerShape(20.dp)
                             )
                         }
-                    }
+                    } else {
+                        item {
+                            val isSelected = state.selectedCategoryId == null
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = if (isSelected) Color(0xFF3B32D1) else Color(0xFFF1F5F9),
+                                modifier = Modifier.clickable { onCategoryFilterChange(null) }
+                            ) {
+                                Text(
+                                    text = "Semua",
+                                    fontFamily = interfamily,
+                                    fontSize = 13.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) Color.White else Color(0xFF475569),
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp)
+                                )
+                            }
+                        }
 
-                    items(state.kategoriList, key = { it.id }) { kategori ->
-                        val isSelected = state.selectedCategoryId == kategori.id
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (isSelected) Color(0xFF3B32D1) else Color(0xFFF1F5F9),
-                            modifier = Modifier.clickable { onCategoryFilterChange(kategori.id) }
-                        ) {
-                            Text(
-                                text = kategori.name,
-                                fontFamily = interfamily,
-                                fontSize = 13.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) Color.White else Color(0xFF475569),
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp)
-                            )
+                        items(state.kategoriList, key = { it.id }) { kategori ->
+                            val isSelected = state.selectedCategoryId == kategori.id
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = if (isSelected) Color(0xFF3B32D1) else Color(0xFFF1F5F9),
+                                modifier = Modifier.clickable { onCategoryFilterChange(kategori.id) }
+                            ) {
+                                Text(
+                                    text = kategori.name,
+                                    fontFamily = interfamily,
+                                    fontSize = 13.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) Color.White else Color(0xFF475569),
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp)
+                                )
+                            }
                         }
                     }
                 }
 
                 // ── 4. Scrollable Product Cards List
-                if (filteredList.isEmpty()) {
+                if (isShimmerActive) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(vertical = 4.dp)
+                    ) {
+                        items(5) {
+                            ProdukCardShimmer()
+                        }
+                    }
+                } else if (filteredList.isEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()

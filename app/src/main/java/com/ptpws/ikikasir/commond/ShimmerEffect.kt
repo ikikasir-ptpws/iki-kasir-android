@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -800,6 +801,128 @@ fun DashboardRingkasanShimmer(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Skeleton Shimmer untuk Kartu Grid Produk Kasir (Tablet Landscape POS)
+ */
+@Composable
+fun KasirProductGridCardShimmer(
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp)
+        ) {
+            // Image Box Skeleton
+            ShimmerBox(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(90.dp),
+                shape = RoundedCornerShape(10.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Nama Produk Skeleton
+            ShimmerBox(
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .height(13.dp),
+                shape = RoundedCornerShape(4.dp)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Kategori / Barcode Skeleton
+            ShimmerBox(
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .height(11.dp),
+                shape = RoundedCornerShape(4.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Harga & Tombol Aksi Skeleton
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ShimmerBox(
+                    modifier = Modifier
+                        .width(60.dp)
+                        .height(15.dp),
+                    shape = RoundedCornerShape(4.dp)
+                )
+
+                ShimmerBox(
+                    modifier = Modifier.size(26.dp),
+                    shape = CircleShape
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Skeleton Shimmer untuk Kartu Promo di Manajemen Promo
+ */
+@Composable
+fun PromoCardShimmer(
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // Nama Promo Skeleton
+                ShimmerBox(
+                    modifier = Modifier.size(width = 130.dp, height = 12.dp),
+                    shape = RoundedCornerShape(4.dp)
+                )
+                // Diskon Skeleton
+                ShimmerBox(
+                    modifier = Modifier.size(width = 100.dp, height = 16.dp),
+                    shape = RoundedCornerShape(4.dp)
+                )
+                // Periode Skeleton
+                ShimmerBox(
+                    modifier = Modifier.size(width = 160.dp, height = 11.dp),
+                    shape = RoundedCornerShape(4.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Switch / Status Action Skeleton
+            ShimmerBox(
+                modifier = Modifier.size(width = 44.dp, height = 24.dp),
+                shape = RoundedCornerShape(12.dp)
+            )
         }
     }
 }

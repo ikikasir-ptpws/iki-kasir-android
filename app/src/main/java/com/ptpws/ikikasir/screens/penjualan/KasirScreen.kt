@@ -90,6 +90,10 @@ fun KasirScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.refreshKatalog()
+    }
+
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()

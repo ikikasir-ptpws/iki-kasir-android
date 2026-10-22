@@ -12,6 +12,7 @@ import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
 import com.ptpws.ikikasir.feature.promo.domain.usecase.GetActivePromosUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,7 +30,7 @@ class KasirViewModel @Inject constructor(
     private val getActivePromosUseCase: GetActivePromosUseCase
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(KasirState())
+    private val _state = MutableStateFlow(KasirState(isLoading = true))
     val state: StateFlow<KasirState> = _state.asStateFlow()
 
     init {
@@ -66,9 +67,14 @@ class KasirViewModel @Inject constructor(
 
     private fun loadProdukKatalog() {
         viewModelScope.launch {
-            getProdukUseCase().collect { list ->
-                _state.update { it.copy(produkKatalog = list) }
+            _state.update { it.copy(isLoading = true) }
+            launch {
+                getProdukUseCase().collect { list ->
+                    _state.update { it.copy(produkKatalog = list) }
+                }
             }
+            delay(850L)
+            _state.update { it.copy(isLoading = false) }
         }
     }
 
@@ -179,6 +185,7 @@ class KasirViewModel @Inject constructor(
 
     fun refreshKatalog() {
         viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
             try {
                 getProdukUseCase.refresh()
             } catch (e: Exception) {
@@ -189,6 +196,8 @@ class KasirViewModel @Inject constructor(
             } catch (e: Exception) {
                 // Ignore transient errors on background refresh
             }
+            delay(800L)
+            _state.update { it.copy(isLoading = false) }
         }
     }
 

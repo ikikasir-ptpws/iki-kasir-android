@@ -19,12 +19,11 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
+import com.ptpws.ikikasir.commond.KasirProductGridCardShimmer
+import com.ptpws.ikikasir.commond.ShimmerBox
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -95,6 +94,14 @@ fun KasirCatalogPane(
     val displayedList = remember(filteredList, displayedCount) {
         filteredList.take(displayedCount)
     }
+
+    // Initial Loading Shimmer State (850ms agar animasi skeleton shimmer terlihat jelas dan smooth)
+    var isInitialLoading by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        delay(850L)
+        isInitialLoading = false
+    }
+    val isShimmerActive = isInitialLoading || state.isLoading
 
     Column(
         modifier = modifier
@@ -180,47 +187,72 @@ fun KasirCatalogPane(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(vertical = 2.dp)
         ) {
-            item {
-                val isSelected = state.selectedCategoryId == null
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = if (isSelected) PrimaryRoyalBlue else Color.White,
-                    border = if (isSelected) null else BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                    modifier = Modifier.clickable { onCategoryChange(null) }
-                ) {
-                    Text(
-                        text = "Semua (${state.produkKatalog.size})",
-                        fontFamily = interfamily,
-                        fontSize = 12.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) Color.White else Color(0xFF475569),
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+            if (isShimmerActive) {
+                items(6) {
+                    ShimmerBox(
+                        modifier = Modifier
+                            .width(80.dp)
+                            .height(30.dp),
+                        shape = RoundedCornerShape(20.dp)
                     )
                 }
-            }
+            } else {
+                item {
+                    val isSelected = state.selectedCategoryId == null
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (isSelected) PrimaryRoyalBlue else Color.White,
+                        border = if (isSelected) null else BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier.clickable { onCategoryChange(null) }
+                    ) {
+                        Text(
+                            text = "Semua (${state.produkKatalog.size})",
+                            fontFamily = interfamily,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) Color.White else Color(0xFF475569),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                        )
+                    }
+                }
 
-            items(state.kategoriList, key = { it.id }) { kategori ->
-                val isSelected = state.selectedCategoryId == kategori.id
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = if (isSelected) PrimaryRoyalBlue else Color.White,
-                    border = if (isSelected) null else BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                    modifier = Modifier.clickable { onCategoryChange(kategori.id) }
-                ) {
-                    Text(
-                        text = kategori.name,
-                        fontFamily = interfamily,
-                        fontSize = 12.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) Color.White else Color(0xFF475569),
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                    )
+                items(state.kategoriList, key = { it.id }) { kategori ->
+                    val isSelected = state.selectedCategoryId == kategori.id
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (isSelected) PrimaryRoyalBlue else Color.White,
+                        border = if (isSelected) null else BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier.clickable { onCategoryChange(kategori.id) }
+                    ) {
+                        Text(
+                            text = kategori.name,
+                            fontFamily = interfamily,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) Color.White else Color(0xFF475569),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                        )
+                    }
                 }
             }
         }
 
         // ── 3. Adaptive Grid Katalog Produk
-        if (filteredList.isEmpty()) {
+        if (isShimmerActive) {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 135.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(bottom = 12.dp)
+            ) {
+                items(8) {
+                    KasirProductGridCardShimmer()
+                }
+            }
+        } else if (filteredList.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

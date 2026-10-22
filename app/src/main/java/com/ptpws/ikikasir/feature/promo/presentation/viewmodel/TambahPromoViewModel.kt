@@ -49,7 +49,7 @@ class TambahPromoViewModel @Inject constructor(
     private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(TambahPromoFormState())
+    private val _state = MutableStateFlow(TambahPromoFormState(isRefreshingProducts = true))
     val state: StateFlow<TambahPromoFormState> = _state.asStateFlow()
 
     init {
@@ -58,6 +58,7 @@ class TambahPromoViewModel @Inject constructor(
 
     private fun loadProdukCatalog() {
         viewModelScope.launch {
+            _state.update { it.copy(isRefreshingProducts = true) }
             getProdukUseCase().collect { products ->
                 _state.update { currentState ->
                     val updatedSelected = currentState.selectedProducts.map { sel ->
@@ -65,7 +66,8 @@ class TambahPromoViewModel @Inject constructor(
                     }
                     currentState.copy(
                         availableProducts = products,
-                        selectedProducts = updatedSelected
+                        selectedProducts = updatedSelected,
+                        isRefreshingProducts = false
                     )
                 }
             }

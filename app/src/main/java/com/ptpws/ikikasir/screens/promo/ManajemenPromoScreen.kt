@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
+import com.ptpws.ikikasir.commond.PromoCardShimmer
+import com.ptpws.ikikasir.commond.ShimmerBox
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
 import com.ptpws.ikikasir.feature.promo.domain.model.isAvailableOn
@@ -70,6 +72,10 @@ fun ManajemenPromoScreen(
         }
     }
     BackHandler(enabled = !isBackProcessing, onBack = handleBack)
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshPromoList()
+    }
 
     val activeCount = remember(state.promoList) { state.promoList.count { it.isAvailableOn() } }
     val endingThisWeekCount = remember(state.promoList) { state.promoList.count { it.isEndingWithinDays(7) } }
@@ -227,13 +233,22 @@ fun ManajemenPromoScreen(
                                     color = Color.White.copy(alpha = 0.9f),
                                     letterSpacing = 0.5.sp
                                 )
-                                Text(
-                                    text = "$activeCount",
-                                    fontFamily = interfamily,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 36.sp,
-                                    color = Color.White
-                                )
+                                if (state.isLoading) {
+                                    ShimmerBox(
+                                        modifier = Modifier.size(width = 45.dp, height = 36.dp),
+                                        shape = RoundedCornerShape(8.dp),
+                                        baseColor = Color.White.copy(alpha = 0.25f),
+                                        highlightColor = Color.White.copy(alpha = 0.5f)
+                                    )
+                                } else {
+                                    Text(
+                                        text = "$activeCount",
+                                        fontFamily = interfamily,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 36.sp,
+                                        color = Color.White
+                                    )
+                                }
                             }
                             Icon(
                                 imageVector = Icons.Default.LocalOffer,
@@ -273,13 +288,22 @@ fun ManajemenPromoScreen(
                                     letterSpacing = 0.5.sp,
                                     lineHeight = 13.sp
                                 )
-                                Text(
-                                    text = "$endingThisWeekCount",
-                                    fontFamily = interfamily,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 36.sp,
-                                    color = Color(0xFFEF4444)
-                                )
+                                if (state.isLoading) {
+                                    ShimmerBox(
+                                        modifier = Modifier.size(width = 45.dp, height = 36.dp),
+                                        shape = RoundedCornerShape(8.dp),
+                                        baseColor = Color(0xFFEF4444).copy(alpha = 0.15f),
+                                        highlightColor = Color(0xFFEF4444).copy(alpha = 0.35f)
+                                    )
+                                } else {
+                                    Text(
+                                        text = "$endingThisWeekCount",
+                                        fontFamily = interfamily,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 36.sp,
+                                        color = Color(0xFFEF4444)
+                                    )
+                                }
                             }
                             Icon(
                                 imageVector = Icons.Default.Close,
@@ -324,7 +348,11 @@ fun ManajemenPromoScreen(
             }
 
             // ── 4. Promo Items List ──────────────────────────────────────
-            if (state.filteredList.isEmpty()) {
+            if (state.isLoading) {
+                items(4) {
+                    PromoCardShimmer()
+                }
+            } else if (state.filteredList.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier

@@ -12,6 +12,7 @@ import com.ptpws.ikikasir.feature.promo.domain.usecase.DeletePromoUseCase
 import com.ptpws.ikikasir.feature.promo.domain.usecase.GetPromoListUseCase
 import com.ptpws.ikikasir.feature.promo.domain.usecase.TogglePromoStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,26 +38,29 @@ class PromoViewModel @Inject constructor(
     private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(PromoListState())
+    private val _state = MutableStateFlow(PromoListState(isLoading = true))
     val state: StateFlow<PromoListState> = _state.asStateFlow()
 
     init {
-        loadPromoList()
+        refreshPromoList()
     }
 
-    private fun loadPromoList() {
+    fun refreshPromoList() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            getPromoListUseCase().collect { list ->
-                _state.update { currentState ->
-                    val filtered = applyFilterAndSearch(list, currentState.searchQuery, currentState.selectedFilterTab)
-                    currentState.copy(
-                        promoList = list,
-                        filteredList = filtered,
-                        isLoading = false
-                    )
+            launch {
+                getPromoListUseCase().collect { list ->
+                    _state.update { currentState ->
+                        val filtered = applyFilterAndSearch(list, currentState.searchQuery, currentState.selectedFilterTab)
+                        currentState.copy(
+                            promoList = list,
+                            filteredList = filtered
+                        )
+                    }
                 }
             }
+            delay(850L)
+            _state.update { it.copy(isLoading = false) }
         }
     }
 

@@ -41,7 +41,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
+import com.ptpws.ikikasir.commond.ProdukCardShimmer
 import com.ptpws.ikikasir.commond.interfamily
+import kotlinx.coroutines.delay
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.TambahPromoViewModel
 import android.app.Activity
@@ -807,10 +809,13 @@ fun PilihProdukPromoDialog(
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     val tempSelected = remember { mutableStateListOf<Produk>().apply { addAll(initialSelected) } }
+    var isDialogLoading by remember { mutableStateOf(true) }
 
     // Realtime synchronization saat dialog dibuka
     LaunchedEffect(Unit) {
         onRefresh()
+        delay(800L)
+        isDialogLoading = false
     }
 
     // Sync data terbaru produk yang sedang terpilih jika availableProducts terupdate
@@ -1165,7 +1170,19 @@ fun PilihProdukPromoDialog(
                 }
 
                 // Scrollable Products List
-                if (filteredList.isEmpty()) {
+                if (isDialogLoading || isRefreshing) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(vertical = 4.dp)
+                    ) {
+                        items(5) {
+                            ProdukCardShimmer()
+                        }
+                    }
+                } else if (filteredList.isEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
