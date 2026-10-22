@@ -216,4 +216,10 @@ sealed class AppScreen(
         R.drawable.logoikikasir,
         "bluetooth_printer"
     )
+
+    object Referral : AppScreen(
+        R.string.screen_referral,
+        R.drawable.logoikikasir,
+        "referral"
+    )
 }
