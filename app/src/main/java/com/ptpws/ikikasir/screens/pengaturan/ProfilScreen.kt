@@ -294,10 +294,10 @@ fun ProfilScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(85.dp)
-                                    .clip(RoundedCornerShape(20.dp))
+                                    .size(90.dp)
+                                    .clip(CircleShape)
                                     .background(Color(0xFFE5E7EB))
-                                    .border(2.dp, Color(0xFFEEF2FF), RoundedCornerShape(20.dp)),
+                                    .border(2.5.dp, Color(0xFFEEF2FF), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (userPhoto.isNotBlank() && !avatarLoadError) {
@@ -306,22 +306,24 @@ fun ProfilScreen(
                                         contentDescription = displayName,
                                         contentScale = ContentScale.Crop,
                                         onError = { avatarLoadError = true },
-                                        modifier = Modifier.fillMaxSize()
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape)
                                     )
                                 } else {
                                     Icon(
                                         imageVector = Icons.Default.Person,
                                         contentDescription = displayName,
                                         tint = Color(0xFF9CA3AF),
-                                        modifier = Modifier.size(50.dp)
+                                        modifier = Modifier.size(52.dp)
                                     )
                                 }
                             }
                             Box(
                                 modifier = Modifier
                                     .align(Alignment.BottomEnd)
-                                    .offset(x = 6.dp, y = 6.dp)
-                                    .size(26.dp)
+                                    .offset(x = 2.dp, y = 2.dp)
+                                    .size(28.dp)
                                     .clip(CircleShape)
                                     .background(Color(0xFF4F46E5))
                                     .border(2.dp, Color.White, CircleShape),
@@ -331,7 +333,7 @@ fun ProfilScreen(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "Edit Profil",
                                     tint = Color.White,
-                                    modifier = Modifier.size(13.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
                             }
                         }
@@ -1581,6 +1583,7 @@ fun ProfilScreen(
                             .size(90.dp)
                             .clip(CircleShape)
                             .background(Color(0xFFE5E7EB))
+                            .border(2.5.dp, Color(0xFFEEF2FF), CircleShape)
                             .clickable { imagePickerLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
@@ -1589,14 +1592,16 @@ fun ProfilScreen(
                                 model = editPhotoUrl,
                                 contentDescription = "Foto Profil",
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape)
                             )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Person,
                                 contentDescription = "Default Avatar",
                                 tint = Color(0xFF9CA3AF),
-                                modifier = Modifier.size(50.dp)
+                                modifier = Modifier.size(52.dp)
                             )
                         }
                     }
