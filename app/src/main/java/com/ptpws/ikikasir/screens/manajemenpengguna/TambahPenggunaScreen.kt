@@ -142,8 +142,11 @@ fun TambahPenggunaScreen(
         if (!userId.isNullOrEmpty()) {
             viewModel.loadUserById(userId)
         } else {
-            viewModel.resetForm()
-            profileImageUri = null
+            // Hanya reset jika sebelumnya form memuat data pengguna edit (id tidak kosong)
+            if (formState.id.isNotBlank()) {
+                viewModel.resetForm()
+                profileImageUri = null
+            }
         }
     }
 
@@ -736,7 +739,7 @@ fun TambahPenggunaScreen(
                                     return@Button
                                 }
                                 if (formState.currentPassword.isBlank()) {
-                                    localError = "Kata sandi saat ini wajib diisi untuk mengubah kata sandi di Firebase Auth"
+                                    localError = "Masukkan kata sandi saat ini untuk mengubah kata sandi, atau gunakan opsi 'Lupa kata sandi?' di atas"
                                     return@Button
                                 }
                             }

@@ -1701,7 +1701,7 @@ private fun ChangePasswordDialog(
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
@@ -1715,13 +1715,13 @@ private fun ChangePasswordDialog(
                     fontFamily = interfamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = Color(0xFF1E293B)
                 )
                 Text(
                     text = "Masukkan kata sandi saat ini, lalu tentukan kata sandi baru.",
                     fontFamily = interfamily,
                     fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color(0xFF64748B)
                 )
                 PasswordInput(
                     label = "Kata sandi saat ini",

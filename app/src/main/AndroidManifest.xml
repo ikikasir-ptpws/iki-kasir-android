@@ -114,6 +114,8 @@
         <activity
             android:name=".screens.manajemenpengguna.TambahPenggunaActivity"
             android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:theme="@style/Theme.IKIKASIR" />
         <activity
             android:name=".screens.promo.TambahPromoActivity"

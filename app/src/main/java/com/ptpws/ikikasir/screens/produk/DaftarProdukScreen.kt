@@ -596,7 +596,8 @@ fun DaftarProdukScreen(
 
                         DropdownMenu(
                             expanded = showSortDropdown,
-                            onDismissRequest = { showSortDropdown = false }
+                            onDismissRequest = { showSortDropdown = false },
+                            modifier = Modifier.background(Color.White, RoundedCornerShape(12.dp))
                         ) {
                             val options = listOf(
                                 "Terbaru",
@@ -612,9 +613,20 @@ fun DaftarProdukScreen(
                                             text = option,
                                             fontSize = 13.sp,
                                             fontFamily = interfamily,
+                                            color = if (option == selectedSortOption) Color(0xFF4F46E5) else Color(0xFF1E293B),
                                             fontWeight = if (option == selectedSortOption) FontWeight.Bold else FontWeight.Normal
                                         )
                                     },
+                                    trailingIcon = if (option == selectedSortOption) {
+                                        {
+                                            Icon(
+                                                imageVector = Icons.Default.CheckCircle,
+                                                contentDescription = null,
+                                                tint = Color(0xFF4F46E5),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    } else null,
                                     onClick = {
                                         selectedSortOption = option
                                         showSortDropdown = false

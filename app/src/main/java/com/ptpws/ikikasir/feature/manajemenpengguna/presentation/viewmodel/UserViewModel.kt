@@ -51,8 +51,7 @@ class UserViewModel @Inject constructor(
             _listState.update { it.copy(isLoading = true) }
             getUsersUseCase().collect { userList ->
                 _listState.update { state ->
-                    val query = state.searchQuery
-                    val filtered = filterUsers(userList, query)
+                    val filtered = filterUsers(userList, state.searchQuery, state.filterRole, state.filterStatus)
                     state.copy(
                         isLoading = false,
                         users = userList,
@@ -65,7 +64,7 @@ class UserViewModel @Inject constructor(
 
     fun onSearchQueryChange(query: String) {
         _listState.update { state ->
-            val filtered = filterUsers(state.users, query)
+            val filtered = filterUsers(state.users, query, state.filterRole, state.filterStatus)
             state.copy(
                 searchQuery = query,
                 filteredUsers = filtered
@@ -73,13 +72,48 @@ class UserViewModel @Inject constructor(
         }
     }
 
-    private fun filterUsers(users: List<User>, query: String): List<User> {
-        if (query.isBlank()) return users
-        val q = query.trim().lowercase()
-        return users.filter {
-            it.fullName.lowercase().contains(q) ||
-            it.email.lowercase().contains(q) ||
-            it.roleId.lowercase().contains(q)
+    fun onFilterRoleChange(role: String) {
+        _listState.update { state ->
+            val filtered = filterUsers(state.users, state.searchQuery, role, state.filterStatus)
+            state.copy(filterRole = role, filteredUsers = filtered)
+        }
+    }
+
+    fun onFilterStatusChange(status: String) {
+        _listState.update { state ->
+            val filtered = filterUsers(state.users, state.searchQuery, state.filterRole, status)
+            state.copy(filterStatus = status, filteredUsers = filtered)
+        }
+    }
+
+    fun clearFilters() {
+        _listState.update { state ->
+            val filtered = filterUsers(state.users, state.searchQuery, "", "")
+            state.copy(filterRole = "", filterStatus = "", filteredUsers = filtered)
+        }
+    }
+
+    private fun filterUsers(
+        users: List<User>,
+        query: String,
+        role: String = "",
+        status: String = ""
+    ): List<User> {
+        return users.filter { user ->
+            val matchesQuery = if (query.isBlank()) true else {
+                val q = query.trim().lowercase()
+                user.fullName.lowercase().contains(q) ||
+                user.email.lowercase().contains(q) ||
+                user.roleId.lowercase().contains(q)
+            }
+            val matchesRole = if (role.isBlank()) true else
+                user.roleId.lowercase() == role.lowercase()
+            val matchesStatus = when (status.lowercase()) {
+                "aktif" -> user.isActive
+                "nonaktif" -> !user.isActive
+                else -> true
+            }
+            matchesQuery && matchesRole && matchesStatus
         }
     }
 
@@ -163,37 +197,59 @@ class UserViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.sendPasswordResetEmail(cleanEmail).collect { result ->
                 result.onSuccess {
-                    onResult(true, "Instruksi reset kata sandi telah dikirim ke $cleanEmail.")
+                    onResult(true, "Tautan reset kata sandi berhasil dikirim ke $cleanEmail. Silakan periksa kotak masuk atau folder spam email tersebut.")
                 }.onFailure { err ->
-                    onResult(false, err.message ?: "Gagal mengirim email reset kata sandi.")
+                    val rawMsg = err.message.orEmpty().lowercase()
+                    val friendlyMsg = when {
+                        rawMsg.contains("blocked all requests") || rawMsg.contains("too-many-requests") || rawMsg.contains("unusual activity") ->
+                            "Terlalu banyak permintaan. Silakan tunggu beberapa menit sebelum mencoba mengirim lagi."
+                        rawMsg.contains("user-not-found") || rawMsg.contains("no user record") ->
+                            "Akun dengan email $cleanEmail belum terdaftar di sistem login."
+                        rawMsg.contains("network") || rawMsg.contains("timeout") ->
+                            "Koneksi internet bermasalah. Periksa koneksi internet Anda lalu coba lagi."
+                        else ->
+                            "Gagal mengirim email reset kata sandi. Pastikan email aktif dan coba lagi."
+                    }
+                    onResult(false, friendlyMsg)
                 }
             }
         }
     }
 
+    private var loadUserJob: kotlinx.coroutines.Job? = null
+
     fun loadUserById(userId: String) {
         if (userId.isBlank()) return
-        viewModelScope.launch {
+        // Jangan timpa form jika data user ini sudah pernah dimuat dan sedang diedit
+        if (_formState.value.id == userId) return
+
+        loadUserJob?.cancel()
+        loadUserJob = viewModelScope.launch {
             getUsersUseCase().collect { userList ->
                 val existing = userList.find { it.id == userId }
                 if (existing != null) {
-                    _formState.value = UserFormState(
-                        id = existing.id,
-                        fullName = existing.fullName,
-                        email = existing.email,
-                        currentPassword = "",
-                        password = "",
-                        confirmPassword = "",
-                        roleId = existing.roleId,
-                        isActive = existing.isActive,
-                        photoUrl = existing.photoUrl
-                    )
+                    if (_formState.value.id != userId) {
+                        _formState.value = UserFormState(
+                            id = existing.id,
+                            fullName = existing.fullName,
+                            email = existing.email,
+                            currentPassword = "",
+                            password = "",
+                            confirmPassword = "",
+                            roleId = existing.roleId,
+                            isActive = existing.isActive,
+                            photoUrl = existing.photoUrl
+                        )
+                    }
+                    // Batalkan listener setelah data berhasil dimuat agar background sync tidak me-reset form yang sedang diketik user
+                    loadUserJob?.cancel()
                 }
             }
         }
     }
 
     fun resetForm() {
+        loadUserJob?.cancel()
         _formState.value = UserFormState()
     }
 
@@ -278,7 +334,7 @@ class UserViewModel @Inject constructor(
                     return
                 }
                 if (current.currentPassword.isBlank()) {
-                    val message = "Kata sandi saat ini wajib diisi untuk mengonfirmasi perubahan kata sandi di Firebase Auth, atau gunakan opsi kirim email reset."
+                    val message = "Masukkan kata sandi saat ini untuk mengubah kata sandi, atau gunakan opsi 'Lupa kata sandi?' di atas."
                     GlobalCrudResultDialog.failure(message)
                     _formState.update { it.copy(error = message) }
                     return

@@ -1,6 +1,8 @@
 package com.ptpws.ikikasir.screens.manajemenpengguna
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,21 +19,25 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PersonOff
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
-import com.ptpws.ikikasir.commond.GlobalTextField
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,9 +52,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -56,15 +62,43 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
+import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
+import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserViewModel
+import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
 
+// Opsi filter yang tersedia untuk halaman Daftar Pengguna
+data class UserFilterItem(
+    val label: String,
+    val icon: ImageVector,
+    val roleValue: String = "",
+    val statusValue: String = ""
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DaftarUserScreen(
     viewModel: UserViewModel = hiltViewModel(),
+    roleViewModel: RoleViewModel = hiltViewModel(),
     onEditUser: (String) -> Unit = {}
 ) {
     val state by viewModel.listState.collectAsState()
+    val roleState by roleViewModel.listState.collectAsState()
+    var showFilterDropdown by remember { mutableStateOf(false) }
+    val userFilterOptions = buildList {
+        add(UserFilterItem("Semua Pengguna", Icons.Default.People))
+        add(UserFilterItem("Aktif", Icons.Default.CheckCircle, statusValue = "aktif"))
+        add(UserFilterItem("Nonaktif", Icons.Default.PersonOff, statusValue = "nonaktif"))
+        roleState.roles
+            .asSequence()
+            .map { it.name.trim() }
+            .filter { it.isNotEmpty() }
+            .distinctBy { it.lowercase() }
+            .forEach { roleName ->
+                add(UserFilterItem(roleName, Icons.Default.Category, roleValue = roleName))
+            }
+    }
 
     val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
     androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
@@ -80,8 +114,9 @@ fun DaftarUserScreen(
     }
 
     val users = state.filteredUsers
+    val isFilterActive = state.filterRole.isNotBlank() || state.filterStatus.isNotBlank()
     val pageSize = 10
-    var displayedCount by remember(state.searchQuery) {
+    var displayedCount by remember(state.searchQuery, state.filterRole, state.filterStatus) {
         mutableIntStateOf(pageSize)
     }
     val displayedUsers = remember(users, displayedCount) {
@@ -129,9 +164,7 @@ fun DaftarUserScreen(
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = { userToDelete = null }
-                ) {
+                TextButton(onClick = { userToDelete = null }) {
                     Text(
                         text = "Batal",
                         color = Color(0xFF6B7280),
@@ -152,48 +185,160 @@ fun DaftarUserScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
         ) {
-            // Search bar & Sync button
+            // Search bar and filter
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    GlobalTextField(
-                        value = state.searchQuery,
-                        onValueChange = { viewModel.onSearchQueryChange(it) },
-                        placeholder = "Cari nama atau role...",
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Search, contentDescription = null,
-                                tint = Color(0xFF6B7280), modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        trailingIcon = {
-                            Icon(
-                                Icons.Default.Tune, contentDescription = "Filter",
-                                tint = Color(0xFF4F46E5), modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    IconButton(
-                        onClick = { viewModel.syncData() },
-                        modifier = Modifier
-                            .size(52.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        if (state.isSyncing) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color(0xFF4F46E5), strokeWidth = 2.dp)
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Sinkronisasi",
-                                tint = Color(0xFF4F46E5),
-                                modifier = Modifier.size(22.dp)
-                            )
+                        GlobalTextField(
+                            value = state.searchQuery,
+                            onValueChange = { viewModel.onSearchQueryChange(it) },
+                            placeholder = "Cari nama, email, atau role...",
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Search, contentDescription = null,
+                                    tint = Color(0xFF6B7280), modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            trailingIcon = if (state.searchQuery.isNotEmpty()) {
+                                {
+                                    IconButton(
+                                        onClick = { viewModel.onSearchQueryChange("") },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Hapus",
+                                            tint = Color(0xFF6B7280),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            } else null,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Tombol filter
+                        Box {
+                            Surface(
+                                onClick = { showFilterDropdown = !showFilterDropdown },
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (isFilterActive) Color(0xFFEEF2FF) else Color.White,
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isFilterActive) Color(0xFF4F46E5) else Color(0xFFE2E8F0)
+                                ),
+                                modifier = Modifier.size(46.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Tune,
+                                        contentDescription = "Filter Pengguna",
+                                        tint = if (isFilterActive) Color(0xFF4F46E5) else Color(0xFF334155),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+
+                            // Dropdown Filter List
+                            DropdownMenu(
+                                expanded = showFilterDropdown,
+                                onDismissRequest = { showFilterDropdown = false },
+                                modifier = Modifier.background(Color.White, RoundedCornerShape(16.dp))
+                            ) {
+                                userFilterOptions.forEachIndexed { index, option ->
+                                    if (index == 3 && userFilterOptions.size > 3) {
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(vertical = 4.dp),
+                                            color = Color(0xFFE5E7EB)
+                                        )
+                                    }
+                                    val isSelected = when {
+                                        option.roleValue.isBlank() && option.statusValue.isBlank() ->
+                                            !isFilterActive
+                                        option.roleValue.isNotBlank() ->
+                                            state.filterRole.equals(option.roleValue, ignoreCase = true) && state.filterStatus.isBlank()
+                                        option.statusValue.isNotBlank() ->
+                                            state.filterStatus.equals(option.statusValue, ignoreCase = true) && state.filterRole.isBlank()
+                                        else -> false
+                                    }
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = option.label,
+                                                fontFamily = interfamily,
+                                                fontSize = 13.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) Color(0xFF4F46E5) else Color(0xFF1E293B)
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = option.icon,
+                                                contentDescription = null,
+                                                tint = if (isSelected) Color(0xFF4F46E5) else Color(0xFF64748B),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        },
+                                        trailingIcon = if (isSelected) {
+                                            {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = "Terpilih",
+                                                    tint = Color(0xFF4F46E5),
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        } else null,
+                                        onClick = {
+                                            if (option.roleValue.isBlank() && option.statusValue.isBlank()) {
+                                                viewModel.clearFilters()
+                                            } else {
+                                                viewModel.onFilterRoleChange(option.roleValue)
+                                                viewModel.onFilterStatusChange(option.statusValue)
+                                            }
+                                            showFilterDropdown = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                    }
+
+                    // Chip filter aktif (jika ada filter yang dipilih)
+                    if (isFilterActive) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (state.filterRole.isNotBlank()) {
+                                ActiveFilterChip(
+                                    label = "Role: ${state.filterRole.replaceFirstChar { it.uppercase() }}",
+                                    onRemove = { viewModel.onFilterRoleChange("") }
+                                )
+                            }
+                            if (state.filterStatus.isNotBlank()) {
+                                ActiveFilterChip(
+                                    label = "Status: ${state.filterStatus.replaceFirstChar { it.uppercase() }}",
+                                    onRemove = { viewModel.onFilterStatusChange("") }
+                                )
+                            }
+                            TextButton(
+                                onClick = { viewModel.clearFilters() },
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
+                            ) {
+                                Text(
+                                    text = "Hapus Filter",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFFEF4444),
+                                    fontFamily = interfamily
+                                )
+                            }
                         }
                     }
                 }
@@ -213,7 +358,10 @@ fun DaftarUserScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Belum ada data pengguna",
+                            text = if (isFilterActive || state.searchQuery.isNotBlank())
+                                "Tidak ada pengguna yang sesuai filter"
+                            else
+                                "Belum ada data pengguna",
                             fontFamily = interfamily,
                             color = Color(0xFF6B7280),
                             fontSize = 14.sp
@@ -221,7 +369,7 @@ fun DaftarUserScreen(
                     }
                 }
             } else {
-                // User cards (Scroll pagination: 10 data awal + 10 data saat scroll)
+                // User cards
                 items(displayedUsers.size) { index ->
                     val user = displayedUsers[index]
                     val inisial = user.inisial
@@ -231,12 +379,8 @@ fun DaftarUserScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White
-                        ),
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = 2.dp
-                        )
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -244,7 +388,6 @@ fun DaftarUserScreen(
                                 .padding(horizontal = 14.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-
                             var imageLoadFailed by remember(user.photoUrl) { mutableStateOf(false) }
 
                             // Avatar circular
@@ -286,10 +429,7 @@ fun DaftarUserScreen(
 
                             Spacer(modifier = Modifier.width(14.dp))
 
-                            // Nama dan Email
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -305,10 +445,7 @@ fun DaftarUserScreen(
                                     )
                                     Box(
                                         modifier = Modifier
-                                            .background(
-                                                Color(0xFFE5E7EB),
-                                                RoundedCornerShape(6.dp)
-                                            )
+                                            .background(Color(0xFFE5E7EB), RoundedCornerShape(6.dp))
                                             .padding(horizontal = 7.dp, vertical = 2.dp)
                                     ) {
                                         Text(
@@ -387,7 +524,7 @@ fun DaftarUserScreen(
                 }
             }
 
-            // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+            // Scroll Pagination Footer
             if (!state.isLoading && users.isNotEmpty()) {
                 item(key = "scroll_pagination_footer") {
                     GlobalScrollPaginationFooter(
@@ -473,6 +610,41 @@ fun DaftarUserScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActiveFilterChip(label: String, onRemove: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .background(Color(0xFFEEF2FF), RoundedCornerShape(20.dp))
+            .padding(start = 10.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = label,
+                fontSize = 11.sp,
+                fontFamily = interfamily,
+                color = Color(0xFF4F46E5),
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(Modifier.width(4.dp))
+            Box(
+                modifier = Modifier
+                    .size(16.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF4F46E5))
+                    .clickable { onRemove() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Hapus filter",
+                    tint = Color.White,
+                    modifier = Modifier.size(10.dp)
+                )
             }
         }
     }

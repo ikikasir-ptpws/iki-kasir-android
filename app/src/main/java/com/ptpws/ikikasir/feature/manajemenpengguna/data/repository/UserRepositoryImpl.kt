@@ -396,24 +396,45 @@ class UserRepositoryImpl @Inject constructor(
                 }
 
                 if (!authUpdated) {
+                    val rawMsg = authError?.message.orEmpty().lowercase()
                     val errorMsg = when {
+                        rawMsg.contains("blocked all requests") ||
+                        rawMsg.contains("too-many-requests") ||
+                        rawMsg.contains("unusual activity") ->
+                            "Terlalu banyak percobaan gagal dari perangkat ini. Demi keamanan, silakan tunggu beberapa menit sebelum mencoba lagi, atau gunakan opsi 'Lupa kata sandi?' untuk mengirim link reset ke email."
+
                         authError is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException ||
-                        authError?.message?.contains("wrong-password", ignoreCase = true) == true ||
-                        authError?.message?.contains("invalid-credential", ignoreCase = true) == true ->
-                            "Kata sandi saat ini/lama tidak sesuai. Gagal memperbarui kata sandi akun di Firebase Auth."
+                        rawMsg.contains("wrong-password") ||
+                        rawMsg.contains("invalid-credential") ||
+                        rawMsg.contains("password is invalid") ->
+                            "Kata sandi saat ini yang Anda masukkan salah. Silakan periksa kembali kata sandi saat ini, atau gunakan opsi 'Lupa kata sandi?' untuk mereset via email."
 
                         authError is com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException ||
-                        authError?.message?.contains("requires-recent-login", ignoreCase = true) == true ->
-                            "Sesi keamanan memerlukan verifikasi. Masukkan kata sandi saat ini untuk melanjutkan."
+                        rawMsg.contains("requires-recent-login") ||
+                        rawMsg.contains("recent authentication") ->
+                            "Demi keamanan, silakan masukkan kata sandi saat ini yang benar untuk mengonfirmasi perubahan kata sandi."
 
-                        authError?.message?.contains("weak-password", ignoreCase = true) == true ->
-                            "Kata sandi baru terlalu lemah. Gunakan minimal 6 karakter."
+                        rawMsg.contains("weak-password") ||
+                        rawMsg.contains("password should be at least") ->
+                            "Kata sandi baru terlalu lemah. Harap gunakan minimal 6 karakter kombinasi huruf dan angka."
 
-                        authError?.message?.contains("network", ignoreCase = true) == true ->
-                            "Koneksi internet bermasalah. Periksa koneksi lalu coba lagi."
+                        rawMsg.contains("network") ||
+                        rawMsg.contains("timeout") ||
+                        rawMsg.contains("unable to resolve host") ->
+                            "Koneksi internet bermasalah. Periksa koneksi data atau Wi-Fi Anda lalu coba lagi."
+
+                        authError is com.google.firebase.auth.FirebaseAuthUserCollisionException ||
+                        rawMsg.contains("already in use") ||
+                        rawMsg.contains("email-already-in-use") ->
+                            "Alamat email ini sudah digunakan oleh akun lain. Gunakan alamat email yang berbeda."
+
+                        authError is com.google.firebase.auth.FirebaseAuthInvalidUserException ||
+                        rawMsg.contains("user-not-found") ||
+                        rawMsg.contains("no user record") ->
+                            "Akun ini belum terdaftar di sistem login. Pastikan alamat email sudah benar."
 
                         else ->
-                            "Gagal memperbarui kata sandi di Firebase Auth: ${authError?.message ?: "Kata sandi saat ini/lama salah atau tidak cocok."}\n\nMasukkan kata sandi saat ini yang benar atau gunakan opsi reset kata sandi."
+                            "Gagal memperbarui kata sandi. Pastikan kata sandi saat ini sudah benar, atau gunakan tombol 'Lupa kata sandi?' untuk mengirim instruksi reset ke email pengguna."
                     }
                     emit(Result.failure(Exception(errorMsg)))
                     return@flow
