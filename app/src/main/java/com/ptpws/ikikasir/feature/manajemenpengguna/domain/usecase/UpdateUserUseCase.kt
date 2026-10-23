@@ -8,6 +8,6 @@ import javax.inject.Inject
 class UpdateUserUseCase @Inject constructor(
     private val repository: UserRepository
 ) {
-    suspend operator fun invoke(user: User, plainPassword: String? = null): Flow<Result<Unit>> =
-        repository.updateUser(user, plainPassword)
+    suspend operator fun invoke(user: User, plainPassword: String? = null, currentPassword: String? = null): Flow<Result<Unit>> =
+        repository.updateUser(user, plainPassword, currentPassword)
 }

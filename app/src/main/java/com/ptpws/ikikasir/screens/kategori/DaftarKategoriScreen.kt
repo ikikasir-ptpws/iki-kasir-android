@@ -13,6 +13,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -836,16 +838,16 @@ fun KategoriCardItem(
                 )
 
                 // Edit button
-                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFF8FAFC)) {
+                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEEF2FF)) {
                     IconButton(onClick = onEdit, modifier = Modifier.size(38.dp)) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF374151), modifier = Modifier.size(17.dp))
+                        Icon(Icons.Outlined.Edit, contentDescription = "Edit", tint = Color(0xFF4F46E5), modifier = Modifier.size(17.dp))
                     }
                 }
                 Spacer(modifier = Modifier.width(6.dp))
                 // Delete button
                 Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
                     IconButton(onClick = onDelete, modifier = Modifier.size(38.dp)) {
-                        Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = Color(0xFFEF4444), modifier = Modifier.size(17.dp))
+                        Icon(Icons.Outlined.Delete, contentDescription = "Hapus", tint = Color(0xFFEF4444), modifier = Modifier.size(17.dp))
                     }
                 }
             }

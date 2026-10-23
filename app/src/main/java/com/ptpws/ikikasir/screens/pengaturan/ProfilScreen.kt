@@ -1069,27 +1069,31 @@ fun ProfilScreen(
                                 }
 
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    IconButton(
-                                        onClick = { notaLogoPickerLauncher.launch("image/*") },
-                                        modifier = Modifier.size(36.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Edit,
-                                            contentDescription = "Ganti Logo",
-                                            tint = Color(0xFF4F46E5),
-                                            modifier = Modifier.size(18.dp)
-                                        )
+                                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEEF2FF)) {
+                                        IconButton(
+                                            onClick = { notaLogoPickerLauncher.launch("image/*") },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Edit,
+                                                contentDescription = "Ganti Logo",
+                                                tint = Color(0xFF4F46E5),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     }
-                                    IconButton(
-                                        onClick = { logoUrl = "" },
-                                        modifier = Modifier.size(36.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Delete,
-                                            contentDescription = "Hapus Logo",
-                                            tint = Color(0xFFEF4444),
-                                            modifier = Modifier.size(18.dp)
-                                        )
+                                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
+                                        IconButton(
+                                            onClick = { logoUrl = "" },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Delete,
+                                                contentDescription = "Hapus Logo",
+                                                tint = Color(0xFFEF4444),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }

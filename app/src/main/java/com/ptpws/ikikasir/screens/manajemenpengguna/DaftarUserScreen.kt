@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -366,28 +369,32 @@ fun DaftarUserScreen(
                                     )
                                 }
 
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    IconButton(
-                                        onClick = { onEditUser(user.id) },
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.iconedit),
-                                            contentDescription = "Edit User",
-                                            tint = Color(0xFF4338CA),
-                                            modifier = Modifier.size(18.dp)
-                                        )
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEEF2FF)) {
+                                        IconButton(
+                                            onClick = { onEditUser(user.id) },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Edit,
+                                                contentDescription = "Edit User",
+                                                tint = Color(0xFF4F46E5),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     }
-                                    IconButton(
-                                        onClick = { userToDelete = user },
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.iconhapus),
-                                            contentDescription = "Hapus User",
-                                            tint = Color(0xFFEF4444),
-                                            modifier = Modifier.size(18.dp)
-                                        )
+                                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
+                                        IconButton(
+                                            onClick = { userToDelete = user },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Delete,
+                                                contentDescription = "Hapus User",
+                                                tint = Color(0xFFEF4444),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }

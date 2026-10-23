@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.ptpws.ikikasir.core.network.NetworkMonitor
@@ -263,12 +264,12 @@ class UserRepositoryImpl @Inject constructor(
                     .await()
             } catch (_: Exception) {}
 
-            // Buat Firebase Auth account menggunakan password dari input form (tidak disimpan ke DB)
+            // Buat akun langsung di Firebase Authentication menggunakan password input
             createAuthUserIfOnline(email = user.email, plainPassword = plainPassword)
             try {
-                Log.d(TAG, "Online: Mengirim data ke Firestore collection 'users' dengan ID '${user.id}'...")
+                Log.d(TAG, "Online: Mengirim data ke Firestore collection 'users' dengan ID '${user.id}' (tanpa password)...")
                 remoteDataSource.saveUser(user.toDto())
-                Log.d(TAG, "Online: Berhasil simpan ke Firestore! Menyimpan ke Room DB (isSynced = true)")
+                Log.d(TAG, "Online: Berhasil simpan ke Firestore! Menyimpan ke Room DB (isSynced = true, tanpa password)")
                 localDao.insertOrUpdate(user.toEntity(isSynced = true))
                 emit(Result.success(Unit))
             } catch (e: Exception) {
@@ -277,7 +278,7 @@ class UserRepositoryImpl @Inject constructor(
                 emit(Result.success(Unit))
             }
         } else {
-            Log.d(TAG, "Offline: Menyimpan ke Room DB (isSynced = false)")
+            Log.d(TAG, "Offline: Menyimpan ke Room DB (isSynced = false, tanpa password)")
             localDao.insertOrUpdate(user.toEntity(isSynced = false))
             emit(Result.success(Unit))
         }
@@ -299,7 +300,11 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateUser(user: User, plainPassword: String?): Flow<Result<Unit>> = flow {
+    override suspend fun updateUser(
+        user: User,
+        plainPassword: String?,
+        currentPassword: String?
+    ): Flow<Result<Unit>> = flow {
         val isOnline = networkMonitor.isConnected()
 
         if (isOnline) {
@@ -311,33 +316,133 @@ class UserRepositoryImpl @Inject constructor(
                     .await()
             } catch (_: Exception) {}
 
+            val existingLocal = localDao.getUserById(user.id)
+            val oldEmail = existingLocal?.email?.trim()?.ifBlank { null } ?: user.email.trim()
+            val oldPassword = currentPassword?.trim()?.takeIf { it.isNotBlank() }
+
             if (!plainPassword.isNullOrBlank()) {
+                val newPass = plainPassword.trim()
                 val currentAuth = FirebaseAuth.getInstance().currentUser
-                if (currentAuth?.email?.trim()?.equals(user.email.trim(), ignoreCase = true) == true) {
+                val isCurrentLoggedInUser = currentAuth?.email?.trim()?.equals(oldEmail, ignoreCase = true) == true
+
+                var authUpdated = false
+                var authError: Exception? = null
+
+                // 1. Jika akun yang diedit adalah akun yang sedang aktif login di perangkat ini
+                if (isCurrentLoggedInUser && currentAuth != null) {
                     try {
-                        currentAuth.updatePassword(plainPassword).await()
-                        Log.d(TAG, "Password akun aktif berhasil diupdate di Firebase Auth")
+                        if (!oldPassword.isNullOrBlank()) {
+                            val credential = EmailAuthProvider.getCredential(oldEmail, oldPassword)
+                            currentAuth.reauthenticate(credential).await()
+                        }
+                        currentAuth.updatePassword(newPass).await()
+                        if (!user.email.trim().equals(oldEmail, ignoreCase = true)) {
+                            currentAuth.updateEmail(user.email.trim()).await()
+                        }
+                        authUpdated = true
+                        Log.d(TAG, "Password akun aktif ($oldEmail) berhasil diupdate di Firebase Auth")
                     } catch (e: Exception) {
-                        Log.w(TAG, "Gagal update password akun aktif di Firebase Auth: ${e.message}")
+                        Log.e(TAG, "Gagal update password akun aktif di Firebase Auth: ${e.message}", e)
+                        authError = e
                     }
-                } else {
-                    createAuthUserIfOnline(email = user.email, plainPassword = plainPassword)
+                }
+
+                // 2. Jika bukan akun aktif, atau update via akun aktif perlu dicoba via secondary auth
+                if (!authUpdated) {
+                    val secondaryAuth = getSecondaryAuth()
+                    try {
+                        if (!oldPassword.isNullOrBlank()) {
+                            // Login ke akun lama via secondaryAuth untuk update password
+                            try {
+                                secondaryAuth.signInWithEmailAndPassword(oldEmail, oldPassword).await()
+                                val secUser = secondaryAuth.currentUser
+                                if (secUser != null) {
+                                    secUser.updatePassword(newPass).await()
+                                    if (!user.email.trim().equals(oldEmail, ignoreCase = true)) {
+                                        secUser.updateEmail(user.email.trim()).await()
+                                    }
+                                    authUpdated = true
+                                    Log.d(TAG, "Secondary Auth: Berhasil update password untuk $oldEmail di Firebase Auth")
+                                }
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Secondary Auth: Gagal sign in dengan oldPassword untuk $oldEmail: ${e.message}")
+                                authError = e
+                            } finally {
+                                secondaryAuth.signOut()
+                            }
+                        }
+
+                        // Jika akun belum pernah terdaftar di Firebase Auth (misal baru dibuat di offline), daftarkan baru
+                        if (!authUpdated) {
+                            try {
+                                secondaryAuth.createUserWithEmailAndPassword(user.email.trim(), newPass).await()
+                                authUpdated = true
+                                Log.d(TAG, "Secondary Auth: Akun ${user.email} berhasil didaftarkan baru di Firebase Auth")
+                            } catch (collisionEx: Exception) {
+                                if (collisionEx is com.google.firebase.auth.FirebaseAuthUserCollisionException ||
+                                    collisionEx.message?.contains("already in use", ignoreCase = true) == true) {
+                                    Log.w(TAG, "Secondary Auth: Akun sudah ada di Firebase Auth tetapi sandi lama salah/tidak tersedia")
+                                } else {
+                                    authError = collisionEx
+                                }
+                            } finally {
+                                secondaryAuth.signOut()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Secondary Auth error saat update user: ${e.message}", e)
+                        authError = e
+                    }
+                }
+
+                if (!authUpdated) {
+                    val errorMsg = when {
+                        authError is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException ||
+                        authError?.message?.contains("wrong-password", ignoreCase = true) == true ||
+                        authError?.message?.contains("invalid-credential", ignoreCase = true) == true ->
+                            "Kata sandi saat ini/lama tidak sesuai. Gagal memperbarui kata sandi akun di Firebase Auth."
+
+                        authError is com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException ||
+                        authError?.message?.contains("requires-recent-login", ignoreCase = true) == true ->
+                            "Sesi keamanan memerlukan verifikasi. Masukkan kata sandi saat ini untuk melanjutkan."
+
+                        authError?.message?.contains("weak-password", ignoreCase = true) == true ->
+                            "Kata sandi baru terlalu lemah. Gunakan minimal 6 karakter."
+
+                        authError?.message?.contains("network", ignoreCase = true) == true ->
+                            "Koneksi internet bermasalah. Periksa koneksi lalu coba lagi."
+
+                        else ->
+                            "Gagal memperbarui kata sandi di Firebase Auth: ${authError?.message ?: "Kata sandi saat ini/lama salah atau tidak cocok."}\n\nMasukkan kata sandi saat ini yang benar atau gunakan opsi reset kata sandi."
+                    }
+                    emit(Result.failure(Exception(errorMsg)))
+                    return@flow
                 }
             }
+
+            // Simpan ke Firestore & Room DB (tanpa password)
+            val updatedUserToSave = user
+
             try {
-                Log.d(TAG, "Online: Update user di Firestore...")
-                remoteDataSource.updateUser(user.toDto())
+                Log.d(TAG, "Online: Update user di Firestore (tanpa password)...")
+                remoteDataSource.updateUser(updatedUserToSave.toDto())
                 Log.d(TAG, "Online: Firestore update sukses, update Room DB dengan isSynced = true")
-                localDao.insertOrUpdate(user.toEntity(isSynced = true))
+                localDao.insertOrUpdate(updatedUserToSave.toEntity(isSynced = true))
                 emit(Result.success(Unit))
             } catch (e: Exception) {
                 Log.w(TAG, "Gagal update Firestore online, fallback simpan lokal: ${e.message}")
-                localDao.insertOrUpdate(user.toEntity(isSynced = false))
+                localDao.insertOrUpdate(updatedUserToSave.toEntity(isSynced = false))
                 emit(Result.success(Unit))
             }
         } else {
+            // OFFLINE
+            if (!plainPassword.isNullOrBlank()) {
+                emit(Result.failure(Exception("Mengubah kata sandi memerlukan koneksi internet untuk memperbarui akun autentikasi.")))
+                return@flow
+            }
+            val updatedUserToSave = user
             Log.d(TAG, "Offline: Update user di Room DB dengan isSynced = false")
-            localDao.insertOrUpdate(user.toEntity(isSynced = false))
+            localDao.insertOrUpdate(updatedUserToSave.toEntity(isSynced = false))
             emit(Result.success(Unit))
         }
     }

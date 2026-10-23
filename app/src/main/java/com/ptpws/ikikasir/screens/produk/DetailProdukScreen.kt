@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.QrCode
@@ -19,6 +18,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.PointOfSale
 import androidx.compose.material3.*
@@ -185,7 +185,7 @@ fun DetailProdukScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Edit,
+                                imageVector = Icons.Outlined.Edit,
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(if (isSmallScreen) 16.dp else 18.dp)

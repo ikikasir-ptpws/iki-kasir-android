@@ -1,5 +1,6 @@
 package com.ptpws.ikikasir.feature.manajemenpengguna.data.remote.datasource
 
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.remote.dto.UserDto
 import kotlinx.coroutines.channels.awaitClose
@@ -24,6 +25,9 @@ class UserRemoteDataSourceImpl @Inject constructor(
             }
             if (snapshot != null) {
                 val list = snapshot.documents.mapNotNull { doc ->
+                    if (doc.contains("password")) {
+                        doc.reference.update("password", FieldValue.delete())
+                    }
                     doc.toObject(UserDto::class.java)?.apply {
                         if (id.isBlank()) id = doc.id
                     }
@@ -39,6 +43,11 @@ class UserRemoteDataSourceImpl @Inject constructor(
     override suspend fun getAllUsers(): List<UserDto> {
         val snapshot = collection.get().await()
         return snapshot.documents.mapNotNull { doc ->
+            if (doc.contains("password")) {
+                try {
+                    doc.reference.update("password", FieldValue.delete())
+                } catch (_: Exception) {}
+            }
             doc.toObject(UserDto::class.java)?.apply {
                 if (id.isBlank()) id = doc.id
             }

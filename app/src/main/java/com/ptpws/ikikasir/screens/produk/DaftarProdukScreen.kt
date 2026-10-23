@@ -1136,30 +1136,34 @@ fun ProdukCardItem(
 
                 // Action Buttons Column
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    IconButton(
-                        onClick = onEdit,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Edit,
-                            contentDescription = "Edit",
-                            tint = Color(0xFF64748B),
-                            modifier = Modifier.size(18.dp)
-                        )
+                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEEF2FF)) {
+                        IconButton(
+                            onClick = onEdit,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = "Edit",
+                                tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
-                    IconButton(
-                        onClick = onDelete,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Delete,
-                            contentDescription = "Hapus",
-                            tint = Color(0xFFF87171),
-                            modifier = Modifier.size(18.dp)
-                        )
+                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
+                        IconButton(
+                            onClick = onDelete,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = "Hapus",
+                                tint = Color(0xFFEF4444),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }

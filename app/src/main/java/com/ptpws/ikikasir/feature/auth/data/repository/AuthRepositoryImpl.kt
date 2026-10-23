@@ -160,8 +160,9 @@ class AuthRepositoryImpl @Inject constructor(
                 }
                 authException.message?.contains("password is invalid", ignoreCase = true) == true ||
                 authException.message?.contains("wrong-password", ignoreCase = true) == true ||
-                authException.message?.contains("INVALID_LOGIN_CREDENTIALS", ignoreCase = true) == true ->
+                authException.message?.contains("INVALID_LOGIN_CREDENTIALS", ignoreCase = true) == true -> {
                     "Email atau kata sandi salah. Silakan periksa kembali."
+                }
                 authException.message?.contains("network", ignoreCase = true) == true ||
                 authException.message?.contains("timeout", ignoreCase = true) == true ->
                     "Koneksi internet bermasalah. Coba lagi."

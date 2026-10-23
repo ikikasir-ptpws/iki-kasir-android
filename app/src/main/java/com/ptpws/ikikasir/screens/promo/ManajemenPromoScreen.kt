@@ -19,6 +19,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -454,28 +456,32 @@ fun ManajemenPromoScreen(
                                     modifier = Modifier.scale(0.85f)
                                 )
 
-                                IconButton(
-                                    onClick = { onEditPromo(promo.id) },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Edit,
-                                        contentDescription = "Edit Promo",
-                                        tint = Color(0xFF2563EB),
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEEF2FF)) {
+                                    IconButton(
+                                        onClick = { onEditPromo(promo.id) },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Edit,
+                                            contentDescription = "Edit Promo",
+                                            tint = Color(0xFF4F46E5),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
                                 }
 
-                                IconButton(
-                                    onClick = { promoToDelete = promo },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Hapus Promo",
-                                        tint = Color(0xFFEF4444),
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
+                                    IconButton(
+                                        onClick = { promoToDelete = promo },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Delete,
+                                            contentDescription = "Hapus Promo",
+                                            tint = Color(0xFFEF4444),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
                                 }
 
                                 IconButton(

@@ -4,8 +4,9 @@ data class UserFormState(
     val id: String = "",
     val fullName: String = "",
     val email: String = "",
-    val password: String = "",         // hanya dipakai di form UI untuk dikirim ke Firebase Auth
-    val confirmPassword: String = "",  // hanya dipakai di form UI untuk validasi
+    val currentPassword: String = "",
+    val password: String = "",         // password baru jika diisi
+    val confirmPassword: String = "",  // konfirmasi password baru
     val roleId: String = "",
     val isActive: Boolean = true,
     val photoUrl: String = "",

@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
+import com.ptpws.ikikasir.feature.auth.domain.repository.AuthRepository
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 
 @HiltViewModel
@@ -30,7 +31,8 @@ class UserViewModel @Inject constructor(
     private val updateUserUseCase: UpdateUserUseCase,
     private val deleteUserUseCase: DeleteUserUseCase,
     private val syncUsersUseCase: SyncUsersUseCase,
-    private val logActivityUseCase: LogActivityUseCase
+    private val logActivityUseCase: LogActivityUseCase,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _listState = MutableStateFlow(UserListState())
@@ -128,6 +130,10 @@ class UserViewModel @Inject constructor(
         _formState.update { it.copy(email = value, error = null) }
     }
 
+    fun onCurrentPasswordChange(value: String) {
+        _formState.update { it.copy(currentPassword = value, error = null) }
+    }
+
     fun onPasswordChange(value: String) {
         _formState.update { it.copy(password = value, error = null) }
     }
@@ -148,6 +154,23 @@ class UserViewModel @Inject constructor(
         _formState.update { it.copy(photoUrl = value) }
     }
 
+    fun sendPasswordResetEmail(email: String, onResult: (Boolean, String) -> Unit) {
+        val cleanEmail = email.trim()
+        if (cleanEmail.isBlank()) {
+            onResult(false, "Alamat email tidak boleh kosong")
+            return
+        }
+        viewModelScope.launch {
+            authRepository.sendPasswordResetEmail(cleanEmail).collect { result ->
+                result.onSuccess {
+                    onResult(true, "Instruksi reset kata sandi telah dikirim ke $cleanEmail.")
+                }.onFailure { err ->
+                    onResult(false, err.message ?: "Gagal mengirim email reset kata sandi.")
+                }
+            }
+        }
+    }
+
     fun loadUserById(userId: String) {
         if (userId.isBlank()) return
         viewModelScope.launch {
@@ -158,7 +181,7 @@ class UserViewModel @Inject constructor(
                         id = existing.id,
                         fullName = existing.fullName,
                         email = existing.email,
-                        // password tidak disimpan di DB, field dikosongkan saat edit
+                        currentPassword = "",
                         password = "",
                         confirmPassword = "",
                         roleId = existing.roleId,
@@ -254,6 +277,12 @@ class UserViewModel @Inject constructor(
                     _formState.update { it.copy(error = message) }
                     return
                 }
+                if (current.currentPassword.isBlank()) {
+                    val message = "Kata sandi saat ini wajib diisi untuk mengonfirmasi perubahan kata sandi di Firebase Auth, atau gunakan opsi kirim email reset."
+                    GlobalCrudResultDialog.failure(message)
+                    _formState.update { it.copy(error = message) }
+                    return
+                }
             }
         }
         if (current.roleId.isBlank()) {
@@ -266,7 +295,6 @@ class UserViewModel @Inject constructor(
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, error = null) }
             val userId = if (current.id.isBlank()) UUID.randomUUID().toString() else current.id
-            // User domain model TIDAK mengandung password
             val user = User(
                 id = userId,
                 fullName = current.fullName.trim(),
@@ -279,10 +307,13 @@ class UserViewModel @Inject constructor(
             )
 
             val flow = if (!isEdit) {
-                // plainPassword hanya diteruskan ke Firebase Auth, tidak disimpan
                 insertUserUseCase(user, current.password)
             } else {
-                updateUserUseCase(user, current.password.ifBlank { null })
+                updateUserUseCase(
+                    user = user,
+                    plainPassword = current.password.ifBlank { null },
+                    currentPassword = current.currentPassword.ifBlank { null }
+                )
             }
             flow.collect { result ->
                 result.onSuccess {
