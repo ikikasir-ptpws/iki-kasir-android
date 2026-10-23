@@ -67,12 +67,23 @@ class AuthViewModel @Inject constructor(
 
                         rawMsg.contains("password is invalid", ignoreCase = true) ||
                         rawMsg.contains("wrong-password", ignoreCase = true) ||
-                        rawMsg.contains("invalid-credential", ignoreCase = true) ->
-                            "Email atau kata sandi salah. Silakan periksa kembali."
+                        rawMsg.contains("invalid-credential", ignoreCase = true) ||
+                        rawMsg.contains("supplied auth credential", ignoreCase = true) ||
+                        rawMsg.contains("malformed", ignoreCase = true) ||
+                        rawMsg.contains("has expired", ignoreCase = true) ->
+                            "Email atau kata sandi tidak cocok. Periksa kembali, lalu coba lagi. Jika lupa kata sandi, pilih “Lupa?”."
 
                         rawMsg.contains("network error", ignoreCase = true) ||
-                        rawMsg.contains("interrupted connection", ignoreCase = true) ->
+                        rawMsg.contains("interrupted connection", ignoreCase = true) ||
+                        rawMsg.contains("network", ignoreCase = true) ||
+                        rawMsg.contains("timeout", ignoreCase = true) ->
                             "Gagal terhubung ke server. Periksa koneksi internet Anda."
+
+                        rawMsg.contains("invalid-email", ignoreCase = true) ->
+                            "Format email belum benar. Periksa kembali alamat email Anda."
+
+                        rawMsg.contains("user-disabled", ignoreCase = true) ->
+                            "Akun ini dinonaktifkan. Hubungi administrator untuk mendapatkan bantuan."
 
                         rawMsg.contains("CONFIGURATION_NOT_FOUND", ignoreCase = true) ||
                         rawMsg.contains("OPERATION_NOT_ALLOWED", ignoreCase = true) ||
@@ -83,7 +94,8 @@ class AuthViewModel @Inject constructor(
                         rawMsg.contains("too-many-requests", ignoreCase = true) ->
                             "Terlalu banyak percobaan login gagal. Silakan coba beberapa saat lagi."
 
-                        else -> rawMsg
+                        else ->
+                            "Login belum berhasil. Periksa kembali email dan kata sandi Anda, lalu coba lagi. Jika masalah berlanjut, hubungi administrator."
                     }
 
                     logActivityUseCase(
