@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.*
+import com.ptpws.ikikasir.commond.GlobalTextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -126,15 +127,14 @@ fun ManajemenStokScreen(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                         )
                     }
-                    OutlinedTextField(
+                    GlobalTextField(
                         value = state.restockTambahJumlahText,
                         onValueChange = { viewModel.onRestockJumlahChange(it) },
-                        label = { Text("Jumlah Restock (Tambah Stok)", fontSize = 12.sp, fontFamily = interfamily) },
-                        placeholder = { Text("Contoh: 10", fontSize = 13.sp) },
+                        label = "Jumlah Restock (Tambah Stok)",
+                        placeholder = "Contoh: 10",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             },
@@ -368,17 +368,10 @@ fun ManajemenStokScreen(
 
             // 3. Search & Scan Bar
             item {
-                OutlinedTextField(
+                GlobalTextField(
                     value = state.searchQuery,
                     onValueChange = { viewModel.onSearchQueryChange(it) },
-                    placeholder = {
-                        Text(
-                            text = "Cari Produk atau SKU",
-                            fontSize = 13.sp,
-                            color = Color(0xFF94A3B8),
-                            fontFamily = interfamily
-                        )
-                    },
+                    placeholder = "Cari Produk atau SKU",
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
@@ -392,7 +385,7 @@ fun ManajemenStokScreen(
                             shape = RoundedCornerShape(10.dp),
                             color = Color(0xFFEEF2FF),
                             modifier = Modifier
-                                .padding(end = 6.dp)
+                                .padding(end = 4.dp)
                                 .clickable {
                                     triggerBarcodeScanner()
                                 }
@@ -419,14 +412,7 @@ fun ManajemenStokScreen(
                         }
                     },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = Color(0xFFF1F5F9),
-                        focusedContainerColor = Color.White,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedBorderColor = Color(0xFF4F46E5)
-                    )
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 

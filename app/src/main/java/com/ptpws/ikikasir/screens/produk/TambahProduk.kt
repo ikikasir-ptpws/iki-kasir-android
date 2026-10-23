@@ -33,6 +33,7 @@ import androidx.compose.material.icons.outlined.PointOfSale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.ptpws.ikikasir.commond.GlobalImageUploadOverlay
+import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.commond.ImageUploadType
 import com.ptpws.ikikasir.core.util.ImageCompressorHelper
@@ -260,148 +261,126 @@ fun TambahProdukScreen(
 
             // Nama Produk
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = "Nama Produk",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = interfamily,
-                        color = Color(0xFF374151)
-                    )
-                    OutlinedTextField(
-                        value = formState.name,
-                        onValueChange = { viewModel.onNameChange(it) },
-                        placeholder = { Text("Contoh: Kopi Susu Gula Aren", fontSize = 13.sp, color = Color(0xFF9CA3AF)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = Color.White,
-                            focusedContainerColor = Color.White,
-                            unfocusedBorderColor = Color(0xFFE5E7EB),
-                            focusedBorderColor = Color(0xFF4F46E5)
-                        )
-                    )
-                }
+                GlobalTextField(
+                    value = formState.name,
+                    onValueChange = { viewModel.onNameChange(it) },
+                    label = "Nama Produk",
+                    isRequired = true,
+                    placeholder = "Contoh: Kopi Susu Gula Aren",
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             // Barcode / Kode Produk + Scan + Generate Otomatis
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Barcode / Kode Produk",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = interfamily,
-                            color = Color(0xFF374151),
-                            maxLines = 1
-                        )
-                        Text(
-                            text = "Generate Otomatis",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = interfamily,
-                            color = Color(0xFF4F46E5),
-                            maxLines = 1,
-                            softWrap = false,
-                            modifier = Modifier.clickable {
-                                val randomBarcode = "899" + (100000000..999999999).random()
-                                viewModel.onBarcodeChange(randomBarcode)
-                            }
-                        )
-                    }
-
-                    OutlinedTextField(
-                        value = formState.barcode,
-                        onValueChange = { viewModel.onBarcodeChange(it) },
-                        placeholder = { Text("Contoh: 8992753210123", fontSize = if (isSmallScreen) 12.sp else 13.sp, color = Color(0xFF9CA3AF)) },
-                        singleLine = true,
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.QrCode,
-                                contentDescription = null,
-                                tint = Color(0xFF9CA3AF),
-                                modifier = Modifier.size(20.dp)
+                GlobalTextField(
+                    value = formState.barcode,
+                    onValueChange = { viewModel.onBarcodeChange(it) },
+                    placeholder = "Contoh: 8992753210123",
+                    singleLine = true,
+                    labelComposable = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Barcode / Kode Produk",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = interfamily,
+                                color = Color(0xFF374151),
+                                maxLines = 1
                             )
-                        },
-                        trailingIcon = {
-                            if (formState.barcode.isNotBlank()) {
-                                // Barcode sudah ada → tampil tombol Cetak
-                                Surface(
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = Color(0xFFEFF6FF),
-                                    modifier = Modifier
-                                        .padding(end = 4.dp)
-                                        .clickable { showPrintDialog = true }
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = if (isSmallScreen) 8.dp else 10.dp, vertical = 6.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Print,
-                                            contentDescription = "Cetak",
-                                            tint = Color(0xFF2563EB),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Text(
-                                            text = "Cetak",
-                                            fontSize = if (isSmallScreen) 11.sp else 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            fontFamily = interfamily,
-                                            color = Color(0xFF2563EB)
-                                        )
-                                    }
+                            Text(
+                                text = "Generate Otomatis",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = interfamily,
+                                color = Color(0xFF4F46E5),
+                                maxLines = 1,
+                                softWrap = false,
+                                modifier = Modifier.clickable {
+                                    val randomBarcode = "899" + (100000000..999999999).random()
+                                    viewModel.onBarcodeChange(randomBarcode)
                                 }
-                            } else {
-                                // Barcode kosong → tampil tombol Scan
-                                Surface(
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = Color(0xFFEEF2FF),
-                                    modifier = Modifier
-                                        .padding(end = 4.dp)
-                                        .clickable {
-                                            triggerBarcodeScanner()
-                                        }
+                            )
+                        }
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.QrCode,
+                            contentDescription = null,
+                            tint = Color(0xFF9CA3AF),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    trailingIcon = {
+                        if (formState.barcode.isNotBlank()) {
+                            // Barcode sudah ada → tampil tombol Cetak
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color(0xFFEFF6FF),
+                                modifier = Modifier
+                                    .padding(end = 4.dp)
+                                    .clickable { showPrintDialog = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = if (isSmallScreen) 8.dp else 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = if (isSmallScreen) 8.dp else 10.dp, vertical = 6.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.QrCodeScanner,
-                                            contentDescription = "Scan",
-                                            tint = Color(0xFF4F46E5),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Text(
-                                            text = "Scan",
-                                            fontSize = if (isSmallScreen) 11.sp else 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            fontFamily = interfamily,
-                                            color = Color(0xFF4F46E5)
-                                        )
-                                    }
+                                    Icon(
+                                        imageVector = Icons.Default.Print,
+                                        contentDescription = "Cetak",
+                                        tint = Color(0xFF2563EB),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "Cetak",
+                                        fontSize = if (isSmallScreen) 11.sp else 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = interfamily,
+                                        color = Color(0xFF2563EB)
+                                    )
                                 }
                             }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = Color.White,
-                            focusedContainerColor = Color.White,
-                            unfocusedBorderColor = Color(0xFFE5E7EB),
-                            focusedBorderColor = Color(0xFF4F46E5)
-                        )
-                    )
-                }
+                        } else {
+                            // Barcode kosong → tampil tombol Scan
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color(0xFFEEF2FF),
+                                modifier = Modifier
+                                    .padding(end = 4.dp)
+                                    .clickable {
+                                        triggerBarcodeScanner()
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = if (isSmallScreen) 8.dp else 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.QrCodeScanner,
+                                        contentDescription = "Scan",
+                                        tint = Color(0xFF4F46E5),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "Scan",
+                                        fontSize = if (isSmallScreen) 11.sp else 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = interfamily,
+                                        color = Color(0xFF4F46E5)
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             // Harga Beli & Harga Jual + Card HPP & Estimasi Laba Kotor
@@ -420,67 +399,31 @@ fun TambahProdukScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 8.dp else 12.dp)
                         ) {
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Text(
-                                    text = "Harga Beli",
-                                    fontSize = if (isSmallScreen) 12.sp else 13.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontFamily = interfamily,
-                                    color = Color(0xFF374151)
-                                )
-                                OutlinedTextField(
-                                    value = formState.costPrice,
-                                    onValueChange = { viewModel.onCostPriceChange(it) },
-                                    leadingIcon = {
-                                        Text("Rp", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
-                                    },
-                                    placeholder = { Text("0", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF)) },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        unfocusedContainerColor = Color.White,
-                                        focusedContainerColor = Color.White,
-                                        unfocusedBorderColor = Color(0xFFE5E7EB),
-                                        focusedBorderColor = Color(0xFF4F46E5)
-                                    )
-                                )
-                            }
+                            GlobalTextField(
+                                value = formState.costPrice,
+                                onValueChange = { viewModel.onCostPriceChange(it) },
+                                label = "Harga Beli",
+                                leadingIcon = {
+                                    Text("Rp", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
+                                },
+                                placeholder = "0",
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
 
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Text(
-                                    text = "Harga Jual",
-                                    fontSize = if (isSmallScreen) 12.sp else 13.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontFamily = interfamily,
-                                    color = Color(0xFF374151)
-                                )
-                                OutlinedTextField(
-                                    value = formState.sellingPrice,
-                                    onValueChange = { viewModel.onSellingPriceChange(it) },
-                                    leadingIcon = {
-                                        Text("Rp", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
-                                    },
-                                    placeholder = { Text("0", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF)) },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        unfocusedContainerColor = Color.White,
-                                        focusedContainerColor = Color.White,
-                                        unfocusedBorderColor = Color(0xFFE5E7EB),
-                                        focusedBorderColor = Color(0xFF4F46E5)
-                                    )
-                                )
-                            }
+                            GlobalTextField(
+                                value = formState.sellingPrice,
+                                onValueChange = { viewModel.onSellingPriceChange(it) },
+                                label = "Harga Jual",
+                                leadingIcon = {
+                                    Text("Rp", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
+                                },
+                                placeholder = "0",
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
                         }
 
                         // Box Estimasi Laba Kotor & HPP
@@ -597,69 +540,41 @@ fun TambahProdukScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 8.dp else 12.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = "Stok",
-                            fontSize = if (isSmallScreen) 12.sp else 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = interfamily,
-                            color = Color(0xFF374151)
-                        )
-                        OutlinedTextField(
-                            value = formState.stock,
-                            onValueChange = { viewModel.onStockChange(it) },
-                            placeholder = { Text("0", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF)) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedContainerColor = Color.White,
-                                focusedContainerColor = Color.White,
-                                unfocusedBorderColor = Color(0xFFE5E7EB),
-                                focusedBorderColor = Color(0xFF4F46E5)
-                            )
-                        )
-                    }
+                    GlobalTextField(
+                        value = formState.stock,
+                        onValueChange = { viewModel.onStockChange(it) },
+                        label = "Stok",
+                        placeholder = "0",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
 
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = if (isSmallScreen) "Batas " else "Batas Stok ",
-                                fontSize = if (isSmallScreen) 12.sp else 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = interfamily,
-                                color = Color(0xFF374151)
-                            )
-                            Text(
-                                text = if (isSmallScreen) "(Def. 5)" else "(Default 5)",
-                                fontSize = if (isSmallScreen) 11.sp else 12.sp,
-                                fontFamily = interfamily,
-                                color = Color(0xFF9CA3AF)
-                            )
-                        }
-                        OutlinedTextField(
-                            value = formState.lowStockThreshold,
-                            onValueChange = { viewModel.onLowStockThresholdChange(it) },
-                            placeholder = { Text("5", fontSize = if (isSmallScreen) 12.sp else 14.sp, color = Color(0xFF9CA3AF)) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedContainerColor = Color.White,
-                                focusedContainerColor = Color.White,
-                                unfocusedBorderColor = Color(0xFFE5E7EB),
-                                focusedBorderColor = Color(0xFF4F46E5)
-                            )
-                        )
-                    }
+                    GlobalTextField(
+                        value = formState.lowStockThreshold,
+                        onValueChange = { viewModel.onLowStockThresholdChange(it) },
+                        labelComposable = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = if (isSmallScreen) "Batas " else "Batas Stok ",
+                                    fontSize = if (isSmallScreen) 12.sp else 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontFamily = interfamily,
+                                    color = Color(0xFF374151)
+                                )
+                                Text(
+                                    text = if (isSmallScreen) "(Def. 5)" else "(Default 5)",
+                                    fontSize = if (isSmallScreen) 11.sp else 12.sp,
+                                    fontFamily = interfamily,
+                                    color = Color(0xFF9CA3AF)
+                                )
+                            }
+                        },
+                        placeholder = "5",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 

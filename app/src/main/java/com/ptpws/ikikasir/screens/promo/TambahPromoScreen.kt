@@ -41,6 +41,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
+import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.ProdukCardShimmer
 import com.ptpws.ikikasir.commond.interfamily
 import kotlinx.coroutines.delay
@@ -296,122 +297,26 @@ fun TambahPromoScreen(
                         )
 
                         // Nama Promo
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row {
-                                Text(
-                                    text = "Nama Promo ",
-                                    fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF334155)
-                                )
-                                Text(
-                                    text = "*",
-                                    fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFEF4444)
-                                )
-                            }
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color(0xFFF8FAFC),
-                                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 14.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    BasicTextField(
-                                        value = state.namaPromo,
-                                        onValueChange = { viewModel.onNamaPromoChange(it) },
-                                        singleLine = true,
-                                        textStyle = TextStyle(
-                                            color = Color(0xFF0F172A),
-                                            fontSize = 14.sp,
-                                            fontFamily = interfamily,
-                                            fontWeight = FontWeight.Medium
-                                        ),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        decorationBox = { innerTextField ->
-                                            if (state.namaPromo.isEmpty()) {
-                                                Text(
-                                                    text = "Masukkan nama promo",
-                                                    fontSize = 14.sp,
-                                                    fontFamily = interfamily,
-                                                    color = Color(0xFF94A3B8)
-                                                )
-                                            }
-                                            innerTextField()
-                                        }
-                                    )
-                                }
-                            }
-                        }
+                        GlobalTextField(
+                            value = state.namaPromo,
+                            onValueChange = { viewModel.onNamaPromoChange(it) },
+                            label = "Nama Promo",
+                            isRequired = true,
+                            placeholder = "Masukkan nama promo",
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
                         // Tipe Promo Input Field
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row {
-                                Text(
-                                    text = "Tipe Promo ",
-                                    fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF334155)
-                                )
-                                Text(
-                                    text = "*",
-                                    fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFEF4444)
-                                )
-                            }
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color(0xFFF8FAFC),
-                                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 14.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    BasicTextField(
-                                        value = state.tipePromo,
-                                        onValueChange = { viewModel.onTipePromoChange(it) },
-                                        singleLine = true,
-                                        textStyle = TextStyle(
-                                            color = Color(0xFF0F172A),
-                                            fontSize = 14.sp,
-                                            fontFamily = interfamily,
-                                            fontWeight = FontWeight.Medium
-                                        ),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        decorationBox = { innerTextField ->
-                                            if (state.tipePromo.isEmpty()) {
-                                                Text(
-                                                    text = "Masukkan tipe promo",
-                                                    fontSize = 14.sp,
-                                                    fontFamily = interfamily,
-                                                    color = Color(0xFF94A3B8)
-                                                )
-                                            }
-                                            innerTextField()
-                                        }
-                                    )
-                                }
-                            }
-                        }
+                        GlobalTextField(
+                            value = state.tipePromo,
+                            onValueChange = { viewModel.onTipePromoChange(it) },
+                            label = "Tipe Promo",
+                            isRequired = true,
+                            placeholder = "Masukkan tipe promo",
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }
@@ -625,60 +530,23 @@ fun TambahPromoScreen(
                         }
 
                         // Input Diskon Field
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFFF8FAFC),
-                            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .background(Color(0xFFF1F5F9))
-                                        .padding(horizontal = 16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = state.diskonType,
-                                        fontFamily = interfamily,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF64748B)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                BasicTextField(
-                                    value = state.nilaiDiskon,
-                                    onValueChange = { viewModel.onNilaiDiskonChange(it) },
-                                    singleLine = true,
-                                    textStyle = TextStyle(
-                                        color = Color(0xFF0F172A),
-                                        fontSize = 15.sp,
-                                        fontFamily = interfamily,
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f),
-                                    decorationBox = { innerTextField ->
-                                        if (state.nilaiDiskon.isEmpty()) {
-                                            Text(
-                                                text = "0",
-                                                fontSize = 15.sp,
-                                                fontFamily = interfamily,
-                                                color = Color(0xFF94A3B8)
-                                            )
-                                        }
-                                        innerTextField()
-                                    }
+                        GlobalTextField(
+                            value = state.nilaiDiskon,
+                            onValueChange = { viewModel.onNilaiDiskonChange(it) },
+                            leadingIcon = {
+                                Text(
+                                    text = state.diskonType,
+                                    fontFamily = interfamily,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF64748B)
                                 )
-                            }
-                        }
+                            },
+                            placeholder = "0",
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }

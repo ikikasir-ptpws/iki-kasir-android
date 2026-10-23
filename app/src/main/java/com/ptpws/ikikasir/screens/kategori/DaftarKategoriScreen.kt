@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import com.ptpws.ikikasir.commond.GlobalTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -230,65 +231,35 @@ fun DaftarKategoriScreen(
                         .padding(bottom = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color.White,
-                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(46.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
+                    GlobalTextField(
+                        value = state.searchQuery,
+                        onValueChange = viewModel::onSearchQueryChange,
+                        placeholder = "Cari kategori atau menu...",
+                        leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = null,
-                                tint = Color(0xFF94A3B8),
-                                modifier = Modifier.size(20.dp)
+                                tint = Color(0xFF6B7280),
+                                modifier = Modifier.size(18.dp)
                             )
-                            BasicTextField(
-                                value = state.searchQuery,
-                                onValueChange = viewModel::onSearchQueryChange,
-                                modifier = Modifier.weight(1f),
-                                textStyle = TextStyle(
-                                    fontFamily = interfamily,
-                                    fontSize = 13.sp,
-                                    color = Color(0xFF0F172A)
-                                ),
-                                cursorBrush = SolidColor(Color(0xFF4F46E5)),
-                                singleLine = true,
-                                decorationBox = { inner ->
-                                    if (state.searchQuery.isEmpty()) {
-                                        Text(
-                                            text = "Cari kategori atau menu...",
-                                            fontFamily = interfamily,
-                                            fontSize = 13.sp,
-                                            color = Color(0xFF94A3B8)
-                                        )
-                                    }
-                                    inner()
-                                }
-                            )
-                            if (state.searchQuery.isNotEmpty()) {
+                        },
+                        trailingIcon = if (state.searchQuery.isNotEmpty()) {
+                            {
                                 IconButton(
                                     onClick = { viewModel.onSearchQueryChange("") },
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(24.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = "Hapus",
-                                        tint = Color(0xFF94A3B8),
+                                        tint = Color(0xFF6B7280),
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
                             }
-                        }
-                    }
+                        } else null,
+                        modifier = Modifier.weight(1f)
+                    )
 
                     Spacer(modifier = Modifier.width(10.dp))
 

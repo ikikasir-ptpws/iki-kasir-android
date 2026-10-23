@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import com.ptpws.ikikasir.commond.GlobalTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -341,91 +342,45 @@ fun TambahPenggunaScreen(
                     ) {
 
                         // Nama Lengkap
-                        Column(verticalArrangement = Arrangement.spacedBy(if (isCompact) 4.dp else 6.dp)) {
-                            Text(
-                                text = "Nama Lengkap",
-                                fontFamily = interfamily,
-                                fontSize = if (isCompact) 12.sp else 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF334155)
-                            )
-                            OutlinedTextField(
-                                value = formState.fullName,
-                                onValueChange = {
-                                    localError = null
-                                    viewModel.onFullNameChange(it)
-                                },
-                                placeholder = {
-                                    Text(
-                                        text = "Contoh: Budi Santoso",
-                                        fontSize = if (isCompact) 12.sp else 13.sp,
-                                        fontFamily = interfamily,
-                                        color = Color(0xFF9CA3AF)
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Person,
-                                        contentDescription = null,
-                                        tint = Color(0xFF94A3B8),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedContainerColor = Color(0xFFF8FAFC),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedBorderColor = Color(0xFFE5E7EB),
-                                    focusedBorderColor = Color(0xFF4F46E5)
+                        GlobalTextField(
+                            value = formState.fullName,
+                            onValueChange = {
+                                localError = null
+                                viewModel.onFullNameChange(it)
+                            },
+                            placeholder = "Contoh: Budi Santoso",
+                            label = "Nama Lengkap",
+                            isRequired = true,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Person,
+                                    contentDescription = null,
+                                    tint = Color(0xFF6B7280),
+                                    modifier = Modifier.size(18.dp)
                                 )
-                            )
-                        }
+                            }
+                        )
 
                         // Alamat Email
-                        Column(verticalArrangement = Arrangement.spacedBy(if (isCompact) 4.dp else 6.dp)) {
-                            Text(
-                                text = "Alamat Email",
-                                fontFamily = interfamily,
-                                fontSize = if (isCompact) 12.sp else 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF334155)
-                            )
-                            OutlinedTextField(
-                                value = formState.email,
-                                onValueChange = {
-                                    localError = null
-                                    viewModel.onEmailChange(it)
-                                },
-                                placeholder = {
-                                    Text(
-                                        text = "email@domain.com",
-                                        fontSize = if (isCompact) 12.sp else 13.sp,
-                                        fontFamily = interfamily,
-                                        color = Color(0xFF9CA3AF)
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Email,
-                                        contentDescription = null,
-                                        tint = Color(0xFF94A3B8),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedContainerColor = Color(0xFFF8FAFC),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedBorderColor = Color(0xFFE5E7EB),
-                                    focusedBorderColor = Color(0xFF4F46E5)
+                        GlobalTextField(
+                            value = formState.email,
+                            onValueChange = {
+                                localError = null
+                                viewModel.onEmailChange(it)
+                            },
+                            placeholder = "email@domain.com",
+                            label = "Alamat Email",
+                            isRequired = true,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Email,
+                                    contentDescription = null,
+                                    tint = Color(0xFF6B7280),
+                                    modifier = Modifier.size(18.dp)
                                 )
-                            )
-                        }
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                        )
 
                         // Role
                         Column(verticalArrangement = Arrangement.spacedBy(if (isCompact) 4.dp else 6.dp)) {
@@ -556,48 +511,22 @@ fun TambahPenggunaScreen(
                                         )
                                     }
                                 }
-                                OutlinedTextField(
+                                GlobalTextField(
                                     value = formState.currentPassword,
                                     onValueChange = {
                                         localError = null
                                         viewModel.onCurrentPasswordChange(it)
                                     },
-                                    placeholder = {
-                                        Text(
-                                            text = "Wajib diisi jika ingin mengubah kata sandi",
-                                            fontSize = if (isCompact) 11.sp else 12.sp,
-                                            fontFamily = interfamily,
-                                            color = Color(0xFF9CA3AF)
-                                        )
-                                    },
+                                    placeholder = "Wajib diisi jika ingin mengubah kata sandi",
+                                    isPassword = true,
                                     leadingIcon = {
                                         Icon(
                                             imageVector = Icons.Outlined.Lock,
                                             contentDescription = null,
-                                            tint = Color(0xFF94A3B8),
+                                            tint = Color(0xFF6B7280),
                                             modifier = Modifier.size(18.dp)
                                         )
-                                    },
-                                    trailingIcon = {
-                                        IconButton(onClick = { kataSandiSaatIniTerlihat = !kataSandiSaatIniTerlihat }) {
-                                            Icon(
-                                                imageVector = if (kataSandiSaatIniTerlihat) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                                contentDescription = "Tampilkan Kata Sandi Saat Ini",
-                                                tint = Color(0xFF94A3B8),
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
-                                    },
-                                    singleLine = true,
-                                    visualTransformation = if (kataSandiSaatIniTerlihat) VisualTransformation.None else PasswordVisualTransformation(),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        unfocusedContainerColor = Color(0xFFF8FAFC),
-                                        focusedContainerColor = Color.White,
-                                        unfocusedBorderColor = Color(0xFFE5E7EB),
-                                        focusedBorderColor = Color(0xFF4F46E5)
-                                    )
+                                    }
                                 )
                                 if (resetEmailSuccessMessage != null) {
                                     Text(
@@ -611,112 +540,46 @@ fun TambahPenggunaScreen(
                         }
 
                         // Kata Sandi
-                        Column(verticalArrangement = Arrangement.spacedBy(if (isCompact) 4.dp else 6.dp)) {
-                            Text(
-                                text = if (isEdit) "Kata Sandi Baru (Opsional)" else "Kata Sandi",
-                                fontFamily = interfamily,
-                                fontSize = if (isCompact) 12.sp else 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF334155)
-                            )
-                            OutlinedTextField(
-                                value = formState.password,
-                                onValueChange = {
-                                    localError = null
-                                    viewModel.onPasswordChange(it)
-                                },
-                                placeholder = {
-                                    Text(
-                                        text = if (isEdit) "Kosongkan jika tidak ingin mengubah sandi" else "Min. 6 karakter",
-                                        fontSize = if (isCompact) 12.sp else 13.sp,
-                                        fontFamily = interfamily,
-                                        color = Color(0xFF9CA3AF)
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Lock,
-                                        contentDescription = null,
-                                        tint = Color(0xFF94A3B8),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                },
-                                trailingIcon = {
-                                    IconButton(onClick = { kataSandiTerlihat = !kataSandiTerlihat }) {
-                                        Icon(
-                                            imageVector = if (kataSandiTerlihat) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                            contentDescription = "Tampilkan Kata Sandi",
-                                            tint = Color(0xFF94A3B8),
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                },
-                                singleLine = true,
-                                visualTransformation = if (kataSandiTerlihat) VisualTransformation.None else PasswordVisualTransformation(),
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedContainerColor = Color(0xFFF8FAFC),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedBorderColor = Color(0xFFE5E7EB),
-                                    focusedBorderColor = Color(0xFF4F46E5)
+                        GlobalTextField(
+                            value = formState.password,
+                            onValueChange = {
+                                localError = null
+                                viewModel.onPasswordChange(it)
+                            },
+                            placeholder = if (isEdit) "Kosongkan jika tidak ingin mengubah sandi" else "Min. 6 karakter",
+                            label = if (isEdit) "Kata Sandi Baru (Opsional)" else "Kata Sandi",
+                            isRequired = !isEdit,
+                            isPassword = true,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Lock,
+                                    contentDescription = null,
+                                    tint = Color(0xFF6B7280),
+                                    modifier = Modifier.size(18.dp)
                                 )
-                            )
-                        }
+                            }
+                        )
 
                         // Konfirmasi Kata Sandi
-                        Column(verticalArrangement = Arrangement.spacedBy(if (isCompact) 4.dp else 6.dp)) {
-                            Text(
-                                text = if (isEdit) "Konfirmasi Kata Sandi (Opsional)" else "Konfirmasi Kata Sandi",
-                                fontFamily = interfamily,
-                                fontSize = if (isCompact) 12.sp else 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF334155)
-                            )
-                            OutlinedTextField(
-                                value = formState.confirmPassword,
-                                onValueChange = {
-                                    localError = null
-                                    viewModel.onConfirmPasswordChange(it)
-                                },
-                                placeholder = {
-                                    Text(
-                                        text = if (isEdit) "Ulangi kata sandi baru" else "Ulangi kata sandi",
-                                        fontSize = if (isCompact) 12.sp else 13.sp,
-                                        fontFamily = interfamily,
-                                        color = Color(0xFF9CA3AF)
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Lock,
-                                        contentDescription = null,
-                                        tint = Color(0xFF94A3B8),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                },
-                                trailingIcon = {
-                                    IconButton(onClick = { konfirmasiKataSandiTerlihat = !konfirmasiKataSandiTerlihat }) {
-                                        Icon(
-                                            imageVector = if (konfirmasiKataSandiTerlihat) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                            contentDescription = "Tampilkan Konfirmasi Kata Sandi",
-                                            tint = Color(0xFF94A3B8),
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                },
-                                singleLine = true,
-                                visualTransformation = if (konfirmasiKataSandiTerlihat) VisualTransformation.None else PasswordVisualTransformation(),
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedContainerColor = Color(0xFFF8FAFC),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedBorderColor = Color(0xFFE5E7EB),
-                                    focusedBorderColor = Color(0xFF4F46E5)
+                        GlobalTextField(
+                            value = formState.confirmPassword,
+                            onValueChange = {
+                                localError = null
+                                viewModel.onConfirmPasswordChange(it)
+                            },
+                            placeholder = if (isEdit) "Ulangi kata sandi baru" else "Ulangi kata sandi",
+                            label = if (isEdit) "Konfirmasi Kata Sandi (Opsional)" else "Konfirmasi Kata Sandi",
+                            isRequired = !isEdit,
+                            isPassword = true,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Lock,
+                                    contentDescription = null,
+                                    tint = Color(0xFF6B7280),
+                                    modifier = Modifier.size(18.dp)
                                 )
-                            )
-                        }
+                            }
+                        )
                     }
                 }
             }

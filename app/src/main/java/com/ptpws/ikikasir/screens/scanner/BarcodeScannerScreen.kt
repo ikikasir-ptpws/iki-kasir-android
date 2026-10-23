@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import com.ptpws.ikikasir.commond.GlobalTextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -538,10 +539,10 @@ private fun ManualBarcodeDialog(
                     fontSize = 13.sp,
                     color = Color(0xFF64748B)
                 )
-                OutlinedTextField(
+                GlobalTextField(
                     value = textCode,
                     onValueChange = { textCode = it },
-                    placeholder = { Text("Contoh: 8991234567890", fontSize = 13.sp) },
+                    placeholder = "Contoh: 8991234567890",
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Ascii,
@@ -552,8 +553,7 @@ private fun ManualBarcodeDialog(
                             if (textCode.isNotBlank()) onSubmit(textCode.trim())
                         }
                     ),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         },

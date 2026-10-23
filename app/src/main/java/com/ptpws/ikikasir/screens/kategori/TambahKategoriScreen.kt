@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.TambahKategoriViewModel
 
@@ -275,78 +276,26 @@ fun TambahKategoriScreen(
                         }
 
                         // Field 1: Nama Kategori *
-                        Column {
-                            Row {
-                                Text(
-                                    text = "Nama Kategori ",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    fontFamily = interfamily,
-                                    color = Color(0xFF374151)
-                                )
-                                Text(
-                                    text = "*",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = interfamily,
-                                    color = Color(0xFFEF4444)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(6.dp))
-                            OutlinedTextField(
-                                value = formState.nama,
-                                onValueChange = { viewModel.onNamaChange(it) },
-                                placeholder = { Text("Contoh: Pastry & Bakery", fontSize = 13.sp, color = Color(0xFF9CA3AF)) },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedContainerColor = Color(0xFFF8FAFC),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedBorderColor = Color(0xFFE5E7EB),
-                                    focusedBorderColor = Color(0xFF4F46E5)
-                                )
-                            )
-                        }
+                        GlobalTextField(
+                            value = formState.nama,
+                            onValueChange = { viewModel.onNamaChange(it) },
+                            placeholder = "Contoh: Pastry & Bakery",
+                            label = "Nama Kategori",
+                            isRequired = true
+                        )
 
                         // Field 2: Deskripsi Singkat
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Deskripsi Singkat",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    fontFamily = interfamily,
-                                    color = Color(0xFF374151)
-                                )
-                                Text(
-                                    text = "Opsional",
-                                    fontSize = 12.sp,
-                                    fontFamily = interfamily,
-                                    color = Color(0xFF9CA3AF)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(6.dp))
-                            OutlinedTextField(
-                                value = formState.deskripsi,
-                                onValueChange = { viewModel.onDeskripsiChange(it) },
-                                placeholder = { Text("Aneka roti lembut, croissant, dan puff hangat", fontSize = 13.sp, color = Color(0xFF9CA3AF)) },
-                                minLines = 2,
-                                maxLines = 3,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedContainerColor = Color(0xFFF8FAFC),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedBorderColor = Color(0xFFE5E7EB),
-                                    focusedBorderColor = Color(0xFF4F46E5)
-                                )
-                            )
-                        }
+                        GlobalTextField(
+                            value = formState.deskripsi,
+                            onValueChange = { viewModel.onDeskripsiChange(it) },
+                            placeholder = "Aneka roti lembut, croissant, dan puff hangat",
+                            label = "Deskripsi Singkat (Opsional)",
+                            singleLine = false,
+                            minLines = 2,
+                            maxLines = 3,
+                            height = null,
+                            minHeight = 72.dp
+                        )
                     }
                 }
             }

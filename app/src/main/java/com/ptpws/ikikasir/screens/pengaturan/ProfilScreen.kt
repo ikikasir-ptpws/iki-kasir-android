@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.core.util.ImageCompressorHelper
@@ -861,19 +862,14 @@ fun ProfilScreen(
 
                     if (isPpnAktif) {
                         // Input Persentase PPN
-                        OutlinedTextField(
+                        GlobalTextField(
                             value = ppnPersen,
                             onValueChange = { ppnPersen = it },
-                            label = { Text("Persentase PPN (%)", fontFamily = interfamily) },
+                            label = "Persentase PPN (%)",
                             trailingIcon = { Text("%", fontFamily = interfamily, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 12.dp)) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF4F46E5),
-                                unfocusedBorderColor = Color(0xFFE5E7EB)
-                            )
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         // Skema PPN (Inklusif vs Eksklusif)
@@ -1154,56 +1150,32 @@ fun ProfilScreen(
                         }
                     }
 
-                    OutlinedTextField(
+                    GlobalTextField(
                         value = namaToko,
                         onValueChange = { namaToko = it },
-                        label = { Text("Nama Toko / Header", fontFamily = interfamily) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF4F46E5),
-                            unfocusedBorderColor = Color(0xFFE5E7EB)
-                        )
+                        label = "Nama Toko / Header",
+                        placeholder = "Masukkan nama toko"
                     )
 
-                    OutlinedTextField(
+                    GlobalTextField(
                         value = alamatToko,
                         onValueChange = { alamatToko = it },
-                        label = { Text("Alamat Toko", fontFamily = interfamily) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF4F46E5),
-                            unfocusedBorderColor = Color(0xFFE5E7EB)
-                        )
+                        label = "Alamat Toko",
+                        placeholder = "Masukkan alamat toko"
                     )
 
-                    OutlinedTextField(
+                    GlobalTextField(
                         value = namaWifi,
                         onValueChange = { namaWifi = it },
-                        label = { Text("Nama WiFi", fontFamily = interfamily) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF4F46E5),
-                            unfocusedBorderColor = Color(0xFFE5E7EB)
-                        )
+                        label = "Nama WiFi",
+                        placeholder = "Masukkan nama WiFi"
                     )
 
-                    OutlinedTextField(
+                    GlobalTextField(
                         value = kataSandiWifi,
                         onValueChange = { kataSandiWifi = it },
-                        label = { Text("Kata Sandi WiFi", fontFamily = interfamily) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF4F46E5),
-                            unfocusedBorderColor = Color(0xFFE5E7EB)
-                        )
+                        label = "Kata Sandi WiFi",
+                        placeholder = "Masukkan kata sandi WiFi"
                     )
 
                     // Lebar Kertas Struk
@@ -1618,39 +1590,32 @@ fun ProfilScreen(
                     }
 
                     // Field Nama Lengkap
-                    OutlinedTextField(
+                    GlobalTextField(
                         value = editFullName,
                         onValueChange = { editFullName = it },
-                        label = { Text("Nama Lengkap", fontFamily = interfamily) },
+                        label = "Nama Lengkap",
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF4F46E5),
-                            unfocusedBorderColor = Color(0xFFE5E7EB)
-                        )
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     // Email Readonly
-                    OutlinedTextField(
+                    GlobalTextField(
                         value = currentUser?.email.orEmpty(),
                         onValueChange = {},
                         enabled = false,
-                        label = { Text("Email (Tersinkron)", fontFamily = interfamily) },
+                        label = "Email (Tersinkron)",
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     // Role Readonly
-                    OutlinedTextField(
+                    GlobalTextField(
                         value = userProfileState.roleName,
                         onValueChange = {},
                         enabled = false,
-                        label = { Text("Role / Hak Akses", fontFamily = interfamily) },
+                        label = "Role / Hak Akses",
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -1832,24 +1797,24 @@ private fun PasswordInput(
     onValueChange: (String) -> Unit,
     onToggleVisibility: () -> Unit
 ) {
-    OutlinedTextField(
+    GlobalTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, fontFamily = interfamily, fontSize = 12.sp) },
-        singleLine = true,
+        label = label,
         enabled = enabled,
+        singleLine = true,
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         trailingIcon = {
             IconButton(onClick = onToggleVisibility, enabled = enabled) {
                 Icon(
                     imageVector = if (visible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                    contentDescription = if (visible) "Sembunyikan kata sandi" else "Tampilkan kata sandi"
+                    contentDescription = if (visible) "Sembunyikan kata sandi" else "Tampilkan kata sandi",
+                    tint = Color(0xFF6B7280),
+                    modifier = Modifier.size(18.dp)
                 )
             }
-        },
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp)
+        }
     )
 }
 

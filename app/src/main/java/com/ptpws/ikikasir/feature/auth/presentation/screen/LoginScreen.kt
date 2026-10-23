@@ -29,6 +29,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.text.TextStyle
 import com.ptpws.ikikasir.R
+import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.interfamily
 
 import androidx.compose.material.icons.outlined.Lock
@@ -88,35 +89,12 @@ fun LoginScreen(
                             color = Color(0xFF111827)
                         )
                         Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "EMAIL",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = interfamily,
-                            letterSpacing = 0.8.sp,
-                            color = Color(0xFF6B7280)
+                        GlobalTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            placeholder = "Masukkan Email Anda",
+                            label = "EMAIL"
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Card(
-                            modifier = Modifier.fillMaxWidth().height(44.dp),
-                            shape = RoundedCornerShape(15.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F3F5)),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                        ) {
-                            BasicTextField(
-                                value = email,
-                                onValueChange = { email = it },
-                                singleLine = true,
-                                textStyle = TextStyle(color = Color.Black, fontSize = 12.sp),
-                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                                decorationBox = { inner ->
-                                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
-                                        if (email.isEmpty()) Text("Masukkan Email Anda", fontSize = 12.sp, color = Color(0x80474747))
-                                        inner()
-                                    }
-                                }
-                            )
-                        }
                         Spacer(modifier = Modifier.height(20.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -154,39 +132,12 @@ fun LoginScreen(
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Card(
-                            modifier = Modifier.fillMaxWidth().height(44.dp),
-                            shape = RoundedCornerShape(15.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F3F5)),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                        ) {
-                            BasicTextField(
-                                value = password,
-                                onValueChange = { password = it },
-                                singleLine = true,
-                                visualTransformation = if (passVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                                textStyle = TextStyle(color = Color.Black, fontSize = 12.sp),
-                                modifier = Modifier.fillMaxSize(),
-                                decorationBox = { inner ->
-                                    Row(
-                                        Modifier.fillMaxSize().padding(start = 16.dp, end = 8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-                                            if (password.isEmpty()) Text("Masukkan Kata Sandi", fontSize = 12.sp, color = Color(0x80474747))
-                                            inner()
-                                        }
-                                        IconButton(onClick = { passVisible = !passVisible }) {
-                                            Icon(
-                                                imageVector = if (passVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                                contentDescription = null,
-                                                tint = Color(0xFF6B7280)
-                                            )
-                                        }
-                                    }
-                                }
-                            )
-                        }
+                        GlobalTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            placeholder = "Masukkan Kata Sandi",
+                            isPassword = true
+                        )
                         Spacer(modifier = Modifier.height(28.dp))
                         Button(
                             onClick = { onLoginClick(email, password) },

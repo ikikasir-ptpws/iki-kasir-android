@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import com.ptpws.ikikasir.commond.GlobalTextField
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -158,40 +159,23 @@ fun DaftarUserScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedTextField(
+                    GlobalTextField(
                         value = state.searchQuery,
                         onValueChange = { viewModel.onSearchQueryChange(it) },
-                        placeholder = {
-                            Text(
-                                "Cari nama atau role...",
-                                fontFamily = interfamily,
-                                color = Color(0xFF6B7280),
-                                fontSize = 14.sp
-                            )
-                        },
+                        placeholder = "Cari nama atau role...",
                         leadingIcon = {
                             Icon(
                                 Icons.Default.Search, contentDescription = null,
-                                tint = Color(0xFF6B7280), modifier = Modifier.size(20.dp)
+                                tint = Color(0xFF6B7280), modifier = Modifier.size(18.dp)
                             )
                         },
                         trailingIcon = {
                             Icon(
                                 Icons.Default.Tune, contentDescription = "Filter",
-                                tint = Color(0xFF4F46E5), modifier = Modifier.size(20.dp)
+                                tint = Color(0xFF4F46E5), modifier = Modifier.size(18.dp)
                             )
                         },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = Color(0xFFE5E7EB),
-                            focusedBorderColor = Color(0xFF4F46E5),
-                            unfocusedContainerColor = Color.White,
-                            focusedContainerColor = Color.White
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(52.dp)
+                        modifier = Modifier.weight(1f)
                     )
 
                     IconButton(

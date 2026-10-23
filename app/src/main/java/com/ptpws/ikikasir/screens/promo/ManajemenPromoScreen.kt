@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
+import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.PromoCardShimmer
 import com.ptpws.ikikasir.commond.ShimmerBox
 import com.ptpws.ikikasir.commond.interfamily
@@ -159,48 +160,21 @@ fun ManajemenPromoScreen(
         ) {
             // ── 1. Search Bar ─────────────────────────────────────────────
             item {
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = Color.White,
-                    shadowElevation = 1.dp,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
+                GlobalTextField(
+                    value = state.searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChange(it) },
+                    placeholder = "Cari promo ..",
+                    leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = null,
                             tint = Color(0xFF94A3B8),
                             modifier = Modifier.size(20.dp)
                         )
-                        BasicTextField(
-                            value = state.searchQuery,
-                            onValueChange = { viewModel.onSearchQueryChange(it) },
-                            modifier = Modifier.weight(1f),
-                            textStyle = TextStyle(
-                                fontFamily = interfamily,
-                                fontSize = 13.sp,
-                                color = Color(0xFF0F172A)
-                            ),
-                            cursorBrush = SolidColor(Color(0xFF2563EB)),
-                            singleLine = true,
-                            decorationBox = { innerTextField ->
-                                if (state.searchQuery.isEmpty()) {
-                                    Text(
-                                        text = "Cari promo ..",
-                                        fontFamily = interfamily,
-                                        fontSize = 13.sp,
-                                        color = Color(0xFF94A3B8)
-                                    )
-                                }
-                                innerTextField()
-                            }
-                        )
-                    }
-                }
+                    },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             // ── 2. Stat Cards (Promo Aktif & Berakhir Minggu Ini) ─────────

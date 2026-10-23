@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.*
+import com.ptpws.ikikasir.commond.GlobalTextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -1020,13 +1021,12 @@ fun DetailTransaksiScreen(
                                 }
                             }
 
-                            OutlinedTextField(
+                            GlobalTextField(
                                 value = refundReason,
                                 onValueChange = { refundReason = it },
-                                label = { Text("Alasan Refund (Opsional)", fontFamily = interfamily, fontSize = 12.sp) },
-                                placeholder = { Text("Misal: Pesanan salah / Batal beli", fontFamily = interfamily, fontSize = 12.sp) },
+                                label = "Alasan Refund (Opsional)",
+                                placeholder = "Misal: Pesanan salah / Batal beli",
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
                                 singleLine = true,
                                 enabled = !state.isRefunding
                             )

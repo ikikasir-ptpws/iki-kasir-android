@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import com.ptpws.ikikasir.commond.GlobalTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -326,50 +327,19 @@ fun DaftarProdukScreen(
 
             // Search Bar & Barcode Scanner
             item {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(46.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color(0xFFF1F5F9)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                GlobalTextField(
+                    value = state.searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChange(it) },
+                    placeholder = "Cari produk atau barcode...",
+                    leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Cari",
-                            tint = Color(0xFF94A3B8),
-                            modifier = Modifier.size(20.dp)
+                            tint = Color(0xFF6B7280),
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Box(
-                            modifier = Modifier.weight(1f),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            if (state.searchQuery.isEmpty()) {
-                                Text(
-                                    text = "Cari produk atau barcode...",
-                                    fontSize = 13.sp,
-                                    color = Color(0xFF94A3B8),
-                                    fontFamily = interfamily
-                                )
-                            }
-                            BasicTextField(
-                                value = state.searchQuery,
-                                onValueChange = { viewModel.onSearchQueryChange(it) },
-                                singleLine = true,
-                                textStyle = TextStyle(
-                                    fontSize = 13.sp,
-                                    color = Color(0xFF0F172A),
-                                    fontFamily = interfamily
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                    },
+                    trailingIcon = {
                         IconButton(
                             onClick = { triggerScanner() },
                             modifier = Modifier.size(32.dp)
@@ -377,12 +347,13 @@ fun DaftarProdukScreen(
                             Icon(
                                 imageVector = Icons.Default.QrCodeScanner,
                                 contentDescription = "Scan Barcode",
-                                tint = Color(0xFF94A3B8),
+                                tint = Color(0xFF6B7280),
                                 modifier = Modifier.size(20.dp)
                             )
                         }
-                    }
-                }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             // Filter Kategori Pills (Semua, Stok Menipis, Belum Berkategori & Dynamic List with Counts)
