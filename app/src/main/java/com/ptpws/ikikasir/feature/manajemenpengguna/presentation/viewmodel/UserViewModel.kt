@@ -233,6 +233,7 @@ class UserViewModel @Inject constructor(
                             id = existing.id,
                             fullName = existing.fullName,
                             email = existing.email,
+                            initialEmail = existing.email,
                             currentPassword = "",
                             password = "",
                             confirmPassword = "",
@@ -280,6 +281,8 @@ class UserViewModel @Inject constructor(
             return
         }
         val isEdit = current.id.isNotBlank()
+        val isEmailChanged = isEdit && current.initialEmail.isNotBlank() && !current.initialEmail.trim().equals(current.email.trim(), ignoreCase = true)
+
         if (!isEdit) {
             // Tambah pengguna baru: password wajib diisi
             if (current.password.isBlank()) {
@@ -307,7 +310,18 @@ class UserViewModel @Inject constructor(
                 return
             }
         } else {
-            // Edit pengguna: password opsional (hanya divalidasi jika diisi)
+            // Edit pengguna:
+            if (isEmailChanged) {
+                // Perubahan email memerlukan sandi saat ini atau sandi baru untuk sinkronisasi Firebase Auth
+                if (current.password.isBlank() && current.currentPassword.isBlank()) {
+                    val message = "Mengubah email memerlukan kata sandi saat ini atau kata sandi baru untuk sinkronisasi akun login Firebase."
+                    GlobalCrudResultDialog.failure(message)
+                    _formState.update { it.copy(error = message) }
+                    return
+                }
+            }
+
+            // Validasi kata sandi baru jika diisi
             if (current.password.isNotBlank() || current.confirmPassword.isNotBlank()) {
                 if (current.password.isBlank()) {
                     val message = "Kata sandi baru tidak boleh kosong"
@@ -368,7 +382,8 @@ class UserViewModel @Inject constructor(
                 updateUserUseCase(
                     user = user,
                     plainPassword = current.password.ifBlank { null },
-                    currentPassword = current.currentPassword.ifBlank { null }
+                    currentPassword = current.currentPassword.ifBlank { null },
+                    oldEmail = current.initialEmail.ifBlank { null }
                 )
             }
             flow.collect { result ->

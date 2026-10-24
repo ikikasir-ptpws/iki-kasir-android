@@ -476,6 +476,37 @@ fun TambahPenggunaScreen(
                         }
 
                         val isEdit = formState.id.isNotBlank()
+                        val isEmailChanged = isEdit && formState.initialEmail.isNotBlank() && !formState.initialEmail.trim().equals(formState.email.trim(), ignoreCase = true)
+
+                        if (isEmailChanged) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFEFF6FF),
+                                border = BorderStroke(1.dp, Color(0xFFBFDBFE))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Info,
+                                        contentDescription = null,
+                                        tint = Color(0xFF2563EB),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "Perubahan email terdeteksi. Masukkan kata sandi saat ini atau tentukan kata sandi baru untuk menyelaraskan akun login Firebase Auth.",
+                                        fontFamily = interfamily,
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF1E40AF),
+                                        lineHeight = 15.sp
+                                    )
+                                }
+                            }
+                        }
 
                         // Kata Sandi Saat Ini (Hanya tampil saat Edit Pengguna)
                         if (isEdit) {
@@ -520,7 +551,7 @@ fun TambahPenggunaScreen(
                                         localError = null
                                         viewModel.onCurrentPasswordChange(it)
                                     },
-                                    placeholder = "Wajib diisi jika ingin mengubah kata sandi",
+                                    placeholder = if (isEmailChanged) "Wajib diisi jika tidak mengubah kata sandi baru" else "Wajib diisi jika ingin mengubah kata sandi",
                                     isPassword = true,
                                     leadingIcon = {
                                         Icon(
@@ -550,7 +581,7 @@ fun TambahPenggunaScreen(
                                 viewModel.onPasswordChange(it)
                             },
                             placeholder = if (isEdit) "Kosongkan jika tidak ingin mengubah sandi" else "Min. 6 karakter",
-                            label = if (isEdit) "Kata Sandi Baru (Opsional)" else "Kata Sandi",
+                            label = if (isEmailChanged) "Kata Sandi Baru (Opsional jika sandi saat ini diisi)" else if (isEdit) "Kata Sandi Baru (Opsional)" else "Kata Sandi",
                             isRequired = !isEdit,
                             isPassword = true,
                             leadingIcon = {
@@ -681,6 +712,7 @@ fun TambahPenggunaScreen(
             // ── Tombol Simpan Pengguna
             item {
                 val isEdit = formState.id.isNotBlank()
+                val isEmailChanged = isEdit && formState.initialEmail.isNotBlank() && !formState.initialEmail.trim().equals(formState.email.trim(), ignoreCase = true)
                 Button(
                     onClick = {
                         if (formState.fullName.isBlank()) {
@@ -721,6 +753,10 @@ fun TambahPenggunaScreen(
                                 return@Button
                             }
                         } else {
+                            if (isEmailChanged && formState.password.isBlank() && formState.currentPassword.isBlank()) {
+                                localError = "Mengubah email memerlukan kata sandi saat ini atau kata sandi baru untuk sinkronisasi akun login Firebase"
+                                return@Button
+                            }
                             if (formState.password.isNotBlank() || formState.confirmPassword.isNotBlank()) {
                                 if (formState.password.isBlank()) {
                                     localError = "Kata sandi baru tidak boleh kosong"

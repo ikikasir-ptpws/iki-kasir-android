@@ -303,7 +303,8 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun updateUser(
         user: User,
         plainPassword: String?,
-        currentPassword: String?
+        currentPassword: String?,
+        oldEmail: String?
     ): Flow<Result<Unit>> = flow {
         val isOnline = networkMonitor.isConnected()
 
@@ -317,13 +318,17 @@ class UserRepositoryImpl @Inject constructor(
             } catch (_: Exception) {}
 
             val existingLocal = localDao.getUserById(user.id)
-            val oldEmail = existingLocal?.email?.trim()?.ifBlank { null } ?: user.email.trim()
+            val resolvedOldEmail = oldEmail?.trim()?.ifBlank { null }
+                ?: existingLocal?.email?.trim()?.ifBlank { null }
+                ?: user.email.trim()
+            val isEmailChanged = !resolvedOldEmail.equals(user.email.trim(), ignoreCase = true)
+            val isPasswordChanged = !plainPassword.isNullOrBlank()
             val oldPassword = currentPassword?.trim()?.takeIf { it.isNotBlank() }
 
-            if (!plainPassword.isNullOrBlank()) {
-                val newPass = plainPassword.trim()
+            if (isPasswordChanged || isEmailChanged) {
+                val newPass = plainPassword?.trim()?.takeIf { it.isNotBlank() }
                 val currentAuth = FirebaseAuth.getInstance().currentUser
-                val isCurrentLoggedInUser = currentAuth?.email?.trim()?.equals(oldEmail, ignoreCase = true) == true
+                val isCurrentLoggedInUser = currentAuth?.email?.trim()?.equals(resolvedOldEmail, ignoreCase = true) == true
 
                 var authUpdated = false
                 var authError: Exception? = null
@@ -331,57 +336,88 @@ class UserRepositoryImpl @Inject constructor(
                 // 1. Jika akun yang diedit adalah akun yang sedang aktif login di perangkat ini
                 if (isCurrentLoggedInUser && currentAuth != null) {
                     try {
-                        if (!oldPassword.isNullOrBlank()) {
-                            val credential = EmailAuthProvider.getCredential(oldEmail, oldPassword)
-                            currentAuth.reauthenticate(credential).await()
+                        val reauthPass = oldPassword ?: newPass
+                        if (!reauthPass.isNullOrBlank()) {
+                            try {
+                                val credential = EmailAuthProvider.getCredential(resolvedOldEmail, reauthPass)
+                                currentAuth.reauthenticate(credential).await()
+                            } catch (reauthEx: Exception) {
+                                Log.w(TAG, "Reauth current user gagal: ${reauthEx.message}")
+                            }
                         }
-                        currentAuth.updatePassword(newPass).await()
-                        if (!user.email.trim().equals(oldEmail, ignoreCase = true)) {
+
+                        if (isEmailChanged) {
                             currentAuth.updateEmail(user.email.trim()).await()
+                            Log.d(TAG, "Email akun aktif berhasil diupdate dari $resolvedOldEmail ke ${user.email} di Firebase Auth")
                         }
+
+                        if (newPass != null) {
+                            currentAuth.updatePassword(newPass).await()
+                            Log.d(TAG, "Password akun aktif ($resolvedOldEmail) berhasil diupdate di Firebase Auth")
+                        }
+
                         authUpdated = true
-                        Log.d(TAG, "Password akun aktif ($oldEmail) berhasil diupdate di Firebase Auth")
                     } catch (e: Exception) {
-                        Log.e(TAG, "Gagal update password akun aktif di Firebase Auth: ${e.message}", e)
+                        Log.e(TAG, "Gagal update akun aktif di Firebase Auth: ${e.message}", e)
                         authError = e
                     }
                 }
 
-                // 2. Jika bukan akun aktif, atau update via akun aktif perlu dicoba via secondary auth
+                // 2. Jika bukan akun aktif, atau update akun via secondary auth
                 if (!authUpdated) {
                     val secondaryAuth = getSecondaryAuth()
+                    val authPasswordToUse = oldPassword ?: newPass
+
                     try {
-                        if (!oldPassword.isNullOrBlank()) {
-                            // Login ke akun lama via secondaryAuth untuk update password
+                        if (!authPasswordToUse.isNullOrBlank()) {
+                            // Coba login ke akun lama via secondaryAuth untuk update email/password
                             try {
-                                secondaryAuth.signInWithEmailAndPassword(oldEmail, oldPassword).await()
+                                secondaryAuth.signInWithEmailAndPassword(resolvedOldEmail, authPasswordToUse).await()
                                 val secUser = secondaryAuth.currentUser
                                 if (secUser != null) {
-                                    secUser.updatePassword(newPass).await()
-                                    if (!user.email.trim().equals(oldEmail, ignoreCase = true)) {
+                                    if (isEmailChanged) {
                                         secUser.updateEmail(user.email.trim()).await()
+                                        Log.d(TAG, "Secondary Auth: Berhasil update email dari $resolvedOldEmail ke ${user.email}")
+                                    }
+                                    if (newPass != null) {
+                                        secUser.updatePassword(newPass).await()
+                                        Log.d(TAG, "Secondary Auth: Berhasil update password untuk ${user.email}")
                                     }
                                     authUpdated = true
-                                    Log.d(TAG, "Secondary Auth: Berhasil update password untuk $oldEmail di Firebase Auth")
                                 }
                             } catch (e: Exception) {
-                                Log.w(TAG, "Secondary Auth: Gagal sign in dengan oldPassword untuk $oldEmail: ${e.message}")
+                                Log.w(TAG, "Secondary Auth: Gagal sign in dengan resolvedOldEmail ($resolvedOldEmail): ${e.message}")
                                 authError = e
                             } finally {
                                 secondaryAuth.signOut()
                             }
                         }
 
-                        // Jika akun belum pernah terdaftar di Firebase Auth (misal baru dibuat di offline), daftarkan baru
-                        if (!authUpdated) {
+                        // Jika belum berhasil dan newPass/oldPassword tersedia, coba buat akun baru di Firebase Auth jika belum ada
+                        if (!authUpdated && !authPasswordToUse.isNullOrBlank()) {
                             try {
-                                secondaryAuth.createUserWithEmailAndPassword(user.email.trim(), newPass).await()
+                                val passForNew = newPass ?: authPasswordToUse
+                                secondaryAuth.createUserWithEmailAndPassword(user.email.trim(), passForNew).await()
                                 authUpdated = true
                                 Log.d(TAG, "Secondary Auth: Akun ${user.email} berhasil didaftarkan baru di Firebase Auth")
                             } catch (collisionEx: Exception) {
                                 if (collisionEx is com.google.firebase.auth.FirebaseAuthUserCollisionException ||
                                     collisionEx.message?.contains("already in use", ignoreCase = true) == true) {
-                                    Log.w(TAG, "Secondary Auth: Akun sudah ada di Firebase Auth tetapi sandi lama salah/tidak tersedia")
+                                    // Akun baru sudah ada di Firebase Auth, coba login dan update jika ada password baru
+                                    if (newPass != null && oldPassword != null) {
+                                        try {
+                                            secondaryAuth.signInWithEmailAndPassword(user.email.trim(), oldPassword).await()
+                                            secondaryAuth.currentUser?.updatePassword(newPass)?.await()
+                                            authUpdated = true
+                                        } catch (e: Exception) {
+                                            Log.w(TAG, "Secondary Auth: Gagal update password akun yang sudah ada: ${e.message}")
+                                            authError = e
+                                        } finally {
+                                            secondaryAuth.signOut()
+                                        }
+                                    } else {
+                                        authUpdated = true
+                                    }
                                 } else {
                                     authError = collisionEx
                                 }
@@ -412,7 +448,7 @@ class UserRepositoryImpl @Inject constructor(
                         authError is com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException ||
                         rawMsg.contains("requires-recent-login") ||
                         rawMsg.contains("recent authentication") ->
-                            "Demi keamanan, silakan masukkan kata sandi saat ini yang benar untuk mengonfirmasi perubahan kata sandi."
+                            "Demi keamanan, silakan masukkan kata sandi saat ini yang benar untuk mengonfirmasi perubahan data akun."
 
                         rawMsg.contains("weak-password") ||
                         rawMsg.contains("password should be at least") ->
@@ -431,13 +467,35 @@ class UserRepositoryImpl @Inject constructor(
                         authError is com.google.firebase.auth.FirebaseAuthInvalidUserException ||
                         rawMsg.contains("user-not-found") ||
                         rawMsg.contains("no user record") ->
-                            "Akun ini belum terdaftar di sistem login. Pastikan alamat email sudah benar."
+                            "Akun ini belum terdaftar di sistem login. Pastikan kata sandi saat ini atau kata sandi baru telah diisi dengan benar."
 
                         else ->
-                            "Gagal memperbarui kata sandi. Pastikan kata sandi saat ini sudah benar, atau gunakan tombol 'Lupa kata sandi?' untuk mengirim instruksi reset ke email pengguna."
+                            if (isEmailChanged) {
+                                "Gagal memperbarui email akun login. Pastikan kata sandi saat ini sudah benar, atau isi kata sandi baru untuk akun ini."
+                            } else {
+                                "Gagal memperbarui kata sandi. Pastikan kata sandi saat ini sudah benar, atau gunakan tombol 'Lupa kata sandi?' untuk mengirim instruksi reset ke email pengguna."
+                            }
                     }
                     emit(Result.failure(Exception(errorMsg)))
                     return@flow
+                }
+
+                // Jika email berhasil diubah, catat resolvedOldEmail di deleted_accounts agar sesi/login lama dibersihkan
+                if (isEmailChanged && resolvedOldEmail.isNotBlank()) {
+                    try {
+                        FirebaseFirestore.getInstance()
+                            .collection("deleted_accounts")
+                            .document(resolvedOldEmail.lowercase())
+                            .set(mapOf(
+                                "email" to resolvedOldEmail.lowercase(),
+                                "deletedAt" to Timestamp.now(),
+                                "userId" to user.id,
+                                "reason" to "email_changed_to_${user.email.trim().lowercase()}"
+                            )).await()
+                        Log.d(TAG, "Berhasil mencatat $resolvedOldEmail ke deleted_accounts karena email diubah ke ${user.email}")
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Gagal mencatat oldEmail ke deleted_accounts: ${e.message}")
+                    }
                 }
             }
 
@@ -457,8 +515,8 @@ class UserRepositoryImpl @Inject constructor(
             }
         } else {
             // OFFLINE
-            if (!plainPassword.isNullOrBlank()) {
-                emit(Result.failure(Exception("Mengubah kata sandi memerlukan koneksi internet untuk memperbarui akun autentikasi.")))
+            if (!plainPassword.isNullOrBlank() || (!oldEmail.isNullOrBlank() && !oldEmail.equals(user.email.trim(), ignoreCase = true))) {
+                emit(Result.failure(Exception("Mengubah email atau kata sandi memerlukan koneksi internet untuk memperbarui akun autentikasi.")))
                 return@flow
             }
             val updatedUserToSave = user

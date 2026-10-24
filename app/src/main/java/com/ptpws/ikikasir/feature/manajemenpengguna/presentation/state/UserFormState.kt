@@ -4,6 +4,7 @@ data class UserFormState(
     val id: String = "",
     val fullName: String = "",
     val email: String = "",
+    val initialEmail: String = "",
     val currentPassword: String = "",
     val password: String = "",         // password baru jika diisi
     val confirmPassword: String = "",  // konfirmasi password baru
