@@ -86,7 +86,7 @@ private val dummyTentangAplikasiInfo = TentangAplikasiInfo(
         ),
         FiturAplikasiItem(
             judul = "Fitur Refund & Batal Transaksi",
-            deskripsiSingkat = "Kelola pengembalian dana transaksi (refund) dengan transparansi status di Room DB & Cloud, menjaga pembukuan tetap seimbang.",
+            deskripsiSingkat = "Kelola pengembalian dana transaksi (refund) dengan transparansi.",
             tagKategori = "Pengembalian",
             ikonType = "REFUND"
         ),
@@ -106,7 +106,7 @@ private val dummyTentangAplikasiInfo = TentangAplikasiInfo(
     keunggulanList = listOf(
         "Tampilan modern, bersih, dan sangat mudah digunakan oleh siapa saja",
         "Mendukung printer thermal bluetooth ukuran 58mm & 80mm",
-        "Penyimpanan ganda lokal (Room DB) & Cloud (Firestore)",
+        "Penyimpanan ganda lokal",
         "Ekspor laporan lengkap langsung ke file Excel di memori HP",
         "Bisa digunakan tanpa internet (Full Offline Support)"
     ),
