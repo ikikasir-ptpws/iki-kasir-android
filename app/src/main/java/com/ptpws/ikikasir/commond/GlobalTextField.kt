@@ -158,8 +158,7 @@ fun GlobalTextField(
                     if (value.isEmpty() && placeholder.isNotEmpty()) {
                         Text(
                             text = placeholder,
-                            fontSize = 12.sp,
-                            fontFamily = interfamily,
+                            style = textStyle,
                             color = Color(0x80474747),
                             maxLines = maxLines
                         )
