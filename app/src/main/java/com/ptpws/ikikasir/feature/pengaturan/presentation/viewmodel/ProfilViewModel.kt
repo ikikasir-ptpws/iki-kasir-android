@@ -27,9 +27,11 @@ import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.SaveTaxSettingUseCas
 import com.ptpws.ikikasir.feature.role.data.local.dao.RoleDao
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -72,6 +74,7 @@ class ProfilViewModel @Inject constructor(
 
     private val _userProfileState = MutableStateFlow(UserProfileState())
     val userProfileState: StateFlow<UserProfileState> = _userProfileState.asStateFlow()
+    private var userProfileObservationJob: Job? = null
 
     private val _notaSetting = MutableStateFlow(NotaSetting())
     val notaSetting: StateFlow<NotaSetting> = _notaSetting.asStateFlow()
@@ -128,6 +131,31 @@ class ProfilViewModel @Inject constructor(
                     roleName = roleDisplayName,
                     isLoading = false
                 )
+
+                if (email.isNotBlank()) {
+                    userProfileObservationJob?.cancel()
+                    userProfileObservationJob = viewModelScope.launch {
+                        launch {
+                            userDao.getUserByEmailFlow(email).collectLatest { entity ->
+                                entity ?: return@collectLatest
+                                _userProfileState.value = _userProfileState.value.copy(
+                                    user = entity.toDomain(),
+                                    isLoading = false
+                                )
+                            }
+                        }
+                        launch {
+                            userRemoteDataSource.getUserFlow().collectLatest { remoteUsers ->
+                                if (!networkMonitor.isConnected()) return@collectLatest
+                                val remoteUser = remoteUsers.firstOrNull { remote ->
+                                    remote.id == firebaseUser?.uid ||
+                                        remote.email.equals(email, ignoreCase = true)
+                                } ?: return@collectLatest
+                                userDao.insertOrUpdate(remoteUser.toEntity())
+                            }
+                        }
+                    }
+                }
             }
         }
     }

@@ -13,7 +13,9 @@ import com.ptpws.ikikasir.feature.pengaturan.domain.repository.NotaSettingReposi
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -32,6 +34,7 @@ class NotaSettingRepositoryImpl @Inject constructor(
 
     private val repositoryScope = CoroutineScope(Dispatchers.IO)
     private val prefsFallback = NotaSettingPreferences(context)
+    private var remoteSettingListenerJob: Job? = null
 
     init {
         // Auto-sync when online
@@ -42,7 +45,33 @@ class NotaSettingRepositoryImpl @Inject constructor(
                     try { syncInternal() } catch (e: Exception) {
                         Log.e(TAG, "Auto-sync error: ${e.message}", e)
                     }
+                    observeRemoteSetting()
+                } else {
+                    remoteSettingListenerJob?.cancel()
+                    remoteSettingListenerJob = null
                 }
+            }
+        }
+        if (networkMonitor.isConnected()) {
+            observeRemoteSetting()
+        }
+    }
+
+    private fun observeRemoteSetting() {
+        if (remoteSettingListenerJob?.isActive == true) return
+        remoteSettingListenerJob = repositoryScope.launch {
+            try {
+                remoteDataSource.getNotaSettingFlow().collectLatest { remote ->
+                    if (!networkMonitor.isConnected()) return@collectLatest
+                    if (remote == null) return@collectLatest
+                    val local = localDao.getNotaSetting(remote.id)
+                    if (local?.isSynced == false) return@collectLatest
+                    val setting = remote.toDomain()
+                    localDao.insertOrUpdate(setting.toEntity(isSynced = true))
+                    prefsFallback.saveSetting(setting)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Realtime nota setting listener failed: ${e.message}", e)
             }
         }
     }

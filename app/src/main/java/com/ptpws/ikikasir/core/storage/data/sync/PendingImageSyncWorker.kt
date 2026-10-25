@@ -9,6 +9,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.ptpws.ikikasir.core.database.AppDatabase
 import com.ptpws.ikikasir.core.storage.data.local.PendingImageEntity
+import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -70,7 +71,12 @@ class PendingImageSyncWorker(
             "products" -> database.produkDao.updateImageUrl(item.documentId, downloadUrl)
             "users" -> database.userDao.updatePhotoUrl(item.documentId, downloadUrl)
             "transactions" -> database.transactionDao.updatePaymentProofUrl(item.documentId, downloadUrl)
-            "nota_settings" -> database.notaSettingDao.updateLogoUrl(item.documentId, downloadUrl)
+            "nota_settings" -> {
+                database.notaSettingDao.updateLogoUrl(item.documentId, downloadUrl)
+                database.notaSettingDao.getNotaSetting(item.documentId)?.let { setting ->
+                    NotaSettingPreferences(applicationContext).saveSetting(setting.toDomain())
+                }
+            }
         }
     }
 
