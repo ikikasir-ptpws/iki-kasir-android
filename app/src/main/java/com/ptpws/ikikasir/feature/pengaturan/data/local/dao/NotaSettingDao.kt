@@ -24,4 +24,7 @@ interface NotaSettingDao {
 
     @Query("UPDATE nota_settings SET isSynced = 1 WHERE id = :id")
     suspend fun markAsSynced(id: String = "default_nota_setting")
+
+    @Query("UPDATE nota_settings SET logoUrl = :logoUrl WHERE id = :id")
+    suspend fun updateLogoUrl(id: String, logoUrl: String)
 }

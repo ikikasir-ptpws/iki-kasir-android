@@ -2,6 +2,8 @@ package com.ptpws.ikikasir.core.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ptpws.ikikasir.core.database.AppDatabase
 import com.ptpws.ikikasir.feature.antrean.data.local.dao.AntreanDao
 import com.ptpws.ikikasir.feature.antrean.data.local.dao.QueueHistoryDao
@@ -11,6 +13,7 @@ import com.ptpws.ikikasir.feature.manajemenstok.data.local.dao.StokAdjustmentDao
 import com.ptpws.ikikasir.feature.penjualan.data.local.dao.TransactionDao
 import com.ptpws.ikikasir.feature.produk.data.local.dao.ProdukDao
 import com.ptpws.ikikasir.feature.role.data.local.dao.RoleDao
+import com.ptpws.ikikasir.core.storage.data.local.PendingImageDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,6 +24,24 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
+    private val MIGRATION_36_37 = object : Migration(36, 37) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS pending_images (
+                    id TEXT NOT NULL,
+                    localPath TEXT NOT NULL,
+                    storageFolder TEXT NOT NULL,
+                    collection TEXT NOT NULL,
+                    documentId TEXT NOT NULL,
+                    firestoreField TEXT NOT NULL,
+                    createdAt INTEGER NOT NULL,
+                    PRIMARY KEY(id)
+                )
+                """.trimIndent()
+            )
+        }
+    }
 
     @Provides
     @Singleton
@@ -32,9 +53,14 @@ object DatabaseModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
+            .addMigrations(MIGRATION_36_37)
             .fallbackToDestructiveMigration()
             .build()
     }
+
+    @Provides
+    @Singleton
+    fun providePendingImageDao(database: AppDatabase): PendingImageDao = database.pendingImageDao
 
     @Provides
     @Singleton

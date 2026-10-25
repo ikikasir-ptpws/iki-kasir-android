@@ -28,7 +28,7 @@ class TambahProdukActivity : BaseActivity() {
                         .navigationBarsPadding()
                 ) {
                     TambahProdukScreen(onBack = { finish() })
-                    GlobalCrudResultDialogHost()
+                    GlobalCrudResultDialogHost(showSuccess = false)
                     GlobalUploadProgressHost()
                 }
             }

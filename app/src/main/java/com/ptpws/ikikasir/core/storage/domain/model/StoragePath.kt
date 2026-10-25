@@ -19,3 +19,6 @@ object StoragePath {
     const val STORE_LOGOS = "store_logos"
     const val CATEGORY_IMAGES = "category_images"
 }
+
+fun isLocalImageUri(value: String): Boolean =
+    value.startsWith("file://") || value.startsWith("content://")

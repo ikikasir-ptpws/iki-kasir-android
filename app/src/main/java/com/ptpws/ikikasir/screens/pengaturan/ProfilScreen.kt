@@ -144,6 +144,23 @@ fun ProfilScreen(
     var pendingLogoUri by remember { mutableStateOf<Uri?>(null) }
     var showLogoPicker by remember { mutableStateOf(false) }
     var isSavingNota by remember { mutableStateOf(false) }
+    val restoreNotaDraft = {
+        val saved = liveNotaSetting.takeIf {
+            it.storeName.isNotBlank() ||
+                it.storeAddress.isNotBlank() ||
+                it.wifiName.isNotBlank() ||
+                it.wifiPassword.isNotBlank() ||
+                it.logoUrl.isNotBlank() ||
+                it.paperWidth != "58mm"
+        } ?: notaPrefs.getSetting()
+        namaToko = saved.storeName
+        alamatToko = saved.storeAddress
+        namaWifi = saved.wifiName
+        kataSandiWifi = saved.wifiPassword
+        ukuranKertas = saved.paperWidth
+        logoUrl = saved.logoUrl
+        pendingLogoUri = null
+    }
 
     if (showLogoPicker) {
         com.ptpws.ikikasir.commond.ImageSourcePickerDialog(
@@ -163,7 +180,14 @@ fun ProfilScreen(
     }
 
     LaunchedEffect(liveNotaSetting) {
-        if (liveNotaSetting.storeName.isNotBlank() || liveNotaSetting.storeAddress.isNotBlank() || liveNotaSetting.logoUrl.isNotBlank()) {
+        if (
+            liveNotaSetting.storeName.isNotBlank() ||
+            liveNotaSetting.storeAddress.isNotBlank() ||
+            liveNotaSetting.wifiName.isNotBlank() ||
+            liveNotaSetting.wifiPassword.isNotBlank() ||
+            liveNotaSetting.logoUrl.isNotBlank() ||
+            liveNotaSetting.paperWidth != "58mm"
+        ) {
             namaToko = liveNotaSetting.storeName
             alamatToko = liveNotaSetting.storeAddress
             namaWifi = liveNotaSetting.wifiName
@@ -400,6 +424,7 @@ fun ProfilScreen(
                                 iconTint = Color(0xFF7E22CE),
                                 label = "Setting Nota / Struk Pembayaran",
                                 onClick = {
+                                    restoreNotaDraft()
                                     showStrukDialog = true
                                     onSettingStruk()
                                 }
@@ -923,7 +948,10 @@ fun ProfilScreen(
     // ── Dialog Setting Nota / Struk Pembayaran
     if (showStrukDialog) {
         val strukScrollState = rememberScrollState()
-        Dialog(onDismissRequest = { showStrukDialog = false }) {
+        Dialog(onDismissRequest = {
+            restoreNotaDraft()
+            showStrukDialog = false
+        }) {
             Card(
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -952,7 +980,10 @@ fun ProfilScreen(
                             color = Color(0xFF111827)
                         )
                         IconButton(
-                            onClick = { showStrukDialog = false },
+                            onClick = {
+                                restoreNotaDraft()
+                                showStrukDialog = false
+                            },
                             modifier = Modifier.size(24.dp)
                         ) {
                             Icon(
@@ -1190,7 +1221,10 @@ fun ProfilScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         OutlinedButton(
-                            onClick = { showStrukDialog = false },
+                            onClick = {
+                                restoreNotaDraft()
+                                showStrukDialog = false
+                            },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
                             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
@@ -1200,7 +1234,7 @@ fun ProfilScreen(
                         Button(
                             onClick = {
                                 isSavingNota = true
-                                val updatedSetting = NotaSetting(
+                                val updatedSetting = liveNotaSetting.copy(
                                     storeName = namaToko,
                                     storeAddress = alamatToko,
                                     wifiName = namaWifi,

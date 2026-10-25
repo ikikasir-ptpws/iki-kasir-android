@@ -38,6 +38,9 @@ import android.net.Uri
 import com.ptpws.ikikasir.core.storage.domain.usecase.DeleteStorageImageUseCase
 import com.ptpws.ikikasir.core.storage.domain.usecase.UploadProfilePhotoUseCase
 import com.ptpws.ikikasir.core.storage.domain.usecase.UploadStoreLogoUseCase
+import com.ptpws.ikikasir.core.storage.domain.usecase.QueuePendingImageUseCase
+import com.ptpws.ikikasir.core.storage.domain.model.PendingImageTarget
+import com.ptpws.ikikasir.core.network.NetworkMonitor
 
 data class UserProfileState(
     val user: User? = null,
@@ -62,7 +65,9 @@ class ProfilViewModel @Inject constructor(
     private val userRemoteDataSource: UserRemoteDataSource,
     private val uploadProfilePhotoUseCase: UploadProfilePhotoUseCase,
     private val deleteStorageImageUseCase: DeleteStorageImageUseCase,
-    private val uploadStoreLogoUseCase: UploadStoreLogoUseCase
+    private val uploadStoreLogoUseCase: UploadStoreLogoUseCase,
+    private val queuePendingImageUseCase: QueuePendingImageUseCase,
+    private val networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
     private val _userProfileState = MutableStateFlow(UserProfileState())
@@ -151,26 +156,36 @@ class ProfilViewModel @Inject constructor(
         viewModelScope.launch {
             val current = _userProfileState.value.user ?: return@launch
             _userProfileState.value = _userProfileState.value.copy(isLoading = true)
-            GlobalUploadProgress.showProfilePhotoUpload(progress = 0f)
-            val uploadResult = uploadProfilePhotoUseCase(
-                localFilePathOrUri = localImageUri.toString(),
-                userId = current.id
-            ) { progress ->
-                GlobalUploadProgress.updateProgress(progress, "Mengunggah foto profil...")
+            val uploadedPhotoUrl = if (networkMonitor.isConnected()) {
+                GlobalUploadProgress.showProfilePhotoUpload(progress = 0f)
+                val uploadResult = uploadProfilePhotoUseCase(
+                    localFilePathOrUri = localImageUri.toString(),
+                    userId = current.id
+                ) { progress ->
+                    GlobalUploadProgress.updateProgress(progress, "Mengunggah foto profil...")
+                }
+                GlobalUploadProgress.dismiss()
+                uploadResult.getOrNull() ?: run {
+                    val message = uploadResult.exceptionOrNull()?.message ?: "Upload foto profil gagal."
+                    GlobalCrudResultDialog.failure(message)
+                    _userProfileState.value = _userProfileState.value.copy(isLoading = false)
+                    onComplete(false)
+                    return@launch
+                }
+            } else {
+                null
             }
-            GlobalUploadProgress.dismiss()
-            val newPhotoUrl = uploadResult.getOrNull()
-            if (newPhotoUrl == null) {
-                val message = uploadResult.exceptionOrNull()?.message ?: "Upload foto profil gagal."
-                GlobalCrudResultDialog.failure(message)
-                _userProfileState.value = _userProfileState.value.copy(isLoading = false)
-                onComplete(false)
-                return@launch
-            }
+            val newPhotoUrl = uploadedPhotoUrl ?: localImageUri.toString()
             val saved = persistUserProfile(current, newFullName, newPhotoUrl)
-            if (saved && current.photoUrl.isNotBlank() && current.photoUrl != newPhotoUrl) {
+            if (saved && uploadedPhotoUrl == null) {
+                queuePendingImageUseCase(
+                    localFilePathOrUri = localImageUri.toString(),
+                    target = PendingImageTarget.USER,
+                    documentId = current.id
+                )
+            } else if (saved && current.photoUrl.isNotBlank() && current.photoUrl != newPhotoUrl) {
                 deleteStorageImageUseCase(current.photoUrl)
-            } else if (!saved) {
+            } else if (!saved && uploadedPhotoUrl != null) {
                 deleteStorageImageUseCase(newPhotoUrl)
             }
             _userProfileState.value = _userProfileState.value.copy(isLoading = false)
@@ -188,26 +203,33 @@ class ProfilViewModel @Inject constructor(
             photoUrl = newPhotoUrl,
             updatedAt = com.google.firebase.Timestamp.now()
         )
+        val isOnline = networkMonitor.isConnected()
         return try {
             withContext(Dispatchers.IO) {
-                firebaseAuth.currentUser?.let { firebaseUser ->
-                    val changeRequest = UserProfileChangeRequest.Builder()
-                        .setDisplayName(newFullName.trim())
-                        .apply {
-                            if (newPhotoUrl.isNotBlank()) setPhotoUri(Uri.parse(newPhotoUrl))
+                if (isOnline) {
+                    firebaseAuth.currentUser?.let { firebaseUser ->
+                        val changeRequest = UserProfileChangeRequest.Builder()
+                            .setDisplayName(newFullName.trim())
+                            .apply {
+                                if (newPhotoUrl.isNotBlank()) setPhotoUri(Uri.parse(newPhotoUrl))
+                            }
+                            .build()
+                        try {
+                            firebaseUser.updateProfile(changeRequest).await()
+                        } catch (e: Exception) {
+                            android.util.Log.w("ProfilViewModel", "Firebase Auth update profile error: ${e.message}")
                         }
-                        .build()
-                    try {
-                        firebaseUser.updateProfile(changeRequest).await()
-                    } catch (e: Exception) {
-                        android.util.Log.w("ProfilViewModel", "Firebase Auth update profile error: ${e.message}")
                     }
                 }
-                userDao.insertOrUpdate(updatedUser.toEntity(isSynced = true))
-                try {
-                    userRemoteDataSource.updateUser(updatedUser.toDto())
-                } catch (e: Exception) {
-                    userDao.insertOrUpdate(updatedUser.toEntity(isSynced = false))
+
+                userDao.insertOrUpdate(updatedUser.toEntity(isSynced = false))
+                if (isOnline) {
+                    try {
+                        userRemoteDataSource.updateUser(updatedUser.toDto())
+                        userDao.insertOrUpdate(updatedUser.toEntity(isSynced = true))
+                    } catch (e: Exception) {
+                        userDao.insertOrUpdate(updatedUser.toEntity(isSynced = false))
+                    }
                 }
             }
             _userProfileState.value = _userProfileState.value.copy(user = updatedUser)
@@ -233,8 +255,12 @@ class ProfilViewModel @Inject constructor(
         viewModelScope.launch {
             val oldLogoUrl = _notaSetting.value.logoUrl
             var uploadedLogoUrl: String? = null
+            var localLogoNeedsQueue = false
             val settingWithLogo = if (localImageUri == null) {
                 setting
+            } else if (!networkMonitor.isConnected()) {
+                localLogoNeedsQueue = true
+                setting.copy(logoUrl = localImageUri.toString())
             } else {
                 GlobalUploadProgress.showLogoUpload(progress = 0f)
                 val uploadResult = uploadStoreLogoUseCase(
@@ -256,7 +282,15 @@ class ProfilViewModel @Inject constructor(
                 setting.copy(logoUrl = downloadUrl)
             }
             saveNotaSetting(settingWithLogo) { success ->
-                if (success && oldLogoUrl.isNotBlank() && oldLogoUrl != settingWithLogo.logoUrl) {
+                if (success && localLogoNeedsQueue && localImageUri != null) {
+                    viewModelScope.launch {
+                        queuePendingImageUseCase(
+                            localFilePathOrUri = localImageUri.toString(),
+                            target = PendingImageTarget.STORE_LOGO,
+                            documentId = settingWithLogo.id
+                        )
+                    }
+                } else if (success && oldLogoUrl.isNotBlank() && oldLogoUrl != settingWithLogo.logoUrl) {
                     viewModelScope.launch {
                         deleteStorageImageUseCase(oldLogoUrl)
                     }

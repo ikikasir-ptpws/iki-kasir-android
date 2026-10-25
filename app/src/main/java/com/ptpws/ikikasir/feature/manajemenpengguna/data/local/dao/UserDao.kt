@@ -44,4 +44,7 @@ interface UserDao {
 
     @Query("UPDATE users SET isSynced = 1 WHERE id = :id")
     suspend fun markAsSynced(id: String)
+
+    @Query("UPDATE users SET photoUrl = :photoUrl WHERE id = :id")
+    suspend fun updatePhotoUrl(id: String, photoUrl: String)
 }

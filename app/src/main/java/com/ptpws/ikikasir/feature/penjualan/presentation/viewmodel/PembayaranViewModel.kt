@@ -35,6 +35,9 @@ import com.ptpws.ikikasir.feature.penjualan.presentation.state.PrinterStatus
 import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.core.storage.domain.usecase.DeleteStorageImageUseCase
 import com.ptpws.ikikasir.core.storage.domain.usecase.UploadPaymentProofUseCase
+import com.ptpws.ikikasir.core.storage.domain.usecase.QueuePendingImageUseCase
+import com.ptpws.ikikasir.core.storage.domain.model.PendingImageTarget
+import com.ptpws.ikikasir.core.network.NetworkMonitor
 
 @HiltViewModel
 class PembayaranViewModel @Inject constructor(
@@ -49,7 +52,9 @@ class PembayaranViewModel @Inject constructor(
     private val bluetoothPrinterPreferences: BluetoothPrinterPreferences,
     private val bluetoothPrinterRepository: BluetoothPrinterRepository,
     private val uploadPaymentProofUseCase: UploadPaymentProofUseCase,
-    private val deleteStorageImageUseCase: DeleteStorageImageUseCase
+    private val deleteStorageImageUseCase: DeleteStorageImageUseCase,
+    private val queuePendingImageUseCase: QueuePendingImageUseCase,
+    private val networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PembayaranState())
@@ -456,24 +461,31 @@ class PembayaranViewModel @Inject constructor(
             val localProof = if (isTunai) "" else currentState.buktiPembayaranUri.orEmpty()
             var paymentProofUrl = localProof
             var uploadedProofThisAttempt = false
+            var paymentProofNeedsQueue = false
             if (localProof.isNotBlank() && !localProof.startsWith("https://")) {
-                GlobalUploadProgress.showBuktiPembayaranUpload(progress = 0f)
-                val uploadResult = uploadPaymentProofUseCase(
-                    localFilePathOrUri = localProof,
-                    transactionId = currentState.orderId
-                ) { progress ->
-                    GlobalUploadProgress.updateProgress(progress, "Mengunggah bukti pembayaran...")
-                }
-                GlobalUploadProgress.dismiss()
-                paymentProofUrl = uploadResult.getOrNull().orEmpty()
-                if (paymentProofUrl.isBlank()) {
-                    val message = uploadResult.exceptionOrNull()?.message ?: "Upload bukti pembayaran gagal."
-                    _state.update {
-                        it.copy(isLoading = false, showFailedDialog = true, errorMessage = message)
+                if (networkMonitor.isConnected()) {
+                    GlobalUploadProgress.showBuktiPembayaranUpload(progress = 0f)
+                    val uploadResult = uploadPaymentProofUseCase(
+                        localFilePathOrUri = localProof,
+                        transactionId = currentState.orderId
+                    ) { progress ->
+                        GlobalUploadProgress.updateProgress(progress, "Mengunggah bukti pembayaran...")
                     }
-                    return@launch
+                    GlobalUploadProgress.dismiss()
+                    val uploadedUrl = uploadResult.getOrNull()
+                    if (uploadedUrl == null) {
+                        val message = uploadResult.exceptionOrNull()?.message ?: "Upload bukti pembayaran gagal."
+                        _state.update {
+                            it.copy(isLoading = false, showFailedDialog = true, errorMessage = message)
+                        }
+                        return@launch
+                    } else {
+                        paymentProofUrl = uploadedUrl
+                        uploadedProofThisAttempt = true
+                    }
+                } else {
+                    paymentProofNeedsQueue = true
                 }
-                uploadedProofThisAttempt = true
             }
 
             prosesPembayaranUseCase(
@@ -495,6 +507,13 @@ class PembayaranViewModel @Inject constructor(
                 _state.update { it.copy(isLoading = false) }
                 result.fold(
                     onSuccess = { transaksi ->
+                        if (paymentProofNeedsQueue) {
+                            queuePendingImageUseCase(
+                                localFilePathOrUri = localProof,
+                                target = PendingImageTarget.TRANSACTION,
+                                documentId = currentState.orderId
+                            )
+                        }
                         logActivityUseCase(
                             title = "Transaksi Baru: ${currentState.orderId}",
                             description = "Penjualan ${currentState.totalItemCount} item (${currentState.totalPcsCount} pcs) via ${currentState.metodePembayaran} sebesar Rp ${NumberFormat.getNumberInstance(Locale("id", "ID")).format(targetTotal.toLong())}.",

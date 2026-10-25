@@ -35,4 +35,7 @@ interface TransactionDao {
 
     @Query("SELECT MAX(createdAt) FROM transactions")
     suspend fun getLatestTransactionTimestamp(): Long?
+
+    @Query("UPDATE transactions SET paymentProofUrl = :url WHERE transactionId = :transactionId")
+    suspend fun updatePaymentProofUrl(transactionId: String, url: String)
 }

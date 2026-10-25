@@ -44,4 +44,7 @@ interface ProdukDao {
 
     @Query("UPDATE products SET isSynced = 1 WHERE id = :id")
     suspend fun markAsSynced(id: String)
+
+    @Query("UPDATE products SET imageUrl = :imageUrl WHERE id = :id")
+    suspend fun updateImageUrl(id: String, imageUrl: String)
 }

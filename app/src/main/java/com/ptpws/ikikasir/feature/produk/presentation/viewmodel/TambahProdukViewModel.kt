@@ -8,6 +8,10 @@ import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.core.storage.domain.usecase.DeleteStorageImageUseCase
 import com.ptpws.ikikasir.core.storage.domain.usecase.UploadProductImageUseCase
+import com.ptpws.ikikasir.core.storage.domain.usecase.QueuePendingImageUseCase
+import com.ptpws.ikikasir.core.storage.domain.model.PendingImageTarget
+import com.ptpws.ikikasir.core.storage.domain.model.isLocalImageUri
+import com.ptpws.ikikasir.core.network.NetworkMonitor
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.InsertProdukUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.PrintProductBarcodeUseCase
@@ -34,6 +38,8 @@ class TambahProdukViewModel @Inject constructor(
     private val getKategoriUseCase: GetKategoriUseCase,
     private val uploadProductImageUseCase: UploadProductImageUseCase,
     private val deleteStorageImageUseCase: DeleteStorageImageUseCase,
+    private val queuePendingImageUseCase: QueuePendingImageUseCase,
+    private val networkMonitor: NetworkMonitor,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -256,23 +262,33 @@ class TambahProdukViewModel @Inject constructor(
 
             // Upload gambar ke Firebase Storage jika ada gambar baru yang dipilih
             var finalImageUrl = currentState.imageUrl
-            if (pendingImageUri != null) {
-                GlobalUploadProgress.showProductImageUpload(progress = 0f)
-                val uploadResult = uploadImageIfNeeded(
-                    productId = baseProduk.id,
-                    onProgress = { progress ->
-                        GlobalUploadProgress.updateProgress(progress, "Mengunggah foto produk...")
+            val localImageUri = pendingImageUri
+            if (localImageUri != null) {
+                if (networkMonitor.isConnected()) {
+                    GlobalUploadProgress.showProductImageUpload(progress = 0f)
+                    val uploadResult = uploadImageIfNeeded(
+                        productId = baseProduk.id,
+                        onProgress = { progress ->
+                            GlobalUploadProgress.updateProgress(progress, "Mengunggah foto produk...")
+                        }
+                    )
+                    GlobalUploadProgress.dismiss()
+                    val downloadUrl = uploadResult?.getOrNull()
+                    if (downloadUrl == null) {
+                        val error = uploadResult?.exceptionOrNull()?.message ?: "Upload foto produk gagal."
+                        GlobalCrudResultDialog.failure(error)
+                        _formState.update { it.copy(isLoading = false, errorMessage = error) }
+                        return@launch
                     }
-                )
-                GlobalUploadProgress.dismiss()
-                val downloadUrl = uploadResult?.getOrNull()
-                if (downloadUrl == null) {
-                    val error = uploadResult?.exceptionOrNull()?.message ?: "Upload foto produk gagal."
-                    GlobalCrudResultDialog.failure(error)
-                    _formState.update { it.copy(isLoading = false, errorMessage = error) }
-                    return@launch
+                    finalImageUrl = downloadUrl
+                } else {
+                    queuePendingImageUseCase(
+                        localFilePathOrUri = localImageUri.toString(),
+                        target = PendingImageTarget.PRODUCT,
+                        documentId = baseProduk.id
+                    )
+                    finalImageUrl = localImageUri.toString()
                 }
-                finalImageUrl = downloadUrl
             }
 
             val produk = baseProduk.copy(imageUrl = finalImageUrl)
@@ -286,7 +302,9 @@ class TambahProdukViewModel @Inject constructor(
             flow.collect { result ->
                 if (result.isSuccess) {
                     pendingImageUri = null
-                    if (oldImageUrl.isNotBlank() && oldImageUrl != produk.imageUrl) {
+                    if (oldImageUrl.isNotBlank() && oldImageUrl != produk.imageUrl &&
+                        !isLocalImageUri(produk.imageUrl)
+                    ) {
                         deleteStorageImageUseCase(oldImageUrl)
                     }
                     oldImageUrl = produk.imageUrl

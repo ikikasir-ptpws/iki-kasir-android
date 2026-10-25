@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.pengaturan.data.remote.dto
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.PropertyName
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting
+import com.ptpws.ikikasir.core.storage.domain.model.isLocalImageUri
 
 data class NotaSettingDto(
     @get:PropertyName("id") @set:PropertyName("id")
@@ -52,7 +53,7 @@ fun NotaSetting.toDto(): NotaSettingDto {
         wifiName = wifiName,
         wifiPassword = wifiPassword,
         paperWidth = paperWidth,
-        logoUrl = logoUrl,
+        logoUrl = logoUrl.takeUnless(::isLocalImageUri).orEmpty(),
         updatedAt = updatedAt
     )
 }

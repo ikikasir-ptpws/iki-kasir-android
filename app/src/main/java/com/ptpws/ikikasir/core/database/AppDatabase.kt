@@ -33,6 +33,8 @@ import com.ptpws.ikikasir.feature.promo.data.local.entity.PromoEntity
 
 import com.ptpws.ikikasir.feature.auditlog.data.local.dao.AuditLogDao
 import com.ptpws.ikikasir.feature.auditlog.data.local.entity.AuditLogEntity
+import com.ptpws.ikikasir.core.storage.data.local.PendingImageEntity
+import com.ptpws.ikikasir.core.storage.data.local.PendingImageDao
 
 @Database(
     entities = [
@@ -49,9 +51,10 @@ import com.ptpws.ikikasir.feature.auditlog.data.local.entity.AuditLogEntity
         PaymentMethodSettingEntity::class,
         TableSettingEntity::class,
         PromoEntity::class,
-        AuditLogEntity::class
+        AuditLogEntity::class,
+        PendingImageEntity::class
     ],
-    version = 36,
+    version = 37,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class, MapConverter::class)
@@ -70,6 +73,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val tableSettingDao: TableSettingDao
     abstract val promoDao: PromoDao
     abstract val auditLogDao: AuditLogDao
+    abstract val pendingImageDao: PendingImageDao
 
     companion object {
         const val DATABASE_NAME = "ikikasir_db"

@@ -6,6 +6,7 @@ import com.google.firebase.firestore.PropertyName
 import com.google.firebase.firestore.ServerTimestamp
 import com.ptpws.ikikasir.feature.produk.data.local.entity.ProdukEntity
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
+import com.ptpws.ikikasir.core.storage.domain.model.isLocalImageUri
 
 data class ProdukDto(
     @get:Exclude @set:Exclude
@@ -77,7 +78,7 @@ data class ProdukDto(
             id = id,
             name = name,
             categoryId = categoryId,
-            imageUrl = imageUrl,
+            imageUrl = imageUrl.takeUnless(::isLocalImageUri).orEmpty(),
             barcode = barcode,
             costPrice = costPrice,
             sellingPrice = sellingPrice,

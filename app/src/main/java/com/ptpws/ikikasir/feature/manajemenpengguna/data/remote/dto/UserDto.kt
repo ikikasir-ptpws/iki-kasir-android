@@ -6,6 +6,7 @@ import com.google.firebase.firestore.PropertyName
 import com.google.firebase.firestore.ServerTimestamp
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.entity.UserEntity
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.model.User
+import com.ptpws.ikikasir.core.storage.domain.model.isLocalImageUri
 
 data class UserDto(
     @get:Exclude @set:Exclude
@@ -71,7 +72,7 @@ fun User.toDto(): UserDto {
         email = email,
         roleId = roleId,
         isActive = isActive,
-        photoUrl = photoUrl,
+        photoUrl = photoUrl.takeUnless(::isLocalImageUri).orEmpty(),
         createdAt = null,
         updatedAt = null
     )

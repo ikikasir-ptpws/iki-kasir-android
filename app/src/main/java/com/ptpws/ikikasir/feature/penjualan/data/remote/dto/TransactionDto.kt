@@ -9,6 +9,7 @@ import com.ptpws.ikikasir.feature.penjualan.data.local.entity.toEntity
 import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
+import com.ptpws.ikikasir.core.storage.domain.model.isLocalImageUri
 
 /**
  * Firestore DTO untuk koleksi "transactions".
@@ -150,7 +151,7 @@ fun PenjualanTransaksi.toDto(): TransactionDto {
             "price" to cartItem.price,
             "quantity" to cartItem.quantity,
             "totalPrice" to cartItem.totalPrice,
-            "imageUrl" to cartItem.produk.imageUrl
+            "imageUrl" to cartItem.produk.imageUrl.takeUnless(::isLocalImageUri).orEmpty()
         )
     }
 
@@ -174,7 +175,7 @@ fun PenjualanTransaksi.toDto(): TransactionDto {
         tableNumber = tableNumber,
         queueSequence = queueSequence,
         refundReason = refundReason,
-        paymentProofUrl = paymentProofUrl,
+        paymentProofUrl = paymentProofUrl.takeUnless(::isLocalImageUri).orEmpty(),
         createdAt = null,
         updatedAt = null
     )

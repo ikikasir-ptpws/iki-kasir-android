@@ -8,6 +8,9 @@ import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.core.storage.domain.usecase.DeleteStorageImageUseCase
 import com.ptpws.ikikasir.core.storage.domain.usecase.UploadProfilePhotoUseCase
+import com.ptpws.ikikasir.core.storage.domain.usecase.QueuePendingImageUseCase
+import com.ptpws.ikikasir.core.storage.domain.model.PendingImageTarget
+import com.ptpws.ikikasir.core.network.NetworkMonitor
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.model.User
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.usecase.DeleteUserUseCase
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.usecase.GetUsersUseCase
@@ -38,7 +41,9 @@ class UserViewModel @Inject constructor(
     private val logActivityUseCase: LogActivityUseCase,
     private val authRepository: AuthRepository,
     private val uploadProfilePhotoUseCase: UploadProfilePhotoUseCase,
-    private val deleteStorageImageUseCase: DeleteStorageImageUseCase
+    private val deleteStorageImageUseCase: DeleteStorageImageUseCase,
+    private val queuePendingImageUseCase: QueuePendingImageUseCase,
+    private val networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
     private val _listState = MutableStateFlow(UserListState())
@@ -383,20 +388,32 @@ class UserViewModel @Inject constructor(
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, error = null) }
             val userId = if (current.id.isBlank()) UUID.randomUUID().toString() else current.id
-            val uploadedPhotoUrl = pendingPhotoUri?.let { uri ->
-                GlobalUploadProgress.showProfilePhotoUpload(progress = 0f)
-                val result = uploadProfilePhotoUseCase(
-                    localFilePathOrUri = uri.toString(),
-                    userId = userId
-                ) { progress ->
-                    GlobalUploadProgress.updateProgress(progress, "Mengunggah foto pengguna...")
-                }
-                GlobalUploadProgress.dismiss()
-                result.getOrNull() ?: run {
-                    val message = result.exceptionOrNull()?.message ?: "Upload foto pengguna gagal."
-                    GlobalCrudResultDialog.failure(message)
-                    _formState.update { it.copy(isLoading = false, error = message) }
-                    return@launch
+            val localPhotoUri = pendingPhotoUri
+            val uploadedPhotoUrl = localPhotoUri?.let { uri ->
+                if (networkMonitor.isConnected()) {
+                    GlobalUploadProgress.showProfilePhotoUpload(progress = 0f)
+                    val result = uploadProfilePhotoUseCase(
+                        localFilePathOrUri = uri.toString(),
+                        userId = userId
+                    ) { progress ->
+                        GlobalUploadProgress.updateProgress(progress, "Mengunggah foto pengguna...")
+                    }
+                    GlobalUploadProgress.dismiss()
+                    val downloadUrl = result.getOrNull()
+                    if (downloadUrl == null) {
+                        val message = result.exceptionOrNull()?.message ?: "Upload foto pengguna gagal."
+                        GlobalCrudResultDialog.failure(message)
+                        _formState.update { it.copy(isLoading = false, error = message) }
+                        return@launch
+                    }
+                    downloadUrl
+                } else {
+                    queuePendingImageUseCase(
+                        localFilePathOrUri = uri.toString(),
+                        target = PendingImageTarget.USER,
+                        documentId = userId
+                    )
+                    uri.toString()
                 }
             }
             val photoUrl = uploadedPhotoUrl ?: current.photoUrl
