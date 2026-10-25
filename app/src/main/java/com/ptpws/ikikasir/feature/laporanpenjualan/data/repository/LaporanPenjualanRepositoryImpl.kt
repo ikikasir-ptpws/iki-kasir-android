@@ -7,6 +7,7 @@ import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.ProdukTerjualIte
 import com.ptpws.ikikasir.feature.laporanpenjualan.domain.repository.LaporanPenjualanRepository
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.penjualan.domain.repository.PenjualanRepository
+import com.ptpws.ikikasir.feature.produk.domain.repository.ProdukRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import java.text.SimpleDateFormat
@@ -19,7 +20,8 @@ import javax.inject.Singleton
 @Singleton
 class LaporanPenjualanRepositoryImpl @Inject constructor(
     private val penjualanRepository: PenjualanRepository,
-    private val kategoriRepository: KategoriRepository
+    private val kategoriRepository: KategoriRepository,
+    private val produkRepository: ProdukRepository
 ) : LaporanPenjualanRepository {
 
     override fun getLaporanPenjualan(
@@ -29,12 +31,19 @@ class LaporanPenjualanRepositoryImpl @Inject constructor(
     ): Flow<LaporanPenjualanSummary> {
         return combine(
             penjualanRepository.getAllTransaksi(),
-            kategoriRepository.getKategoriList()
-        ) { allTransactions, kategoriList ->
+            kategoriRepository.getKategoriList(),
+            produkRepository.getProdukList()
+        ) { allTransactions, kategoriList, produkList ->
             val kategoriMap = kategoriList.associate { it.id to it.name }
+            val kategoriMapNormalized = kategoriList.associate { it.id.trim().lowercase() to it.name }
+            val kategoriNameMap = kategoriList.associate { it.name.trim().lowercase() to it.name }
+            val productCategoryMap = produkList.associate { it.id to it.categoryId }
             aggregateSoldProducts(
                 transactions = allTransactions,
                 kategoriMap = kategoriMap,
+                kategoriMapNormalized = kategoriMapNormalized,
+                kategoriNameMap = kategoriNameMap,
+                productCategoryMap = productCategoryMap,
                 periode = periode,
                 customStartMillis = customStartMillis,
                 customEndMillis = customEndMillis
@@ -45,6 +54,9 @@ class LaporanPenjualanRepositoryImpl @Inject constructor(
     private fun aggregateSoldProducts(
         transactions: List<PenjualanTransaksi>,
         kategoriMap: Map<String, String>,
+        kategoriMapNormalized: Map<String, String>,
+        kategoriNameMap: Map<String, String>,
+        productCategoryMap: Map<String, String>,
         periode: PeriodeLaporanPenjualan,
         customStartMillis: Long?,
         customEndMillis: Long?
@@ -81,7 +93,14 @@ class LaporanPenjualanRepositoryImpl @Inject constructor(
             if (tx.items.isNotEmpty()) {
                 tx.items.forEach { item ->
                     val key = if (item.produk.id.isNotBlank()) item.produk.id else item.name.trim().lowercase()
-                    val catName = kategoriMap[item.produk.categoryId] ?: "Umum"
+                    val transactionCategory = item.produk.categoryId.trim()
+                    val categoryId = transactionCategory.ifBlank {
+                        productCategoryMap[item.produk.id].orEmpty()
+                    }
+                    val catName = kategoriMap[categoryId]
+                        ?: kategoriMapNormalized[categoryId.lowercase()]
+                        ?: kategoriNameMap[transactionCategory.lowercase()]
+                        ?: "Umum"
                     val acc = productMap.getOrPut(key) {
                         ProductAccumulator(
                             productId = item.produk.id,
