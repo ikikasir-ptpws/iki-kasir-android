@@ -77,6 +77,7 @@
             android:name=".screens.penjualan.DetailTransaksiActivity"
             android:exported="false"
             android:label="@string/title_activity_detail_transaksi"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.IKIKASIR" />
         <activity
             android:name=".screens.splash.SplashActivity"
@@ -92,24 +93,29 @@
         <activity
             android:name=".feature.auth.presentation.screen.AuthActivity"
             android:exported="false"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.IKIKASIR" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.IKIKASIR" />
         <activity
             android:name=".screens.produk.TambahProdukActivity"
             android:exported="false"
             android:label="@string/title_activity_tambah_produk"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.IKIKASIR" />
         <activity
             android:name=".screens.produk.DetailProdukActivity"
             android:exported="false"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.IKIKASIR" />
         <activity
             android:name=".screens.kategori.TambahKategoriActivity"
             android:exported="false"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.IKIKASIR" />
         <activity
             android:name=".screens.manajemenpengguna.TambahPenggunaActivity"
@@ -120,10 +126,12 @@
         <activity
             android:name=".screens.promo.TambahPromoActivity"
             android:exported="false"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.IKIKASIR" />
         <activity
             android:name=".feature.role.presentation.screen.TambahRoleActivity"
             android:exported="false"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.IKIKASIR" />
 
         <provider

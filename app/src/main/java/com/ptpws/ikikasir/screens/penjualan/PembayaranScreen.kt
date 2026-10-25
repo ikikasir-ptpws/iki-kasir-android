@@ -281,6 +281,7 @@ fun PembayaranScreen(
     }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         containerColor = Color(0xFFF8FAFC),
         topBar = {
             TopAppBar(

@@ -173,6 +173,7 @@ fun TambahPromoScreen(
     }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         containerColor = Color(0xFFF8FAFC),
         topBar = {
             Row(
