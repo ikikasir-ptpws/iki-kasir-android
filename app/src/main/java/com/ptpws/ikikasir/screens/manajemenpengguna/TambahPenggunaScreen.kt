@@ -128,6 +128,7 @@ fun TambahPenggunaScreen(
     val availableRoles = roleListState.roles
     val context = LocalContext.current
     var profileImageUri by remember { mutableStateOf<Uri?>(null) }
+    var showImagePicker by remember { mutableStateOf(false) }
     var roleDropdownExpanded by remember { mutableStateOf(false) }
 
     var kataSandiSaatIniTerlihat by remember { mutableStateOf(false) }
@@ -150,42 +151,18 @@ fun TambahPenggunaScreen(
         }
     }
 
-    val coroutineScope = rememberCoroutineScope()
-    var isUploadingImage by remember { mutableStateOf(false) }
-    var uploadProgress by remember { mutableStateOf<Float?>(null) }
-
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            coroutineScope.launch {
-                isUploadingImage = true
-                uploadProgress = 0.15f
-                GlobalUploadProgress.showProfilePhotoUpload(progress = 0.15f, message = "Memeriksa foto profil...")
-                try {
-                    val compressedFile = ImageCompressorHelper.processAndCompressImage(
-                        context = context,
-                        sourceUri = uri,
-                        targetSubfolder = "user_images",
-                        onProgress = { p, msg ->
-                            uploadProgress = p
-                            GlobalUploadProgress.updateProgress(p, msg)
-                        }
-                    )
-                    val permanentUri = Uri.fromFile(compressedFile)
-                    profileImageUri = permanentUri
-                    viewModel.onPhotoUrlChange(permanentUri.toString())
-                    localError = null
-                } catch (e: Exception) {
-                    localError = "Gagal memproses gambar: ${e.message}"
-                } finally {
-                    delay(150)
-                    isUploadingImage = false
-                    uploadProgress = null
-                    GlobalUploadProgress.dismiss()
-                }
-            }
-        }
+    if (showImagePicker) {
+        com.ptpws.ikikasir.commond.ImageSourcePickerDialog(
+            onImageSelected = { uri ->
+                profileImageUri = uri
+                viewModel.onLocalPhotoSelected(uri)
+                localError = null
+                showImagePicker = false
+            },
+            onDismiss = { showImagePicker = false },
+            uploadType = com.ptpws.ikikasir.commond.ImageUploadType.FOTO_PROFIL,
+            targetSubfolder = "profile_photos"
+        )
     }
 
     Scaffold(
@@ -240,8 +217,8 @@ fun TambahPenggunaScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Box(
-                        modifier = Modifier.clickable(enabled = !isUploadingImage) {
-                            imagePickerLauncher.launch("image/*")
+                        modifier = Modifier.clickable {
+                            showImagePicker = true
                         }
                     ) {
                         Box(
@@ -269,17 +246,6 @@ fun TambahPenggunaScreen(
                                 )
                             }
 
-                            // Circular Progress Indicator Overlay untuk Foto Profil
-                            GlobalImageUploadOverlay(
-                                isUploading = isUploadingImage,
-                                progress = uploadProgress,
-                                shape = CircleShape,
-                                size = if (isCompact) 56.dp else 66.dp,
-                                type = ImageUploadType.FOTO_PROFIL,
-                                title = null,
-                                message = null,
-                                modifier = Modifier.fillMaxSize()
-                            )
                         }
                         Box(
                             modifier = Modifier

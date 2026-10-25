@@ -141,57 +141,21 @@ fun ProfilScreen(
     var kataSandiWifi by remember { mutableStateOf(savedNota.wifiPassword) }
     var ukuranKertas by remember { mutableStateOf(savedNota.paperWidth) }
     var logoUrl by remember { mutableStateOf(savedNota.logoUrl) }
+    var pendingLogoUri by remember { mutableStateOf<Uri?>(null) }
+    var showLogoPicker by remember { mutableStateOf(false) }
+    var isSavingNota by remember { mutableStateOf(false) }
 
-    val notaLogoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            coroutineScope.launch {
-                GlobalUploadProgress.showLogoUpload(progress = 0.15f, message = "Memeriksa ukuran logo...")
-                try {
-                    val compressedFile = ImageCompressorHelper.processAndCompressImage(
-                        context = context,
-                        sourceUri = uri,
-                        targetSubfolder = "store_logo",
-                        onProgress = { p, msg ->
-                            GlobalUploadProgress.updateProgress(p, msg)
-                        }
-                    )
-
-                    GlobalUploadProgress.updateProgress(0.7f, "Menyesuaikan format logo...")
-                    val compressedBitmap = BitmapFactory.decodeFile(compressedFile.absolutePath)
-                    if (compressedBitmap != null) {
-                        val maxDimension = 800
-                        val scale = minOf(maxDimension.toFloat() / compressedBitmap.width, maxDimension.toFloat() / compressedBitmap.height, 1f)
-                        val targetWidth = (compressedBitmap.width * scale).toInt().coerceAtLeast(1)
-                        val targetHeight = (compressedBitmap.height * scale).toInt().coerceAtLeast(1)
-                        val scaledBitmap = if (scale < 1f) {
-                            Bitmap.createScaledBitmap(compressedBitmap, targetWidth, targetHeight, true)
-                        } else {
-                            compressedBitmap
-                        }
-
-                        GlobalUploadProgress.updateProgress(0.85f, "Menyimpan logo nota...")
-                        val baos = ByteArrayOutputStream()
-                        scaledBitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
-                        val imageBytes = baos.toByteArray()
-
-                        // Format Base64 disimpan di Room DB dan Firestore agar persisten & multi-device
-                        val base64String = "data:image/png;base64," + android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP)
-                        logoUrl = base64String
-
-                        GlobalUploadProgress.updateProgress(1.0f, "Logo berhasil dipasang!")
-                        delay(200)
-                    } else {
-                        Toast.makeText(context, "Gagal memproses gambar logo", Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Terjadi kesalahan saat memproses logo: ${e.message}", Toast.LENGTH_SHORT).show()
-                } finally {
-                    GlobalUploadProgress.dismiss()
-                }
-            }
-        }
+    if (showLogoPicker) {
+        com.ptpws.ikikasir.commond.ImageSourcePickerDialog(
+            onImageSelected = { uri ->
+                pendingLogoUri = uri
+                logoUrl = uri.toString()
+                showLogoPicker = false
+            },
+            onDismiss = { showLogoPicker = false },
+            uploadType = com.ptpws.ikikasir.commond.ImageUploadType.LOGO_STRUK,
+            targetSubfolder = "store_logos"
+        )
     }
 
     LaunchedEffect(liveTableSetting) {
@@ -1067,7 +1031,7 @@ fun ProfilScreen(
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEEF2FF)) {
                                         IconButton(
-                                            onClick = { notaLogoPickerLauncher.launch("image/*") },
+                                            onClick = { showLogoPicker = true },
                                             modifier = Modifier.size(36.dp)
                                         ) {
                                             Icon(
@@ -1080,7 +1044,10 @@ fun ProfilScreen(
                                     }
                                     Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
                                         IconButton(
-                                            onClick = { logoUrl = "" },
+                                            onClick = {
+                                                logoUrl = ""
+                                                pendingLogoUri = null
+                                            },
                                             modifier = Modifier.size(36.dp)
                                         ) {
                                             Icon(
@@ -1098,7 +1065,7 @@ fun ProfilScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(12.dp))
-                                    .clickable { notaLogoPickerLauncher.launch("image/*") },
+                                    .clickable { showLogoPicker = true },
                                 shape = RoundedCornerShape(12.dp),
                                 color = Color(0xFFF9FAFB),
                                 border = BorderStroke(1.dp, Color(0xFFD1D5DB))
@@ -1232,27 +1199,35 @@ fun ProfilScreen(
                         }
                         Button(
                             onClick = {
+                                isSavingNota = true
                                 val updatedSetting = NotaSetting(
-                                    storeName    = namaToko,
+                                    storeName = namaToko,
                                     storeAddress = alamatToko,
-                                    wifiName     = namaWifi,
+                                    wifiName = namaWifi,
                                     wifiPassword = kataSandiWifi,
-                                    paperWidth   = ukuranKertas,
-                                    logoUrl      = logoUrl
+                                    paperWidth = ukuranKertas,
+                                    logoUrl = if (pendingLogoUri == null) logoUrl else ""
                                 )
-                                // 1. Simpan ke SharedPreferences
-                                notaPrefs.saveSetting(updatedSetting)
-
-                                // 2. Simpan ke Room DB & Firestore via ViewModel (Clean Architecture)
-                                viewModel.saveNotaSetting(updatedSetting)
-
-                                showStrukDialog = false
+                                viewModel.saveNotaSettingWithLogo(updatedSetting, pendingLogoUri) { savedSetting ->
+                                    isSavingNota = false
+                                    if (savedSetting != null) {
+                                        notaPrefs.saveSetting(savedSetting)
+                                        logoUrl = savedSetting.logoUrl
+                                        pendingLogoUri = null
+                                        showStrukDialog = false
+                                    }
+                                }
                             },
+                            enabled = !isSavingNota,
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
                         ) {
-                            Text("Simpan", fontFamily = interfamily, color = Color.White)
+                            if (isSavingNota) {
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                            } else {
+                                Text("Simpan", fontFamily = interfamily, color = Color.White)
+                            }
                         }
                     }
                 }
@@ -1484,33 +1459,21 @@ fun ProfilScreen(
         val currentUser = userProfileState.user
         var editFullName by remember(currentUser) { mutableStateOf(currentUser?.fullName.orEmpty()) }
         var editPhotoUrl by remember(currentUser) { mutableStateOf(currentUser?.photoUrl.orEmpty()) }
+        var pendingProfilePhotoUri by remember(currentUser) { mutableStateOf<Uri?>(null) }
+        var showProfilePhotoPicker by remember { mutableStateOf(false) }
         var isSavingProfile by remember { mutableStateOf(false) }
 
-        val imagePickerLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.GetContent()
-        ) { uri: Uri? ->
-            uri?.let { sourceUri ->
-                coroutineScope.launch {
-                    GlobalUploadProgress.showProfilePhotoUpload(progress = 0.15f, message = "Memeriksa foto profil...")
-                    try {
-                        val compressedFile = ImageCompressorHelper.processAndCompressImage(
-                            context = context,
-                            sourceUri = sourceUri,
-                            targetSubfolder = "user_images",
-                            onProgress = { p, msg ->
-                                GlobalUploadProgress.updateProgress(p, msg)
-                            }
-                        )
-                        editPhotoUrl = Uri.fromFile(compressedFile).toString()
-                        GlobalUploadProgress.updateProgress(1.0f, "Foto profil berhasil dimuat")
-                        delay(200)
-                    } catch (e: Exception) {
-                        editPhotoUrl = sourceUri.toString()
-                    } finally {
-                        GlobalUploadProgress.dismiss()
-                    }
-                }
-            }
+        if (showProfilePhotoPicker) {
+            com.ptpws.ikikasir.commond.ImageSourcePickerDialog(
+                onImageSelected = { uri ->
+                    pendingProfilePhotoUri = uri
+                    editPhotoUrl = uri.toString()
+                    showProfilePhotoPicker = false
+                },
+                onDismiss = { showProfilePhotoPicker = false },
+                uploadType = com.ptpws.ikikasir.commond.ImageUploadType.FOTO_PROFIL,
+                targetSubfolder = "profile_photos"
+            )
         }
 
         Dialog(onDismissRequest = { if (!isSavingProfile) showEditProfilDialog = false }) {
@@ -1560,7 +1523,7 @@ fun ProfilScreen(
                             .clip(CircleShape)
                             .background(Color(0xFFE5E7EB))
                             .border(2.5.dp, Color(0xFFEEF2FF), CircleShape)
-                            .clickable { imagePickerLauncher.launch("image/*") },
+                            .clickable { showProfilePhotoPicker = true },
                         contentAlignment = Alignment.Center
                     ) {
                         if (editPhotoUrl.isNotBlank()) {
@@ -1583,7 +1546,7 @@ fun ProfilScreen(
                     }
 
                     OutlinedButton(
-                        onClick = { imagePickerLauncher.launch("image/*") },
+                        onClick = { showProfilePhotoPicker = true },
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         Text("Pilih / Ubah Foto Profil", fontFamily = interfamily, fontSize = 12.sp)
@@ -1638,9 +1601,15 @@ fun ProfilScreen(
                         Button(
                             onClick = {
                                 isSavingProfile = true
-                                viewModel.updateUserProfile(editFullName, editPhotoUrl) {
+                                val onComplete: (Boolean) -> Unit = { success ->
                                     isSavingProfile = false
-                                    showEditProfilDialog = false
+                                    if (success) showEditProfilDialog = false
+                                }
+                                val pendingPhoto = pendingProfilePhotoUri
+                                if (pendingPhoto == null) {
+                                    viewModel.updateUserProfile(editFullName, editPhotoUrl, onComplete)
+                                } else {
+                                    viewModel.updateUserProfileWithPhoto(pendingPhoto, editFullName, onComplete)
                                 }
                             },
                             enabled = !isSavingProfile && editFullName.isNotBlank(),

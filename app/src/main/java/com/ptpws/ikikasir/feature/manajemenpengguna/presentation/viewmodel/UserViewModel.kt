@@ -1,9 +1,13 @@
 package com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
+import com.ptpws.ikikasir.commond.GlobalUploadProgress
+import com.ptpws.ikikasir.core.storage.domain.usecase.DeleteStorageImageUseCase
+import com.ptpws.ikikasir.core.storage.domain.usecase.UploadProfilePhotoUseCase
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.model.User
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.usecase.DeleteUserUseCase
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.usecase.GetUsersUseCase
@@ -32,7 +36,9 @@ class UserViewModel @Inject constructor(
     private val deleteUserUseCase: DeleteUserUseCase,
     private val syncUsersUseCase: SyncUsersUseCase,
     private val logActivityUseCase: LogActivityUseCase,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val uploadProfilePhotoUseCase: UploadProfilePhotoUseCase,
+    private val deleteStorageImageUseCase: DeleteStorageImageUseCase
 ) : ViewModel() {
 
     private val _listState = MutableStateFlow(UserListState())
@@ -40,6 +46,8 @@ class UserViewModel @Inject constructor(
 
     private val _formState = MutableStateFlow(UserFormState())
     val formState: StateFlow<UserFormState> = _formState.asStateFlow()
+    private var pendingPhotoUri: Uri? = null
+    private var originalPhotoUrl: String = ""
 
     init {
         loadUsers()
@@ -185,7 +193,13 @@ class UserViewModel @Inject constructor(
     }
 
     fun onPhotoUrlChange(value: String) {
+        pendingPhotoUri = null
         _formState.update { it.copy(photoUrl = value) }
+    }
+
+    fun onLocalPhotoSelected(uri: Uri) {
+        pendingPhotoUri = uri
+        _formState.update { it.copy(photoUrl = uri.toString(), error = null) }
     }
 
     fun sendPasswordResetEmail(email: String, onResult: (Boolean, String) -> Unit) {
@@ -229,6 +243,8 @@ class UserViewModel @Inject constructor(
                 val existing = userList.find { it.id == userId }
                 if (existing != null) {
                     if (_formState.value.id != userId) {
+                        originalPhotoUrl = existing.photoUrl
+                        pendingPhotoUri = null
                         _formState.value = UserFormState(
                             id = existing.id,
                             fullName = existing.fullName,
@@ -251,6 +267,8 @@ class UserViewModel @Inject constructor(
 
     fun resetForm() {
         loadUserJob?.cancel()
+        originalPhotoUrl = ""
+        pendingPhotoUri = null
         _formState.value = UserFormState()
     }
 
@@ -365,13 +383,30 @@ class UserViewModel @Inject constructor(
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, error = null) }
             val userId = if (current.id.isBlank()) UUID.randomUUID().toString() else current.id
+            val uploadedPhotoUrl = pendingPhotoUri?.let { uri ->
+                GlobalUploadProgress.showProfilePhotoUpload(progress = 0f)
+                val result = uploadProfilePhotoUseCase(
+                    localFilePathOrUri = uri.toString(),
+                    userId = userId
+                ) { progress ->
+                    GlobalUploadProgress.updateProgress(progress, "Mengunggah foto pengguna...")
+                }
+                GlobalUploadProgress.dismiss()
+                result.getOrNull() ?: run {
+                    val message = result.exceptionOrNull()?.message ?: "Upload foto pengguna gagal."
+                    GlobalCrudResultDialog.failure(message)
+                    _formState.update { it.copy(isLoading = false, error = message) }
+                    return@launch
+                }
+            }
+            val photoUrl = uploadedPhotoUrl ?: current.photoUrl
             val user = User(
                 id = userId,
                 fullName = current.fullName.trim(),
                 email = current.email.trim(),
                 roleId = current.roleId,
                 isActive = current.isActive,
-                photoUrl = current.photoUrl,
+                photoUrl = photoUrl,
                 createdAt = Timestamp.now(),
                 updatedAt = Timestamp.now()
             )
@@ -388,6 +423,11 @@ class UserViewModel @Inject constructor(
             }
             flow.collect { result ->
                 result.onSuccess {
+                    pendingPhotoUri = null
+                    if (uploadedPhotoUrl != null && originalPhotoUrl.isNotBlank() && originalPhotoUrl != uploadedPhotoUrl) {
+                        deleteStorageImageUseCase(originalPhotoUrl)
+                    }
+                    originalPhotoUrl = user.photoUrl
                     GlobalCrudResultDialog.success(
                         if (isEdit) "Data pengguna \"${user.fullName}\" berhasil diperbarui."
                         else "Pengguna \"${user.fullName}\" berhasil ditambahkan."
@@ -408,6 +448,9 @@ class UserViewModel @Inject constructor(
                     _formState.update { it.copy(isLoading = false, isSuccess = true) }
                     onSuccess()
                 }.onFailure { err ->
+                    if (uploadedPhotoUrl != null) {
+                        deleteStorageImageUseCase(uploadedPhotoUrl)
+                    }
                     val message = err.message ?: "Gagal menyimpan pengguna"
                     GlobalCrudResultDialog.failure(message)
                     _formState.update { it.copy(isLoading = false, error = message) }
@@ -420,4 +463,3 @@ class UserViewModel @Inject constructor(
         _listState.update { it.copy(message = null, error = null) }
     }
 }
-

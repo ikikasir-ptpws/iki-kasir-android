@@ -32,6 +32,9 @@ import com.ptpws.ikikasir.feature.bluetooth.data.BluetoothPrinterConnection
 import com.ptpws.ikikasir.feature.bluetooth.data.preferences.BluetoothPrinterPreferences
 import com.ptpws.ikikasir.feature.bluetooth.domain.repository.BluetoothPrinterRepository
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.PrinterStatus
+import com.ptpws.ikikasir.commond.GlobalUploadProgress
+import com.ptpws.ikikasir.core.storage.domain.usecase.DeleteStorageImageUseCase
+import com.ptpws.ikikasir.core.storage.domain.usecase.UploadPaymentProofUseCase
 
 @HiltViewModel
 class PembayaranViewModel @Inject constructor(
@@ -44,7 +47,9 @@ class PembayaranViewModel @Inject constructor(
     private val getActivePromosUseCase: GetActivePromosUseCase,
     private val logActivityUseCase: LogActivityUseCase,
     private val bluetoothPrinterPreferences: BluetoothPrinterPreferences,
-    private val bluetoothPrinterRepository: BluetoothPrinterRepository
+    private val bluetoothPrinterRepository: BluetoothPrinterRepository,
+    private val uploadPaymentProofUseCase: UploadPaymentProofUseCase,
+    private val deleteStorageImageUseCase: DeleteStorageImageUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PembayaranState())
@@ -448,6 +453,28 @@ class PembayaranViewModel @Inject constructor(
             val tax = currentState.taxSetting
             val ppnPercentage = if (tax.isActive && tax.percentage > 0) tax.percentage else 0.0
             val ppnType = if (tax.isActive && tax.percentage > 0) tax.type else ""
+            val localProof = if (isTunai) "" else currentState.buktiPembayaranUri.orEmpty()
+            var paymentProofUrl = localProof
+            var uploadedProofThisAttempt = false
+            if (localProof.isNotBlank() && !localProof.startsWith("https://")) {
+                GlobalUploadProgress.showBuktiPembayaranUpload(progress = 0f)
+                val uploadResult = uploadPaymentProofUseCase(
+                    localFilePathOrUri = localProof,
+                    transactionId = currentState.orderId
+                ) { progress ->
+                    GlobalUploadProgress.updateProgress(progress, "Mengunggah bukti pembayaran...")
+                }
+                GlobalUploadProgress.dismiss()
+                paymentProofUrl = uploadResult.getOrNull().orEmpty()
+                if (paymentProofUrl.isBlank()) {
+                    val message = uploadResult.exceptionOrNull()?.message ?: "Upload bukti pembayaran gagal."
+                    _state.update {
+                        it.copy(isLoading = false, showFailedDialog = true, errorMessage = message)
+                    }
+                    return@launch
+                }
+                uploadedProofThisAttempt = true
+            }
 
             prosesPembayaranUseCase(
                 kodeTransaksi = currentState.orderId,
@@ -462,7 +489,7 @@ class PembayaranViewModel @Inject constructor(
                 notes = currentState.notes,
                 customerName = currentState.customerName,
                 tableNumber = currentState.tableNumber,
-                paymentProofUrl = currentState.buktiPembayaranUri ?: "",
+                paymentProofUrl = paymentProofUrl,
                 isTaxInclusive = isTaxInclusive
             ).collect { result ->
                 _state.update { it.copy(isLoading = false) }
@@ -484,6 +511,9 @@ class PembayaranViewModel @Inject constructor(
                         generateOrderId()
                     },
                     onFailure = { error ->
+                        if (uploadedProofThisAttempt) {
+                            deleteStorageImageUseCase(paymentProofUrl)
+                        }
                         val message = error.message ?: "Terjadi kesalahan saat memproses pembayaran."
                         logActivityUseCase(
                             title = "Pembatalan Transaksi: ${currentState.orderId}",

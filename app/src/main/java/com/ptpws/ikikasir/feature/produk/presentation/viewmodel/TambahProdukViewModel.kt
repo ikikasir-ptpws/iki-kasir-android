@@ -1,9 +1,13 @@
 package com.ptpws.ikikasir.feature.produk.presentation.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
+import com.ptpws.ikikasir.commond.GlobalUploadProgress
+import com.ptpws.ikikasir.core.storage.domain.usecase.DeleteStorageImageUseCase
+import com.ptpws.ikikasir.core.storage.domain.usecase.UploadProductImageUseCase
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.InsertProdukUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.PrintProductBarcodeUseCase
@@ -28,11 +32,18 @@ class TambahProdukViewModel @Inject constructor(
     private val printProductBarcodeUseCase: PrintProductBarcodeUseCase,
     private val logActivityUseCase: LogActivityUseCase,
     private val getKategoriUseCase: GetKategoriUseCase,
+    private val uploadProductImageUseCase: UploadProductImageUseCase,
+    private val deleteStorageImageUseCase: DeleteStorageImageUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _formState = MutableStateFlow(ProdukFormState())
     val formState: StateFlow<ProdukFormState> = _formState.asStateFlow()
+
+    // Menyimpan URI lokal sementara sebelum diupload ke Storage
+    private var pendingImageUri: Uri? = null
+    // URL gambar lama untuk dihapus dari Storage jika ganti gambar (saat edit)
+    private var oldImageUrl: String = ""
 
     private var registeredCategories: List<Kategori> = emptyList()
 
@@ -76,10 +87,13 @@ class TambahProdukViewModel @Inject constructor(
                     isEditMode = true
                 )
             }
+            oldImageUrl = savedStateHandle.get<String>("produkImageUrl").orEmpty()
         }
     }
 
     fun initFromProduk(produk: Produk) {
+        // Simpan URL gambar lama untuk keperluan hapus dari Storage jika diganti
+        oldImageUrl = produk.imageUrl
         _formState.update {
             it.copy(
                 id = produk.id,
@@ -129,6 +143,33 @@ class TambahProdukViewModel @Inject constructor(
 
     fun onImageUrlChange(imageUrl: String) {
         _formState.update { it.copy(imageUrl = imageUrl) }
+    }
+
+    /**
+     * Dipanggil dari UI ketika user memilih gambar dari kamera/galeri.
+     * Menyimpan URI lokal sementara; upload ke Firebase Storage dilakukan saat simpan.
+     */
+    fun onLocalImageSelected(uri: Uri) {
+        pendingImageUri = uri
+        // Tampilkan preview menggunakan URI lokal sementara
+        _formState.update { it.copy(imageUrl = uri.toString()) }
+    }
+
+    /**
+     * Upload gambar ke Firebase Storage.
+     * Mengembalikan download URL atau null jika gagal.
+     * Dipanggil secara internal dari simpanProduk().
+     */
+    private suspend fun uploadImageIfNeeded(
+        productId: String,
+        onProgress: ((Float) -> Unit)? = null
+    ): Result<String>? {
+        val uri = pendingImageUri ?: return null
+        return uploadProductImageUseCase(
+            localFilePathOrUri = uri.toString(),
+            productId = productId,
+            onProgress = onProgress
+        )
     }
 
     fun onDiscountChange(discount: String) {
@@ -211,7 +252,30 @@ class TambahProdukViewModel @Inject constructor(
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            val produk = currentState.toProduk().copy(categoryId = finalCategoryId)
+            val baseProduk = currentState.toProduk().copy(categoryId = finalCategoryId)
+
+            // Upload gambar ke Firebase Storage jika ada gambar baru yang dipilih
+            var finalImageUrl = currentState.imageUrl
+            if (pendingImageUri != null) {
+                GlobalUploadProgress.showProductImageUpload(progress = 0f)
+                val uploadResult = uploadImageIfNeeded(
+                    productId = baseProduk.id,
+                    onProgress = { progress ->
+                        GlobalUploadProgress.updateProgress(progress, "Mengunggah foto produk...")
+                    }
+                )
+                GlobalUploadProgress.dismiss()
+                val downloadUrl = uploadResult?.getOrNull()
+                if (downloadUrl == null) {
+                    val error = uploadResult?.exceptionOrNull()?.message ?: "Upload foto produk gagal."
+                    GlobalCrudResultDialog.failure(error)
+                    _formState.update { it.copy(isLoading = false, errorMessage = error) }
+                    return@launch
+                }
+                finalImageUrl = downloadUrl
+            }
+
+            val produk = baseProduk.copy(imageUrl = finalImageUrl)
 
             val flow = if (currentState.isEditMode) {
                 updateProdukUseCase(produk)
@@ -221,6 +285,11 @@ class TambahProdukViewModel @Inject constructor(
 
             flow.collect { result ->
                 if (result.isSuccess) {
+                    pendingImageUri = null
+                    if (oldImageUrl.isNotBlank() && oldImageUrl != produk.imageUrl) {
+                        deleteStorageImageUseCase(oldImageUrl)
+                    }
+                    oldImageUrl = produk.imageUrl
                     val isEdit = currentState.isEditMode
                     GlobalCrudResultDialog.success(
                         if (isEdit) "Produk \"${produk.name}\" berhasil diperbarui."
@@ -247,6 +316,9 @@ class TambahProdukViewModel @Inject constructor(
                         )
                     }
                 } else {
+                    if (pendingImageUri != null && finalImageUrl != currentState.imageUrl) {
+                        deleteStorageImageUseCase(finalImageUrl)
+                    }
                     val message = result.exceptionOrNull()?.message ?: "Gagal menyimpan produk"
                     GlobalCrudResultDialog.failure(message)
                     _formState.update {

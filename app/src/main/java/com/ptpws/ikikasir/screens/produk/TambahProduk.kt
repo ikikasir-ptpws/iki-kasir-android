@@ -97,41 +97,21 @@ fun TambahProdukScreen(
     val horizontalScreenPadding = if (isSmallScreen) 12.dp else 16.dp
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var showPrintDialog by remember { mutableStateOf(false) }
+    var showImagePicker by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    var isUploadingImage by remember { mutableStateOf(false) }
-    var uploadProgress by remember { mutableStateOf<Float?>(null) }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            coroutineScope.launch {
-                isUploadingImage = true
-                uploadProgress = 0.15f
-                GlobalUploadProgress.showProductImageUpload(progress = 0.15f, message = "Memeriksa ukuran foto produk...")
-                try {
-                    val compressedFile = ImageCompressorHelper.processAndCompressImage(
-                        context = context,
-                        sourceUri = uri,
-                        targetSubfolder = "product_images",
-                        onProgress = { p, msg ->
-                            uploadProgress = p
-                            GlobalUploadProgress.updateProgress(p, msg)
-                        }
-                    )
-                    val permanentUri = Uri.fromFile(compressedFile)
-                    imageUri = permanentUri
-                    viewModel.onImageUrlChange(permanentUri.toString())
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Gagal memproses foto: ${e.message}", Toast.LENGTH_SHORT).show()
-                } finally {
-                    delay(150)
-                    isUploadingImage = false
-                    uploadProgress = null
-                    GlobalUploadProgress.dismiss()
-                }
-            }
-        }
+    // ImageSourcePickerDialog ditampilkan dari showImagePicker state
+    if (showImagePicker) {
+        com.ptpws.ikikasir.commond.ImageSourcePickerDialog(
+            onImageSelected = { uri ->
+                imageUri = uri
+                viewModel.onLocalImageSelected(uri)
+                showImagePicker = false
+            },
+            onDismiss = { showImagePicker = false },
+            uploadType = com.ptpws.ikikasir.commond.ImageUploadType.PRODUK,
+            targetSubfolder = "product_images"
+        )
     }
 
     val triggerBarcodeScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { scannedCode ->
@@ -194,7 +174,7 @@ fun TambahProdukScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(if (isSmallScreen) 125.dp else 150.dp)
-                        .clickable(enabled = !isUploadingImage) { imagePickerLauncher.launch("image/*") },
+                        .clickable { showImagePicker = true },
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6)),
                     border = BorderStroke(1.dp, Color(0xFFC7D2FE))
@@ -238,14 +218,6 @@ fun TambahProdukScreen(
                             }
                         }
 
-                        // Circular Progress Overlay untuk upload/proses foto produk
-                        GlobalImageUploadOverlay(
-                            isUploading = isUploadingImage,
-                            progress = uploadProgress,
-                            title = "Memproses Foto...",
-                            type = ImageUploadType.PRODUK,
-                            modifier = Modifier.fillMaxSize()
-                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(4.dp))

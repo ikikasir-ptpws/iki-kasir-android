@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
+import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.dao.UserDao
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.entity.toEntity
@@ -33,6 +34,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import android.net.Uri
+import com.ptpws.ikikasir.core.storage.domain.usecase.DeleteStorageImageUseCase
+import com.ptpws.ikikasir.core.storage.domain.usecase.UploadProfilePhotoUseCase
+import com.ptpws.ikikasir.core.storage.domain.usecase.UploadStoreLogoUseCase
 
 data class UserProfileState(
     val user: User? = null,
@@ -54,7 +59,10 @@ class ProfilViewModel @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val userDao: UserDao,
     private val roleDao: RoleDao,
-    private val userRemoteDataSource: UserRemoteDataSource
+    private val userRemoteDataSource: UserRemoteDataSource,
+    private val uploadProfilePhotoUseCase: UploadProfilePhotoUseCase,
+    private val deleteStorageImageUseCase: DeleteStorageImageUseCase,
+    private val uploadStoreLogoUseCase: UploadStoreLogoUseCase
 ) : ViewModel() {
 
     private val _userProfileState = MutableStateFlow(UserProfileState())
@@ -122,58 +130,144 @@ class ProfilViewModel @Inject constructor(
     fun updateUserProfile(newFullName: String, newPhotoUrl: String, onComplete: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
             val current = _userProfileState.value.user ?: return@launch
-            val updatedUser = current.copy(
-                fullName = newFullName.trim(),
-                photoUrl = newPhotoUrl,
-                updatedAt = com.google.firebase.Timestamp.now()
-            )
+            _userProfileState.value = _userProfileState.value.copy(isLoading = true)
+            val saved = persistUserProfile(current, newFullName, newPhotoUrl)
+            _userProfileState.value = _userProfileState.value.copy(isLoading = false)
+            onComplete(saved)
+        }
+    }
 
+    /**
+     * Upload foto profil ke Firebase Storage dan update data pengguna.
+     * @param localImageUri URI gambar lokal (dari kamera atau galeri)
+     * @param newFullName Nama lengkap baru (bisa sama dengan yang lama)
+     * @param onComplete Dipanggil setelah selesai (true = sukses, false = gagal)
+     */
+    fun updateUserProfileWithPhoto(
+        localImageUri: Uri,
+        newFullName: String,
+        onComplete: (Boolean) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            val current = _userProfileState.value.user ?: return@launch
+            _userProfileState.value = _userProfileState.value.copy(isLoading = true)
+            GlobalUploadProgress.showProfilePhotoUpload(progress = 0f)
+            val uploadResult = uploadProfilePhotoUseCase(
+                localFilePathOrUri = localImageUri.toString(),
+                userId = current.id
+            ) { progress ->
+                GlobalUploadProgress.updateProgress(progress, "Mengunggah foto profil...")
+            }
+            GlobalUploadProgress.dismiss()
+            val newPhotoUrl = uploadResult.getOrNull()
+            if (newPhotoUrl == null) {
+                val message = uploadResult.exceptionOrNull()?.message ?: "Upload foto profil gagal."
+                GlobalCrudResultDialog.failure(message)
+                _userProfileState.value = _userProfileState.value.copy(isLoading = false)
+                onComplete(false)
+                return@launch
+            }
+            val saved = persistUserProfile(current, newFullName, newPhotoUrl)
+            if (saved && current.photoUrl.isNotBlank() && current.photoUrl != newPhotoUrl) {
+                deleteStorageImageUseCase(current.photoUrl)
+            } else if (!saved) {
+                deleteStorageImageUseCase(newPhotoUrl)
+            }
+            _userProfileState.value = _userProfileState.value.copy(isLoading = false)
+            onComplete(saved)
+        }
+    }
+
+    private suspend fun persistUserProfile(
+        current: User,
+        newFullName: String,
+        newPhotoUrl: String
+    ): Boolean {
+        val updatedUser = current.copy(
+            fullName = newFullName.trim(),
+            photoUrl = newPhotoUrl,
+            updatedAt = com.google.firebase.Timestamp.now()
+        )
+        return try {
             withContext(Dispatchers.IO) {
-                try {
-                    // Update Firebase Auth user profile
-                    firebaseAuth.currentUser?.let { fUser ->
-                        val changeRequest = UserProfileChangeRequest.Builder()
-                            .setDisplayName(newFullName.trim())
-                            .apply {
-                                if (newPhotoUrl.isNotBlank()) setPhotoUri(android.net.Uri.parse(newPhotoUrl))
-                            }
-                            .build()
-                        try {
-                            fUser.updateProfile(changeRequest).await()
-                        } catch (e: Exception) {
-                            android.util.Log.w("ProfilViewModel", "Firebase Auth update profile error: ${e.message}")
+                firebaseAuth.currentUser?.let { firebaseUser ->
+                    val changeRequest = UserProfileChangeRequest.Builder()
+                        .setDisplayName(newFullName.trim())
+                        .apply {
+                            if (newPhotoUrl.isNotBlank()) setPhotoUri(Uri.parse(newPhotoUrl))
                         }
-                    }
-
-                    // Update Room DB
-                    userDao.insertOrUpdate(updatedUser.toEntity(isSynced = true))
-
-                    // Update Firestore
+                        .build()
                     try {
-                        userRemoteDataSource.updateUser(updatedUser.toDto())
+                        firebaseUser.updateProfile(changeRequest).await()
                     } catch (e: Exception) {
-                        userDao.insertOrUpdate(updatedUser.toEntity(isSynced = false))
-                    }
-
-                    _userProfileState.value = _userProfileState.value.copy(user = updatedUser)
-
-                    logActivityUseCase(
-                        title = "Pembaruan Profil",
-                        description = "Profil pengguna '${updatedUser.fullName}' diperbarui.",
-                        category = "USER_MANAGEMENT",
-                        action = "UPDATE"
-                    )
-
-                    withContext(Dispatchers.Main) {
-                        GlobalCrudResultDialog.success("Profil berhasil diperbarui.")
-                        onComplete(true)
-                    }
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
-                        GlobalCrudResultDialog.failure(e.message ?: "Gagal memperbarui profil.")
-                        onComplete(false)
+                        android.util.Log.w("ProfilViewModel", "Firebase Auth update profile error: ${e.message}")
                     }
                 }
+                userDao.insertOrUpdate(updatedUser.toEntity(isSynced = true))
+                try {
+                    userRemoteDataSource.updateUser(updatedUser.toDto())
+                } catch (e: Exception) {
+                    userDao.insertOrUpdate(updatedUser.toEntity(isSynced = false))
+                }
+            }
+            _userProfileState.value = _userProfileState.value.copy(user = updatedUser)
+            logActivityUseCase(
+                title = "Pembaruan Profil",
+                description = "Profil pengguna '${updatedUser.fullName}' diperbarui.",
+                category = "USER_MANAGEMENT",
+                action = "UPDATE"
+            )
+            GlobalCrudResultDialog.success("Profil berhasil diperbarui.")
+            true
+        } catch (e: Exception) {
+            GlobalCrudResultDialog.failure(e.message ?: "Gagal memperbarui profil.")
+            false
+        }
+    }
+
+    fun saveNotaSettingWithLogo(
+        setting: NotaSetting,
+        localImageUri: Uri?,
+        onComplete: (NotaSetting?) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            val oldLogoUrl = _notaSetting.value.logoUrl
+            var uploadedLogoUrl: String? = null
+            val settingWithLogo = if (localImageUri == null) {
+                setting
+            } else {
+                GlobalUploadProgress.showLogoUpload(progress = 0f)
+                val uploadResult = uploadStoreLogoUseCase(
+                    localFilePathOrUri = localImageUri.toString(),
+                    storeId = setting.id
+                ) { progress ->
+                    GlobalUploadProgress.updateProgress(progress, "Mengunggah logo toko...")
+                }
+                GlobalUploadProgress.dismiss()
+                val downloadUrl = uploadResult.getOrNull()
+                if (downloadUrl == null) {
+                    GlobalCrudResultDialog.failure(
+                        uploadResult.exceptionOrNull()?.message ?: "Upload logo toko gagal."
+                    )
+                    onComplete(null)
+                    return@launch
+                }
+                uploadedLogoUrl = downloadUrl
+                setting.copy(logoUrl = downloadUrl)
+            }
+            saveNotaSetting(settingWithLogo) { success ->
+                if (success && oldLogoUrl.isNotBlank() && oldLogoUrl != settingWithLogo.logoUrl) {
+                    viewModelScope.launch {
+                        deleteStorageImageUseCase(oldLogoUrl)
+                    }
+                } else if (!success) {
+                    uploadedLogoUrl?.let { logoUrl ->
+                        viewModelScope.launch {
+                            deleteStorageImageUseCase(logoUrl)
+                        }
+                    }
+                }
+                onComplete(if (success) settingWithLogo else null)
             }
         }
     }
