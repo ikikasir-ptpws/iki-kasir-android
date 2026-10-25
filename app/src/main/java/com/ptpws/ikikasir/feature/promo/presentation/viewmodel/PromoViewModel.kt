@@ -23,8 +23,9 @@ import javax.inject.Inject
 data class PromoListState(
     val promoList: List<Promo> = emptyList(),
     val filteredList: List<Promo> = emptyList(),
+    val availablePromoTypes: List<String> = emptyList(),
     val searchQuery: String = "",
-    val selectedFilterTab: String = "Semua", // "Semua", "Aktif", "Akan Datang", "Kedaluwarsa"
+    val selectedFilterTab: String = "Semua", // "Semua", "Aktif", "Akan Datang", "Kedaluwarsa", or specific tipePromo
     val isLoading: Boolean = false,
     val userMessage: String? = null,
     val errorMessage: String? = null
@@ -51,10 +52,15 @@ class PromoViewModel @Inject constructor(
             launch {
                 getPromoListUseCase().collect { list ->
                     _state.update { currentState ->
+                        val defaultTabs = setOf("Semua", "Aktif", "Akan Datang", "Kedaluwarsa")
+                        val promoTypes = list.map { it.tipePromo.trim() }
+                            .filter { it.isNotBlank() && !defaultTabs.contains(it) }
+                            .distinct()
                         val filtered = applyFilterAndSearch(list, currentState.searchQuery, currentState.selectedFilterTab)
                         currentState.copy(
                             promoList = list,
-                            filteredList = filtered
+                            filteredList = filtered,
+                            availablePromoTypes = promoTypes
                         )
                     }
                 }
@@ -144,10 +150,11 @@ class PromoViewModel @Inject constructor(
                     promo.tipePromo.contains(query, ignoreCase = true)
 
             val matchesTab = when (filterTab) {
+                "Semua" -> true
                 "Aktif" -> promo.isAvailableOn()
                 "Akan Datang" -> promo.isUpcomingOn()
                 "Kedaluwarsa" -> promo.isExpiredOn()
-                else -> true
+                else -> promo.tipePromo.equals(filterTab, ignoreCase = true)
             }
 
             matchesQuery && matchesTab

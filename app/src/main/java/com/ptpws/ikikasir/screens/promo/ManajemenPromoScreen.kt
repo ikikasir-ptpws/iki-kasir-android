@@ -296,12 +296,15 @@ fun ManajemenPromoScreen(
 
             // ── 3. Filter Chips ──────────────────────────────────────────
             item {
+                val defaultFilters = remember { listOf("Semua", "Aktif", "Akan Datang", "Kedaluwarsa") }
+                val allFilters = remember(state.availablePromoTypes) {
+                    defaultFilters + state.availablePromoTypes
+                }
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 2.dp)
                 ) {
-                    val filters = listOf("Semua", "Aktif", "Akan Datang", "Kedaluwarsa")
-                    items(filters) { filterText ->
+                    items(allFilters) { filterText ->
                         val isSelected = state.selectedFilterTab == filterText
                         Surface(
                             shape = RoundedCornerShape(20.dp),
@@ -366,30 +369,55 @@ fun ManajemenPromoScreen(
                                 modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
-                                if (!promo.isSynced) {
-                                    Box(
-                                        modifier = Modifier
-                                            .background(
-                                                color = Color(0xFFFEF3C7),
-                                                shape = RoundedCornerShape(20.dp)
-                                            )
-                                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                                if (!promo.isSynced || promo.tipePromo.isNotBlank()) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        Text(
-                                            text = "Pending",
-                                            fontFamily = interfamily,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFFD97706)
-                                        )
+                                        if (!promo.isSynced) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(
+                                                        color = Color(0xFFFEF3C7),
+                                                        shape = RoundedCornerShape(20.dp)
+                                                    )
+                                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                                            ) {
+                                                Text(
+                                                    text = "Pending",
+                                                    fontFamily = interfamily,
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color(0xFFD97706)
+                                                )
+                                            }
+                                        }
+                                        if (promo.tipePromo.isNotBlank()) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(
+                                                        color = Color(0xFFEFF6FF),
+                                                        shape = RoundedCornerShape(20.dp)
+                                                    )
+                                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                                            ) {
+                                                Text(
+                                                    text = promo.tipePromo,
+                                                    fontFamily = interfamily,
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color(0xFF2563EB)
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                                 Text(
                                     text = promo.name,
                                     fontFamily = interfamily,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF334155)
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
                                 )
                                 val nilaidiskonText = if (promo.discountType == "%") {
                                     "Diskon ${promo.discountValue.toInt()}%"

@@ -28,7 +28,7 @@ class TambahPromoActivity : BaseActivity() {
                         onBack = { finish() },
                         onSimpanPromo = { finish() }
                     )
-                    GlobalCrudResultDialogHost()
+                    GlobalCrudResultDialogHost(showSuccess = false)
                 }
             }
         }
