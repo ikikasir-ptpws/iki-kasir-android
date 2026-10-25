@@ -71,6 +71,7 @@ class PendingImageSyncWorker(
             "products" -> database.produkDao.updateImageUrl(item.documentId, downloadUrl)
             "users" -> database.userDao.updatePhotoUrl(item.documentId, downloadUrl)
             "transactions" -> database.transactionDao.updatePaymentProofUrl(item.documentId, downloadUrl)
+            "financial_records" -> database.catatanKeuanganDao.updateProofImageUrl(item.documentId, downloadUrl)
             "nota_settings" -> {
                 database.notaSettingDao.updateLogoUrl(item.documentId, downloadUrl)
                 database.notaSettingDao.getNotaSetting(item.documentId)?.let { setting ->

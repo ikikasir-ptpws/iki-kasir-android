@@ -123,6 +123,26 @@ sealed class AppScreen(
         "laporan_keuangan"
     )
 
+    object CatatanKeuangan : AppScreen(
+        R.string.screen_catatan_keuangan,
+        R.drawable.catatankeuangan,
+        "catatan_keuangan"
+    )
+
+    object TambahCatatanKeuangan : AppScreen(
+        R.string.screen_tambah_catatan_keuangan,
+        R.drawable.catatankeuangan,
+        "tambah_catatan_keuangan?catatanId={catatanId}"
+    ) {
+        fun createRoute(catatanId: String? = null): String {
+            return if (!catatanId.isNullOrBlank()) {
+                "tambah_catatan_keuangan?catatanId=$catatanId"
+            } else {
+                "tambah_catatan_keuangan"
+            }
+        }
+    }
+
     object AuditLog : AppScreen(
         R.string.screen_auditlog,
         R.drawable.logoikikasir,
@@ -222,4 +242,4 @@ sealed class AppScreen(
         R.drawable.logoikikasir,
         "referral"
     )
-}
+}

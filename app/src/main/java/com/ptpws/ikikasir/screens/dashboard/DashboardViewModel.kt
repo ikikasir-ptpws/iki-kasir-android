@@ -46,6 +46,7 @@ private val DEFAULT_UNASSIGNED_ROLE_ACCESS = listOf(
     "Antrean",
     "Riwayat Antrean",
     "Laporan Keuangan",
+    "Catatan Keuangan",
     "Manajemen Pengguna",
     "Audit Log"
 ).associateWith { true }

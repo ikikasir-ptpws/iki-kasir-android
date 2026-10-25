@@ -36,6 +36,9 @@ import com.ptpws.ikikasir.feature.auditlog.data.local.entity.AuditLogEntity
 import com.ptpws.ikikasir.core.storage.data.local.PendingImageEntity
 import com.ptpws.ikikasir.core.storage.data.local.PendingImageDao
 
+import com.ptpws.ikikasir.feature.catatankeuangan.data.local.dao.CatatanKeuanganDao
+import com.ptpws.ikikasir.feature.catatankeuangan.data.local.entity.CatatanKeuanganEntity
+
 @Database(
     entities = [
         KategoriEntity::class,
@@ -52,9 +55,10 @@ import com.ptpws.ikikasir.core.storage.data.local.PendingImageDao
         TableSettingEntity::class,
         PromoEntity::class,
         AuditLogEntity::class,
-        PendingImageEntity::class
+        PendingImageEntity::class,
+        CatatanKeuanganEntity::class
     ],
-    version = 37,
+    version = 41,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class, MapConverter::class)
@@ -74,6 +78,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val promoDao: PromoDao
     abstract val auditLogDao: AuditLogDao
     abstract val pendingImageDao: PendingImageDao
+    abstract val catatanKeuanganDao: CatatanKeuanganDao
 
     companion object {
         const val DATABASE_NAME = "ikikasir_db"

@@ -1,5 +1,7 @@
 package com.ptpws.ikikasir.commond
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.core.util.ImageCompressorHelper
@@ -142,6 +145,45 @@ fun ImageSourcePickerDialog(
         }
     }
 
+    fun launchCamera() {
+        try {
+            val (_, uri) = ImageCompressorHelper.createCameraTempFileUri(context)
+            cameraFileUri = uri
+            cameraLauncher.launch(uri)
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(
+                context,
+                "Gagal membuka kamera: ${e.message}",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            launchCamera()
+        } else {
+            android.widget.Toast.makeText(
+                context,
+                "Izin kamera diperlukan untuk mengambil foto.",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    val onCameraClick = {
+        if (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            launchCamera()
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
     val title = when (uploadType) {
         ImageUploadType.PRODUK -> "Pilih Foto Produk"
         ImageUploadType.LOGO_STRUK -> "Pilih Logo Toko"
@@ -235,17 +277,7 @@ fun ImageSourcePickerDialog(
                             label = "Kamera",
                             description = "Ambil foto baru",
                             gradientColors = listOf(Color(0xFF6366F1), Color(0xFF4F46E5)),
-                            onClick = {
-                                try {
-                                    val (_, uri) = ImageCompressorHelper.createCameraTempFileUri(context)
-                                    cameraFileUri = uri
-                                    cameraLauncher.launch(uri)
-                                } catch (e: Exception) {
-                                    android.widget.Toast.makeText(
-                                        context, "Gagal membuka kamera: ${e.message}", android.widget.Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
+                            onClick = onCameraClick
                         )
 
                         // Opsi Galeri

@@ -23,6 +23,8 @@
 
     <!-- Keuangan -->
     <string name="screen_laporan_keuangan">Laporan Keuangan</string>
+    <string name="screen_catatan_keuangan">Catatan Keuangan</string>
+    <string name="screen_tambah_catatan_keuangan">Tambah Catatan Keuangan</string>
     <string name="screen_auditlog">Audit Log</string>
 
     <!-- Pengguna -->

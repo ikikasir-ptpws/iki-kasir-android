@@ -132,6 +132,13 @@ class SidebarRepositoryImpl @Inject constructor() : SidebarRepository {
                         route = AppScreen.LaporanKeuangan.route,
                         iconRes = R.drawable.laporankeuangan,
                         permissionName = "Laporan Keuangan"
+                    ),
+                    SidebarSubMenuItem(
+                        id = "keuangan_catatan",
+                        title = "Catatan Keuangan",
+                        route = AppScreen.CatatanKeuangan.route,
+                        iconRes = R.drawable.catatankeuangan,
+                        permissionName = "Catatan Keuangan"
                     )
                 )
             ),

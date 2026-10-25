@@ -69,6 +69,24 @@ class UploadPaymentProofUseCase @Inject constructor(
     }
 }
 
+class UploadFinancialRecordProofUseCase @Inject constructor(
+    private val storageRepository: StorageRepository
+) {
+    suspend operator fun invoke(
+        localFilePathOrUri: String,
+        recordId: String,
+        onProgress: ((Float) -> Unit)? = null
+    ): Result<String> {
+        val fileName = "financial_record_${recordId}_${System.currentTimeMillis()}.jpg"
+        return storageRepository.uploadImage(
+            localFilePathOrUri = localFilePathOrUri,
+            folder = StoragePath.FINANCIAL_RECORD_PAYMENT_PROOFS,
+            fileName = fileName,
+            onProgress = onProgress
+        )
+    }
+}
+
 /**
  * Use case untuk mengupload logo toko (struk/nota) ke Firebase Storage.
  */

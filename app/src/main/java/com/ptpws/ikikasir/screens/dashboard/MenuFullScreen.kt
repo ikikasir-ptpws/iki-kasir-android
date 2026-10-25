@@ -32,6 +32,7 @@ import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalConfiguration
 
 @Composable
 fun MenuFullScreen(
@@ -60,7 +61,8 @@ fun MenuFullScreen(
     val hasPenjualanSection = showKasir || showTransaksi || showAntrean || showRiwayatAntrean || showPromo || showLaporanPenjualan
 
     val showLaporanKeuangan = viewModel.isAllowed("Laporan Keuangan") && matchSearch(query, "laporan keuangan", "laporan", "keuangan")
-    val hasKeuanganSection = showLaporanKeuangan
+    val showCatatanKeuangan = viewModel.isAllowed("Catatan Keuangan") && matchSearch(query, "catatan keuangan", "catatan", "pemasukan", "pengeluaran")
+    val hasKeuanganSection = showLaporanKeuangan || showCatatanKeuangan
 
     val showManajemenPengguna = viewModel.isAllowed("Manajemen Pengguna") && matchSearch(query, "manajemen pengguna", "pengguna", "user")
     val showAuditLog = viewModel.isAllowed("Audit Log") && matchSearch(query, "audit log", "auditlog", "audit", "log")
@@ -146,7 +148,13 @@ fun MenuFullScreen(
 
             if (!sessionState.isLoading && hasKeuanganSection) {
                 item { SectionTitle(title = "Keuangan") }
-                item { KeuanganMenuSection(navController = navController, showLaporan = showLaporanKeuangan) }
+                item {
+                    KeuanganMenuSection(
+                        navController = navController,
+                        showLaporan = showLaporanKeuangan,
+                        showCatatan = showCatatanKeuangan
+                    )
+                }
                 item { Spacer(modifier = Modifier.height(12.dp)) }
             }
 
@@ -165,28 +173,50 @@ fun MenuFullScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun KeuanganMenuSection(
     navController: NavController,
-    showLaporan: Boolean = true
+    showLaporan: Boolean = true,
+    showCatatan: Boolean = true
 ) {
-    if (!showLaporan) return
-    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val items = mutableListOf<@Composable () -> Unit>()
+    if (showLaporan) {
+        items.add {
+            MenuIconItem(
+                iconRes = R.drawable.laporankeuangan,
+                label = "Laporan\nKeuangan",
+                bgColor = Color(0xFFFFF0F6),
+                onClick = { navController.navigate(AppScreen.LaporanKeuangan.route) }
+            )
+        }
+    }
+    if (showCatatan) {
+        items.add {
+            MenuIconItem(
+                iconRes = R.drawable.catatankeuangan,
+                label = "Catatan\nKeuangan",
+                bgColor = Color(0xFFECFDF5),
+                onClick = { navController.navigate(AppScreen.CatatanKeuangan.route) }
+            )
+        }
+    }
+
+    if (items.isEmpty()) return
+
+    val configuration = LocalConfiguration.current
     val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
     val sectionHorizontalPadding = if (isSmallScreen) 14.dp else 20.dp
+    val itemSpacing = if (isSmallScreen) 16.dp else 28.dp
 
-    Row(
+    FlowRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = sectionHorizontalPadding),
-        horizontalArrangement = Arrangement.Start
+        horizontalArrangement = Arrangement.spacedBy(itemSpacing),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        MenuIconItem(
-            iconRes = R.drawable.laporankeuangan,
-            label = "Laporan\nKeuangan",
-            bgColor = Color(0xFFFFF0F6),
-            onClick = { navController.navigate(AppScreen.LaporanKeuangan.route) }
-        )
+        items.forEach { it() }
     }
 }
 

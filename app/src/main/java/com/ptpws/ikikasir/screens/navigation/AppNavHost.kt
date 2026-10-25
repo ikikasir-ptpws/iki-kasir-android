@@ -40,6 +40,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -66,7 +68,10 @@ import com.ptpws.ikikasir.screens.pengaturan.ProfilScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
 import com.ptpws.ikikasir.screens.kategori.TambahKategoriActivity
 import com.ptpws.ikikasir.screens.keuangan.AuditLogScreen
+import com.ptpws.ikikasir.screens.keuangan.CatatanKeuanganScreen
 import com.ptpws.ikikasir.screens.keuangan.LaporanKeuanganScreen
+import com.ptpws.ikikasir.screens.keuangan.TambahCatatanKeuanganActivity
+import com.ptpws.ikikasir.screens.keuangan.TambahCatatanKeuanganScreen
 import com.ptpws.ikikasir.feature.laporanpenjualan.presentation.screen.LaporanPenjualanScreen
 import com.ptpws.ikikasir.screens.manajemenpengguna.ManajemenPenggunaScreen
 import com.ptpws.ikikasir.screens.manajemenpengguna.TambahPenggunaActivity
@@ -297,6 +302,36 @@ fun AppNavHost() {
                 LaporanKeuanganScreen(
                     navController = navController,
                     onBack = { navController.popBackStackSafely(AppScreen.LaporanKeuangan.route) }
+                )
+            }
+            composable(AppScreen.CatatanKeuangan.route) {
+                val context = LocalContext.current
+                CatatanKeuanganScreen(
+                    onBack = { navController.popBackStackSafely(AppScreen.CatatanKeuangan.route) },
+                    onTambahCatatan = {
+                        context.startActivity(Intent(context, TambahCatatanKeuanganActivity::class.java))
+                    },
+                    onEditCatatan = { catatanId ->
+                        val intent = Intent(context, TambahCatatanKeuanganActivity::class.java).apply {
+                            putExtra("CATATAN_ID", catatanId)
+                        }
+                        context.startActivity(intent)
+                    }
+                )
+            }
+            composable(
+                route = AppScreen.TambahCatatanKeuangan.route,
+                arguments = listOf(navArgument("catatanId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
+                val catatanId = backStackEntry.arguments?.getString("catatanId")
+                TambahCatatanKeuanganScreen(
+                    catatanId = catatanId,
+                    onBack = { navController.popBackStackSafely(AppScreen.TambahCatatanKeuangan.route) },
+                    onSimpanSuccess = { navController.popBackStackSafely(AppScreen.TambahCatatanKeuangan.route) }
                 )
             }
             composable(AppScreen.AuditLog.route) {
