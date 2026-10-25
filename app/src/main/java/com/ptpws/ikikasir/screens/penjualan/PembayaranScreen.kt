@@ -16,6 +16,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -45,6 +47,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -149,6 +152,7 @@ fun PembayaranScreen(
 
     // ─── Bukti Pembayaran (Kamera & Galeri) Launchers ──────────────────────────
     val coroutineScope = rememberCoroutineScope()
+    val receivedAmountBringIntoViewRequester = remember { BringIntoViewRequester() }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -331,72 +335,6 @@ fun PembayaranScreen(
                 )
             )
         },
-        bottomBar = {
-            Surface(
-                color = Color.White,
-                shadowElevation = 12.dp,
-                tonalElevation = 8.dp
-            ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Button(
-                            onClick = { viewModel.prosesPembayaran() },
-                            enabled = !state.isLoading && state.subtotal > 0,
-                            modifier = Modifier
-                                .widthIn(max = 720.dp)
-                                .fillMaxWidth()
-                                .heightIn(min = 48.dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = PrimaryRoyalBlue,
-                                disabledContainerColor = Color(0xFFE2E8F0)
-                            )
-                        ) {
-                        if (state.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = Color.White,
-                                strokeWidth = 2.5.dp
-                            )
-                        } else {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text(
-                                    text = "Konfirmasi Bayar",
-                                    fontFamily = interfamily,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                                Text(
-                                    text = "  |  Rp ${formatRupiah(state.grandTotal)}",
-                                    fontFamily = interfamily,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -406,7 +344,7 @@ fun PembayaranScreen(
         ) {
             LazyColumn(
                 modifier = Modifier
-                    .fillMaxHeight()
+                    .fillMaxSize()
                     .widthIn(max = 720.dp)
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp),
@@ -1091,7 +1029,17 @@ fun PembayaranScreen(
                                                 innerTextField()
                                             }
                                         },
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .bringIntoViewRequester(receivedAmountBringIntoViewRequester)
+                                            .onFocusChanged { focusState ->
+                                                if (focusState.isFocused) {
+                                                    coroutineScope.launch {
+                                                        delay(250)
+                                                        receivedAmountBringIntoViewRequester.bringIntoView()
+                                                    }
+                                                }
+                                            }
                                     )
                                 }
                             }
@@ -1233,6 +1181,61 @@ fun PembayaranScreen(
                                 color = Color(state.printerStatus.dotColor),
                                 maxLines = 1,
                                 softWrap = false
+                            )
+                        }
+                    }
+
+                }
+            }
+
+            item(key = "confirm_payment_action") {
+                Button(
+                    onClick = { viewModel.prosesPembayaran() },
+                    enabled = !state.isLoading && state.subtotal > 0,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 720.dp)
+                        .heightIn(min = 52.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryRoyalBlue,
+                        disabledContainerColor = Color(0xFFE2E8F0)
+                    )
+                ) {
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White,
+                            strokeWidth = 2.5.dp
+                        )
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Konfirmasi Bayar",
+                                fontFamily = interfamily,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "  |  Rp ${formatRupiah(state.grandTotal)}",
+                                fontFamily = interfamily,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
