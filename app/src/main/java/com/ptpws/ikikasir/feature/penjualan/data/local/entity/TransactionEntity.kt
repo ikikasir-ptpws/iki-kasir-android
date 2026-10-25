@@ -93,11 +93,13 @@ data class TransactionEntity(
                 val price = obj.optDouble("price", 0.0)
                 val qty = obj.optInt("quantity", 1)
                 val imgUrl = obj.optString("imageUrl", "")
+                val categoryId = obj.optString("categoryId", "")
                 cartItems.add(
                     CartItem(
                         produk = Produk(
                             id = pId,
                             name = pName,
+                            categoryId = categoryId,
                             sellingPrice = price,
                             imageUrl = imgUrl
                         ),
@@ -143,6 +145,7 @@ fun PenjualanTransaksi.toEntity(isSynced: Boolean = false): TransactionEntity {
         val obj = JSONObject().apply {
             put("productId", cartItem.produk.id)
             put("productName", cartItem.produk.name)
+            put("categoryId", cartItem.produk.categoryId)
             put("price", cartItem.price)
             put("quantity", cartItem.quantity)
             put("totalPrice", cartItem.totalPrice)
