@@ -104,10 +104,12 @@ data class TransactionDto(
             val price = (map["price"] as? Number)?.toDouble() ?: 0.0
             val qty = (map["quantity"] as? Number)?.toInt() ?: 1
             val imgUrl = map["imageUrl"]?.toString() ?: map["image"]?.toString() ?: ""
+            val categoryId = map["categoryId"]?.toString().orEmpty()
             CartItem(
                 produk = Produk(
                     id = pId,
                     name = pName,
+                    categoryId = categoryId,
                     sellingPrice = price,
                     imageUrl = imgUrl
                 ),
@@ -148,6 +150,7 @@ fun PenjualanTransaksi.toDto(): TransactionDto {
         mapOf(
             "productId" to cartItem.produk.id,
             "productName" to cartItem.produk.name,
+            "categoryId" to cartItem.produk.categoryId,
             "price" to cartItem.price,
             "quantity" to cartItem.quantity,
             "totalPrice" to cartItem.totalPrice,
