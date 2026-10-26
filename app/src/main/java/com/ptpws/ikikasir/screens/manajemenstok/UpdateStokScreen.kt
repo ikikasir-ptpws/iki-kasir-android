@@ -122,57 +122,6 @@ fun UpdateStokScreen(
                 )
                 HorizontalDivider(color = Color(0xFFE5E7EB), thickness = 1.dp)
             }
-        },
-        bottomBar = {
-            Surface(
-                color = Color.White,
-                tonalElevation = 8.dp,
-                shadowElevation = 8.dp
-            ) {
-                Column {
-                    HorizontalDivider(color = Color(0xFFE5E7EB), thickness = 1.dp)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Button(
-                            onClick = { viewModel.simpanPerubahan() },
-                            enabled = !state.isLoading,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF3F3DDF)
-                            )
-                        ) {
-                            if (state.isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(22.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Save,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Simpan Perubahan",
-                                    fontFamily = interfamily,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color.White
-                                )
-                            }
-                        }
-                    }
-                }
-            }
         }
     ) { paddingValues ->
 
@@ -180,7 +129,7 @@ fun UpdateStokScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 56.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
 
@@ -485,10 +434,46 @@ fun UpdateStokScreen(
                 }
             }
 
-            // ── 5. Horizontal Divider
+            // ── 5. Horizontal Divider & Tombol Simpan Perubahan
             item {
                 Spacer(modifier = Modifier.height(4.dp))
                 HorizontalDivider(color = Color(0xFFE5E7EB), thickness = 1.dp)
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { viewModel.simpanPerubahan() },
+                    enabled = !state.isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4F46E5)
+                    )
+                ) {
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Simpan Perubahan",
+                            fontFamily = interfamily,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
