@@ -27,13 +27,13 @@ data class ProdukFormState(
         return Produk(
             id = id.ifBlank { java.util.UUID.randomUUID().toString() },
             name = name.trim(),
-            costPrice = costPrice.toDoubleOrNull() ?: 0.0,
-            sellingPrice = sellingPrice.toDoubleOrNull() ?: 0.0,
+            costPrice = parsePriceStringToDouble(costPrice),
+            sellingPrice = parsePriceStringToDouble(sellingPrice),
             stock = stock.toIntOrNull() ?: 0,
             lowStockThreshold = lowStockThreshold.toIntOrNull() ?: 5,
             categoryId = categoryId.trim(),
             imageUrl = imageUrl.trim(),
-            discount = discount.toDoubleOrNull() ?: 0.0,
+            discount = parsePriceStringToDouble(discount),
             discountType = discountType.trim(),
             barcode = barcode.trim(),
             isVisibleInCashier = isVisibleInCashier,
@@ -42,4 +42,10 @@ data class ProdukFormState(
             isSynced = false
         )
     }
+}
+
+fun parsePriceStringToDouble(input: String): Double {
+    if (input.isBlank()) return 0.0
+    val cleanDigits = input.replace("[^0-9]".toRegex(), "")
+    return cleanDigits.toDoubleOrNull() ?: 0.0
 }
