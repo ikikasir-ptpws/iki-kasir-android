@@ -115,6 +115,8 @@ class LaporanKeuanganViewModel @Inject constructor(
                 totalHpp = st.totalHpp,
                 totalRefundNominal = st.totalRefundNominal,
                 totalRefundCount = st.totalRefundCount,
+                totalPemasukanCatatan = st.totalPemasukanCatatan,
+                totalPengeluaranCatatan = st.totalPengeluaranCatatan,
                 dailySales = st.dailySales.map {
                     DailySalesExportEntry(
                         dayLabel = it.dayLabel,
@@ -204,6 +206,8 @@ class LaporanKeuanganViewModel @Inject constructor(
                 totalHpp = st.totalHpp,
                 totalRefundNominal = st.totalRefundNominal,
                 totalRefundCount = st.totalRefundCount,
+                totalPemasukanCatatan = st.totalPemasukanCatatan,
+                totalPengeluaranCatatan = st.totalPengeluaranCatatan,
                 dailySales = st.dailySales.map {
                     DailySalesExportEntry(
                         dayLabel = it.dayLabel,
