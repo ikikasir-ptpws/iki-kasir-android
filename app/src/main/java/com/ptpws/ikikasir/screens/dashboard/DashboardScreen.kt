@@ -1,5 +1,6 @@
 package com.example.app.ui.screen
 
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,6 +16,8 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -42,6 +45,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
@@ -51,6 +55,7 @@ import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.PeriodeLaporanPe
 import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.ui.platform.LocalContext
 import com.ptpws.ikikasir.commond.DashboardHeaderShimmer
 import com.ptpws.ikikasir.commond.DashboardFilterRowShimmer
 import com.ptpws.ikikasir.commond.DashboardStatCardsShimmer
@@ -168,11 +173,16 @@ fun DashboardScreen(
                             analytics = analyticsState,
                             selectedFilter = selectedFilter,
                             customDateLabel = customDateLabel,
-                            onCardClick = {
+                            onSalesCardClick = {
+                                val route = AppScreen.LaporanPenjualan.routeWith(PeriodeLaporanPenjualan.HARI_INI.name)
+                                navController.navigate(route)
+                            },
+                            onTxCardClick = {
                                 if (showTransaksi) {
                                     navController.navigate(AppScreen.Riwayat.route)
                                 } else if (showLaporanKeuangan) {
-                                    navController.navigate(AppScreen.LaporanKeuangan.route)
+                                    val route = AppScreen.LaporanPenjualan.routeWith(PeriodeLaporanPenjualan.HARI_INI.name)
+                                    navController.navigate(route)
                                 }
                             }
                         )
@@ -416,6 +426,8 @@ fun StatCardsSection(
     analytics: DashboardAnalytics = DashboardAnalytics(),
     selectedFilter: PeriodeLaporanPenjualan = PeriodeLaporanPenjualan.HARI_INI,
     customDateLabel: String = "",
+    onSalesCardClick: (() -> Unit)? = null,
+    onTxCardClick: (() -> Unit)? = null,
     onCardClick: (() -> Unit)? = null
 ) {
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
@@ -425,7 +437,17 @@ fun StatCardsSection(
     val cardCornerRadius = if (isSmallScreen) 16.dp else 20.dp
     val iconBoxSize = if (isSmallScreen) 32.dp else 36.dp
 
+    val context = LocalContext.current
+    val dashboardPrefs = remember(context) {
+        context.getSharedPreferences("DashboardPrefs", Context.MODE_PRIVATE)
+    }
+    var isAmountVisible by remember {
+        mutableStateOf(dashboardPrefs.getBoolean("KEY_IS_AMOUNT_VISIBLE", true))
+    }
+
     val formattedPenjualan = formatDashboardNominal(analytics.penjualanHariIni)
+    val displayPenjualan = if (isAmountVisible) formattedPenjualan else "••••••••"
+
     val salesGrowthPercent = formatDashboardPercent(analytics.pertumbuhanPenjualanPersen)
     val salesGrowthText = if (analytics.pertumbuhanPenjualanPersen == 0.0) {
         "0%"
@@ -462,6 +484,9 @@ fun StatCardsSection(
         else -> "keseluruhan"
     }
 
+    val effectiveSalesClick = onSalesCardClick ?: onCardClick
+    val effectiveTxClick = onTxCardClick ?: onCardClick
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -475,7 +500,7 @@ fun StatCardsSection(
                 .weight(1f)
                 .fillMaxHeight()
                 .then(
-                    if (onCardClick != null) Modifier.clickable { onCardClick() } else Modifier
+                    if (effectiveSalesClick != null) Modifier.clickable { effectiveSalesClick() } else Modifier
                 ),
             shape = RoundedCornerShape(cardCornerRadius),
             elevation = CardDefaults.cardElevation(
@@ -513,22 +538,50 @@ fun StatCardsSection(
                     Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
 
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = salesCardTitle,
-                            fontSize = if (isSmallScreen) 9.5.sp else 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White.copy(alpha = 0.85f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = "ⓘ",
-                            fontSize = if (isSmallScreen) 9.sp else 10.sp,
-                            color = Color.White.copy(alpha = 0.7f)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            modifier = Modifier.weight(1f, fill = false)
+                        ) {
+                            Text(
+                                text = salesCardTitle,
+                                fontSize = if (isSmallScreen) 9.5.sp else 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White.copy(alpha = 0.85f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = "ⓘ",
+                                fontSize = if (isSmallScreen) 9.sp else 10.sp,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                        }
+
+                        // Fitur Mata Toggle Saldo (seperti aplikasi DANA) - Tersimpan permanen di SharedPreferences
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.2f))
+                                .clickable {
+                                    val newVisibility = !isAmountVisible
+                                    isAmountVisible = newVisibility
+                                    dashboardPrefs.edit().putBoolean("KEY_IS_AMOUNT_VISIBLE", newVisibility).apply()
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (isAmountVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+                                contentDescription = if (isAmountVisible) "Sembunyikan Saldo" else "Tampilkan Saldo",
+                                tint = Color.White,
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -541,11 +594,11 @@ fun StatCardsSection(
                     )
 
                     Text(
-                        text = formattedPenjualan,
+                        text = displayPenjualan,
                         fontSize = if (isSmallScreen) {
-                            if (formattedPenjualan.length > 8) 16.sp else 20.sp
+                            if (displayPenjualan.length > 8) 16.sp else 20.sp
                         } else {
-                            if (formattedPenjualan.length > 10) 19.sp else 24.sp
+                            if (displayPenjualan.length > 10) 19.sp else 24.sp
                         },
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -595,7 +648,7 @@ fun StatCardsSection(
                 .weight(1f)
                 .fillMaxHeight()
                 .then(
-                    if (onCardClick != null) Modifier.clickable { onCardClick() } else Modifier
+                    if (effectiveTxClick != null) Modifier.clickable { effectiveTxClick() } else Modifier
                 ),
             shape = RoundedCornerShape(cardCornerRadius),
             elevation = CardDefaults.cardElevation(
