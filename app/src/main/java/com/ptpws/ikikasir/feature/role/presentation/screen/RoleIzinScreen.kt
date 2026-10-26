@@ -157,7 +157,7 @@ fun RoleIzinScreen(
                     start = 16.dp,
                     end = 16.dp,
                     top = 12.dp,
-                    bottom = 100.dp
+                    bottom = 80.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -185,36 +185,6 @@ fun RoleIzinScreen(
                         )
                     }
                 }
-            }
-        }
-
-        // Tombol Tambah Role Baru (sticky bottom)
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp)
-        ) {
-            Button(
-                onClick = onAddRoleClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Tambah Role Baru",
-                    fontFamily = interfamily,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 15.sp
-                )
             }
         }
     }
