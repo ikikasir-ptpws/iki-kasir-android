@@ -259,8 +259,9 @@ class ExcelExportService @Inject constructor() {
             )
             summaryRows += listOf(emptyList())
 
-            // Section 1: KPI Finansial Utama
+            // Section 1: KPI Finansial Utama (Semua Metrik Laporan Keuangan)
             summaryRows += listOf(ExcelCell("RINGKASAN METRIK FINANSIAL UTAMA", "BrandTitle"))
+            // Row 1 KPI
             summaryRows += listOf(
                 ExcelCell("TOTAL OMZET (REVENUE)", "KpiLabel"), ExcelCell("", "KpiLabel"),
                 ExcelCell("LABA KOTOR (GROSS PROFIT)", "KpiLabel"), ExcelCell("", "KpiLabel"),
@@ -273,27 +274,42 @@ class ExcelExportService @Inject constructor() {
                 ExcelCell(reportData.totalLabaBersih.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
                 ExcelCell(reportData.totalHpp.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency")
             )
+            // Row 2 KPI
+            summaryRows += listOf(
+                ExcelCell("PEMASUKAN LAINNYA", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("PENGELUARAN & BEBAN", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("DISKON & PROMO", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("TOTAL PPN / PAJAK", "KpiLabel"), ExcelCell("", "KpiLabel")
+            )
+            summaryRows += listOf(
+                ExcelCell(reportData.totalPemasukanCatatan.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
+                ExcelCell(reportData.totalPengeluaranCatatan.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
+                ExcelCell(reportData.totalDiskon.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
+                ExcelCell(reportData.totalPajak.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency")
+            )
+            // Row 3 KPI
             summaryRows += listOf(
                 ExcelCell("TOTAL PESANAN SELESAI", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("TOTAL PPN / PAJAK", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("TOTAL REFUND", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("TRANSAKSI BATAL", "KpiLabel"), ExcelCell("", "KpiLabel")
+                ExcelCell("RATA-RATA ORDER (AOV)", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("VOLUME PRODUK TERJUAL", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("TOTAL REFUND & BATAL", "KpiLabel"), ExcelCell("", "KpiLabel")
             )
             summaryRows += listOf(
                 ExcelCell("${reportData.totalTransaksiCount} Order Selesai", "KpiValue"), ExcelCell("", "KpiValue"),
-                ExcelCell(reportData.totalPajak.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell(reportData.totalRefundNominal.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell("${reportData.totalRefundCount} Transaksi Batal", "KpiValue"), ExcelCell("", "KpiValue")
+                ExcelCell(reportData.rataRataTransaksi.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
+                ExcelCell("${reportData.totalProdukTerjual} Produk Terjual", "KpiValue"), ExcelCell("", "KpiValue"),
+                ExcelCell("${reportData.totalRefundNominal.formatRupiah()} (${reportData.totalRefundCount} Batal)", "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency")
             )
             summaryRows += listOf(emptyList())
 
-            // Section 2: Struktur Laba Rugi (P&L)
-            // Initialize merge ranges with KPI card merged blocks (Rows 6-9)
+            // Initialize merge ranges with KPI card merged blocks (Rows 6-11)
             val summaryMergeRanges = mutableListOf<String>(
                 "A6:B6", "C6:D6", "E6:F6", "G6:H6",
                 "A7:B7", "C7:D7", "E7:F7", "G7:H7",
                 "A8:B8", "C8:D8", "E8:F8", "G8:H8",
-                "A9:B9", "C9:D9", "E9:F9", "G9:H9"
+                "A9:B9", "C9:D9", "E9:F9", "G9:H9",
+                "A10:B10", "C10:D10", "E10:F10", "G10:H10",
+                "A11:B11", "C11:D11", "E11:F11", "G11:H11"
             )
 
             // Section 2: Struktur Laba Rugi (P&L)
@@ -369,11 +385,29 @@ class ExcelExportService @Inject constructor() {
                     description = "Pajak kasir yang berhasil dihimpun"
                 )
             )
+            if (reportData.totalPemasukanCatatan > 0) {
+                pnlItems.add(
+                    PnLItemData(
+                        label = "Pemasukan Lainnya (Catatan Keuangan)",
+                        value = reportData.totalPemasukanCatatan,
+                        description = "Pendapatan usaha di luar transaksi kasir"
+                    )
+                )
+            }
+            if (reportData.totalPengeluaranCatatan > 0) {
+                pnlItems.add(
+                    PnLItemData(
+                        label = "Beban & Pengeluaran Operasional",
+                        value = -reportData.totalPengeluaranCatatan,
+                        description = "Biaya operasional toko (Catatan Keuangan Pengeluaran)"
+                    )
+                )
+            }
             pnlItems.add(
                 PnLItemData(
                     label = "TOTAL LABA BERSIH (NET PROFIT)",
                     value = reportData.totalLabaBersih,
-                    description = "Keuntungan bersih akhir toko pada periode ini",
+                    description = "Keuntungan bersih akhir toko setelah dikurangi modal, diskon, pajak & beban",
                     isSubtotalOrTotal = true,
                     customRatio = "Margin ${String.format(Locale.US, "%.1f", reportData.profitMarginPersen)}%"
                 )
