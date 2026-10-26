@@ -8,6 +8,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import com.ptpws.ikikasir.feature.antrean.domain.model.QueueHistory
+import com.ptpws.ikikasir.feature.catatankeuangan.domain.model.CatatanKeuangan
 import com.ptpws.ikikasir.feature.keuangan.domain.model.FinancialReportExportData
 import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.LaporanPenjualanSummary
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
@@ -1016,6 +1017,131 @@ class ExcelExportService @Inject constructor() {
                     )
                 ),
                 "Laporan_Penjualan_Produk_${fileNameDateFormat.format(Date())}.xlsx"
+            )
+        }
+    }
+
+    suspend fun exportCatatanKeuangan(
+        context: Context,
+        catatanList: List<CatatanKeuangan>,
+        filterLabel: String = "Semua"
+    ): Result<Uri> = withContext(Dispatchers.IO) {
+        runCatching {
+            val sortedList = catatanList.sortedByDescending { it.createdAt.seconds }
+            val rows = mutableListOf<List<ExcelCell>>()
+
+            // Row 1: Brand Title
+            rows += listOf(ExcelCell("IKI KASIR - POINT OF SALE", style = "BrandTitle"))
+
+            // Row 2: Report Title
+            rows += listOf(ExcelCell("LAPORAN CATATAN KEUANGAN (PEMASUKAN & PENGELUARAN)", style = "ReportTitle"))
+
+            // Row 3: Subtitle Metadata Info
+            val subtitle = "Periode Filter: $filterLabel   |   Dicetak: ${dateTimeFormat.format(Date())}   |   Total Data: ${catatanList.size} Catatan"
+            rows += listOf(ExcelCell(subtitle, style = "Subtitle"))
+
+            // Row 4: Empty separator
+            rows += listOf(emptyList())
+
+            // Compute KPI Metrics
+            val totalPemasukan = sortedList.filter { it.isPemasukan }.sumOf { it.amount }
+            val totalPengeluaran = sortedList.filter { it.isPengeluaran }.sumOf { it.amount }
+            val saldoBersih = totalPemasukan - totalPengeluaran
+
+            // Row 5: KPI Headers
+            rows += listOf(
+                ExcelCell("TOTAL PEMASUKAN", "KpiHeaderGreen"), ExcelCell("", "KpiHeaderGreen"),
+                ExcelCell("TOTAL PENGELUARAN", "KpiHeaderRed"), ExcelCell("", "KpiHeaderRed"),
+                ExcelCell("SALDO BERSIH (NETTO)", "KpiHeaderBlue"), ExcelCell("", "KpiHeaderBlue")
+            )
+
+            // Row 6: KPI Values
+            rows += listOf(
+                ExcelCell(totalPemasukan.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
+                ExcelCell(totalPengeluaran.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
+                ExcelCell(saldoBersih.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency")
+            )
+
+            // Row 7: Empty separator
+            rows += listOf(emptyList())
+
+            // Row 8: Table Headers
+            val headers = listOf("No", "Tanggal", "Jam", "Tipe", "Judul / Keterangan", "Nominal (Rp)", "Metode Pembayaran", "Catatan Tambahan", "Status Sync")
+            rows += headers.map { ExcelCell(it, style = "TableHeader") }
+
+            val columnWidths = listOf(8, 16, 12, 16, 28, 20, 20, 28, 16)
+
+            // Table Data Rows
+            sortedList.forEachIndexed { index, item ->
+                val dateStr = item.date.ifBlank { dateTimeFormat.format(item.createdAt.toDate()).substringBefore(" ") }
+                val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(item.createdAt.toDate()) + " WIB"
+                val tipeStr = if (item.isPemasukan) "PEMASUKAN" else "PENGELUARAN"
+                val syncStr = if (item.isSynced) "Disinkronkan" else "Pending"
+
+                rows += listOf(
+                    ExcelCell((index + 1).toString(), style = "Number"),
+                    ExcelCell(dateStr, style = "Text"),
+                    ExcelCell(timeStr, style = "Text"),
+                    ExcelCell(tipeStr, style = if (item.isPemasukan) "CompletedStatus" else "CancelledStatus"),
+                    ExcelCell(item.title, style = "TextBold"),
+                    ExcelCell(item.amount.formatRupiah(), style = "Currency"),
+                    ExcelCell(item.paymentMethod.ifBlank { "Tunai" }, style = "Text"),
+                    ExcelCell(item.note, style = "Text"),
+                    ExcelCell(syncStr, style = "Text")
+                )
+            }
+
+            // Footer Total Rows
+            val totalRowNumber = rows.size + 1
+            rows += listOf(
+                ExcelCell("TOTAL PEMASUKAN", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell(totalPemasukan.formatRupiah(), "TotalValue"),
+                ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel")
+            )
+            rows += listOf(
+                ExcelCell("TOTAL PENGELUARAN", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell(totalPengeluaran.formatRupiah(), "TotalValue"),
+                ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel")
+            )
+            rows += listOf(
+                ExcelCell("SALDO BERSIH (NETTO)", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell(saldoBersih.formatRupiah(), "TotalValue"),
+                ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel")
+            )
+
+            val rowPemasukan = totalRowNumber
+            val rowPengeluaran = totalRowNumber + 1
+            val rowNetto = totalRowNumber + 2
+
+            val mergeRanges = listOf(
+                "A5:B5", "C5:D5", "E5:F5",
+                "A6:B6", "C6:D6", "E6:F6",
+                "A$rowPemasukan:E$rowPemasukan", "G$rowPemasukan:I$rowPemasukan",
+                "A$rowPengeluaran:E$rowPengeluaran", "G$rowPengeluaran:I$rowPengeluaran",
+                "A$rowNetto:E$rowNetto", "G$rowNetto:I$rowNetto"
+            )
+
+            val autoFilterEndRow = totalRowNumber - 1
+            val autoFilterRange = "A8:I$autoFilterEndRow"
+
+            saveAndShare(
+                context,
+                createSpreadsheetXlsx(
+                    listOf(
+                        ExcelSheet(
+                            name = "Catatan Keuangan",
+                            rows = rows,
+                            columnWidths = columnWidths,
+                            headerRowIndex = 7,
+                            mergeRanges = mergeRanges,
+                            autoFilterRange = autoFilterRange
+                        )
+                    )
+                ),
+                "Catatan_Keuangan_${fileNameDateFormat.format(Date())}.xlsx"
             )
         }
     }
