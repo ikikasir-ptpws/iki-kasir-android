@@ -689,7 +689,7 @@ fun BottomNavItem(
             modifier = Modifier
                 .clickable(
                     interactionSource = interactionSource,
-                    indication = ripple(bounded = false, radius = 30.dp, color = Color(0xFF4F46E5).copy(alpha = 0.2f))
+                    indication = null
                 ) { onClick() }
                 .padding(vertical = 2.dp)
         ) {
