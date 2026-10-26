@@ -2,6 +2,7 @@ package com.ptpws.ikikasir.screens.keuangan
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.navigation.NavController
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -51,8 +52,10 @@ private fun formatRupiah(amount: Double): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatatanKeuanganScreen(
+    navController: NavController? = null,
     onBack: () -> Unit = {},
     onTambahCatatan: () -> Unit = {},
+    onDetailCatatan: (String) -> Unit = {},
     onEditCatatan: (String) -> Unit = {},
     viewModel: CatatanKeuanganViewModel = hiltViewModel()
 ) {
@@ -484,7 +487,9 @@ fun CatatanKeuanganScreen(
                     }
                     items(items = records, key = { it.id }) { item ->
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onDetailCatatan(item.id) },
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
