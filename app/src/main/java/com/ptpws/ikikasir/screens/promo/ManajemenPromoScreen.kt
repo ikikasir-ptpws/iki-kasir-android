@@ -55,6 +55,11 @@ private fun formatRupiah(amount: Double): String {
     return "Rp " + numberFormat.format(amount.toLong())
 }
 
+private fun formatRupiahNumber(amount: Double): String {
+    val numberFormat = NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID"))
+    return numberFormat.format(amount.toLong())
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManajemenPromoScreen(
@@ -405,7 +410,7 @@ fun ManajemenPromoScreen(
                                 val nilaidiskonText = if (promo.discountType == "%") {
                                     "Diskon ${promo.discountValue.toInt()}%"
                                 } else {
-                                    "Potongan Rp ${promo.discountValue.toInt()}"
+                                    "Potongan Rp ${formatRupiahNumber(promo.discountValue)}"
                                 }
                                 Text(
                                     text = nilaidiskonText,
@@ -669,7 +674,11 @@ fun DetailPromoDialog(
                             fontFamily = interfamily,
                             color = Color(0xFF64748B)
                         )
-                        val diskonText = if (promo.discountType == "%") "${promo.discountValue.toInt()}%" else "Rp ${promo.discountValue.toInt()}"
+                        val diskonText = if (promo.discountType == "%") {
+                            "${promo.discountValue.toInt()}%"
+                        } else {
+                            "Rp ${formatRupiahNumber(promo.discountValue)}"
+                        }
                         Text(
                             text = diskonText,
                             fontSize = 14.sp,
