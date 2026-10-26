@@ -17,6 +17,7 @@ import com.ptpws.ikikasir.feature.produk.domain.usecase.InsertProdukUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.PrintProductBarcodeUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.UpdateProdukUseCase
 import com.ptpws.ikikasir.feature.produk.presentation.state.ProdukFormState
+import com.ptpws.ikikasir.feature.produk.presentation.state.parsePriceStringToDouble
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +29,17 @@ import javax.inject.Inject
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.GetKategoriUseCase
+import java.text.NumberFormat
+import java.util.Locale
+
+fun formatInputPrice(input: String): String {
+    if (input.isBlank()) return ""
+    val raw = if (input.endsWith(".0")) input.dropLast(2) else input
+    val cleanDigits = raw.replace("[^0-9]".toRegex(), "")
+    if (cleanDigits.isBlank()) return ""
+    val longVal = cleanDigits.toLongOrNull() ?: return ""
+    return NumberFormat.getNumberInstance(Locale("id", "ID")).format(longVal)
+}
 
 @HiltViewModel
 class TambahProdukViewModel @Inject constructor(
@@ -72,9 +84,11 @@ class TambahProdukViewModel @Inject constructor(
 
         val produkId = savedStateHandle.get<String>("produkId")
         if (!produkId.isNullOrBlank()) {
-            val costPriceStr = savedStateHandle.get<String>("produkCostPrice") ?: ""
-            val sellingPriceStr = savedStateHandle.get<String>("produkSellingPrice") 
-                ?: savedStateHandle.get<String>("produkPrice") ?: ""
+            val costPriceStr = formatInputPrice(savedStateHandle.get<String>("produkCostPrice") ?: "")
+            val sellingPriceStr = formatInputPrice(
+                savedStateHandle.get<String>("produkSellingPrice") 
+                    ?: savedStateHandle.get<String>("produkPrice") ?: ""
+            )
 
             _formState.update {
                 it.copy(
@@ -104,8 +118,8 @@ class TambahProdukViewModel @Inject constructor(
             it.copy(
                 id = produk.id,
                 name = produk.name,
-                costPrice = produk.costPrice.toString(),
-                sellingPrice = produk.sellingPrice.toString(),
+                costPrice = if (produk.costPrice > 0) formatInputPrice(produk.costPrice.toString()) else "",
+                sellingPrice = if (produk.sellingPrice > 0) formatInputPrice(produk.sellingPrice.toString()) else "",
                 stock = produk.stock.toString(),
                 lowStockThreshold = produk.lowStockThreshold.toString(),
                 categoryId = produk.categoryId,
@@ -124,11 +138,13 @@ class TambahProdukViewModel @Inject constructor(
     }
 
     fun onCostPriceChange(costPrice: String) {
-        _formState.update { it.copy(costPrice = costPrice, errorMessage = null) }
+        val formatted = formatInputPrice(costPrice)
+        _formState.update { it.copy(costPrice = formatted, errorMessage = null) }
     }
 
     fun onSellingPriceChange(sellingPrice: String) {
-        _formState.update { it.copy(sellingPrice = sellingPrice, errorMessage = null) }
+        val formatted = formatInputPrice(sellingPrice)
+        _formState.update { it.copy(sellingPrice = formatted, errorMessage = null) }
     }
 
     fun onPriceChange(price: String) {
@@ -237,7 +253,7 @@ class TambahProdukViewModel @Inject constructor(
             return
         }
 
-        val sellingPriceVal = currentState.sellingPrice.toDoubleOrNull() ?: 0.0
+        val sellingPriceVal = parsePriceStringToDouble(currentState.sellingPrice)
         if (sellingPriceVal <= 0.0) {
             val message = "Harga jual harus lebih dari Rp 0"
             GlobalCrudResultDialog.failure(message)
