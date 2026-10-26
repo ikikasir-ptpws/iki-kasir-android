@@ -1,5 +1,6 @@
 package com.ptpws.ikikasir.feature.catatankeuangan.presentation.state
 
+import android.net.Uri
 import com.ptpws.ikikasir.feature.catatankeuangan.domain.model.CatatanKeuangan
 
 data class CatatanKeuanganState(
@@ -14,6 +15,10 @@ data class CatatanKeuanganState(
     val endDateMillis: Long? = null,
     val customDateLabel: String? = null,
     val isLoading: Boolean = false,
+    val isExporting: Boolean = false,
+    val exportedUri: Uri? = null,
+    val exportSuccessMessage: String? = null,
+    val exportErrorMessage: String? = null,
     val userMessage: String? = null,
     val errorMessage: String? = null
 )
