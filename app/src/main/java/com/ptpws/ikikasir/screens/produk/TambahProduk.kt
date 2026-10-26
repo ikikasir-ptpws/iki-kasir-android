@@ -36,6 +36,7 @@ import com.ptpws.ikikasir.commond.GlobalImageUploadOverlay
 import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.commond.ImageUploadType
+import com.ptpws.ikikasir.feature.produk.presentation.state.parsePriceStringToDouble
 import com.ptpws.ikikasir.core.util.ImageCompressorHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -399,8 +400,8 @@ fun TambahProdukScreen(
                         }
 
                         // Box Estimasi Laba Kotor & HPP
-                        val costPriceDouble = formState.costPrice.toDoubleOrNull() ?: 0.0
-                        val sellingPriceDouble = formState.sellingPrice.toDoubleOrNull() ?: 0.0
+                        val costPriceDouble = parsePriceStringToDouble(formState.costPrice)
+                        val sellingPriceDouble = parsePriceStringToDouble(formState.sellingPrice)
                         val labaKotor = sellingPriceDouble - costPriceDouble
                         val marginPercent = if (sellingPriceDouble > 0) (labaKotor / sellingPriceDouble * 100) else 0.0
                         val isProfitable = labaKotor >= 0
