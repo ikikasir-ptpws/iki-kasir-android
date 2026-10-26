@@ -380,9 +380,9 @@ class ExcelExportService @Inject constructor() {
             )
             pnlItems.add(
                 PnLItemData(
-                    label = "Pajak Pertambahan Nilai (PPN)",
+                    label = "PPN / Pajak Terkumpul (Titipan)",
                     value = reportData.totalPajak,
-                    description = "Pajak kasir yang berhasil dihimpun"
+                    description = "Pajak kasir yang berhasil dihimpun (Titipan Pajak Pemerintah)"
                 )
             )
             if (reportData.totalPemasukanCatatan > 0) {
@@ -407,7 +407,7 @@ class ExcelExportService @Inject constructor() {
                 PnLItemData(
                     label = "TOTAL LABA BERSIH (NET PROFIT)",
                     value = reportData.totalLabaBersih,
-                    description = "Keuntungan bersih akhir toko setelah dikurangi modal, diskon, pajak & beban",
+                    description = "Laba Kotor + Pemasukan Lainnya - Beban Operasional",
                     isSubtotalOrTotal = true,
                     customRatio = "Margin ${String.format(Locale.US, "%.1f", reportData.profitMarginPersen)}%"
                 )
