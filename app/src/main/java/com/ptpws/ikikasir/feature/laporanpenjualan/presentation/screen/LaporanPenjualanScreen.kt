@@ -290,22 +290,42 @@ fun LaporanPenjualanScreen(
                     }
                 },
                 actions = {
-                    IconButton(
+                    FilledTonalButton(
                         onClick = { viewModel.exportToExcel(context) },
-                        enabled = !state.isExporting && state.summary.items.isNotEmpty()
+                        enabled = !state.isExporting && state.summary.items.isNotEmpty(),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFFEFF6FF),
+                            contentColor = Color(0xFF2563EB),
+                            disabledContainerColor = Color(0xFFF1F5F9),
+                            disabledContentColor = Color(0xFFCBD5E1)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(end = 12.dp)
                     ) {
                         if (state.isExporting) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = Color(0xFF4F46E5),
-                                strokeWidth = 2.dp
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFF2563EB)
                             )
                         } else {
-                            Icon(
-                                imageVector = Icons.Default.FileDownload,
-                                contentDescription = "Ekspor Excel",
-                                tint = if (state.summary.items.isNotEmpty()) Color(0xFF4F46E5) else Color(0xFFCBD5E1)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.FileDownload,
+                                    contentDescription = "Ekspor",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = "Ekspor",
+                                    fontFamily = interfamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
                         }
                     }
                 },
