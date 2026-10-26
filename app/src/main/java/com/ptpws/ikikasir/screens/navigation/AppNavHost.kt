@@ -72,6 +72,7 @@ import com.ptpws.ikikasir.screens.keuangan.CatatanKeuanganScreen
 import com.ptpws.ikikasir.screens.keuangan.LaporanKeuanganScreen
 import com.ptpws.ikikasir.screens.keuangan.TambahCatatanKeuanganActivity
 import com.ptpws.ikikasir.screens.keuangan.TambahCatatanKeuanganScreen
+import com.ptpws.ikikasir.feature.catatankeuangan.presentation.screen.DetailCatatanKeuanganScreen
 import com.ptpws.ikikasir.feature.laporanpenjualan.presentation.screen.LaporanPenjualanScreen
 import com.ptpws.ikikasir.screens.manajemenpengguna.ManajemenPenggunaScreen
 import com.ptpws.ikikasir.screens.manajemenpengguna.TambahPenggunaActivity
@@ -307,11 +308,35 @@ fun AppNavHost() {
             composable(AppScreen.CatatanKeuangan.route) {
                 val context = LocalContext.current
                 CatatanKeuanganScreen(
+                    navController = navController,
                     onBack = { navController.popBackStackSafely(AppScreen.CatatanKeuangan.route) },
                     onTambahCatatan = {
                         context.startActivity(Intent(context, TambahCatatanKeuanganActivity::class.java))
                     },
+                    onDetailCatatan = { catatanId ->
+                        navController.navigate(AppScreen.DetailCatatanKeuangan.createRoute(catatanId))
+                    },
                     onEditCatatan = { catatanId ->
+                        val intent = Intent(context, TambahCatatanKeuanganActivity::class.java).apply {
+                            putExtra("CATATAN_ID", catatanId)
+                        }
+                        context.startActivity(intent)
+                    }
+                )
+            }
+            composable(
+                route = AppScreen.DetailCatatanKeuangan.route,
+                arguments = listOf(navArgument("catatanId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) {
+                val context = LocalContext.current
+                DetailCatatanKeuanganScreen(
+                    navController = navController,
+                    onBack = { navController.popBackStackSafely(AppScreen.DetailCatatanKeuangan.route) },
+                    onEdit = { catatanId ->
                         val intent = Intent(context, TambahCatatanKeuanganActivity::class.java).apply {
                             putExtra("CATATAN_ID", catatanId)
                         }
