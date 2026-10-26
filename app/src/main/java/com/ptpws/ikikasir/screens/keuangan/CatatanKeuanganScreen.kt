@@ -17,7 +17,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Delete
@@ -30,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -69,6 +73,7 @@ fun CatatanKeuanganScreen(
     BackHandler(enabled = !isBackProcessing, onBack = handleBack)
 
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
     var catatanToDelete by remember { mutableStateOf<CatatanKeuangan?>(null) }
     var showDateRangePicker by remember { mutableStateOf(false) }
 
@@ -105,6 +110,146 @@ fun CatatanKeuanganScreen(
         )
     }
 
+    // ── Export Success Dialog (Sama Persis dengan Halaman Riwayat Transaksi) ──
+    if (state.exportSuccessMessage != null && state.exportedUri != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearExportMessage() },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF10B981),
+                    modifier = Modifier.size(52.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Ekspor Excel Berhasil!",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF0F172A)
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = state.exportSuccessMessage!!,
+                        fontFamily = interfamily,
+                        fontSize = 14.sp,
+                        color = Color(0xFF475569),
+                        lineHeight = 20.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Surface(
+                        color = Color(0xFFF1F5F9),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "📁 Lokasi Simpan (Berkas HP):",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp,
+                                color = Color(0xFF334155)
+                            )
+                            Text(
+                                text = "Memori Internal > Download > IkiKasir",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = Color(0xFF4F46E5)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Total ${state.filteredList.size} catatan keuangan diekspor",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val uri = state.exportedUri!!
+                        val shareIntent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(
+                                uri,
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            )
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        val chooser = Intent.createChooser(shareIntent, "Buka dengan")
+                        context.startActivity(chooser)
+                        viewModel.clearExportMessage()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Buka File", fontFamily = interfamily, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { viewModel.clearExportMessage() }
+                ) {
+                    Text("Tutup", fontFamily = interfamily, color = Color(0xFF64748B))
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    // ── Export Error Dialog ───────────────────────────────────────────────
+    if (state.exportErrorMessage != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearExportMessage() },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.ErrorOutline,
+                    contentDescription = null,
+                    tint = Color(0xFFEF4444),
+                    modifier = Modifier.size(52.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Ekspor Excel Gagal",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF991B1B)
+                )
+            },
+            text = {
+                Text(
+                    text = state.exportErrorMessage!!,
+                    fontFamily = interfamily,
+                    fontSize = 14.sp,
+                    color = Color(0xFF475569),
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.clearExportMessage() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Tutup", fontFamily = interfamily, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
         topBar = {
@@ -133,6 +278,26 @@ fun CatatanKeuanganScreen(
                             contentDescription = "Kembali",
                             tint = Color(0xFF0F172A)
                         )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { viewModel.exportToExcel(context) },
+                        enabled = !state.isExporting && state.filteredList.isNotEmpty()
+                    ) {
+                        if (state.isExporting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                color = Color(0xFF4F46E5),
+                                strokeWidth = 2.5.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.FileDownload,
+                                contentDescription = "Ekspor Excel",
+                                tint = if (state.filteredList.isNotEmpty()) Color(0xFF4F46E5) else Color(0xFFCBD5E1)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF8FAFC))
