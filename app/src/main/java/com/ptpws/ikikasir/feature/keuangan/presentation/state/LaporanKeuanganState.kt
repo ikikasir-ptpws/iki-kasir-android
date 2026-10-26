@@ -63,6 +63,8 @@ data class LaporanKeuanganState(
     val totalHpp: Double = 0.0,
     val totalRefundNominal: Double = 0.0,
     val totalRefundCount: Int = 0,
+    val totalPemasukanCatatan: Double = 0.0,
+    val totalPengeluaranCatatan: Double = 0.0,
 
     // Komponen Rinci
     val dailySales: List<DailySalesEntry> = emptyList(),
