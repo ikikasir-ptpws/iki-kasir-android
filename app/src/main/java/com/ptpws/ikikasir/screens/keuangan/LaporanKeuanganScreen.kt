@@ -1005,11 +1005,37 @@ fun LaporanKeuanganScreen(
                             color = Color(0xFF0F172A)
                         )
 
+                        val grossSales = state.totalOmzet + state.totalDiskon + state.totalRefundNominal
                         PnLRow(
                             label = if (isCompact) "Penjualan Kotor (Gross)" else "Penjualan Kotor (Gross Sales)",
-                            value = formatRupiah(state.totalOmzet + state.totalDiskon),
+                            value = formatRupiah(grossSales),
                             isPositive = true
                         )
+
+                        if (state.totalDiskon > 0) {
+                            PnLRow(
+                                label = if (isCompact) "Diskon & Promo" else "Potongan Diskon & Promo",
+                                value = "- " + formatRupiah(state.totalDiskon),
+                                isPositive = false,
+                                highlightRed = true
+                            )
+                        }
+
+                        if (state.totalRefundNominal > 0) {
+                            PnLRow(
+                                label = if (isCompact) "Refund / Batal" else "Pengembalian Dana (Refund)",
+                                value = "- " + formatRupiah(state.totalRefundNominal),
+                                isPositive = false,
+                                highlightRed = true
+                            )
+                        }
+
+                        PnLRow(
+                            label = if (isCompact) "Penjualan Bersih (Omzet)" else "Penjualan Bersih (Net Sales / Omzet)",
+                            value = formatRupiah(state.totalOmzet),
+                            isPositive = true
+                        )
+
                         PnLRow(
                             label = if (isCompact) "HPP / Modal Produk" else "Harga Pokok Penjualan (HPP / Modal)",
                             value = "- " + formatRupiah(state.totalHpp),
@@ -1052,17 +1078,6 @@ fun LaporanKeuanganScreen(
                             }
                         }
 
-                        PnLRow(
-                            label = if (isCompact) "Diskon & Promo" else "Potongan Diskon & Promo",
-                            value = "- " + formatRupiah(state.totalDiskon),
-                            isPositive = false,
-                            highlightRed = state.totalDiskon > 0
-                        )
-                        PnLRow(
-                            label = if (isCompact) "PPN / Pajak" else "PPN / Pajak Terkumpul",
-                            value = "+ " + formatRupiah(state.totalPajak),
-                            isPositive = true
-                        )
                         if (state.totalPemasukanCatatan > 0) {
                             PnLRow(
                                 label = if (isCompact) "Pemasukan Lainnya" else "Pemasukan Lainnya (Catatan Keuangan)",
@@ -1070,12 +1085,21 @@ fun LaporanKeuanganScreen(
                                 isPositive = true
                             )
                         }
+
                         if (state.totalPengeluaranCatatan > 0) {
                             PnLRow(
                                 label = if (isCompact) "Beban & Pengeluaran" else "Beban & Pengeluaran Operasional",
                                 value = "- " + formatRupiah(state.totalPengeluaranCatatan),
                                 isPositive = false,
                                 highlightRed = true
+                            )
+                        }
+
+                        if (state.totalPajak > 0) {
+                            PnLRow(
+                                label = if (isCompact) "PPN Terkumpul (Titipan)" else "PPN / Pajak Terkumpul (Titipan)",
+                                value = formatRupiah(state.totalPajak),
+                                isPositive = true
                             )
                         }
 
