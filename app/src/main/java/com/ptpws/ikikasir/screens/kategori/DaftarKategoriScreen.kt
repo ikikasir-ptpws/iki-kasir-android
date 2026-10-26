@@ -350,25 +350,23 @@ fun DaftarKategoriScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { context.startActivity(Intent(context, TambahKategoriActivity::class.java)) },
+                modifier = Modifier.padding(bottom = 16.dp),
                 containerColor = Color(0xFF4F46E5),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.wrapContentWidth().height(50.dp)
+                elevation = FloatingActionButtonDefaults.elevation(8.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text("Tambah Kategori", fontFamily = interfamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                }
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Tambah Kategori",
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 110.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             // ── Summary banner ───────────────────────────────────────────────
