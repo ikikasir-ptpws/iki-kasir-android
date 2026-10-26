@@ -280,17 +280,14 @@ fun ManajemenPromoScreen(
                 }
             }
 
-            // ── 3. Filter Chips ──────────────────────────────────────────
+            // ── 3. Filter Chips (Semua, Aktif, Akan Datang, Kedaluwarsa) ───
             item {
-                val defaultFilters = remember { listOf("Semua", "Aktif", "Akan Datang", "Kedaluwarsa") }
-                val allFilters = remember(state.availablePromoTypes) {
-                    defaultFilters + state.availablePromoTypes
-                }
+                val statusFilters = remember { listOf("Semua", "Aktif", "Akan Datang", "Kedaluwarsa") }
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 2.dp)
                 ) {
-                    items(allFilters) { filterText ->
+                    items(statusFilters) { filterText ->
                         val isSelected = state.selectedFilterTab == filterText
                         Surface(
                             shape = RoundedCornerShape(20.dp),
