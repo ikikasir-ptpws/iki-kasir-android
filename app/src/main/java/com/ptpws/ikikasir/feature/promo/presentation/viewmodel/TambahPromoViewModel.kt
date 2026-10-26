@@ -7,6 +7,7 @@ import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
+import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.formatInputPrice
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
 import com.ptpws.ikikasir.feature.promo.domain.model.PromoProductItem
 import com.ptpws.ikikasir.feature.promo.domain.usecase.GetPromoByIdUseCase
@@ -106,7 +107,9 @@ class TambahPromoViewModel @Inject constructor(
                     )
                 }
 
-                val formattedDiskon = if (existingPromo.discountValue % 1.0 == 0.0) {
+                val formattedDiskon = if (existingPromo.discountType == "Rp") {
+                    formatInputPrice(existingPromo.discountValue.toString())
+                } else if (existingPromo.discountValue % 1.0 == 0.0) {
                     existingPromo.discountValue.toLong().toString()
                 } else {
                     existingPromo.discountValue.toString()
@@ -141,11 +144,24 @@ class TambahPromoViewModel @Inject constructor(
     }
 
     fun onDiskonTypeChange(type: String) {
-        _state.update { it.copy(diskonType = type) }
+        _state.update { currentState ->
+            val formatted = if (type == "Rp") {
+                formatInputPrice(currentState.nilaiDiskon)
+            } else {
+                currentState.nilaiDiskon.replace("[^0-9]".toRegex(), "")
+            }
+            currentState.copy(diskonType = type, nilaiDiskon = formatted)
+        }
     }
 
     fun onNilaiDiskonChange(nilai: String) {
-        _state.update { it.copy(nilaiDiskon = nilai) }
+        val currentType = _state.value.diskonType
+        val formatted = if (currentType == "Rp") {
+            formatInputPrice(nilai)
+        } else {
+            nilai
+        }
+        _state.update { it.copy(nilaiDiskon = formatted) }
     }
 
     fun onTanggalMulaiChange(tanggal: String) {
