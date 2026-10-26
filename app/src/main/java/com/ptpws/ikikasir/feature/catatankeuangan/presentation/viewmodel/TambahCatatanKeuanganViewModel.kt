@@ -17,6 +17,7 @@ import com.ptpws.ikikasir.feature.catatankeuangan.domain.usecase.InsertCatatanKe
 import com.ptpws.ikikasir.feature.catatankeuangan.domain.usecase.UpdateCatatanKeuanganUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.PaymentMethodSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetPaymentMethodSettingUseCase
+import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.formatInputPrice
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -82,11 +83,7 @@ class TambahCatatanKeuanganViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true) }
             val existing = getCatatanByIdUseCase(id).firstOrNull()
             if (existing != null) {
-                val formattedAmount = if (existing.amount % 1.0 == 0.0) {
-                    existing.amount.toLong().toString()
-                } else {
-                    existing.amount.toString()
-                }
+                val formattedAmount = formatInputPrice(existing.amount.toString())
 
                 _state.update {
                     it.copy(
@@ -127,7 +124,8 @@ class TambahCatatanKeuanganViewModel @Inject constructor(
     }
 
     fun onAmountTextChange(amountText: String) {
-        _state.update { it.copy(amountText = amountText) }
+        val formatted = formatInputPrice(amountText)
+        _state.update { it.copy(amountText = formatted) }
     }
 
     fun onNoteChange(note: String) {
