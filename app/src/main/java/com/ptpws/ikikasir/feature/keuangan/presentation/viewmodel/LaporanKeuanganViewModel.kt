@@ -456,7 +456,7 @@ class LaporanKeuanganViewModel @Inject constructor(
 
         val labaKotor = (omzet - hpp).coerceAtLeast(0.0)
         val marginKotor = if (omzet > 0) ((labaKotor / omzet) * 100).toFloat() else 0f
-        val labaBersih = (omzet - hpp - diskon + totalPemasukanCatatan - totalPengeluaranCatatan).coerceAtLeast(0.0)
+        val labaBersih = (labaKotor + totalPemasukanCatatan - totalPengeluaranCatatan).coerceAtLeast(0.0)
         val profitMargin = if (omzet > 0) ((labaBersih / omzet) * 100).toFloat() else 0f
         val aov = if (completed.isNotEmpty()) omzet / completed.size else 0.0
 
