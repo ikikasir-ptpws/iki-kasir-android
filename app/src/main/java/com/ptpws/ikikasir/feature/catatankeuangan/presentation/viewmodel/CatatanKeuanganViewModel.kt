@@ -14,6 +14,8 @@ import com.ptpws.ikikasir.feature.catatankeuangan.domain.usecase.GetCatatanKeuan
 import com.ptpws.ikikasir.feature.catatankeuangan.domain.usecase.InsertCatatanKeuanganUseCase
 import com.ptpws.ikikasir.feature.catatankeuangan.domain.usecase.UpdateCatatanKeuanganUseCase
 import com.ptpws.ikikasir.feature.catatankeuangan.presentation.state.CatatanKeuanganState
+import com.ptpws.ikikasir.feature.catatankeuangan.domain.usecase.ExportCatatanKeuanganToExcelUseCase
+import android.content.Context
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +33,7 @@ class CatatanKeuanganViewModel @Inject constructor(
     private val insertCatatanKeuanganUseCase: InsertCatatanKeuanganUseCase,
     private val updateCatatanKeuanganUseCase: UpdateCatatanKeuanganUseCase,
     private val deleteCatatanKeuanganUseCase: DeleteCatatanKeuanganUseCase,
+    private val exportCatatanKeuanganToExcelUseCase: ExportCatatanKeuanganToExcelUseCase,
     private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
 
@@ -248,6 +251,59 @@ class CatatanKeuanganViewModel @Inject constructor(
                     (endSeconds == null || itemDateSeconds <= endSeconds)
             }
             matchesQuery && matchesTab && matchesDate
+        }
+    }
+
+    fun exportToExcel(context: Context) {
+        val listToExport = _state.value.filteredList
+        if (listToExport.isEmpty()) {
+            _state.update { it.copy(exportErrorMessage = "Tidak ada data catatan keuangan untuk diekspor.") }
+            return
+        }
+
+        val filterLabel = buildFilterLabel(_state.value)
+
+        viewModelScope.launch {
+            _state.update { it.copy(isExporting = true, exportErrorMessage = null, exportSuccessMessage = null, exportedUri = null) }
+            val result = exportCatatanKeuanganToExcelUseCase(context, listToExport, filterLabel)
+            result.onSuccess { uri ->
+                logActivityUseCase(
+                    title = "Ekspor Catatan Keuangan",
+                    description = "Data catatan keuangan (${listToExport.size} item, filter: $filterLabel) berhasil diekspor ke Excel.",
+                    category = "KEUANGAN",
+                    action = "EXPORT",
+                    isWarning = false
+                )
+                _state.update {
+                    it.copy(
+                        isExporting = false,
+                        exportedUri = uri,
+                        exportSuccessMessage = "File Excel catatan keuangan berhasil diunduh dan tersimpan di HP Anda."
+                    )
+                }
+            }.onFailure { err ->
+                val msg = err.message ?: "Gagal mengekspor data ke Excel."
+                _state.update {
+                    it.copy(
+                        isExporting = false,
+                        exportedUri = null,
+                        exportErrorMessage = msg
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearExportMessage() {
+        _state.update { it.copy(exportSuccessMessage = null, exportErrorMessage = null, exportedUri = null) }
+    }
+
+    private fun buildFilterLabel(state: CatatanKeuanganState): String {
+        return when {
+            state.selectedFilterTab == "Filter Tanggal" && !state.customDateLabel.isNullOrBlank() -> state.customDateLabel
+            state.selectedFilterTab != "Semua" -> state.selectedFilterTab
+            state.searchQuery.isNotBlank() -> "Pencarian: \"${state.searchQuery}\""
+            else -> "Semua Waktu"
         }
     }
 }
