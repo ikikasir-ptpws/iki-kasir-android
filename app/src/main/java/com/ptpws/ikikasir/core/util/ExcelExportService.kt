@@ -26,6 +26,8 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.abs
+import kotlin.math.round
 
 private const val EXCEL_MIME_TYPE =
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -1494,13 +1496,13 @@ class ExcelExportService @Inject constructor() {
 
     private fun Double.formatRupiah(): String {
         if (!isFinite()) return "Rp 0"
+        val roundedValue = round(this).toLong()
+        val absValue = abs(roundedValue)
         val formatter = NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID")).apply {
-            minimumFractionDigits = 0
-            maximumFractionDigits = 2
+            maximumFractionDigits = 0
         }
-        val absValue = kotlin.math.abs(this)
         val formatted = formatter.format(absValue)
-        return if (this < -0.00001) "-Rp $formatted" else "Rp $formatted"
+        return if (roundedValue < 0) "-Rp $formatted" else "Rp $formatted"
     }
 
     private fun String.xmlEscape(): String = buildString(length) {
