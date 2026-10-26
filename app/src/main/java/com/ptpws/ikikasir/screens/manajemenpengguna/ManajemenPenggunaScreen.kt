@@ -77,18 +77,24 @@ fun ManajemenPenggunaScreen(
             )
         },
         floatingActionButton = {
-            if (pagerState.currentPage == 0) {
-                FloatingActionButton(
-                    onClick = {
+            FloatingActionButton(
+                onClick = {
+                    if (pagerState.currentPage == 0) {
                         context.startActivity(Intent(context, TambahPenggunaActivity::class.java))
-                    },
-                    containerColor = Color(0xFF4F46E5),
-                    contentColor = Color.White,
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = FloatingActionButtonDefaults.elevation(8.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Tambah User")
-                }
+                    } else {
+                        context.startActivity(Intent(context, TambahRoleActivity::class.java))
+                    }
+                },
+                modifier = Modifier.padding(bottom = 16.dp),
+                containerColor = Color(0xFF4F46E5),
+                contentColor = Color.White,
+                shape = RoundedCornerShape(16.dp),
+                elevation = FloatingActionButtonDefaults.elevation(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = if (pagerState.currentPage == 0) "Tambah User" else "Tambah Role"
+                )
             }
         }
     ) { paddingValues ->
