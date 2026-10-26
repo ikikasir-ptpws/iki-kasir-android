@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -735,6 +736,33 @@ fun LaporanKeuanganScreen(
                         )
                     }
 
+                    // Row 4: Total Pemasukan & Total Pengeluaran (Catatan Keuangan)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        KpiCard(
+                            title = "PEMASUKAN LAINNYA",
+                            value = formatRupiah(state.totalPemasukanCatatan),
+                            badge = if (isCompact) "Pemasukan" else "Catatan Keuangan",
+                            icon = Icons.AutoMirrored.Filled.TrendingUp,
+                            accentColor = Color(0xFF16A34A),
+                            containerColor = Color(0xFFF0FDF4),
+                            borderColor = Color(0xFFBBF7D0),
+                            modifier = Modifier.weight(1f)
+                        )
+                        KpiCard(
+                            title = "PENGELUARAN & BEBAN",
+                            value = formatRupiah(state.totalPengeluaranCatatan),
+                            badge = if (isCompact) "Beban" else "Beban Operasional",
+                            icon = Icons.AutoMirrored.Filled.TrendingDown,
+                            accentColor = Color(0xFFDC2626),
+                            containerColor = Color(0xFFFEF2F2),
+                            borderColor = Color(0xFFFECACA),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
                     // Row 4: Total Refund & Transaksi Batal (Muncul jika ada transaksi refund)
                     if (state.totalRefundNominal > 0 || state.totalRefundCount > 0) {
                         Row(
@@ -1035,6 +1063,21 @@ fun LaporanKeuanganScreen(
                             value = "+ " + formatRupiah(state.totalPajak),
                             isPositive = true
                         )
+                        if (state.totalPemasukanCatatan > 0) {
+                            PnLRow(
+                                label = if (isCompact) "Pemasukan Lainnya" else "Pemasukan Lainnya (Catatan Keuangan)",
+                                value = "+ " + formatRupiah(state.totalPemasukanCatatan),
+                                isPositive = true
+                            )
+                        }
+                        if (state.totalPengeluaranCatatan > 0) {
+                            PnLRow(
+                                label = if (isCompact) "Beban & Pengeluaran" else "Beban & Pengeluaran Operasional",
+                                value = "- " + formatRupiah(state.totalPengeluaranCatatan),
+                                isPositive = false,
+                                highlightRed = true
+                            )
+                        }
 
                         HorizontalDivider(
                             color = Color(0xFFF1F5F9),
