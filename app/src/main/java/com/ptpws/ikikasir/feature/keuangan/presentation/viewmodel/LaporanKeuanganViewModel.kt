@@ -15,6 +15,8 @@ import com.ptpws.ikikasir.feature.keuangan.presentation.state.LaporanKeuanganSta
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.MetodePembayaranReport
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.PeriodeFilter
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.TopProdukReport
+import com.ptpws.ikikasir.feature.catatankeuangan.domain.model.CatatanKeuangan
+import com.ptpws.ikikasir.feature.catatankeuangan.domain.usecase.GetCatatanKeuanganListUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetAllTransaksiUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +34,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LaporanKeuanganViewModel @Inject constructor(
     private val getAllTransaksiUseCase: GetAllTransaksiUseCase,
+    private val getCatatanKeuanganListUseCase: GetCatatanKeuanganListUseCase,
     private val exportLaporanKeuanganToExcelUseCase: ExportLaporanKeuanganToExcelUseCase,
     private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
@@ -40,6 +43,7 @@ class LaporanKeuanganViewModel @Inject constructor(
     val state: StateFlow<LaporanKeuanganState> = _state.asStateFlow()
 
     private var rawTransaksiList: List<PenjualanTransaksi> = emptyList()
+    private var rawCatatanList: List<CatatanKeuangan> = emptyList()
 
     init {
         loadData()
@@ -48,9 +52,17 @@ class LaporanKeuanganViewModel @Inject constructor(
     private fun loadData() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            getAllTransaksiUseCase().collect { list ->
-                rawTransaksiList = list
-                calculateAnalytics()
+            launch {
+                getAllTransaksiUseCase().collect { list ->
+                    rawTransaksiList = list
+                    calculateAnalytics()
+                }
+            }
+            launch {
+                getCatatanKeuanganListUseCase().collect { list ->
+                    rawCatatanList = list
+                    calculateAnalytics()
+                }
             }
         }
     }
@@ -315,6 +327,49 @@ class LaporanKeuanganViewModel @Inject constructor(
         }
     }
 
+    private fun getFilteredCatatanList(): List<CatatanKeuangan> {
+        if (rawCatatanList.isEmpty()) return emptyList()
+
+        val periode = _state.value.selectedPeriode
+        val now = System.currentTimeMillis()
+
+        return when (periode) {
+            PeriodeFilter.SEMUA -> rawCatatanList
+            PeriodeFilter.HARI_INI -> {
+                val start = getStartOfDay(now)
+                val end = getEndOfDay(now)
+                rawCatatanList.filter { it.createdAt.toDate().time in start..end }
+            }
+            PeriodeFilter.TUJUH_HARI -> {
+                val start = getStartOfDay(now - 6L * 86400000L)
+                val end = getEndOfDay(now)
+                rawCatatanList.filter { it.createdAt.toDate().time in start..end }
+            }
+            PeriodeFilter.TIGA_PULUH_HARI -> {
+                val start = getStartOfDay(now - 29L * 86400000L)
+                val end = getEndOfDay(now)
+                rawCatatanList.filter { it.createdAt.toDate().time in start..end }
+            }
+            PeriodeFilter.BULAN_INI -> {
+                val cal = Calendar.getInstance().apply {
+                    set(Calendar.DAY_OF_MONTH, 1)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val start = cal.timeInMillis
+                val end = getEndOfDay(now)
+                rawCatatanList.filter { it.createdAt.toDate().time in start..end }
+            }
+            PeriodeFilter.KUSTOM -> {
+                val start = _state.value.customStartDateMillis?.let { getStartOfDay(it) } ?: 0L
+                val end = _state.value.customEndDateMillis?.let { getEndOfDay(it) } ?: Long.MAX_VALUE
+                rawCatatanList.filter { it.createdAt.toDate().time in start..end }
+            }
+        }
+    }
+
     private fun calculateAnalytics() {
         val filtered = getFilteredTransactions()
         val periode = _state.value.selectedPeriode
@@ -391,9 +446,13 @@ class LaporanKeuanganViewModel @Inject constructor(
             pAcc.total += txTotal
         }
 
+        val filteredCatatan = getFilteredCatatanList()
+        val totalPemasukanCatatan = filteredCatatan.filter { it.isPemasukan }.sumOf { it.amount }
+        val totalPengeluaranCatatan = filteredCatatan.filter { it.isPengeluaran }.sumOf { it.amount }
+
         val labaKotor = (omzet - hpp).coerceAtLeast(0.0)
         val marginKotor = if (omzet > 0) ((labaKotor / omzet) * 100).toFloat() else 0f
-        val labaBersih = (omzet - hpp - diskon).coerceAtLeast(0.0)
+        val labaBersih = (omzet - hpp - diskon + totalPemasukanCatatan - totalPengeluaranCatatan).coerceAtLeast(0.0)
         val profitMargin = if (omzet > 0) ((labaBersih / omzet) * 100).toFloat() else 0f
         val aov = if (completed.isNotEmpty()) omzet / completed.size else 0.0
 
@@ -447,6 +506,8 @@ class LaporanKeuanganViewModel @Inject constructor(
                 totalHpp = hpp,
                 totalRefundNominal = totalRefundNominal,
                 totalRefundCount = totalRefundCount,
+                totalPemasukanCatatan = totalPemasukanCatatan,
+                totalPengeluaranCatatan = totalPengeluaranCatatan,
                 dailySales = dailyList,
                 topProdukList = topList,
                 metodePembayaranList = paymentList
