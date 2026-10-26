@@ -143,6 +143,16 @@ sealed class AppScreen(
         }
     }
 
+    object DetailCatatanKeuangan : AppScreen(
+        R.string.screen_catatan_keuangan,
+        R.drawable.catatankeuangan,
+        "detail_catatan_keuangan?catatanId={catatanId}"
+    ) {
+        fun createRoute(catatanId: String): String {
+            return "detail_catatan_keuangan?catatanId=$catatanId"
+        }
+    }
+
     object AuditLog : AppScreen(
         R.string.screen_auditlog,
         R.drawable.logoikikasir,
