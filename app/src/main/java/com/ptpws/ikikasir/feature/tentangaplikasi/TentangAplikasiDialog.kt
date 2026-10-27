@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -83,6 +84,12 @@ private val dummyTentangAplikasiInfo = TentangAplikasiInfo(
             deskripsiSingkat = "Analisis omzet harian, laba kotor & laba bersih, ranking produk terlaris, serta ekspor laporan berkas rapi ke Excel (.xlsx).",
             tagKategori = "Analitik",
             ikonType = "LAPORAN"
+        ),
+        FiturAplikasiItem(
+            judul = "Catatan Keuangan",
+            deskripsiSingkat = "Catat pemasukan dan pengeluaran usaha, telusuri riwayat berdasarkan tanggal atau pencarian, serta ekspor catatan ke Excel.",
+            tagKategori = "Keuangan",
+            ikonType = "CATATAN_KEUANGAN"
         ),
         FiturAplikasiItem(
             judul = "Fitur Refund & Batal Transaksi",
@@ -409,6 +416,7 @@ private fun FiturItemCard(
         "PEMBAYARAN" -> Triple(Icons.Default.Payment, Color(0xFFFFFBEB), Color(0xFFF59E0B))
         "PRINTER" -> Triple(Icons.Default.Print, Color(0xFFF3E8FF), Color(0xFF9333EA))
         "LAPORAN" -> Triple(Icons.Default.Assessment, Color(0xFFE0F2FE), Color(0xFF0284C7))
+        "CATATAN_KEUANGAN" -> Triple(Icons.Outlined.AccountBalanceWallet, Color(0xFFECFDF5), Color(0xFF059669))
         "REFUND" -> Triple(Icons.Default.Replay, Color(0xFFFFEDD5), Color(0xFFEA580C))
         "CLOUD" -> Triple(Icons.Default.Sync, Color(0xFFF0FDF4), Color(0xFF16A34A))
         else -> Triple(Icons.Default.Shield, Color(0xFFF1F5F9), Color(0xFF475569))
