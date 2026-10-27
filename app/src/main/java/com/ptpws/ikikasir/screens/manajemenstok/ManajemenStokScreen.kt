@@ -206,15 +206,6 @@ fun ManajemenStokScreen(
                         )
                     }
                 },
-                actions = {
-                    IconButton(onClick = { navController.navigate(AppScreen.Riwayat.route) }) {
-                        Icon(
-                            imageVector = Icons.Outlined.History,
-                            contentDescription = "Riwayat Stok",
-                            tint = Color(0xFF1E293B)
-                        )
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.White
                 )
@@ -711,4 +702,4 @@ fun StokProdukCardItem(
         }
     }
 }
-
+
