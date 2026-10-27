@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.screens.penjualan
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -103,6 +104,62 @@ fun WaitingListScreen(
     }
     val displayedWaitingList = remember(filteredList, displayedCount) {
         filteredList.take(displayedCount)
+    }
+
+    var selectedIds by remember { mutableStateOf(setOf<String>()) }
+    var showBatchCancelConfirmDialog by remember { mutableStateOf(false) }
+
+    // Dialog Konfirmasi Batal Batch
+    if (showBatchCancelConfirmDialog && selectedIds.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { showBatchCancelConfirmDialog = false },
+            title = {
+                Text(
+                    text = "Batalkan ${selectedIds.size} Antrean?",
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = interfamily,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Text(
+                    text = "Apakah Anda yakin ingin membatalkan ${selectedIds.size} antrean yang dipilih sekaligus?",
+                    fontFamily = interfamily,
+                    fontSize = 14.sp,
+                    color = Color(0xFF4B5563)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val idsToProcess = selectedIds
+                        selectedIds = emptySet()
+                        showBatchCancelConfirmDialog = false
+                        viewModel.batalkanMultiple(idsToProcess)
+                    }
+                ) {
+                    Text(
+                        text = "Ya, Batalkan Semua",
+                        color = Color(0xFFEF4444),
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = interfamily
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showBatchCancelConfirmDialog = false }
+                ) {
+                    Text(
+                        text = "Batal",
+                        color = Color(0xFF6B7280),
+                        fontFamily = interfamily
+                    )
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = Color.White
+        )
     }
 
     Scaffold(
@@ -219,6 +276,135 @@ fun WaitingListScreen(
                 }
             }
 
+            // ── Batch Action / Select All Header Bar ──────────────────
+            if (filteredList.isNotEmpty()) {
+                val isAllSelected = selectedIds.size == filteredList.size && filteredList.isNotEmpty()
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 8.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Checkbox Select All / Deselect All
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    if (isAllSelected) {
+                                        selectedIds = emptySet()
+                                    } else {
+                                        selectedIds = filteredList.map { it.id }.toSet()
+                                    }
+                                }
+                                .padding(vertical = 2.dp, horizontal = 4.dp)
+                        ) {
+                            Checkbox(
+                                checked = isAllSelected,
+                                onCheckedChange = { checked ->
+                                    selectedIds = if (checked) {
+                                        filteredList.map { it.id }.toSet()
+                                    } else {
+                                        emptySet()
+                                    }
+                                },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = Color(0xFF4F46E5),
+                                    uncheckedColor = Color(0xFF9CA3AF)
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (selectedIds.isEmpty()) "Pilih Semua (${filteredList.size})" else "${selectedIds.size} Terpilih",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = if (selectedIds.isNotEmpty()) Color(0xFF4F46E5) else Color(0xFF334155)
+                            )
+                        }
+
+                        // Action Buttons when 1 or more selected
+                        if (selectedIds.isNotEmpty()) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Tombol Centang Semua / Selesaikan (✓)
+                                Surface(
+                                    onClick = {
+                                        val idsToProcess = selectedIds
+                                        selectedIds = emptySet()
+                                        viewModel.selesaikanMultiple(idsToProcess)
+                                    },
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = Color(0xFFDCFCE7),
+                                    border = BorderStroke(1.dp, Color(0xFF86EFAC))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = "Selesaikan",
+                                            tint = Color(0xFF15803D),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = "Selesai (${selectedIds.size})",
+                                            fontFamily = interfamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.5.sp,
+                                            color = Color(0xFF15803D)
+                                        )
+                                    }
+                                }
+
+                                // Tombol Silang Semua / Batalkan (✗)
+                                Surface(
+                                    onClick = { showBatchCancelConfirmDialog = true },
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = Color(0xFFFEE2E2),
+                                    border = BorderStroke(1.dp, Color(0xFFFCA5A5))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Batalkan",
+                                            tint = Color(0xFFB91C1C),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = "Batal (${selectedIds.size})",
+                                            fontFamily = interfamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.5.sp,
+                                            color = Color(0xFFB91C1C)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
             // ── Main Content ────────────────────────────────────────
@@ -301,6 +487,14 @@ fun WaitingListScreen(
                                         nomor = globalNumber,
                                         antrean = antrean,
                                         transaksi = matchedTransaksi,
+                                        isSelected = selectedIds.contains(antrean.id),
+                                        onSelectToggle = {
+                                            selectedIds = if (selectedIds.contains(antrean.id)) {
+                                                selectedIds - antrean.id
+                                            } else {
+                                                selectedIds + antrean.id
+                                            }
+                                        },
                                         onSelesai = { viewModel.selesaikan(antrean.id) },
                                         onBatal = { viewModel.batalkan(antrean.id) }
                                     )
@@ -350,6 +544,8 @@ private fun AntreanCard(
     nomor: Int,
     antrean: Antrean,
     transaksi: PenjualanTransaksi?,
+    isSelected: Boolean = false,
+    onSelectToggle: (() -> Unit)? = null,
     onSelesai: () -> Unit,
     onBatal: () -> Unit
 ) {
@@ -368,11 +564,27 @@ private fun AntreanCard(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
-            // ── Header Row: Sequence Number, Invoice ID, Action Buttons (✓ and ✗) ──
+            // ── Header Row: Selection Checkbox, Sequence Number, Invoice ID, Action Buttons ──
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Selection Checkbox for Batch Action
+                if (onSelectToggle != null) {
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = { onSelectToggle() },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = Color(0xFF4F46E5),
+                            uncheckedColor = Color(0xFF9CA3AF)
+                        ),
+                        modifier = Modifier
+                            .size(24.dp)
+                            .padding(end = 4.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+
                 // Queue Sequence Number
                 Box(
                     modifier = Modifier
