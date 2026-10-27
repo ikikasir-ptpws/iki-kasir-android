@@ -1057,14 +1057,14 @@ class ExcelExportService @Inject constructor() {
         filterLabel: String = "Semua"
     ): Result<Uri> = withContext(Dispatchers.IO) {
         runCatching {
-            val sortedList = catatanList.sortedByDescending { it.createdAt.seconds }
+            val sortedList = catatanList.sortedBy { it.createdAt.seconds }
             val rows = mutableListOf<List<ExcelCell>>()
 
             // Row 1: Brand Title
             rows += listOf(ExcelCell("IKIKASIR - POINT OF SALE", style = "BrandTitle"))
 
             // Row 2: Report Title
-            rows += listOf(ExcelCell("LAPORAN CATATAN KEUANGAN (PEMASUKAN & PENGELUARAN)", style = "ReportTitle"))
+            rows += listOf(ExcelCell("LAPORAN CATATAN KEUANGAN (DEBIT & KREDIT)", style = "ReportTitle"))
 
             // Row 3: Subtitle Metadata Info
             val subtitle = "Periode Filter: $filterLabel   |   Dicetak: ${dateTimeFormat.format(Date())}   |   Total Data: ${catatanList.size} Catatan"
@@ -1078,68 +1078,99 @@ class ExcelExportService @Inject constructor() {
             val totalPengeluaran = sortedList.filter { it.isPengeluaran }.sumOf { it.amount }
             val saldoBersih = totalPemasukan - totalPengeluaran
 
-            // Row 5: KPI Headers
+            // Row 5: KPI Headers (A5:C5, D5:F5, G5:J5)
             rows += listOf(
-                ExcelCell("TOTAL PEMASUKAN", "KpiHeaderGreen"), ExcelCell("", "KpiHeaderGreen"),
-                ExcelCell("TOTAL PENGELUARAN", "KpiHeaderRed"), ExcelCell("", "KpiHeaderRed"),
-                ExcelCell("SALDO BERSIH (NETTO)", "KpiHeaderBlue"), ExcelCell("", "KpiHeaderBlue")
+                ExcelCell("TOTAL DEBIT (PEMASUKAN)", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("TOTAL KREDIT (PENGELUARAN)", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel"),
+                ExcelCell("SALDO BERSIH (NETTO)", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel"), ExcelCell("", "KpiLabel")
             )
 
-            // Row 6: KPI Values
+            // Row 6: KPI Values (A6:C6, D6:F6, G6:J6)
             rows += listOf(
-                ExcelCell(totalPemasukan.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell(totalPengeluaran.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell(saldoBersih.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency")
+                ExcelCell(totalPemasukan.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
+                ExcelCell(totalPengeluaran.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
+                ExcelCell(saldoBersih.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency")
             )
 
             // Row 7: Empty separator
             rows += listOf(emptyList())
 
             // Row 8: Table Headers
-            val headers = listOf("No", "Tanggal", "Jam", "Tipe", "Judul / Keterangan", "Nominal (Rp)", "Metode Pembayaran", "Catatan Tambahan", "Status Sync")
-            rows += headers.map { ExcelCell(it, style = "TableHeader") }
+            rows += listOf(
+                ExcelCell("No", "Header"),
+                ExcelCell("Tanggal", "Header"),
+                ExcelCell("Jam", "Header"),
+                ExcelCell("Tipe", "Header"),
+                ExcelCell("Judul / Keterangan", "HeaderLeft"),
+                ExcelCell("Debit (Rp)", "HeaderRight"),
+                ExcelCell("Kredit (Rp)", "HeaderRight"),
+                ExcelCell("Metode Bayar", "Header"),
+                ExcelCell("Catatan Tambahan", "HeaderLeft"),
+                ExcelCell("Saldo (Rp)", "HeaderRight")
+            )
 
-            val columnWidths = listOf(8, 16, 12, 16, 28, 20, 20, 28, 16)
+            val columnWidths = listOf(8, 16, 12, 16, 28, 22, 22, 20, 28, 22)
 
             // Table Data Rows
+            var runningSaldo = 0.0
             sortedList.forEachIndexed { index, item ->
                 val dateStr = item.date.ifBlank { dateTimeFormat.format(item.createdAt.toDate()).substringBefore(" ") }
                 val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(item.createdAt.toDate()) + " WIB"
-                val tipeStr = if (item.isPemasukan) "PEMASUKAN" else "PENGELUARAN"
-                val syncStr = if (item.isSynced) "Disinkronkan" else "Pending"
+                val isPemasukan = item.isPemasukan
+                val tipeStr = if (isPemasukan) "PEMASUKAN" else "PENGELUARAN"
+                val statusStyle = if (isPemasukan) "SuccessPill" else "DangerPill"
+
+                if (isPemasukan) {
+                    runningSaldo += item.amount
+                } else {
+                    runningSaldo -= item.amount
+                }
+
+                val rowStyle = if (index % 2 == 0) "Data" else "DataAlt"
+                val centerStyle = if (index % 2 == 0) "DataCenter" else "DataCenterAlt"
+                val numberStyle = if (index % 2 == 0) "Number" else "NumberAlt"
+
+                val debitStr = if (isPemasukan) item.amount.formatRupiah() else "-"
+                val kreditStr = if (!isPemasukan) item.amount.formatRupiah() else "-"
 
                 rows += listOf(
-                    ExcelCell((index + 1).toString(), style = "Number"),
-                    ExcelCell(dateStr, style = "Text"),
-                    ExcelCell(timeStr, style = "Text"),
-                    ExcelCell(tipeStr, style = if (item.isPemasukan) "CompletedStatus" else "CancelledStatus"),
-                    ExcelCell(item.title, style = "TextBold"),
-                    ExcelCell(item.amount.formatRupiah(), style = "Currency"),
-                    ExcelCell(item.paymentMethod.ifBlank { "Tunai" }, style = "Text"),
-                    ExcelCell(item.note, style = "Text"),
-                    ExcelCell(syncStr, style = "Text")
+                    ExcelCell((index + 1).toString(), centerStyle),
+                    ExcelCell(dateStr, centerStyle),
+                    ExcelCell(timeStr, centerStyle),
+                    ExcelCell(tipeStr, statusStyle),
+                    ExcelCell(item.title, rowStyle),
+                    ExcelCell(debitStr, if (isPemasukan) numberStyle else centerStyle),
+                    ExcelCell(kreditStr, if (!isPemasukan) numberStyle else centerStyle),
+                    ExcelCell(item.paymentMethod.ifBlank { "Tunai" }, centerStyle),
+                    ExcelCell(item.note.ifBlank { "-" }, rowStyle),
+                    ExcelCell(runningSaldo.formatRupiah(), numberStyle)
                 )
             }
 
             // Footer Total Rows
             val totalRowNumber = rows.size + 1
             rows += listOf(
-                ExcelCell("TOTAL PEMASUKAN", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell("TOTAL DEBIT (PEMASUKAN)", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
                 ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
                 ExcelCell(totalPemasukan.formatRupiah(), "TotalValue"),
-                ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel")
+                ExcelCell("-", "TotalCenter"),
+                ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell("-", "TotalCenter")
             )
             rows += listOf(
-                ExcelCell("TOTAL PENGELUARAN", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell("TOTAL KREDIT (PENGELUARAN)", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
                 ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell("-", "TotalCenter"),
                 ExcelCell(totalPengeluaran.formatRupiah(), "TotalValue"),
-                ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel")
+                ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell("-", "TotalCenter")
             )
             rows += listOf(
-                ExcelCell("SALDO BERSIH (NETTO)", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell("SALDO AKHIR (NETTO)", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
                 ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
-                ExcelCell(saldoBersih.formatRupiah(), "TotalValue"),
-                ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel")
+                ExcelCell("-", "TotalCenter"), ExcelCell("", "TotalCenter"),
+                ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
+                ExcelCell(saldoBersih.formatRupiah(), "TotalValue")
             )
 
             val rowPemasukan = totalRowNumber
@@ -1147,15 +1178,15 @@ class ExcelExportService @Inject constructor() {
             val rowNetto = totalRowNumber + 2
 
             val mergeRanges = listOf(
-                "A5:B5", "C5:D5", "E5:F5",
-                "A6:B6", "C6:D6", "E6:F6",
-                "A$rowPemasukan:E$rowPemasukan", "G$rowPemasukan:I$rowPemasukan",
-                "A$rowPengeluaran:E$rowPengeluaran", "G$rowPengeluaran:I$rowPengeluaran",
-                "A$rowNetto:E$rowNetto", "G$rowNetto:I$rowNetto"
+                "A5:C5", "D5:F5", "G5:J5",
+                "A6:C6", "D6:F6", "G6:J6",
+                "A$rowPemasukan:E$rowPemasukan", "H$rowPemasukan:I$rowPemasukan",
+                "A$rowPengeluaran:E$rowPengeluaran", "H$rowPengeluaran:I$rowPengeluaran",
+                "A$rowNetto:E$rowNetto", "F$rowNetto:G$rowNetto", "H$rowNetto:I$rowNetto"
             )
 
             val autoFilterEndRow = totalRowNumber - 1
-            val autoFilterRange = "A8:I$autoFilterEndRow"
+            val autoFilterRange = "A8:J$autoFilterEndRow"
 
             saveAndShare(
                 context,
