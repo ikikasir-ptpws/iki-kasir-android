@@ -48,7 +48,7 @@ class ExcelExportService @Inject constructor() {
             val rows = mutableListOf<List<ExcelCell>>()
 
             // Row 1: Brand Title
-            rows += listOf(ExcelCell("IKI KASIR - POINT OF SALE", style = "BrandTitle"))
+            rows += listOf(ExcelCell("IKIKASIR - POINT OF SALE", style = "BrandTitle"))
 
             // Row 2: Main Report Title
             rows += listOf(ExcelCell("LAPORAN RIWAYAT TRANSAKSI", style = "ReportTitle"))
@@ -251,7 +251,7 @@ class ExcelExportService @Inject constructor() {
             // ── SHEET 1: RINGKASAN FINANSIAL & P&L STATEMENT ──
             // ════════════════════════════════════════════════════════════════
             val summaryRows = mutableListOf<List<ExcelCell>>()
-            summaryRows += listOf(ExcelCell("IKI KASIR - SMART POINT OF SALE", "BrandTitle"))
+            summaryRows += listOf(ExcelCell("IKIKASIR - SMART POINT OF SALE", "BrandTitle"))
             summaryRows += listOf(ExcelCell("LAPORAN KEUANGAN & LABA RUGI (P&L)", "ReportTitle"))
             summaryRows += listOf(
                 ExcelCell(
@@ -515,7 +515,7 @@ class ExcelExportService @Inject constructor() {
             // ── SHEET 2: TREN PENJUALAN HARIAN ──
             // ════════════════════════════════════════════════════════════════
             val dailyRows = mutableListOf<List<ExcelCell>>()
-            dailyRows += listOf(ExcelCell("IKI KASIR - SMART POINT OF SALE", "BrandTitle"))
+            dailyRows += listOf(ExcelCell("IKIKASIR - SMART POINT OF SALE", "BrandTitle"))
             dailyRows += listOf(ExcelCell("TREN PENJUALAN HARIAN", "ReportTitle"))
             dailyRows += listOf(ExcelCell("Periode: ${reportData.filterLabel}   |   Dicetak: ${dateTimeFormat.format(Date())}", "Subtitle"))
             dailyRows += listOf(emptyList())
@@ -584,7 +584,7 @@ class ExcelExportService @Inject constructor() {
             // ── SHEET 3: TOP PRODUK TERLARIS ──
             // ════════════════════════════════════════════════════════════════
             val topRows = mutableListOf<List<ExcelCell>>()
-            topRows += listOf(ExcelCell("IKI KASIR - SMART POINT OF SALE", "BrandTitle"))
+            topRows += listOf(ExcelCell("IKIKASIR - SMART POINT OF SALE", "BrandTitle"))
             topRows += listOf(ExcelCell("LEADERBOARD 5 PRODUK TERLARIS", "ReportTitle"))
             topRows += listOf(ExcelCell("Periode: ${reportData.filterLabel}   |   Dicetak: ${dateTimeFormat.format(Date())}", "Subtitle"))
             topRows += listOf(emptyList())
@@ -652,7 +652,7 @@ class ExcelExportService @Inject constructor() {
             // ── SHEET 4: RINCIAN TRANSAKSI PENJUALAN ──
             // ════════════════════════════════════════════════════════════════
             val txRows = mutableListOf<List<ExcelCell>>()
-            txRows += listOf(ExcelCell("IKI KASIR - SMART POINT OF SALE", "BrandTitle"))
+            txRows += listOf(ExcelCell("IKIKASIR - SMART POINT OF SALE", "BrandTitle"))
             txRows += listOf(ExcelCell("RINCIAN TRANSAKSI PENJUALAN KASIR", "ReportTitle"))
             txRows += listOf(ExcelCell("Periode: ${reportData.filterLabel}   |   Dicetak: ${dateTimeFormat.format(Date())}   |   Total Data: ${sortedTransactions.size} Transaksi", "Subtitle"))
             txRows += listOf(emptyList())
@@ -803,7 +803,7 @@ class ExcelExportService @Inject constructor() {
             val rows = mutableListOf<List<ExcelCell>>()
 
             // Row 1: Brand Title
-            rows += listOf(ExcelCell("IKI KASIR - KITCHEN & QUEUE", style = "BrandTitle"))
+            rows += listOf(ExcelCell("IKIKASIR - KITCHEN & QUEUE", style = "BrandTitle"))
 
             // Row 2: Main Report Title
             rows += listOf(ExcelCell("LAPORAN RIWAYAT ANTREAN", style = "ReportTitle"))
@@ -943,7 +943,7 @@ class ExcelExportService @Inject constructor() {
             val rows = mutableListOf<List<ExcelCell>>()
 
             // Row 1: Brand Title
-            rows += listOf(ExcelCell("IKI KASIR - SMART POINT OF SALE", style = "BrandTitle"))
+            rows += listOf(ExcelCell("IKIKASIR - SMART POINT OF SALE", style = "BrandTitle"))
 
             // Row 2: Main Report Title
             rows += listOf(ExcelCell("LAPORAN PENJUALAN PRODUK TERJUAL", style = "ReportTitle"))
@@ -1061,7 +1061,7 @@ class ExcelExportService @Inject constructor() {
             val rows = mutableListOf<List<ExcelCell>>()
 
             // Row 1: Brand Title
-            rows += listOf(ExcelCell("IKI KASIR - POINT OF SALE", style = "BrandTitle"))
+            rows += listOf(ExcelCell("IKIKASIR - POINT OF SALE", style = "BrandTitle"))
 
             // Row 2: Report Title
             rows += listOf(ExcelCell("LAPORAN CATATAN KEUANGAN (PEMASUKAN & PENGELUARAN)", style = "ReportTitle"))
