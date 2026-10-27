@@ -224,41 +224,13 @@ fun DaftarProdukScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "Daftar Produk",
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = interfamily,
-                            fontSize = 20.sp,
-                            color = Color(0xFF0F172A)
-                        )
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (state.isOnline) Color(0xFFD1FAE5) else Color(0xFFFEE2E2)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (state.isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
-                                    contentDescription = null,
-                                    tint = if (state.isOnline) Color(0xFF059669) else Color(0xFFDC2626),
-                                    modifier = Modifier.size(12.dp)
-                                )
-                                Text(
-                                    text = if (state.isOnline) "Online" else "Offline",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (state.isOnline) Color(0xFF059669) else Color(0xFFDC2626)
-                                )
-                            }
-                        }
-                    }
+                    Text(
+                        text = "Daftar Produk",
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = interfamily,
+                        fontSize = 20.sp,
+                        color = Color(0xFF0F172A)
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = {
@@ -270,15 +242,6 @@ fun DaftarProdukScreen(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
                             tint = Color(0xFF1E293B)
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.syncData() }) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Sinkronisasi",
-                            tint = Color(0xFF4F46E5)
                         )
                     }
                 },
