@@ -987,11 +987,10 @@ class ExcelExportService @Inject constructor() {
                 ExcelCell("Harga Satuan", "HeaderRight"),
                 ExcelCell("Unit Terjual", "HeaderRight"),
                 ExcelCell("Total Omzet", "HeaderRight"),
-                ExcelCell("Kontribusi", "HeaderRight"),
-                ExcelCell("Status", "Header")
+                ExcelCell("Kontribusi", "HeaderRight")
             )
 
-            val columnWidths = listOf(12, 32, 22, 20, 16, 22, 16, 16)
+            val columnWidths = listOf(12, 32, 22, 20, 16, 22, 16)
 
             summary.items.forEachIndexed { index, item ->
                 val rowStyle = if (index % 2 == 0) "Data" else "DataAlt"
@@ -1004,9 +1003,6 @@ class ExcelExportService @Inject constructor() {
                     else -> centerStyle
                 }
 
-                val statusBadge = if (item.unitTerjual > 0) "Laris" else "Belum Terjual"
-                val statusStyle = if (item.unitTerjual > 0) "SuccessPill" else "DataCenter"
-
                 rows += listOf(
                     ExcelCell("#${item.rank}", rankBadgeStyle),
                     ExcelCell(item.namaProduk, rowStyle),
@@ -1014,8 +1010,7 @@ class ExcelExportService @Inject constructor() {
                     ExcelCell(item.hargaSatuan.formatRupiah(), numberStyle),
                     ExcelCell("${item.unitTerjual} Unit", numberStyle),
                     ExcelCell(item.totalOmzet.formatRupiah(), numberStyle),
-                    ExcelCell(String.format(Locale.US, "%.1f%%", item.kontribusiPersen), centerStyle),
-                    ExcelCell(statusBadge, statusStyle)
+                    ExcelCell(String.format(Locale.US, "%.1f%%", item.kontribusiPersen), centerStyle)
                 )
             }
 
@@ -1025,8 +1020,7 @@ class ExcelExportService @Inject constructor() {
                 ExcelCell("TOTAL PENJUALAN PRODUK", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"), ExcelCell("", "TotalLabel"),
                 ExcelCell("${summary.totalUnitTerjual} Unit", "TotalValue"),
                 ExcelCell(summary.totalOmzet.formatRupiah(), "TotalValue"),
-                ExcelCell("100.0%", "TotalCenter"),
-                ExcelCell("", "TotalLabel")
+                ExcelCell("100.0%", "TotalCenter")
             )
 
             val mergeRanges = listOf(
@@ -1036,7 +1030,7 @@ class ExcelExportService @Inject constructor() {
             )
 
             val autoFilterEndRow = totalRowNumber - 1
-            val autoFilterRange = "A8:H$autoFilterEndRow"
+            val autoFilterRange = "A8:G$autoFilterEndRow"
 
             saveAndShare(
                 context,
