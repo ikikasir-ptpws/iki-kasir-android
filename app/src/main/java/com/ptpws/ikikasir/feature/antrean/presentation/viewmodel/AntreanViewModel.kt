@@ -103,6 +103,81 @@ class AntreanViewModel @Inject constructor(
         processAntreanRemoval(id, status = "CANCELLED")
     }
 
+    fun selesaikanMultiple(ids: Set<String>) {
+        processMultipleAntreanRemoval(ids, status = "DONE")
+    }
+
+    fun batalkanMultiple(ids: Set<String>) {
+        processMultipleAntreanRemoval(ids, status = "CANCELLED")
+    }
+
+    private fun processMultipleAntreanRemoval(ids: Set<String>, status: String) {
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                val currentList = (uiState.value as? AntreanUiState.Success)?.data ?: emptyList()
+                val targetItems = currentList.filter { ids.contains(it.id) || ids.contains(it.transactionId) }
+
+                if (targetItems.isEmpty()) {
+                    GlobalCrudResultDialog.failure("Tidak ada antrean terpilih yang ditemukan.")
+                    return@launch
+                }
+
+                var successCount = 0
+                for (targetItem in targetItems) {
+                    val targetTxId = targetItem.transactionId.ifBlank { targetItem.id }
+
+                    // 1. Save to QueueHistory with identical transaction ID & tableNumber
+                    val history = QueueHistory(
+                        id = targetTxId,
+                        transactionId = targetTxId,
+                        status = status,
+                        customerName = targetItem.customerName,
+                        tableNumber = targetItem.tableNumber,
+                        queueSequence = targetItem.queueSequence,
+                        completedAt = Timestamp.now(),
+                        createdAt = targetItem.createdAt,
+                        updatedAt = Timestamp.now()
+                    )
+                    insertQueueHistoryUseCase(history).collect { result -> result.getOrThrow() }
+
+                    // 2. Delete item from active queues (Room DB + Firestore)
+                    antreanRepository.deleteAntrean(targetItem.id).collect { result -> result.getOrThrow() }
+                    if (targetTxId != targetItem.id) {
+                        antreanRepository.deleteAntrean(targetTxId).collect { result -> result.getOrThrow() }
+                    }
+                    successCount++
+                }
+
+                val isDone = status == "DONE"
+                val actionTitle = if (isDone) "Batch Selesai: $successCount Antrean" else "Batch Batal: $successCount Antrean"
+                val actionDesc = if (isDone) {
+                    "$successCount pesanan antrean berhasil diselesaikan sekaligus."
+                } else {
+                    "$successCount pesanan antrean berhasil dibatalkan sekaligus."
+                }
+
+                logActivityUseCase(
+                    title = actionTitle,
+                    description = actionDesc,
+                    category = "TRANSACTION",
+                    action = if (isDone) "UPDATE" else "CANCEL",
+                    isWarning = !isDone
+                )
+
+                GlobalCrudResultDialog.success(
+                    if (isDone) "$successCount antrean terpilih berhasil diselesaikan."
+                    else "$successCount antrean terpilih berhasil dibatalkan."
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed processing batch antrean removal ($status): ${e.message}", e)
+                GlobalCrudResultDialog.failure(
+                    e.message ?: "Gagal memproses batch antrean."
+                )
+            }
+        }
+    }
+
     private fun processAntreanRemoval(id: String, status: String) {
         viewModelScope.launch {
             try {
