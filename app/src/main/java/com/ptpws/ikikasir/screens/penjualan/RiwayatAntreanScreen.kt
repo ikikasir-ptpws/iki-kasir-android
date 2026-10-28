@@ -920,12 +920,28 @@ private fun QueueHistoryCard(
                 }
             }
 
-            // Subtitle: Customer Name & Table Number
+            val totalSubtotal = if (transaksi != null && transaksi.subtotal > 0) transaksi.subtotal else (transaksi?.items?.sumOf { it.totalPrice } ?: 0.0)
+            val isPpnEksklusif = transaksi?.checkIsPpnEksklusif() ?: false
+            val effectivePpn = transaksi?.getEffectivePpnAmount() ?: 0.0
+            val discountAmount = transaksi?.discount ?: 0.0
+            val grandTotal = if (transaksi != null && transaksi.total > 0) {
+                transaksi.total
+            } else if (transaksi != null) {
+                (totalSubtotal - discountAmount + (if (isPpnEksklusif) effectivePpn else 0.0)).coerceAtLeast(0.0)
+            } else {
+                0.0
+            }
+
+            // Subtitle: Customer Name & Table Number & Total Tagihan
             val subtitleText = buildString {
                 if (history.customerName.isNotBlank()) append(history.customerName)
                 if (history.tableNumber.isNotBlank()) {
                     if (isNotEmpty()) append(" • ")
                     append("Meja: ${history.tableNumber}")
+                }
+                if (grandTotal > 0) {
+                    if (isNotEmpty()) append(" • ")
+                    append(formatRupiah(grandTotal))
                 }
             }
 
@@ -978,8 +994,6 @@ private fun QueueHistoryCard(
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val rupiahFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
-
                     // Display product list if available
                     if (transaksi != null && transaksi.items.isNotEmpty()) {
                         Text(
@@ -1005,13 +1019,13 @@ private fun QueueHistoryCard(
                                         fontFamily = interfamily
                                     )
                                     Text(
-                                        text = "${cartItem.quantity}x @ ${rupiahFormat.format(cartItem.produk.price)}",
+                                        text = "${cartItem.quantity}x @ ${formatRupiah(cartItem.produk.price)}",
                                         fontSize = 11.sp,
                                         color = Color(0xFF64748B),
                                         fontFamily = interfamily
                                     )
                                     if (cartItem.produk.discount > 0) {
-                                        val discLabel = if (cartItem.produk.discountType == "PERCENT") "${cartItem.produk.discount.toInt()}%" else rupiahFormat.format(cartItem.produk.discount)
+                                        val discLabel = if (cartItem.produk.discountType == "PERCENT") "${cartItem.produk.discount.toInt()}%" else formatRupiah(cartItem.produk.discount)
                                         Text(
                                             text = "Promo Diskon: $discLabel",
                                             fontSize = 11.sp,
@@ -1030,7 +1044,7 @@ private fun QueueHistoryCard(
                                     }
                                 }
                                 Text(
-                                    text = rupiahFormat.format(cartItem.totalPrice),
+                                    text = formatRupiah(cartItem.totalPrice),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF0F172A),
@@ -1058,12 +1072,7 @@ private fun QueueHistoryCard(
                         }
 
                         val isPpnAktif = transaksi.isTaxActive()
-                        val isPpnEksklusif = transaksi.checkIsPpnEksklusif()
                         val formattedPercent = transaksi.getFormattedPercentage()
-                        val effectivePpn = transaksi.getEffectivePpnAmount()
-                        val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.totalPrice }
-                        val discountAmount = transaksi.discount
-                        val grandTotal = if (transaksi.total > 0) transaksi.total else (totalSubtotal - discountAmount + (if (isPpnEksklusif) effectivePpn else 0.0)).coerceAtLeast(0.0)
 
                         HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp)
 
@@ -1081,7 +1090,7 @@ private fun QueueHistoryCard(
                                     fontFamily = interfamily
                                 )
                                 Text(
-                                    text = if (isPpnEksklusif) "+ ${rupiahFormat.format(effectivePpn)}" else rupiahFormat.format(effectivePpn),
+                                    text = if (isPpnEksklusif) "+ ${formatRupiah(effectivePpn)}" else formatRupiah(effectivePpn),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF334155),
@@ -1104,7 +1113,7 @@ private fun QueueHistoryCard(
                                     fontFamily = interfamily
                                 )
                                 Text(
-                                    text = "- ${rupiahFormat.format(discountAmount)}",
+                                    text = "- ${formatRupiah(discountAmount)}",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF16A34A),
@@ -1126,7 +1135,7 @@ private fun QueueHistoryCard(
                                 fontFamily = interfamily
                             )
                             Text(
-                                text = rupiahFormat.format(grandTotal),
+                                text = formatRupiah(grandTotal),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF0066FF),
@@ -1149,6 +1158,11 @@ private fun QueueHistoryCard(
             }
         }
     }
+}
+
+private fun formatRupiah(amount: Double): String {
+    val formatter = NumberFormat.getInstance(Locale("id", "ID"))
+    return "Rp " + formatter.format(amount.toLong())
 }
 
 @Composable

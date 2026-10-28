@@ -20,7 +20,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -198,82 +197,54 @@ fun WaitingListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // ── Search bar + QR button ──────────────────────────────
-            Row(
+            // ── Search bar ──────────────────────────────
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .height(48.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Card(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    BasicTextField(
-                        value = searchQuery,
-                        onValueChange = { viewModel.onSearchQueryChanged(it) },
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            color = Color.Black,
-                            fontSize = 13.sp,
-                            fontFamily = interfamily
-                        ),
-                        modifier = Modifier.fillMaxSize(),
-                        decorationBox = { innerTextField ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = "Cari",
-                                    tint = Color(0xFF9CA3AF),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Box(modifier = Modifier.weight(1f)) {
-                                    if (searchQuery.isEmpty()) {
-                                        Text(
-                                            text = "Cari antrean, nama, atau invoice...",
-                                            fontSize = 13.sp,
-                                            color = Color(0xFF9CA3AF),
-                                            fontFamily = interfamily
-                                        )
-                                    }
-                                    innerTextField()
+                BasicTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChanged(it) },
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        color = Color.Black,
+                        fontSize = 13.sp,
+                        fontFamily = interfamily
+                    ),
+                    modifier = Modifier.fillMaxSize(),
+                    decorationBox = { innerTextField ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Cari",
+                                tint = Color(0xFF9CA3AF),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(modifier = Modifier.weight(1f)) {
+                                if (searchQuery.isEmpty()) {
+                                    Text(
+                                        text = "Cari antrean, nama, atau invoice...",
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF9CA3AF),
+                                        fontFamily = interfamily
+                                    )
                                 }
+                                innerTextField()
                             }
                         }
-                    )
-                }
-
-                Card(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clickable { /* QR Scan action */ },
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan QR",
-                            tint = Color(0xFF3D5AF1),
-                            modifier = Modifier.size(22.dp)
-                        )
                     }
-                }
+                )
             }
 
             // ── Batch Action / Select All Header Bar ──────────────────
@@ -552,6 +523,17 @@ private fun AntreanCard(
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
 
+    val totalSubtotal = if (transaksi != null && transaksi.subtotal > 0) transaksi.subtotal else (transaksi?.items?.sumOf { it.totalPrice } ?: 0.0)
+    val isPpnEksklusif = transaksi?.checkIsPpnEksklusif() ?: false
+    val effectivePpn = transaksi?.getEffectivePpnAmount() ?: 0.0
+    val totalTagihan = if (transaksi != null && transaksi.total > 0) {
+        transaksi.total
+    } else if (transaksi != null) {
+        (totalSubtotal - transaksi.discount + (if (isPpnEksklusif) effectivePpn else 0.0)).coerceAtLeast(0.0)
+    } else {
+        0.0
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -629,6 +611,10 @@ private fun AntreanCard(
                         if (antrean.tableNumber.isNotBlank()) {
                             if (isNotEmpty()) append(" • ")
                             append("Meja: ${antrean.tableNumber}")
+                        }
+                        if (totalTagihan > 0) {
+                            if (isNotEmpty()) append(" • ")
+                            append(formatRupiah(totalTagihan))
                         }
                     }
 
@@ -727,8 +713,6 @@ private fun AntreanCard(
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val rupiahFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
-
                     if (transaksi != null && transaksi.items.isNotEmpty()) {
                         Text(
                             text = "Item Pesanan:",
@@ -753,13 +737,13 @@ private fun AntreanCard(
                                         fontFamily = interfamily
                                     )
                                     Text(
-                                        text = "${cartItem.quantity}x @ ${rupiahFormat.format(cartItem.produk.price)}",
+                                        text = "${cartItem.quantity}x @ ${formatRupiah(cartItem.produk.price)}",
                                         fontSize = 11.sp,
                                         color = Color(0xFF64748B),
                                         fontFamily = interfamily
                                     )
                                     if (cartItem.produk.discount > 0) {
-                                        val discLabel = if (cartItem.produk.discountType == "PERCENT") "${cartItem.produk.discount.toInt()}%" else rupiahFormat.format(cartItem.produk.discount)
+                                        val discLabel = if (cartItem.produk.discountType == "PERCENT") "${cartItem.produk.discount.toInt()}%" else formatRupiah(cartItem.produk.discount)
                                         Text(
                                             text = "Promo Diskon: $discLabel",
                                             fontSize = 11.sp,
@@ -778,7 +762,7 @@ private fun AntreanCard(
                                     }
                                 }
                                 Text(
-                                    text = rupiahFormat.format(cartItem.totalPrice),
+                                    text = formatRupiah(cartItem.totalPrice),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF0F172A),
@@ -808,9 +792,7 @@ private fun AntreanCard(
                         HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp)
 
                         val isPpnAktif = transaksi.isTaxActive()
-                        val isPpnEksklusif = transaksi.checkIsPpnEksklusif()
                         val formattedPercent = transaksi.getFormattedPercentage()
-                        val effectivePpn = transaksi.getEffectivePpnAmount()
 
                         if (isPpnAktif && effectivePpn > 0) {
                             Row(
@@ -826,7 +808,7 @@ private fun AntreanCard(
                                     fontFamily = interfamily
                                 )
                                 Text(
-                                    text = if (isPpnEksklusif) "+ ${rupiahFormat.format(effectivePpn)}" else rupiahFormat.format(effectivePpn),
+                                    text = if (isPpnEksklusif) "+ ${formatRupiah(effectivePpn)}" else formatRupiah(effectivePpn),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF334155),
@@ -849,7 +831,7 @@ private fun AntreanCard(
                                     fontFamily = interfamily
                                 )
                                 Text(
-                                    text = "- ${rupiahFormat.format(transaksi.discount)}",
+                                    text = "- ${formatRupiah(transaksi.discount)}",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF16A34A),
@@ -857,9 +839,6 @@ private fun AntreanCard(
                                 )
                             }
                         }
-
-                        val totalSubtotal = if (transaksi.subtotal > 0) transaksi.subtotal else transaksi.items.sumOf { it.totalPrice }
-                        val totalTagihan = if (transaksi.total > 0) transaksi.total else (totalSubtotal - transaksi.discount + (if (isPpnEksklusif) effectivePpn else 0.0)).coerceAtLeast(0.0)
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -874,7 +853,7 @@ private fun AntreanCard(
                                 fontFamily = interfamily
                             )
                             Text(
-                                text = rupiahFormat.format(totalTagihan),
+                                text = formatRupiah(totalTagihan),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF3D5AF1),
@@ -899,4 +878,9 @@ private fun AntreanCard(
             }
         }
     }
+}
+
+private fun formatRupiah(amount: Double): String {
+    val formatter = NumberFormat.getInstance(Locale("id", "ID"))
+    return "Rp " + formatter.format(amount.toLong())
 }
