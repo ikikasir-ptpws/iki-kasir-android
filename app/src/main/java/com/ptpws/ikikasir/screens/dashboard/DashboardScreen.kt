@@ -63,6 +63,7 @@ import com.ptpws.ikikasir.commond.DashboardMenuSectionShimmer
 import com.ptpws.ikikasir.commond.DashboardRingkasanShimmer
 
 import java.text.NumberFormat
+import java.util.Calendar
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -174,14 +175,27 @@ fun DashboardScreen(
                             selectedFilter = selectedFilter,
                             customDateLabel = customDateLabel,
                             onSalesCardClick = {
-                                val route = AppScreen.LaporanPenjualan.routeWith(PeriodeLaporanPenjualan.HARI_INI.name)
+                                val route = getLaporanPenjualanRouteForFilter(
+                                    selectedFilter = selectedFilter,
+                                    customStart = customStartDateMillis,
+                                    customEnd = customEndDateMillis
+                                )
                                 navController.navigate(route)
                             },
                             onTxCardClick = {
                                 if (showTransaksi) {
-                                    navController.navigate(AppScreen.Riwayat.route)
+                                    val route = getRiwayatTransaksiRouteForFilter(
+                                        selectedFilter = selectedFilter,
+                                        customStart = customStartDateMillis,
+                                        customEnd = customEndDateMillis
+                                    )
+                                    navController.navigate(route)
                                 } else if (showLaporanKeuangan) {
-                                    val route = AppScreen.LaporanPenjualan.routeWith(PeriodeLaporanPenjualan.HARI_INI.name)
+                                    val route = getLaporanPenjualanRouteForFilter(
+                                        selectedFilter = selectedFilter,
+                                        customStart = customStartDateMillis,
+                                        customEnd = customEndDateMillis
+                                    )
                                     navController.navigate(route)
                                 }
                             }
@@ -1189,5 +1203,62 @@ fun RingkasanCard(
 fun DashboardScreenPreview() {
     MaterialTheme {
         DashboardScreen(navController = rememberNavController())
+    }
+}
+
+private fun getLaporanPenjualanRouteForFilter(
+    selectedFilter: PeriodeLaporanPenjualan,
+    customStart: Long?,
+    customEnd: Long?
+): String {
+    return if (selectedFilter == PeriodeLaporanPenjualan.KUSTOM && customStart != null && customEnd != null) {
+        AppScreen.LaporanPenjualan.routeWith(
+            periode = "KUSTOM",
+            startDate = customStart,
+            endDate = customEnd
+        )
+    } else {
+        AppScreen.LaporanPenjualan.routeWith(selectedFilter.name)
+    }
+}
+
+private fun getRiwayatTransaksiRouteForFilter(
+    selectedFilter: PeriodeLaporanPenjualan,
+    customStart: Long?,
+    customEnd: Long?
+): String {
+    return when (selectedFilter) {
+        PeriodeLaporanPenjualan.HARI_INI -> AppScreen.Riwayat.routeWith(filter = "Hari Ini")
+        PeriodeLaporanPenjualan.TUJUH_HARI -> AppScreen.Riwayat.routeWith(filter = "7 Hari Terakhir")
+        PeriodeLaporanPenjualan.SEMUA -> AppScreen.Riwayat.routeWith(filter = "Semua")
+        PeriodeLaporanPenjualan.TIGA_PULUH_HARI -> {
+            val start30 = Calendar.getInstance().apply {
+                add(Calendar.DAY_OF_YEAR, -30)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            val end30 = System.currentTimeMillis()
+            AppScreen.Riwayat.routeWith(filter = "Filter Tanggal", startDate = start30, endDate = end30)
+        }
+        PeriodeLaporanPenjualan.BULAN_INI -> {
+            val startMonth = Calendar.getInstance().apply {
+                set(Calendar.DAY_OF_MONTH, 1)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            val endMonth = System.currentTimeMillis()
+            AppScreen.Riwayat.routeWith(filter = "Filter Tanggal", startDate = startMonth, endDate = endMonth)
+        }
+        PeriodeLaporanPenjualan.KUSTOM -> {
+            if (customStart != null && customEnd != null) {
+                AppScreen.Riwayat.routeWith(filter = "Filter Tanggal", startDate = customStart, endDate = customEnd)
+            } else {
+                AppScreen.Riwayat.routeWith(filter = "Semua")
+            }
+        }
     }
 }

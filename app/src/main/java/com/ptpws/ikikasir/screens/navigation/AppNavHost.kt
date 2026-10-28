@@ -155,7 +155,7 @@ fun AppNavHost() {
                 }
             }
         } else if (cleanRoute == AppScreen.Produk.baseRoute ||
-            cleanRoute == AppScreen.Riwayat.route ||
+            cleanRoute == AppScreen.Riwayat.baseRoute ||
             cleanRoute == AppScreen.RiwayatAntrean.route
         ) {
             navController.navigate(targetRoute) {
@@ -244,7 +244,10 @@ fun AppNavHost() {
                     produkId = produkId
                 )
             }
-            composable(AppScreen.Riwayat.route) {
+            composable(
+                route = AppScreen.Riwayat.route,
+                arguments = AppScreen.Riwayat.navArguments
+            ) {
                 val context = LocalContext.current
                 RiwayatTransaksiScreen(
                     navController = navController,

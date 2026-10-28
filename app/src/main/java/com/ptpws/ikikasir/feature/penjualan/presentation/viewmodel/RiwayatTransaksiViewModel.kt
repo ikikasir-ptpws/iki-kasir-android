@@ -1,6 +1,7 @@
 package com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel
 
 import android.content.Context
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ptpws.ikikasir.commond.formatDateRangeLabel
@@ -28,13 +29,84 @@ import javax.inject.Inject
 class RiwayatTransaksiViewModel @Inject constructor(
     private val getAllTransaksiUseCase: GetAllTransaksiUseCase,
     private val exportTransaksiToExcelUseCase: ExportTransaksiToExcelUseCase,
-    private val logActivityUseCase: LogActivityUseCase
+    private val logActivityUseCase: LogActivityUseCase,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(RiwayatTransaksiState())
-    val state: StateFlow<RiwayatTransaksiState> = _state.asStateFlow()
+    private val initialStartMillis: Long? = savedStateHandle.get<String>("startDate")?.toLongOrNull()
+    private val initialEndMillis: Long? = savedStateHandle.get<String>("endDate")?.toLongOrNull()
+    private val rawInitialFilter: String? = savedStateHandle.get<String>("initialFilter")
+
+    private val _state: MutableStateFlow<RiwayatTransaksiState>
+    val state: StateFlow<RiwayatTransaksiState>
 
     init {
+        val selFilter: String
+        val startM: Long?
+        val endM: Long?
+        val dateLabel: String?
+
+        if (initialStartMillis != null && initialEndMillis != null) {
+            selFilter = "Filter Tanggal"
+            startM = initialStartMillis
+            endM = initialEndMillis
+            dateLabel = formatDateRangeLabel(initialStartMillis, initialEndMillis)
+        } else if (!rawInitialFilter.isNullOrBlank()) {
+            when (rawInitialFilter) {
+                "HARI_INI", "Hari Ini" -> {
+                    selFilter = "Hari Ini"
+                    startM = null
+                    endM = null
+                    dateLabel = null
+                }
+                "TUJUH_HARI", "TUJUH_HARI_TERAKHIR", "7 Hari Terakhir" -> {
+                    selFilter = "7 Hari Terakhir"
+                    startM = null
+                    endM = null
+                    dateLabel = null
+                }
+                "SEMUA", "Semua" -> {
+                    selFilter = "Semua"
+                    startM = null
+                    endM = null
+                    dateLabel = null
+                }
+                "REFUND", "Refund" -> {
+                    selFilter = "Refund"
+                    startM = null
+                    endM = null
+                    dateLabel = null
+                }
+                "KUSTOM", "Filter Tanggal" -> {
+                    selFilter = "Filter Tanggal"
+                    startM = null
+                    endM = null
+                    dateLabel = null
+                }
+                else -> {
+                    selFilter = rawInitialFilter
+                    startM = null
+                    endM = null
+                    dateLabel = null
+                }
+            }
+        } else {
+            selFilter = "Semua"
+            startM = null
+            endM = null
+            dateLabel = null
+        }
+
+        _state = MutableStateFlow(
+            RiwayatTransaksiState(
+                selectedFilter = selFilter,
+                startDateMillis = startM,
+                endDateMillis = endM,
+                customDateLabel = dateLabel
+            )
+        )
+        state = _state.asStateFlow()
+
         loadTransaksi()
     }
 

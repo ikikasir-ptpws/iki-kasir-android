@@ -94,7 +94,6 @@ fun RiwayatTransaksiScreen(
     val listState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
-        viewModel.resetToDefault()
         listState.scrollToItem(0, 0)
     }
 

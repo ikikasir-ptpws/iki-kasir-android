@@ -62,8 +62,38 @@ sealed class AppScreen(
     object Riwayat : AppScreen(
         R.string.screen_riwayat,
         R.drawable.iconapk,
-        "riwayat"
-    )
+        "riwayat?initialFilter={initialFilter}&startDate={startDate}&endDate={endDate}"
+    ) {
+        val baseRoute = "riwayat"
+        fun routeWith(
+            filter: String? = null,
+            startDate: Long? = null,
+            endDate: Long? = null
+        ): String {
+            val params = mutableListOf<String>()
+            if (filter != null) params.add("initialFilter=$filter")
+            if (startDate != null) params.add("startDate=$startDate")
+            if (endDate != null) params.add("endDate=$endDate")
+            return if (params.isNotEmpty()) "riwayat?${params.joinToString("&")}" else "riwayat"
+        }
+        val navArguments = listOf(
+            navArgument("initialFilter") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            },
+            navArgument("startDate") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            },
+            navArgument("endDate") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    }
 
     object Profil : AppScreen(
         R.string.screen_profil,
