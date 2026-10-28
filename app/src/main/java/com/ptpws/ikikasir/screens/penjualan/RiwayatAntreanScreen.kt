@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -453,10 +454,12 @@ fun RiwayatAntreanScreen(
                         onValueChange = { viewModel.onSearchQueryChanged(it) },
                         singleLine = true,
                         textStyle = TextStyle(
-                            color = Color.Black,
-                            fontSize = 13.sp,
-                            fontFamily = interfamily
+                            color = Color(0xFF0F172A),
+                            fontSize = 13.5.sp,
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Normal
                         ),
+                        cursorBrush = SolidColor(Color(0xFF4F46E5)),
                         modifier = Modifier.fillMaxSize(),
                         decorationBox = { innerTextField ->
                             Row(
@@ -472,11 +475,16 @@ fun RiwayatAntreanScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Box(modifier = Modifier.weight(1f)) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight(),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
                                     if (searchQuery.isEmpty()) {
                                         Text(
                                             text = "Cari antrean, nama, atau invoice...",
-                                            fontSize = 13.sp,
+                                            fontSize = 13.5.sp,
                                             color = Color(0xFF9CA3AF),
                                             fontFamily = interfamily
                                         )
