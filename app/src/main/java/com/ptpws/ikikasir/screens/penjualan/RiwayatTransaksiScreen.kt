@@ -2,6 +2,7 @@ package com.ptpws.ikikasir.screens.penjualan
 
 import android.app.Activity
 import android.content.Intent
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -271,7 +272,7 @@ fun RiwayatTransaksiScreen(
         )
     }
 
-    // Handler saat barcode / QR transaksi berhasil discan: langsung arahkan ke detail transaksi
+    // Handler saat barcode / QR transaksi berhasil discan: hanya arahkan jika merupakan transaksi yang valid
     val handleScannedTransaction: (String) -> Unit = { rawCode ->
         val clean = rawCode.trim()
         val cleanNoHash = clean.removePrefix("#").trim()
@@ -284,9 +285,16 @@ fun RiwayatTransaksiScreen(
             tx.transactionNumber.removePrefix("#").equals(cleanNoHash, ignoreCase = true)
         }
 
-        val targetTxId = matched?.transactionId ?: clean
-        viewModel.onSearchQueryChange(matched?.transactionNumber ?: clean)
-        onDetailTransaksi(targetTxId)
+        if (matched != null) {
+            viewModel.onSearchQueryChange(matched.transactionNumber)
+            onDetailTransaksi(matched.transactionId)
+        } else {
+            Toast.makeText(
+                context,
+                "Kode \"$clean\" bukan nomor transaksi yang valid atau tidak ditemukan.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
     }
 
     val triggerBarcodeScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { contents ->
