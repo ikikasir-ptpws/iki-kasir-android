@@ -254,13 +254,13 @@ fun TambahPromoScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        // Tipe Promo Input Field
+                        // Tipe Promo Input Field (Opsional)
                         GlobalTextField(
                             value = state.tipePromo,
                             onValueChange = { viewModel.onTipePromoChange(it) },
                             label = "Tipe Promo",
-                            isRequired = true,
-                            placeholder = "Masukkan tipe promo",
+                            isRequired = false,
+                            placeholder = "Masukkan tipe promo (opsional)",
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -288,14 +288,23 @@ fun TambahPromoScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "PRODUK PROMO",
-                                fontFamily = interfamily,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF94A3B8),
-                                letterSpacing = 0.5.sp
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "PRODUK PROMO",
+                                    fontFamily = interfamily,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF94A3B8),
+                                    letterSpacing = 0.5.sp
+                                )
+                                Text(
+                                    text = " *",
+                                    fontFamily = interfamily,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFEF4444)
+                                )
+                            }
                             Text(
                                 text = "${state.selectedProducts.size} Terpilih",
                                 fontFamily = interfamily,
@@ -423,14 +432,23 @@ fun TambahPromoScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "NILAI DISKON",
-                                fontFamily = interfamily,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF94A3B8),
-                                letterSpacing = 0.5.sp
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "NILAI DISKON",
+                                    fontFamily = interfamily,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF94A3B8),
+                                    letterSpacing = 0.5.sp
+                                )
+                                Text(
+                                    text = " *",
+                                    fontFamily = interfamily,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFEF4444)
+                                )
+                            }
 
                             // Rp / % Toggle Pill
                             Surface(
@@ -513,14 +531,23 @@ fun TambahPromoScreen(
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Text(
-                            text = "PERIODE PROMO",
-                            fontFamily = interfamily,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF94A3B8),
-                            letterSpacing = 0.5.sp
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "PERIODE PROMO",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF94A3B8),
+                                letterSpacing = 0.5.sp
+                            )
+                            Text(
+                                text = " *",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFEF4444)
+                            )
+                        }
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -531,12 +558,21 @@ fun TambahPromoScreen(
                                 modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Text(
-                                    text = "Mulai",
-                                    fontFamily = interfamily,
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF64748B)
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Mulai",
+                                        fontFamily = interfamily,
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF64748B)
+                                    )
+                                    Text(
+                                        text = " *",
+                                        fontFamily = interfamily,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFEF4444)
+                                    )
+                                }
                                 Surface(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -568,12 +604,21 @@ fun TambahPromoScreen(
                                 modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Text(
-                                    text = "Berakhir",
-                                    fontFamily = interfamily,
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF64748B)
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Berakhir",
+                                        fontFamily = interfamily,
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF64748B)
+                                    )
+                                    Text(
+                                        text = " *",
+                                        fontFamily = interfamily,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFEF4444)
+                                    )
+                                }
                                 Surface(
                                     modifier = Modifier
                                         .fillMaxWidth()

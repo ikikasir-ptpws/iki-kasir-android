@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 
@@ -191,7 +193,41 @@ class TambahPromoViewModel @Inject constructor(
             return
         }
 
+        if (form.selectedProducts.isEmpty()) {
+            val message = "Pilih minimal 1 produk promo"
+            GlobalCrudResultDialog.failure(message)
+            _state.update { it.copy(errorMessage = message) }
+            return
+        }
+
         val rawDiskon = form.nilaiDiskon.replace(".", "").replace(",", "").toDoubleOrNull() ?: 0.0
+        if (rawDiskon <= 0.0) {
+            val message = "Nilai diskon promo harus lebih dari 0"
+            GlobalCrudResultDialog.failure(message)
+            _state.update { it.copy(errorMessage = message) }
+            return
+        }
+
+        if (form.tanggalMulai.isBlank() || form.tanggalBerakhir.isBlank()) {
+            val message = "Periode promo (tanggal mulai dan berakhir) wajib diisi"
+            GlobalCrudResultDialog.failure(message)
+            _state.update { it.copy(errorMessage = message) }
+            return
+        }
+
+        try {
+            val sdf = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID"))
+            val startDate = sdf.parse(form.tanggalMulai)
+            val endDate = sdf.parse(form.tanggalBerakhir)
+            if (startDate != null && endDate != null && endDate.before(startDate)) {
+                val message = "Tanggal berakhir promo tidak boleh sebelum tanggal mulai"
+                GlobalCrudResultDialog.failure(message)
+                _state.update { it.copy(errorMessage = message) }
+                return
+            }
+        } catch (_: Exception) {
+            // Abaikan jika format tanggal kustom
+        }
 
         val promoItems = form.selectedProducts.map { produk ->
             PromoProductItem(
