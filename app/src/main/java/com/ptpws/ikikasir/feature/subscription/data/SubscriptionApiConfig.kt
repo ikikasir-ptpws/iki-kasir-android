@@ -15,19 +15,19 @@ object SubscriptionApiConfig {
      *   1. Menampilkan kode milik sendiri di halaman Program Referral
      *   2. Otomatis dikirim saat mengajukan calon client (Ajukan Calon Client)
      */
-    var REFERRAL_CODE = ""
+    var REFERRAL_CODE = "IKIKASIR-0WTCK"
 
     /**
      * Nama bisnis / toko pemilik lisensi ini.
      * Diisi dari respons server, digunakan untuk personalisasi pesan share referral.
      */
-    var BUSINESS_NAME = ""
+    var BUSINESS_NAME = "Toko Sayyid"
 
     /**
      * ID Customer dari database backend manajemen.
      * Diisi saat berhasil verifikasi subscription, dipakai untuk query referral per-pelanggan.
      */
-    var CUSTOMER_ID = ""
+    var CUSTOMER_ID = "d7c23694-d64b-4862-8d31-5646cff72a95"
 
     /**
      * Nama pemilik lisensi (bukan nama toko).

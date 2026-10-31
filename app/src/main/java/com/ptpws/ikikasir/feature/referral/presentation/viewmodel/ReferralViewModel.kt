@@ -217,7 +217,7 @@ class ReferralViewModel @Inject constructor(
         phone: String,
         email: String,
         notes: String,
-        onSuccess: () -> Unit,
+        onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
         if (name.isBlank()) {
@@ -268,10 +268,10 @@ class ReferralViewModel @Inject constructor(
 
             _isLoading.value = false
 
-            result.onSuccess {
+            result.onSuccess { message ->
                 // Refresh data live dari backend agar calon client baru langsung muncul di daftar
                 loadReferralDataFromServer()
-                onSuccess()
+                onSuccess(message)
             }.onFailure { err ->
                 onError(err.message ?: "Gagal mengajukan calon client.")
             }

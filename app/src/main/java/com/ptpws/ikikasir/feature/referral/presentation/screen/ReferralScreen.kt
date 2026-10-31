@@ -309,12 +309,12 @@ fun ReferralScreen(
                     phone = phone,
                     email = email,
                     notes = notes,
-                    onSuccess = {
+                    onSuccess = { message ->
                         showAjukanClientDialog = false
                         selectedTab = 0
                         Toast.makeText(
                             context,
-                            "Calon client '$name' berhasil diajukan! Menunggu verifikasi admin.",
+                            message.ifBlank { "Calon client '$name' berhasil diajukan! Menunggu verifikasi admin." },
                             Toast.LENGTH_LONG
                         ).show()
                     },
