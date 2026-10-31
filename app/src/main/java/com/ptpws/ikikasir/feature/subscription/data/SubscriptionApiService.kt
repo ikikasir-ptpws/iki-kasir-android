@@ -2,6 +2,8 @@ package com.ptpws.ikikasir.feature.subscription.data
 
 import android.util.Log
 import com.google.gson.Gson
+import com.ptpws.ikikasir.feature.referral.data.preferences.ReferralSessionManager
+import com.ptpws.ikikasir.feature.referral.domain.model.ReferralToken
 import com.ptpws.ikikasir.feature.subscription.data.remote.SubscriptionApiResponse
 import com.ptpws.ikikasir.feature.subscription.data.remote.SubscriptionDataDto
 import com.ptpws.ikikasir.feature.subscription.data.remote.SubscriptionRetrofitApi
@@ -81,6 +83,42 @@ class SubscriptionApiService {
                         ?: ""
                     val serverTime = data.serverTime?.takeIf { it.isNotBlank() }
 
+                    // ─── Isi variabel global referral secara otomatis ───────────────
+                    // Mirip pola CLIENT_EMAIL — dipakai oleh ReferralViewModel tanpa passing manual
+                    val resolvedReferralCode = data.referralCode?.takeIf { it.isNotBlank() }
+                    val resolvedCustomerId = data.customerId?.takeIf { it.isNotBlank() }
+                        ?: data.id?.takeIf { it.isNotBlank() }
+
+                    if (!resolvedReferralCode.isNullOrBlank()) {
+                        SubscriptionApiConfig.REFERRAL_CODE = resolvedReferralCode
+                        Log.d("SubscriptionApi", "REFERRAL_CODE global diset: $resolvedReferralCode")
+                    }
+                    if (!businessName.isNullOrBlank()) {
+                        SubscriptionApiConfig.BUSINESS_NAME = businessName
+                    }
+                    if (!customerName.isNullOrBlank()) {
+                        SubscriptionApiConfig.CUSTOMER_NAME = customerName
+                    }
+                    if (!resolvedCustomerId.isNullOrBlank()) {
+                        SubscriptionApiConfig.CUSTOMER_ID = resolvedCustomerId
+                        Log.d("SubscriptionApi", "CUSTOMER_ID global diset: $resolvedCustomerId")
+                    }
+
+                    // Simpan token referral global ke penyimpanan lokal (agar tetap ada saat app restart)
+                    if (!resolvedReferralCode.isNullOrBlank()) {
+                        ReferralSessionManager.saveToken(
+                            ReferralToken(
+                                email = resEmail,
+                                customerId = resolvedCustomerId.orEmpty(),
+                                referralCode = resolvedReferralCode,
+                                customerName = customerName.orEmpty(),
+                                businessName = businessName.orEmpty(),
+                                lastChecked = System.currentTimeMillis()
+                            )
+                        )
+                    }
+                    // ───────────────────────────────────────────────────────────────
+
                     val expiresAtMillis = expiresAtStr?.let {
                         parseIsoToMillis(it)
                     } ?: (System.currentTimeMillis() + (daysRemaining * 86400000L))
@@ -98,10 +136,13 @@ class SubscriptionApiService {
                         expiresAtMillis = expiresAtMillis,
                         daysRemaining = daysRemaining,
                         message = message,
-                        serverTime = serverTime
+                        serverTime = serverTime,
+                        referralCode = resolvedReferralCode,
+                        customerId = resolvedCustomerId
                     )
 
                     return@withContext Result.success(result)
+
                 } else {
                     // Response di luar 2xx (misal 404 NOT_FOUND atau 400)
                     val errorBodyStr = response.errorBody()?.string().orEmpty()

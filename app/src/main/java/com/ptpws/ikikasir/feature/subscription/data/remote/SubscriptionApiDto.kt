@@ -20,5 +20,9 @@ data class SubscriptionDataDto(
     @SerializedName("expiresAt") val expiresAt: String? = null,
     @SerializedName("daysRemaining") val daysRemaining: Int? = 0,
     @SerializedName("message") val message: String? = null,
-    @SerializedName("serverTime") val serverTime: String? = null
+    @SerializedName("serverTime") val serverTime: String? = null,
+    // Tambahan: field referral yang dikembalikan bersama data subscription
+    @SerializedName("referralCode") val referralCode: String? = null,
+    @SerializedName("customerId") val customerId: String? = null,
+    @SerializedName("id") val id: String? = null
 )

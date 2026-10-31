@@ -478,35 +478,7 @@ fun TambahPenggunaScreen(
                         val isEdit = formState.id.isNotBlank()
                         val isEmailChanged = isEdit && formState.initialEmail.isNotBlank() && !formState.initialEmail.trim().equals(formState.email.trim(), ignoreCase = true)
 
-                        if (isEmailChanged) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color(0xFFEFF6FF),
-                                border = BorderStroke(1.dp, Color(0xFFBFDBFE))
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(10.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Info,
-                                        contentDescription = null,
-                                        tint = Color(0xFF2563EB),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Text(
-                                        text = "Perubahan email terdeteksi. Masukkan kata sandi saat ini atau tentukan kata sandi baru untuk menyelaraskan akun login Firebase Auth.",
-                                        fontFamily = interfamily,
-                                        fontSize = 11.sp,
-                                        color = Color(0xFF1E40AF),
-                                        lineHeight = 15.sp
-                                    )
-                                }
-                            }
-                        }
+
 
                         // Kata Sandi Saat Ini (Hanya tampil saat Edit Pengguna)
                         if (isEdit) {

@@ -22,6 +22,22 @@ class ExpiredSessionManager(context: Context) {
         private const val KEY_STATUS = "status"
         private const val KEY_MESSAGE = "message"
         private const val KEY_LAST_CHECKED = "last_checked"
+
+        /** Cache dianggap basi setelah 1 jam — wajib re-verify ke server */
+        private const val CACHE_MAX_AGE_MS = 60 * 60 * 1000L // 1 jam
+    }
+
+    /**
+     * Mengembalikan true jika cache terakhir di-simpan lebih dari CACHE_MAX_AGE_MS yang lalu.
+     * Dipakai oleh UseCase untuk memutuskan perlu tidaknya re-verify ke server.
+     */
+    fun isCacheStale(): Boolean {
+        val lastChecked = prefs.getLong(KEY_LAST_CHECKED, 0L)
+        if (lastChecked == 0L) return true
+        val age = System.currentTimeMillis() - lastChecked
+        val isStale = age > CACHE_MAX_AGE_MS
+        Log.d("ExpiredSession", "Cache age: ${age / 1000}s, stale=$isStale")
+        return isStale
     }
 
     /**

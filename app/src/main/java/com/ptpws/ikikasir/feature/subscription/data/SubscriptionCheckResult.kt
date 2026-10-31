@@ -13,5 +13,9 @@ data class SubscriptionCheckResult(
     val expiresAtMillis: Long = 0L,
     val daysRemaining: Int = 0,
     val message: String = "",
-    val serverTime: String? = null
+    val serverTime: String? = null,
+    /** Kode referral milik pelanggan ini (dipakai fitur Referral di aplikasi) */
+    val referralCode: String? = null,
+    /** ID pelanggan di backend manajemen */
+    val customerId: String? = null
 )

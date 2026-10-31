@@ -81,29 +81,17 @@ class SplashActivity : BaseActivity() {
                             }
                             is SubscriptionFlowResult.NetworkError -> {
                                 android.util.Log.e("SplashActivity", "Network error saat verifikasi lisensi: ${flowResult.errorMessage}")
-                                val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
-                                // Jika server offline tapi ada session lokal yang masih berlaku aktif
-                                if (sessionManager.isSessionDataActive(email)) {
-                                    if (auth.currentUser != null) {
-                                        startActivity(Intent(this@SplashActivity, com.ptpws.ikikasir.MainActivity::class.java))
-                                    } else {
-                                        startActivity(Intent(this@SplashActivity, AuthActivity::class.java))
-                                    }
-                                    finish()
-                                } else if (sessionManager.hasExpiredSession(email)) {
-                                    // Session lokal mencatat sudah kadaluarsa
-                                    expiredData = sessionManager.getCachedSession()
-                                    showExpiredPopup = true
-                                } else {
-                                    // Belum ada session tersimpan dan server tidak terhubung
-                                    android.widget.Toast.makeText(this@SplashActivity, "Gagal koneksi backend: ${flowResult.errorMessage}", android.widget.Toast.LENGTH_SHORT).show()
-                                    if (auth.currentUser != null) {
-                                        startActivity(Intent(this@SplashActivity, com.ptpws.ikikasir.MainActivity::class.java))
-                                    } else {
-                                        startActivity(Intent(this@SplashActivity, AuthActivity::class.java))
-                                    }
-                                    finish()
-                                }
+                                // Server tidak bisa diakses.
+                                // Catatan: UseCase sudah menangani fallback ke cache lokal di dalamnya.
+                                // Jika sampai sini, berarti tidak ada cache valid -> tidak izinkan masuk.
+                                android.widget.Toast.makeText(
+                                    this@SplashActivity,
+                                    "Gagal terhubung ke server IKIKASIR. Pastikan backend aktif dan coba lagi.",
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
+                                // Tetap di SplashScreen (tidak finish/navigate)
+                                isChecking = false
+                                isRefreshing = false
                             }
                         }
                     }

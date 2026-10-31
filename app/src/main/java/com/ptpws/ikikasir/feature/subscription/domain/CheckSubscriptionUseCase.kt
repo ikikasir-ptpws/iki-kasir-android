@@ -1,4 +1,4 @@
-package com.ptpws.ikikasir.feature.subscription.domain
+﻿package com.ptpws.ikikasir.feature.subscription.domain
 
 import com.ptpws.ikikasir.feature.subscription.data.ExpiredSessionManager
 import com.ptpws.ikikasir.feature.subscription.data.SubscriptionApiService
@@ -29,19 +29,24 @@ class CheckSubscriptionUseCase(
      * Menjalankan alur lengkap sesuai diagram:
      *
      * Android
-     *   ↓
+     *   v
      * Cek session/local cache expired
-     *   ↓
+     *   v
      * Apakah ada data di session cache expired ?
-     *   ├─ Ya  ─→ Apakah session data masih aktif ?
-     *   │           ├─ Ya    ─→ Login Aplikasi
-     *   │           └─ Tidak ─→ [Popup Kadaluarsa] (Tidak bisa dibuka)
-     *   │
-     *   └─ Tidak ─→ Fetch API data expired diserver
-     *                 ↓
-     *               Apakah data masih aktif ?
-     *                 ├─ Ya    ─→ Simpan di Session ─→ Login Aplikasi
-     *                 └─ Tidak ─→ [Popup Kadaluarsa] (Tidak bisa dibuka)
+     *   +- Ya  -> Apakah session data masih aktif ?
+     *   |         +- Tidak          -> [Popup Kadaluarsa]
+     *   |         +- Ya & Segar     -> Login Aplikasi (tanpa hit server)
+     *   |         +- Ya & Basi(>1j) -> Re-verify ke server
+     *   |
+     *   +- Tidak -> Fetch API data expired di server
+     *               v
+     *             Apakah data masih aktif ?
+     *               +- Ya    -> Simpan di Session -> Login Aplikasi
+     *               +- Tidak -> [Popup Kadaluarsa]
+     *
+     * Pada NetworkError:
+     *   - Jika cache masih aktif (meski basi) -> fallback ke cache
+     *   - Jika tidak ada cache valid           -> NetworkError
      */
     suspend fun execute(email: String, forceRefresh: Boolean = false): SubscriptionFlowResult {
         if (forceRefresh) {
@@ -53,16 +58,12 @@ class CheckSubscriptionUseCase(
 
         // 2. Apakah ada data di session cache expired ?
         if (hasCache) {
-            // Ya -> Cek Apakah session data masih aktif ?
             val isStillActive = sessionManager.isSessionDataActive(email)
             val cachedData = sessionManager.getCachedSession()
 
-            return if (isStillActive && cachedData != null) {
-                // Ya -> Login Aplikasi
-                SubscriptionFlowResult.ProceedFromCache(cachedData)
-            } else {
-                // Tidak -> Tampilkan Popup Kadaluarsa
-                SubscriptionFlowResult.ExpiredFromCache(
+            // Jika cache sudah TIDAK aktif (expired berdasarkan waktu lokal) -> langsung blokir
+            if (!isStillActive || cachedData == null) {
+                return SubscriptionFlowResult.ExpiredFromCache(
                     cachedData ?: SubscriptionCheckResult(
                         isActive = false,
                         canAccess = false,
@@ -73,9 +74,17 @@ class CheckSubscriptionUseCase(
                     )
                 )
             }
+
+            // Cache aktif secara lokal. Jika MASIH SEGAR (<1 jam) -> langsung izinkan tanpa hit server
+            if (!sessionManager.isCacheStale()) {
+                return SubscriptionFlowResult.ProceedFromCache(cachedData)
+            }
+
+            // Cache sudah BASI (>1 jam) -> wajib re-verify ke server
+            android.util.Log.d("CheckSubscription", "Cache basi (>1 jam), re-verify ke server: $email")
         }
 
-        // 3. Tidak -> Fetch API data expired diserver
+        // 3. Fetch API data expired di server
         val apiResult = apiService.checkSubscription(email)
 
         return if (apiResult.isSuccess) {
@@ -94,7 +103,14 @@ class CheckSubscriptionUseCase(
             }
         } else {
             val err = apiResult.exceptionOrNull()?.message ?: "Gagal terhubung ke server backend IKIKASIR."
-            SubscriptionFlowResult.NetworkError(err)
+            // Server tidak bisa diakses: fallback ke cache lokal jika masih aktif
+            val cachedData = sessionManager.getCachedSession()
+            if (hasCache && cachedData != null && sessionManager.isSessionDataActive(email)) {
+                android.util.Log.w("CheckSubscription", "Server unreachable, pakai cache sebagai fallback: $email")
+                SubscriptionFlowResult.ProceedFromCache(cachedData)
+            } else {
+                SubscriptionFlowResult.NetworkError(err)
+            }
         }
     }
 }

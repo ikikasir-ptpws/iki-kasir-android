@@ -103,8 +103,8 @@ class UserViewModel @Inject constructor(
             val matchesQuery = if (query.isBlank()) true else {
                 val q = query.trim().lowercase()
                 user.fullName.lowercase().contains(q) ||
-                user.email.lowercase().contains(q) ||
-                user.roleId.lowercase().contains(q)
+                        user.email.lowercase().contains(q) ||
+                        user.roleId.lowercase().contains(q)
             }
             val matchesRole = if (role.isBlank()) true else
                 user.roleId.lowercase() == role.lowercase()
@@ -197,16 +197,24 @@ class UserViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.sendPasswordResetEmail(cleanEmail).collect { result ->
                 result.onSuccess {
-                    onResult(true, "Tautan reset kata sandi berhasil dikirim ke $cleanEmail. Silakan periksa kotak masuk atau folder spam email tersebut.")
+                    onResult(
+                        true,
+                        "Tautan reset kata sandi berhasil dikirim ke $cleanEmail. Silakan periksa kotak masuk atau folder spam email tersebut."
+                    )
                 }.onFailure { err ->
                     val rawMsg = err.message.orEmpty().lowercase()
                     val friendlyMsg = when {
-                        rawMsg.contains("blocked all requests") || rawMsg.contains("too-many-requests") || rawMsg.contains("unusual activity") ->
+                        rawMsg.contains("blocked all requests") || rawMsg.contains("too-many-requests") || rawMsg.contains(
+                            "unusual activity"
+                        ) ->
                             "Terlalu banyak permintaan. Silakan tunggu beberapa menit sebelum mencoba mengirim lagi."
+
                         rawMsg.contains("user-not-found") || rawMsg.contains("no user record") ->
                             "Akun dengan email $cleanEmail belum terdaftar di sistem login."
+
                         rawMsg.contains("network") || rawMsg.contains("timeout") ->
                             "Koneksi internet bermasalah. Periksa koneksi internet Anda lalu coba lagi."
+
                         else ->
                             "Gagal mengirim email reset kata sandi. Pastikan email aktif dan coba lagi."
                     }
@@ -281,7 +289,8 @@ class UserViewModel @Inject constructor(
             return
         }
         val isEdit = current.id.isNotBlank()
-        val isEmailChanged = isEdit && current.initialEmail.isNotBlank() && !current.initialEmail.trim().equals(current.email.trim(), ignoreCase = true)
+        val isEmailChanged = isEdit && current.initialEmail.isNotBlank() && !current.initialEmail.trim()
+            .equals(current.email.trim(), ignoreCase = true)
 
         if (!isEdit) {
             // Tambah pengguna baru: password wajib diisi
@@ -314,7 +323,8 @@ class UserViewModel @Inject constructor(
             if (isEmailChanged) {
                 // Perubahan email memerlukan sandi saat ini atau sandi baru untuk sinkronisasi Firebase Auth
                 if (current.password.isBlank() && current.currentPassword.isBlank()) {
-                    val message = "Mengubah email memerlukan kata sandi saat ini atau kata sandi baru untuk sinkronisasi akun login Firebase."
+                    val message =
+                        "Mengubah email memerlukan kata sandi saat ini atau kata sandi baru untuk sinkronisasi akun login Firebase."
                     GlobalCrudResultDialog.failure(message)
                     _formState.update { it.copy(error = message) }
                     return
@@ -348,7 +358,8 @@ class UserViewModel @Inject constructor(
                     return
                 }
                 if (current.currentPassword.isBlank()) {
-                    val message = "Masukkan kata sandi saat ini untuk mengubah kata sandi, atau gunakan opsi 'Lupa kata sandi?' di atas."
+                    val message =
+                        "Masukkan kata sandi saat ini untuk mengubah kata sandi, atau gunakan opsi 'Lupa kata sandi?' di atas."
                     GlobalCrudResultDialog.failure(message)
                     _formState.update { it.copy(error = message) }
                     return
@@ -392,7 +403,8 @@ class UserViewModel @Inject constructor(
                         if (isEdit) "Data pengguna \"${user.fullName}\" berhasil diperbarui."
                         else "Pengguna \"${user.fullName}\" berhasil ditambahkan."
                     )
-                    val actionTitle = if (isEdit) "Perubahan Pengguna: ${user.fullName}" else "Pengguna Baru: ${user.fullName}"
+                    val actionTitle =
+                        if (isEdit) "Perubahan Pengguna: ${user.fullName}" else "Pengguna Baru: ${user.fullName}"
                     val actionDesc = if (isEdit) {
                         "Data pengguna ${user.fullName} (${user.roleId}) telah diperbarui. Status aktif: ${if (user.isActive) "Aktif" else "Non-Aktif"}."
                     } else {

@@ -77,6 +77,8 @@ fun ReferralScreen(
     var showWithdrawDialog by remember { mutableStateOf(false) }
     var selectedWithdrawalDetail by remember { mutableStateOf<WithdrawalTransaction?>(null) }
     var showUplineDialog by remember { mutableStateOf(false) }
+    var showAjukanClientDialog by remember { mutableStateOf(false) }
+    val isLoading by viewModel.isLoading.collectAsState()
 
     Scaffold(
         containerColor = Color(0xFFF3F4F6),
@@ -98,6 +100,23 @@ fun ReferralScreen(
                             contentDescription = "Kembali",
                             tint = Color(0xFF4F46E5)
                         )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { viewModel.refreshData() }) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = Color(0xFF4F46E5),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Outlined.Refresh,
+                                contentDescription = "Segarkan",
+                                tint = Color(0xFF4F46E5)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -160,7 +179,8 @@ fun ReferralScreen(
                             onSearchChange = { viewModel.setSearchQuery(it) },
                             selectedFilter = selectedFilter,
                             onFilterSelect = { viewModel.setSelectedFilter(it) },
-                            totalActive = allUserReferrals.count { it.isActive }
+                            totalActive = allUserReferrals.count { it.isActive },
+                            onAjukanClient = { showAjukanClientDialog = true }
                         )
                     }
 
@@ -273,6 +293,35 @@ fun ReferralScreen(
                 viewModel.updateUpline(newName, newCode)
                 showUplineDialog = false
                 Toast.makeText(context, "Data upline berhasil diperbarui!", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    // ── DIALOG: Ajukan Calon Client
+    if (showAjukanClientDialog) {
+        AjukanCalonClientDialog(
+            referralCode = referralInfo.referralCode,
+            onDismiss = { showAjukanClientDialog = false },
+            onSubmit = { name, businessName, phone, email, notes ->
+                viewModel.submitClient(
+                    name = name,
+                    businessName = businessName,
+                    phone = phone,
+                    email = email,
+                    notes = notes,
+                    onSuccess = {
+                        showAjukanClientDialog = false
+                        selectedTab = 0
+                        Toast.makeText(
+                            context,
+                            "Calon client '$name' berhasil diajukan! Menunggu verifikasi admin.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    },
+                    onError = { err ->
+                        Toast.makeText(context, err, Toast.LENGTH_SHORT).show()
+                    }
+                )
             }
         )
     }
@@ -855,7 +904,8 @@ fun UserReferralHeader(
     onSearchChange: (String) -> Unit,
     selectedFilter: String,
     onFilterSelect: (String) -> Unit,
-    totalActive: Int
+    totalActive: Int,
+    onAjukanClient: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
@@ -870,13 +920,29 @@ fun UserReferralHeader(
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF6B7280)
             )
-            Text(
-                text = "$totalActive Toko Aktif",
-                fontFamily = interfamily,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF059669)
-            )
+            FilledTonalButton(
+                onClick = onAjukanClient,
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = Color(0xFF4F46E5),
+                    contentColor = Color.White
+                ),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.PersonAdd,
+                    contentDescription = null,
+                    modifier = Modifier.size(15.dp),
+                    tint = Color.White
+                )
+                Spacer(modifier = Modifier.width(5.dp))
+                Text(
+                    text = "Ajukan Calon Client",
+                    fontFamily = interfamily,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
 
         // Search Bar
@@ -924,34 +990,48 @@ fun UserReferralHeader(
                 .height(50.dp)
         )
 
-        // Filter Chips
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("Semua", "Aktif", "Menunggu").forEach { filter ->
-                val isSelected = selectedFilter == filter
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { onFilterSelect(filter) },
-                    label = {
-                        Text(
-                            text = filter,
-                            fontFamily = interfamily,
-                            fontSize = 12.sp,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                        )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color(0xFFEEF2FF),
-                        selectedLabelColor = Color(0xFF4F46E5),
-                        containerColor = Color.White,
-                        labelColor = Color(0xFF64748B)
-                    ),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = if (isSelected) Color(0xFF4F46E5) else Color(0xFFE2E8F0)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                )
+        // Filter Chips & Counter
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Semua", "Aktif", "Menunggu").forEach { filter ->
+                    val isSelected = selectedFilter == filter
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onFilterSelect(filter) },
+                        label = {
+                            Text(
+                                text = filter,
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFFEEF2FF),
+                            selectedLabelColor = Color(0xFF4F46E5),
+                            containerColor = Color.White,
+                            labelColor = Color(0xFF64748B)
+                        ),
+                        border = BorderStroke(
+                            width = 1.dp,
+                            color = if (isSelected) Color(0xFF4F46E5) else Color(0xFFE2E8F0)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
             }
+
+            Text(
+                text = "$totalActive Toko Aktif",
+                fontFamily = interfamily,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF059669)
+            )
         }
     }
 }
@@ -1272,6 +1352,319 @@ fun EmptyWithdrawalCard(onTarikSekarang: () -> Unit) {
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
                 )
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DIALOG: AJUKAN CALON CLIENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+fun AjukanCalonClientDialog(
+    referralCode: String,
+    onDismiss: () -> Unit,
+    onSubmit: (name: String, businessName: String, phone: String, email: String, notes: String) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var businessName by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = { if (!isSubmitting) onDismiss() }) {
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // Header Dialog
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFFEEF2FF)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.PersonAdd,
+                                contentDescription = null,
+                                tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Ajukan Calon Client",
+                                fontFamily = interfamily,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1E293B)
+                            )
+                            Text(
+                                text = "Daftarkan calon client mitra",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onDismiss,
+                        enabled = !isSubmitting,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Tutup",
+                            tint = Color(0xFF94A3B8)
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color(0xFFF1F5F9))
+                )
+
+                // Info Banner Komisi Rp 15.000
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
+                    border = BorderStroke(1.dp, Color(0xFFBBF7D0))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.CardGiftcard,
+                            contentDescription = null,
+                            tint = Color(0xFF16A34A),
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = "Kode Referral: $referralCode",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF15803D)
+                            )
+                            Text(
+                                text = "Calon client akan otomatis terikat ke akun Anda. Setelah disetujui & diverifikasi di sistem IKIKASIR, Anda otomatis mendapatkan komisi Rp 15.000!",
+                                fontFamily = interfamily,
+                                fontSize = 11.sp,
+                                color = Color(0xFF166534),
+                                lineHeight = 15.sp
+                            )
+                        }
+                    }
+                }
+
+                // Field: Nama Pemilik / Calon Client
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "Nama Pemilik / Calon Client *",
+                        fontFamily = interfamily,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF334155)
+                    )
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        placeholder = { Text("Contoh: Budi Santoso", fontSize = 13.sp, color = Color(0xFF94A3B8)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF4F46E5),
+                            unfocusedBorderColor = Color(0xFFCBD5E1)
+                        )
+                    )
+                }
+
+                // Field: Nama Toko / Bisnis
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "Nama Toko / Usaha *",
+                        fontFamily = interfamily,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF334155)
+                    )
+                    OutlinedTextField(
+                        value = businessName,
+                        onValueChange = { businessName = it },
+                        placeholder = { Text("Contoh: Toko Berkah Abadi", fontSize = 13.sp, color = Color(0xFF94A3B8)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF4F46E5),
+                            unfocusedBorderColor = Color(0xFFCBD5E1)
+                        )
+                    )
+                }
+
+                // Field: Nomor WhatsApp
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "Nomor WhatsApp *",
+                        fontFamily = interfamily,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF334155)
+                    )
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = { phone = it },
+                        placeholder = { Text("Contoh: 081234567890", fontSize = 13.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF4F46E5),
+                            unfocusedBorderColor = Color(0xFFCBD5E1)
+                        )
+                    )
+                }
+
+                // Field: Email
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "Email Calon Client *",
+                        fontFamily = interfamily,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF334155)
+                    )
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        placeholder = { Text("Contoh: budi@gmail.com", fontSize = 13.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF4F46E5),
+                            unfocusedBorderColor = Color(0xFFCBD5E1)
+                        )
+                    )
+                }
+
+                // Field: Catatan
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "Catatan Tambahan (Opsional)",
+                        fontFamily = interfamily,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF334155)
+                    )
+                    OutlinedTextField(
+                        value = notes,
+                        onValueChange = { notes = it },
+                        placeholder = { Text("Contoh: Minat paket 1 tahun", fontSize = 13.sp, color = Color(0xFF94A3B8)) },
+                        minLines = 2,
+                        maxLines = 3,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF4F46E5),
+                            unfocusedBorderColor = Color(0xFFCBD5E1)
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Actions Button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        enabled = !isSubmitting,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+                    ) {
+                        Text(
+                            text = "Batal",
+                            fontFamily = interfamily,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF64748B)
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            isSubmitting = true
+                            onSubmit(name, businessName, phone, email, notes)
+                        },
+                        enabled = !isSubmitting && name.isNotBlank() && businessName.isNotBlank() && phone.isNotBlank() && email.isNotBlank(),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                    ) {
+                        if (isSubmitting) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Outlined.Send,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Kirim",
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
             }
         }
     }

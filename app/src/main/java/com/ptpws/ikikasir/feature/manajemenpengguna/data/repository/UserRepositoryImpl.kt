@@ -99,7 +99,10 @@ class UserRepositoryImpl @Inject constructor(
             // berarti user telah dihapus di Firestore. Hapus segera dari Room DB!
             currentLocal.forEach { localUser ->
                 if (localUser.isSynced && !remoteIds.contains(localUser.id)) {
-                    Log.d(TAG, "Realtime: User ${localUser.fullName} (${localUser.id}) dihapus di remote, menghapus dari Room DB")
+                    Log.d(
+                        TAG,
+                        "Realtime: User ${localUser.fullName} (${localUser.id}) dihapus di remote, menghapus dari Room DB"
+                    )
                     localDao.deletePermanently(localUser.id)
                 }
             }
@@ -160,7 +163,8 @@ class UserRepositoryImpl @Inject constructor(
                 } catch (e: Exception) {
                     if (e is com.google.firebase.auth.FirebaseAuthInvalidUserException ||
                         e.message?.contains("no user record", ignoreCase = true) == true ||
-                        e.message?.contains("user-not-found", ignoreCase = true) == true) {
+                        e.message?.contains("user-not-found", ignoreCase = true) == true
+                    ) {
                         existsInAuth = false
                     }
                 }
@@ -180,10 +184,12 @@ class UserRepositoryImpl @Inject constructor(
                         }
                         try {
                             secondaryAuth.signOut()
-                        } catch (_: Exception) {}
+                        } catch (_: Exception) {
+                        }
                     } catch (e: Exception) {
                         if (e is com.google.firebase.auth.FirebaseAuthUserCollisionException ||
-                            e.message?.contains("already in use", ignoreCase = true) == true) {
+                            e.message?.contains("already in use", ignoreCase = true) == true
+                        ) {
                             // Akun memang sudah ada di Firebase Auth (aktif)
                             existsInAuth = true
                         } else {
@@ -200,7 +206,10 @@ class UserRepositoryImpl @Inject constructor(
 
                 // 3. Jika terkonfirmasi akun TIDAK ADA di Firebase Auth (karena telah dihapus lewat Auth Console):
                 if (!existsInAuth) {
-                    Log.d(TAG, "Akun $userEmail (${user.id}) terbukti TIDAK ADA di Firebase Auth. Menghapus otomatis dari Firestore dan Room DB...")
+                    Log.d(
+                        TAG,
+                        "Akun $userEmail (${user.id}) terbukti TIDAK ADA di Firebase Auth. Menghapus otomatis dari Firestore dan Room DB..."
+                    )
                     try {
                         remoteDataSource.deleteUser(user.id)
                         Log.d(TAG, "Berhasil menghapus dokumen Firestore 'users/${user.id}' ($userEmail)")
@@ -216,7 +225,8 @@ class UserRepositoryImpl @Inject constructor(
                             .document(userEmail.lowercase())
                             .delete()
                             .await()
-                    } catch (_: Exception) {}
+                    } catch (_: Exception) {
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -262,18 +272,29 @@ class UserRepositoryImpl @Inject constructor(
                     .document(user.email.trim().lowercase())
                     .delete()
                     .await()
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
 
             // Buat akun langsung di Firebase Authentication menggunakan password input
             createAuthUserIfOnline(email = user.email, plainPassword = plainPassword)
             try {
-                Log.d(TAG, "Online: Mengirim data ke Firestore collection 'users' dengan ID '${user.id}' (tanpa password)...")
+                Log.d(
+                    TAG,
+                    "Online: Mengirim data ke Firestore collection 'users' dengan ID '${user.id}' (tanpa password)..."
+                )
                 remoteDataSource.saveUser(user.toDto())
-                Log.d(TAG, "Online: Berhasil simpan ke Firestore! Menyimpan ke Room DB (isSynced = true, tanpa password)")
+                Log.d(
+                    TAG,
+                    "Online: Berhasil simpan ke Firestore! Menyimpan ke Room DB (isSynced = true, tanpa password)"
+                )
                 localDao.insertOrUpdate(user.toEntity(isSynced = true))
                 emit(Result.success(Unit))
             } catch (e: Exception) {
-                Log.e(TAG, "Gagal simpan ke Firestore (disimpan ke Room DB dengan isSynced = false). Error: ${e.message}", e)
+                Log.e(
+                    TAG,
+                    "Gagal simpan ke Firestore (disimpan ke Room DB dengan isSynced = false). Error: ${e.message}",
+                    e
+                )
                 localDao.insertOrUpdate(user.toEntity(isSynced = false))
                 emit(Result.success(Unit))
             }
@@ -315,7 +336,8 @@ class UserRepositoryImpl @Inject constructor(
                     .document(user.email.trim().lowercase())
                     .delete()
                     .await()
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
 
             val existingLocal = localDao.getUserById(user.id)
             val resolvedOldEmail = oldEmail?.trim()?.ifBlank { null }
@@ -328,7 +350,8 @@ class UserRepositoryImpl @Inject constructor(
             if (isPasswordChanged || isEmailChanged) {
                 val newPass = plainPassword?.trim()?.takeIf { it.isNotBlank() }
                 val currentAuth = FirebaseAuth.getInstance().currentUser
-                val isCurrentLoggedInUser = currentAuth?.email?.trim()?.equals(resolvedOldEmail, ignoreCase = true) == true
+                val isCurrentLoggedInUser =
+                    currentAuth?.email?.trim()?.equals(resolvedOldEmail, ignoreCase = true) == true
 
                 var authUpdated = false
                 var authError: Exception? = null
@@ -348,7 +371,10 @@ class UserRepositoryImpl @Inject constructor(
 
                         if (isEmailChanged) {
                             currentAuth.updateEmail(user.email.trim()).await()
-                            Log.d(TAG, "Email akun aktif berhasil diupdate dari $resolvedOldEmail ke ${user.email} di Firebase Auth")
+                            Log.d(
+                                TAG,
+                                "Email akun aktif berhasil diupdate dari $resolvedOldEmail ke ${user.email} di Firebase Auth"
+                            )
                         }
 
                         if (newPass != null) {
@@ -377,7 +403,10 @@ class UserRepositoryImpl @Inject constructor(
                                 if (secUser != null) {
                                     if (isEmailChanged) {
                                         secUser.updateEmail(user.email.trim()).await()
-                                        Log.d(TAG, "Secondary Auth: Berhasil update email dari $resolvedOldEmail ke ${user.email}")
+                                        Log.d(
+                                            TAG,
+                                            "Secondary Auth: Berhasil update email dari $resolvedOldEmail ke ${user.email}"
+                                        )
                                     }
                                     if (newPass != null) {
                                         secUser.updatePassword(newPass).await()
@@ -386,7 +415,10 @@ class UserRepositoryImpl @Inject constructor(
                                     authUpdated = true
                                 }
                             } catch (e: Exception) {
-                                Log.w(TAG, "Secondary Auth: Gagal sign in dengan resolvedOldEmail ($resolvedOldEmail): ${e.message}")
+                                Log.w(
+                                    TAG,
+                                    "Secondary Auth: Gagal sign in dengan resolvedOldEmail ($resolvedOldEmail): ${e.message}"
+                                )
                                 authError = e
                             } finally {
                                 secondaryAuth.signOut()
@@ -399,18 +431,26 @@ class UserRepositoryImpl @Inject constructor(
                                 val passForNew = newPass ?: authPasswordToUse
                                 secondaryAuth.createUserWithEmailAndPassword(user.email.trim(), passForNew).await()
                                 authUpdated = true
-                                Log.d(TAG, "Secondary Auth: Akun ${user.email} berhasil didaftarkan baru di Firebase Auth")
+                                Log.d(
+                                    TAG,
+                                    "Secondary Auth: Akun ${user.email} berhasil didaftarkan baru di Firebase Auth"
+                                )
                             } catch (collisionEx: Exception) {
                                 if (collisionEx is com.google.firebase.auth.FirebaseAuthUserCollisionException ||
-                                    collisionEx.message?.contains("already in use", ignoreCase = true) == true) {
+                                    collisionEx.message?.contains("already in use", ignoreCase = true) == true
+                                ) {
                                     // Akun baru sudah ada di Firebase Auth, coba login dan update jika ada password baru
                                     if (newPass != null && oldPassword != null) {
                                         try {
-                                            secondaryAuth.signInWithEmailAndPassword(user.email.trim(), oldPassword).await()
+                                            secondaryAuth.signInWithEmailAndPassword(user.email.trim(), oldPassword)
+                                                .await()
                                             secondaryAuth.currentUser?.updatePassword(newPass)?.await()
                                             authUpdated = true
                                         } catch (e: Exception) {
-                                            Log.w(TAG, "Secondary Auth: Gagal update password akun yang sudah ada: ${e.message}")
+                                            Log.w(
+                                                TAG,
+                                                "Secondary Auth: Gagal update password akun yang sudah ada: ${e.message}"
+                                            )
                                             authError = e
                                         } finally {
                                             secondaryAuth.signOut()
@@ -435,38 +475,38 @@ class UserRepositoryImpl @Inject constructor(
                     val rawMsg = authError?.message.orEmpty().lowercase()
                     val errorMsg = when {
                         rawMsg.contains("blocked all requests") ||
-                        rawMsg.contains("too-many-requests") ||
-                        rawMsg.contains("unusual activity") ->
+                                rawMsg.contains("too-many-requests") ||
+                                rawMsg.contains("unusual activity") ->
                             "Terlalu banyak percobaan gagal dari perangkat ini. Demi keamanan, silakan tunggu beberapa menit sebelum mencoba lagi, atau gunakan opsi 'Lupa kata sandi?' untuk mengirim link reset ke email."
 
                         authError is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException ||
-                        rawMsg.contains("wrong-password") ||
-                        rawMsg.contains("invalid-credential") ||
-                        rawMsg.contains("password is invalid") ->
+                                rawMsg.contains("wrong-password") ||
+                                rawMsg.contains("invalid-credential") ||
+                                rawMsg.contains("password is invalid") ->
                             "Kata sandi saat ini yang Anda masukkan salah. Silakan periksa kembali kata sandi saat ini, atau gunakan opsi 'Lupa kata sandi?' untuk mereset via email."
 
                         authError is com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException ||
-                        rawMsg.contains("requires-recent-login") ||
-                        rawMsg.contains("recent authentication") ->
+                                rawMsg.contains("requires-recent-login") ||
+                                rawMsg.contains("recent authentication") ->
                             "Demi keamanan, silakan masukkan kata sandi saat ini yang benar untuk mengonfirmasi perubahan data akun."
 
                         rawMsg.contains("weak-password") ||
-                        rawMsg.contains("password should be at least") ->
+                                rawMsg.contains("password should be at least") ->
                             "Kata sandi baru terlalu lemah. Harap gunakan minimal 6 karakter kombinasi huruf dan angka."
 
                         rawMsg.contains("network") ||
-                        rawMsg.contains("timeout") ||
-                        rawMsg.contains("unable to resolve host") ->
+                                rawMsg.contains("timeout") ||
+                                rawMsg.contains("unable to resolve host") ->
                             "Koneksi internet bermasalah. Periksa koneksi data atau Wi-Fi Anda lalu coba lagi."
 
                         authError is com.google.firebase.auth.FirebaseAuthUserCollisionException ||
-                        rawMsg.contains("already in use") ||
-                        rawMsg.contains("email-already-in-use") ->
+                                rawMsg.contains("already in use") ||
+                                rawMsg.contains("email-already-in-use") ->
                             "Alamat email ini sudah digunakan oleh akun lain. Gunakan alamat email yang berbeda."
 
                         authError is com.google.firebase.auth.FirebaseAuthInvalidUserException ||
-                        rawMsg.contains("user-not-found") ||
-                        rawMsg.contains("no user record") ->
+                                rawMsg.contains("user-not-found") ||
+                                rawMsg.contains("no user record") ->
                             "Akun ini belum terdaftar di sistem login. Pastikan kata sandi saat ini atau kata sandi baru telah diisi dengan benar."
 
                         else ->
@@ -486,13 +526,18 @@ class UserRepositoryImpl @Inject constructor(
                         FirebaseFirestore.getInstance()
                             .collection("deleted_accounts")
                             .document(resolvedOldEmail.lowercase())
-                            .set(mapOf(
-                                "email" to resolvedOldEmail.lowercase(),
-                                "deletedAt" to Timestamp.now(),
-                                "userId" to user.id,
-                                "reason" to "email_changed_to_${user.email.trim().lowercase()}"
-                            )).await()
-                        Log.d(TAG, "Berhasil mencatat $resolvedOldEmail ke deleted_accounts karena email diubah ke ${user.email}")
+                            .set(
+                                mapOf(
+                                    "email" to resolvedOldEmail.lowercase(),
+                                    "deletedAt" to Timestamp.now(),
+                                    "userId" to user.id,
+                                    "reason" to "email_changed_to_${user.email.trim().lowercase()}"
+                                )
+                            ).await()
+                        Log.d(
+                            TAG,
+                            "Berhasil mencatat $resolvedOldEmail ke deleted_accounts karena email diubah ke ${user.email}"
+                        )
                     } catch (e: Exception) {
                         Log.w(TAG, "Gagal mencatat oldEmail ke deleted_accounts: ${e.message}")
                     }
@@ -515,7 +560,11 @@ class UserRepositoryImpl @Inject constructor(
             }
         } else {
             // OFFLINE
-            if (!plainPassword.isNullOrBlank() || (!oldEmail.isNullOrBlank() && !oldEmail.equals(user.email.trim(), ignoreCase = true))) {
+            if (!plainPassword.isNullOrBlank() || (!oldEmail.isNullOrBlank() && !oldEmail.equals(
+                    user.email.trim(),
+                    ignoreCase = true
+                ))
+            ) {
                 emit(Result.failure(Exception("Mengubah email atau kata sandi memerlukan koneksi internet untuk memperbarui akun autentikasi.")))
                 return@flow
             }
@@ -560,11 +609,13 @@ class UserRepositoryImpl @Inject constructor(
                         FirebaseFirestore.getInstance()
                             .collection("deleted_accounts")
                             .document(targetEmail)
-                            .set(mapOf(
-                                "email" to targetEmail,
-                                "deletedAt" to Timestamp.now(),
-                                "userId" to id
-                            )).await()
+                            .set(
+                                mapOf(
+                                    "email" to targetEmail,
+                                    "deletedAt" to Timestamp.now(),
+                                    "userId" to id
+                                )
+                            ).await()
                     } catch (e: Exception) {
                         Log.w(TAG, "Gagal catat ke deleted_accounts: ${e.message}")
                     }

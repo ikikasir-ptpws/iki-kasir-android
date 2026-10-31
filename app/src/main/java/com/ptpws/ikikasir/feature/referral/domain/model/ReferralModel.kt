@@ -7,14 +7,14 @@ enum class WithdrawalStatus(val label: String) {
 }
 
 data class ReferralInfo(
-    val referralCode: String = "IKIKASIR-MUH88",
-    val uplineName: String = "MUhib",
-    val uplineCode: String = "MUB-9921",
-    val uplineBoundDate: String = "10 September 2026",
-    val isBound: Boolean = true,
-    val availableBalance: Double = 1250000.0,
-    val totalEarnings: Double = 2750000.0,
-    val totalWithdrawn: Double = 1500000.0,
+    val referralCode: String = "",
+    val uplineName: String = "",
+    val uplineCode: String = "",
+    val uplineBoundDate: String = "",
+    val isBound: Boolean = false,
+    val availableBalance: Double = 0.0,
+    val totalEarnings: Double = 0.0,
+    val totalWithdrawn: Double = 0.0,
     val rewardPerActiveUser: Double = 15000.0
 )
 
@@ -40,3 +40,28 @@ data class WithdrawalTransaction(
     val status: WithdrawalStatus = WithdrawalStatus.MENUNGGU_VERIFIKASI,
     val notes: String = ""
 )
+
+/**
+ * Token referral global pelanggan.
+ *
+ * Disimpan lokal (SharedPreferences) supaya tetap tersedia walaupun aplikasi
+ * dijalankan ulang / sedang offline. Token ini dipakai untuk:
+ *   1. Menampilkan kode referral milik pelanggan di halaman Program Referral
+ *   2. Otomatis mengikat calon client yang diundang dari aplikasi
+ */
+data class ReferralToken(
+    val email: String = "",
+    val customerId: String = "",
+    val referralCode: String = "",
+    val customerName: String = "",
+    val businessName: String = "",
+    val uplineName: String = "",
+    val uplineCode: String = "",
+    val uplineBoundDate: String = "",
+    val isBound: Boolean = false,
+    val lastChecked: Long = 0L
+) {
+    /** True bila token sudah possesses data referralCode yang valid */
+    val isValid: Boolean
+        get() = referralCode.isNotBlank() && referralCode.startsWith("IKIKASIR-")
+}
