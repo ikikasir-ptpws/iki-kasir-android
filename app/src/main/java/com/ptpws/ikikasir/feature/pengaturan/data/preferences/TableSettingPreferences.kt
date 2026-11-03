@@ -11,7 +11,7 @@ class TableSettingPreferences(context: Context) {
     fun getSetting(): TableSetting {
         return TableSetting(
             id = "default",
-            isTableEnabled = prefs.getBoolean("isTableEnabled", false)
+            isTableEnabled = prefs.getBoolean("isTableEnabled", true)
         )
     }
 
@@ -22,7 +22,7 @@ class TableSettingPreferences(context: Context) {
     }
 
     fun isTableEnabled(): Boolean {
-        return prefs.getBoolean("isTableEnabled", false)
+        return prefs.getBoolean("isTableEnabled", true)
     }
 
     fun setTableEnabled(enabled: Boolean) {
