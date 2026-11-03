@@ -166,6 +166,7 @@ fun MenuFullScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun KeuanganMenuSection(
     navController: NavController,
@@ -176,17 +177,25 @@ fun KeuanganMenuSection(
     val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
     val sectionHorizontalPadding = if (isSmallScreen) 14.dp else 20.dp
 
-    Row(
+    FlowRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = sectionHorizontalPadding),
-        horizontalArrangement = Arrangement.Start
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        maxItemsInEachRow = 4
     ) {
         MenuIconItem(
             iconRes = R.drawable.laporankeuangan,
             label = "Laporan\nKeuangan",
             bgColor = Color(0xFFFFF0F6),
             onClick = { navController.navigate(AppScreen.LaporanKeuangan.route) }
+        )
+        MenuIconItem(
+            iconRes = R.drawable.laporankeuangan,
+            label = "Catatan\nKeuangan",
+            bgColor = Color(0xFFEFF6FF),
+            onClick = { navController.navigate(AppScreen.CatatanKeuangan.route) }
         )
     }
 }

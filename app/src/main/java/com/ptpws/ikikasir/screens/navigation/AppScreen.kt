@@ -252,4 +252,27 @@ sealed class AppScreen(
         R.drawable.logoikikasir,
         "referral"
     )
+
+    object CatatanKeuangan : AppScreen(
+        R.string.screen_transaksi,
+        R.drawable.laporankeuangan,
+        "catatan_keuangan"
+    )
+
+    object TambahCatatanKeuangan : AppScreen(
+        R.string.screen_transaksi,
+        R.drawable.laporankeuangan,
+        "tambah_catatan_keuangan?id={id}"
+    ) {
+        val baseRoute = "tambah_catatan_keuangan"
+        fun routeWith(id: String? = null): String =
+            if (id != null) "tambah_catatan_keuangan?id=$id" else "tambah_catatan_keuangan"
+        val navArguments = listOf(
+            navArgument("id") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    }
 }

@@ -66,7 +66,9 @@ import com.ptpws.ikikasir.screens.pengaturan.ProfilScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
 import com.ptpws.ikikasir.screens.kategori.TambahKategoriActivity
 import com.ptpws.ikikasir.screens.keuangan.AuditLogScreen
+import com.ptpws.ikikasir.screens.keuangan.CatatanKeuanganScreen
 import com.ptpws.ikikasir.screens.keuangan.LaporanKeuanganScreen
+import com.ptpws.ikikasir.screens.keuangan.TambahCatatanKeuanganScreen
 import com.ptpws.ikikasir.feature.laporanpenjualan.presentation.screen.LaporanPenjualanScreen
 import com.ptpws.ikikasir.screens.manajemenpengguna.ManajemenPenggunaScreen
 import com.ptpws.ikikasir.screens.manajemenpengguna.TambahPenggunaActivity
@@ -280,6 +282,15 @@ fun AppNavHost() {
                         authViewModel.logout()
                     }
                 )
+            }
+            composable(AppScreen.CatatanKeuangan.route) {
+                CatatanKeuanganScreen(navController = navController)
+            }
+            composable(
+                AppScreen.TambahCatatanKeuangan.route,
+                arguments = AppScreen.TambahCatatanKeuangan.navArguments
+            ) {
+                TambahCatatanKeuanganScreen(navController = navController)
             }
             composable(AppScreen.KategoriProduk.route) {
                 val context = LocalContext.current

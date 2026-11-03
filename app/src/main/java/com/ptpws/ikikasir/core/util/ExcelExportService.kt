@@ -8,6 +8,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import com.ptpws.ikikasir.feature.antrean.domain.model.QueueHistory
+import com.ptpws.ikikasir.feature.keuangan.domain.model.CatatanKeuangan
 import com.ptpws.ikikasir.feature.keuangan.domain.model.FinancialReportExportData
 import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.LaporanPenjualanSummary
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
@@ -232,6 +233,81 @@ class ExcelExportService @Inject constructor() {
                 ),
                 "Transaksi_${fileNameDateFormat.format(Date())}.xlsx"
             )
+        }
+    }
+
+    suspend fun exportCatatanKeuangan(
+        context: Context,
+        catatanList: List<CatatanKeuangan>,
+        filterLabel: String
+    ): Result<Uri> = withContext(Dispatchers.IO) {
+        runCatching {
+            val sortedList = catatanList.sortedByDescending { it.tanggalMillis }
+            val rows = mutableListOf<List<ExcelCell>>()
+
+            rows += listOf(ExcelCell("IKI KASIR - CATATAN KEUANGAN", "BrandTitle"))
+            rows += listOf(ExcelCell("LAPORAN CATATAN PEMASUKAN & PENGELUARAN", "ReportTitle"))
+            rows += listOf(
+                ExcelCell(
+                    "Filter: $filterLabel   |   Dicetak: ${dateTimeFormat.format(Date())}   |   Total Data: ${sortedList.size} Catatan",
+                    "Subtitle"
+                )
+            )
+            rows += listOf(emptyList())
+
+            val totalPemasukan = sortedList.filter { it.jenis.equals("PEMASUKAN", ignoreCase = true) }.sumOf { it.nominal }
+            val totalPengeluaran = sortedList.filter { it.jenis.equals("PENGELUARAN", ignoreCase = true) }.sumOf { it.nominal }
+            val saldoBersih = totalPemasukan - totalPengeluaran
+
+            rows += listOf(
+                ExcelCell("SUMMARY FINANSIAL", "SectionHeader"),
+                ExcelCell("", "SectionHeader"),
+                ExcelCell("", "SectionHeader"),
+                ExcelCell("", "SectionHeader")
+            )
+            rows += listOf(
+                ExcelCell("Total Pemasukan", "KpiLabel"),
+                ExcelCell(totalPemasukan.toExcelNumber(), "KpiValueCurrency"),
+                ExcelCell("Total Pengeluaran", "KpiLabel"),
+                ExcelCell(totalPengeluaran.toExcelNumber(), "KpiValueCurrency")
+            )
+            rows += listOf(
+                ExcelCell("Saldo Bersih", "KpiLabel"),
+                ExcelCell(saldoBersih.toExcelNumber(), "KpiValueCurrency"),
+                ExcelCell("Jumlah Catatan", "KpiLabel"),
+                ExcelCell(sortedList.size.toString(), "KpiValue")
+            )
+            rows += listOf(emptyList())
+
+            rows += listOf(
+                ExcelCell("TANGGAL", "TableHeaderCenter"),
+                ExcelCell("JENIS", "TableHeaderCenter"),
+                ExcelCell("JUDUL CATATAN", "TableHeader"),
+                ExcelCell("KETERANGAN", "TableHeader"),
+                ExcelCell("METODE", "TableHeaderCenter"),
+                ExcelCell("NOMINAL (RP)", "TableHeaderRight")
+            )
+
+            sortedList.forEachIndexed { index, item ->
+                val dateStr = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID")).format(Date(item.tanggalMillis))
+                val jenisStr = if (item.jenis.equals("PEMASUKAN", ignoreCase = true)) "PEMASUKAN" else "PENGELUARAN"
+                val styleRow = if (index % 2 == 1) "DataRowAlt" else "DataRow"
+                val styleCurrency = if (index % 2 == 1) "CurrencyDataAlt" else "CurrencyData"
+
+                rows += listOf(
+                    ExcelCell(dateStr, styleRow + "Center"),
+                    ExcelCell(jenisStr, styleRow + "Center"),
+                    ExcelCell(item.judul, styleRow),
+                    ExcelCell(item.keterangan.ifBlank { "-" }, styleRow),
+                    ExcelCell(item.metodePembayaran, styleRow + "Center"),
+                    ExcelCell(item.nominal.toExcelNumber(), styleCurrency)
+                )
+            }
+
+            val sheet = ExcelSheet("Catatan Keuangan", rows, listOf(22, 16, 26, 30, 16, 20))
+            val bytes = createSpreadsheetXlsx(listOf(sheet))
+            val dateTag = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+            saveAndShare(context, bytes, "CatatanKeuangan_$dateTag.xlsx")
         }
     }
 
