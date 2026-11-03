@@ -67,6 +67,7 @@ import com.ptpws.ikikasir.screens.penjualan.RiwayatTransaksiScreen
 import com.ptpws.ikikasir.screens.kategori.TambahKategoriActivity
 import com.ptpws.ikikasir.screens.keuangan.AuditLogScreen
 import com.ptpws.ikikasir.screens.keuangan.CatatanKeuanganScreen
+import com.ptpws.ikikasir.screens.keuangan.DetailCatatanKeuanganScreen
 import com.ptpws.ikikasir.screens.keuangan.LaporanKeuanganScreen
 import com.ptpws.ikikasir.screens.keuangan.TambahCatatanKeuanganScreen
 import com.ptpws.ikikasir.feature.laporanpenjualan.presentation.screen.LaporanPenjualanScreen
@@ -291,6 +292,12 @@ fun AppNavHost() {
                 arguments = AppScreen.TambahCatatanKeuangan.navArguments
             ) {
                 TambahCatatanKeuanganScreen(navController = navController)
+            }
+            composable(
+                AppScreen.DetailCatatanKeuangan.route,
+                arguments = AppScreen.DetailCatatanKeuangan.navArguments
+            ) {
+                DetailCatatanKeuanganScreen(navController = navController)
             }
             composable(AppScreen.KategoriProduk.route) {
                 val context = LocalContext.current

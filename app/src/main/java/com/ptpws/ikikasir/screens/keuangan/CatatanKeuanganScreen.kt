@@ -506,6 +506,9 @@ fun CatatanKeuanganScreen(
                 items(group.items, key = { it.id }) { item ->
                     CatatanCardItem(
                         item = item,
+                        onClick = {
+                            navController.navigate(AppScreen.DetailCatatanKeuangan.routeWith(item.id))
+                        },
                         onEdit = {
                             navController.navigate(AppScreen.TambahCatatanKeuangan.routeWith(item.id))
                         },
@@ -577,6 +580,7 @@ private fun SummaryKpiCard(
 @Composable
 private fun CatatanCardItem(
     item: CatatanKeuangan,
+    onClick: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -589,7 +593,9 @@ private fun CatatanCardItem(
     val timeStr = SimpleDateFormat("HH:mm", Locale("id", "ID")).format(Date(item.tanggalMillis))
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, Color(0xFFF1F5F9)),
@@ -644,7 +650,7 @@ private fun CatatanCardItem(
                         color = amountColor
                     )
                     Text(
-                        text = "$timeStr WIB • ${item.metodePembayaran}${if (item.keterangan.isNotBlank()) " • ${item.keterangan}" else ""}",
+                        text = "$timeStr WIB • ${item.metodePembayaran}",
                         fontFamily = interfamily,
                         fontSize = 11.5.sp,
                         color = Color(0xFF94A3B8),

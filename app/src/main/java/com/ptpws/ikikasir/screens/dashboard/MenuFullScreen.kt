@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -192,9 +193,10 @@ fun KeuanganMenuSection(
             onClick = { navController.navigate(AppScreen.LaporanKeuangan.route) }
         )
         MenuIconItem(
-            iconRes = R.drawable.laporankeuangan,
+            iconVector = Icons.Outlined.Description,
+            iconTint = Color(0xFF0D9488),
             label = "Catatan\nKeuangan",
-            bgColor = Color(0xFFEFF6FF),
+            bgColor = Color(0xFFECFDF5),
             onClick = { navController.navigate(AppScreen.CatatanKeuangan.route) }
         )
     }

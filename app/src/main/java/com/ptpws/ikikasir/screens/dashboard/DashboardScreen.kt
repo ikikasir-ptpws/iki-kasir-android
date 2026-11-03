@@ -53,6 +53,7 @@ import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.PeriodeLaporanPe
 import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.ui.platform.LocalConfiguration
 import com.ptpws.ikikasir.commond.DashboardHeaderShimmer
 import com.ptpws.ikikasir.commond.DashboardFilterRowShimmer
 import com.ptpws.ikikasir.commond.DashboardStatCardsShimmer
@@ -988,6 +989,66 @@ fun MenuIconItem(
                     contentDescription = label,
                     modifier = Modifier.size(iconSize),
                     contentScale = ContentScale.Fit
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 6.dp else 8.dp))
+
+        Text(
+            text = label,
+            fontSize = fontSize,
+            fontFamily = interfamily,
+            fontWeight = FontWeight.Medium,
+            color = Color.Black,
+            textAlign = TextAlign.Center,
+            lineHeight = if (isSmallScreen) 14.sp else 16.sp
+        )
+    }
+}
+
+@Composable
+fun MenuIconItem(
+    iconVector: ImageVector,
+    iconTint: Color,
+    label: String,
+    bgColor: Color,
+    onClick: () -> Unit
+) {
+    val configuration = LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
+    val itemWidth = if (isSmallScreen) 74.dp else 80.dp
+    val cardSize = if (isSmallScreen) 54.dp else 60.dp
+    val iconSize = if (isSmallScreen) 22.dp else 25.dp
+    val fontSize = if (isSmallScreen) 11.sp else 12.sp
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(itemWidth)
+    ) {
+        Card(
+            onClick = onClick,
+            modifier = Modifier
+                .size(cardSize)
+                .shadow(
+                    elevation = if (isSmallScreen) 4.dp else 5.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    clip = false
+                ),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = bgColor
+            )
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = iconVector,
+                    contentDescription = label,
+                    tint = iconTint,
+                    modifier = Modifier.size(iconSize)
                 )
             }
         }

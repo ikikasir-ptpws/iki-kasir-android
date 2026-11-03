@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject
 
@@ -89,8 +90,15 @@ class TambahCatatanKeuanganViewModel @Inject constructor(
         _state.update { it.copy(keterangan = keterangan, errorMessage = null) }
     }
 
-    fun onTanggalChange(tanggalMillis: Long) {
-        _state.update { it.copy(tanggalMillis = tanggalMillis, errorMessage = null) }
+    fun onTanggalChange(selectedDateMillis: Long) {
+        val calSelected = Calendar.getInstance().apply { timeInMillis = selectedDateMillis }
+        val calCurrent = Calendar.getInstance().apply {
+            timeInMillis = if (_state.value.tanggalMillis > 0) _state.value.tanggalMillis else System.currentTimeMillis()
+        }
+        calCurrent.set(Calendar.YEAR, calSelected.get(Calendar.YEAR))
+        calCurrent.set(Calendar.MONTH, calSelected.get(Calendar.MONTH))
+        calCurrent.set(Calendar.DAY_OF_MONTH, calSelected.get(Calendar.DAY_OF_MONTH))
+        _state.update { it.copy(tanggalMillis = calCurrent.timeInMillis, errorMessage = null) }
     }
 
     fun onMetodePembayaranChange(metode: String) {

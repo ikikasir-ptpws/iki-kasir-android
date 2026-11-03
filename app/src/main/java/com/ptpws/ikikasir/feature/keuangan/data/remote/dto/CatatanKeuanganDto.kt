@@ -43,24 +43,30 @@ data class CatatanKeuanganDto(
 )
 
 fun CatatanKeuanganDto.toDomain(): CatatanKeuangan {
-    val parsedDateMillis = try {
-        if (date.isNotBlank()) {
-            SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).parse(date)?.time
-        } else null
-    } catch (_: Exception) {
-        null
-    } ?: createdAt?.toDate()?.time ?: System.currentTimeMillis()
+    val createdTime = createdAt?.toDate()?.time ?: 0L
+
+    val bestMillis = if (createdTime > 0) {
+        createdTime
+    } else {
+        try {
+            if (date.isNotBlank()) {
+                SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).parse(date)?.time ?: System.currentTimeMillis()
+            } else System.currentTimeMillis()
+        } catch (_: Exception) {
+            System.currentTimeMillis()
+        }
+    }
 
     return CatatanKeuangan(
         id = id,
         jenis = if (type.isNotBlank()) type else "PEMASUKAN",
         judul = title,
         keterangan = note,
-        tanggalMillis = parsedDateMillis,
+        tanggalMillis = bestMillis,
         metodePembayaran = paymentMethod,
         nominal = amount,
         buktiUri = proofImageUrl.ifBlank { null },
-        createdAtMillis = createdAt?.toDate()?.time ?: System.currentTimeMillis()
+        createdAtMillis = if (createdTime > 0) createdTime else bestMillis
     )
 }
 

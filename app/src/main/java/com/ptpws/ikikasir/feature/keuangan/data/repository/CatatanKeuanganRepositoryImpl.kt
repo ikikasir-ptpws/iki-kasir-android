@@ -3,12 +3,16 @@ package com.ptpws.ikikasir.feature.keuangan.data.repository
 import com.ptpws.ikikasir.feature.keuangan.data.local.dao.CatatanKeuanganDao
 import com.ptpws.ikikasir.feature.keuangan.data.remote.datasource.CatatanKeuanganRemoteDataSource
 import com.ptpws.ikikasir.feature.keuangan.data.remote.dto.toDto
+import com.ptpws.ikikasir.feature.keuangan.data.remote.dto.toDomain
 import com.ptpws.ikikasir.feature.keuangan.domain.model.CatatanKeuangan
 import com.ptpws.ikikasir.feature.keuangan.domain.model.toDomain
 import com.ptpws.ikikasir.feature.keuangan.domain.model.toEntity
 import com.ptpws.ikikasir.feature.keuangan.domain.repository.CatatanKeuanganRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,7 +22,24 @@ class CatatanKeuanganRepositoryImpl @Inject constructor(
     private val remoteDataSource: CatatanKeuanganRemoteDataSource
 ) : CatatanKeuanganRepository {
 
+    private val syncScope = CoroutineScope(Dispatchers.IO)
+    private var isSyncStarted = false
+
     override fun getAllCatatanFlow(): Flow<List<CatatanKeuangan>> {
+        if (!isSyncStarted) {
+            isSyncStarted = true
+            syncScope.launch {
+                try {
+                    remoteDataSource.getCatatanFlow().collect { dtos ->
+                        for (dto in dtos) {
+                            val domain = dto.toDomain()
+                            dao.insertCatatan(domain.toEntity())
+                        }
+                    }
+                } catch (_: Exception) { }
+            }
+        }
+
         return dao.getAllCatatanFlow().map { entities ->
             entities.map { it.toDomain() }
         }

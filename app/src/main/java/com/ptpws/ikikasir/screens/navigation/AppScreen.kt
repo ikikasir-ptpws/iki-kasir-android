@@ -275,4 +275,18 @@ sealed class AppScreen(
             }
         )
     }
+
+    object DetailCatatanKeuangan : AppScreen(
+        R.string.screen_transaksi,
+        R.drawable.laporankeuangan,
+        "detail_catatan_keuangan/{id}"
+    ) {
+        val baseRoute = "detail_catatan_keuangan"
+        fun routeWith(id: String): String = "detail_catatan_keuangan/$id"
+        val navArguments = listOf(
+            navArgument("id") {
+                type = NavType.StringType
+            }
+        )
+    }
 }
