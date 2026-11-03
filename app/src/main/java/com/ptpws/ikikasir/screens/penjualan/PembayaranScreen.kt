@@ -335,7 +335,8 @@ fun PembayaranScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .imePadding(),
             contentAlignment = Alignment.TopCenter
         ) {
             LazyColumn(

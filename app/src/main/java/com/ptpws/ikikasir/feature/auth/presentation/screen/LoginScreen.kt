@@ -52,13 +52,19 @@ fun LoginScreen(
     var forgotStep by remember { mutableStateOf(ForgotStep.INPUT) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
+    ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp).background(color = Color.White),
+                .background(color = Color.White)
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
+            contentPadding = PaddingValues(vertical = 24.dp)
         ) {
             item {
                 Image(
