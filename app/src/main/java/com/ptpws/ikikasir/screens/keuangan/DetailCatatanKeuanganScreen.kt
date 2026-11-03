@@ -15,6 +15,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.CreditCard
@@ -142,38 +144,38 @@ fun DetailCatatanKeuanganScreen(
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(22.dp),
                         colors = CardDefaults.cardColors(containerColor = headerBg),
-                        border = BorderStroke(1.dp, if (isPemasukan) Color(0xFFA7F3D0) else Color(0xFFFCA5A5)),
+                        border = BorderStroke(0.5.dp, if (isPemasukan) Color(0xFFA7F3D0) else Color(0xFFFCA5A5)),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 20.dp, horizontal = 16.dp),
+                                .padding(vertical = 22.dp, horizontal = 16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             // Badge Type
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
+                                shape = CircleShape,
                                 color = badgeBg
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    Text(
-                                        text = if (isPemasukan) "↗" else "↘",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = amountColor
+                                    Icon(
+                                        imageVector = if (isPemasukan) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                                        contentDescription = null,
+                                        tint = amountColor,
+                                        modifier = Modifier.size(13.dp)
                                     )
                                     Text(
                                         text = if (isPemasukan) "PEMASUKAN" else "PENGELUARAN",
                                         fontFamily = interfamily,
-                                        fontSize = 11.sp,
+                                        fontSize = 11.5.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = amountColor,
                                         letterSpacing = 0.5.sp
@@ -186,7 +188,7 @@ fun DetailCatatanKeuanganScreen(
                                 text = "$amountPrefix${formatNominalRupiahDetail(item.nominal)}",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 26.sp,
+                                fontSize = 28.sp,
                                 color = amountColor,
                                 textAlign = TextAlign.Center
                             )
@@ -196,8 +198,8 @@ fun DetailCatatanKeuanganScreen(
                                 text = item.judul,
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 15.5.sp,
-                                color = Color(0xFF0F172A),
+                                fontSize = 15.sp,
+                                color = Color(0xFF1E293B),
                                 textAlign = TextAlign.Center
                             )
                         }
