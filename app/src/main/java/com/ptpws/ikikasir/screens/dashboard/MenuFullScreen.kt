@@ -32,6 +32,7 @@ import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.text.PlatformTextStyle
 
 @Composable
 fun MenuFullScreen(
@@ -311,19 +312,28 @@ fun SearchField(query: String, onQueryChange: (String) -> Unit) {
                 textStyle = TextStyle(
                     color = Color(0xFF1E293B),
                     fontSize = 14.sp,
-                    fontFamily = interfamily
+                    fontFamily = interfamily,
+                    platformStyle = PlatformTextStyle(
+                        includeFontPadding = false
+                    )
                 ),
                 modifier = Modifier.weight(1f),
                 decorationBox = { innerTextField ->
-                    if (query.isEmpty()) {
-                        Text(
-                            text = "Cari Menu...",
-                            fontSize = 14.sp,
-                            fontFamily = interfamily,
-                            color = Color(0xFF94A3B8)
-                        )
+                    Box(
+                        contentAlignment = Alignment.CenterStart,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (query.isEmpty()) {
+                            Text(
+                                text = "Cari Menu...",
+                                fontSize = 14.sp,
+                                fontFamily = interfamily,
+                                color = Color(0xFF94A3B8),
+                                modifier = Modifier.align(Alignment.CenterStart)
+                            )
+                        }
+                        innerTextField()
                     }
-                    innerTextField()
                 }
             )
 

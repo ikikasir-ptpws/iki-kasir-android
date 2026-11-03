@@ -181,13 +181,17 @@ fun WaitingListScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Box(modifier = Modifier.weight(1f)) {
+                                Box(
+                                    modifier = Modifier.weight(1f),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
                                     if (searchQuery.isEmpty()) {
                                         Text(
                                             text = "Cari antrean, nama, atau invoice...",
                                             fontSize = 13.sp,
                                             color = Color(0xFF9CA3AF),
-                                            fontFamily = interfamily
+                                            fontFamily = interfamily,
+                                            modifier = Modifier.align(Alignment.CenterStart)
                                         )
                                     }
                                     innerTextField()

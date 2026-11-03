@@ -77,6 +77,7 @@ import com.ptpws.ikikasir.feature.penjualan.presentation.state.PrinterStatus
 import com.ptpws.ikikasir.screens.penjualan.component.PembayaranFailedDialog
 import com.ptpws.ikikasir.screens.penjualan.component.PembayaranSuccessDialog
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.text.PlatformTextStyle
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import java.text.NumberFormat
@@ -807,24 +808,33 @@ fun PembayaranScreen(
                             textStyle = TextStyle(
                                 color = Color(0xFF0F172A),
                                 fontSize = 13.sp,
-                                fontFamily = interfamily
+                                fontFamily = interfamily,
+                                platformStyle = PlatformTextStyle(
+                                    includeFontPadding = false
+                                )
                             ),
                             singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(Color(0xFFF8FAFC), RoundedCornerShape(12.dp))
                                 .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
-                                .padding(12.dp),
+                                .padding(horizontal = 12.dp, vertical = 12.dp),
                             decorationBox = { inner ->
-                                if (state.customerName.isEmpty()) {
-                                    Text(
-                                        text = "Masukkan nama pelanggan...",
-                                        fontFamily = interfamily,
-                                        fontSize = 13.sp,
-                                        color = Color(0xFF94A3B8)
-                                    )
+                                Box(
+                                    contentAlignment = Alignment.CenterStart,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    if (state.customerName.isEmpty()) {
+                                        Text(
+                                            text = "Masukkan nama pelanggan...",
+                                            fontFamily = interfamily,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF94A3B8),
+                                            modifier = Modifier.align(Alignment.CenterStart)
+                                        )
+                                    }
+                                    inner()
                                 }
-                                inner()
                             }
                         )
                     }
@@ -872,24 +882,33 @@ fun PembayaranScreen(
                                 textStyle = TextStyle(
                                     color = Color(0xFF0F172A),
                                     fontSize = 13.sp,
-                                    fontFamily = interfamily
+                                    fontFamily = interfamily,
+                                    platformStyle = PlatformTextStyle(
+                                        includeFontPadding = false
+                                    )
                                 ),
                                 singleLine = true,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(Color(0xFFF8FAFC), RoundedCornerShape(12.dp))
                                     .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
-                                    .padding(12.dp),
+                                    .padding(horizontal = 12.dp, vertical = 12.dp),
                                 decorationBox = { inner ->
-                                    if (state.tableNumber.isEmpty()) {
-                                        Text(
-                                            text = "Masukkan nomor meja...",
-                                            fontFamily = interfamily,
-                                            fontSize = 13.sp,
-                                            color = Color(0xFF94A3B8)
-                                        )
+                                    Box(
+                                        contentAlignment = Alignment.CenterStart,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        if (state.tableNumber.isEmpty()) {
+                                            Text(
+                                                text = "Masukkan nomor meja...",
+                                                fontFamily = interfamily,
+                                                fontSize = 13.sp,
+                                                color = Color(0xFF94A3B8),
+                                                modifier = Modifier.align(Alignment.CenterStart)
+                                            )
+                                        }
+                                        inner()
                                     }
-                                    inner()
                                 }
                             )
                         }
@@ -937,23 +956,33 @@ fun PembayaranScreen(
                             textStyle = TextStyle(
                                 color = Color(0xFF0F172A),
                                 fontSize = 13.sp,
-                                fontFamily = interfamily
+                                fontFamily = interfamily,
+                                platformStyle = PlatformTextStyle(
+                                    includeFontPadding = false
+                                )
                             ),
+                            singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(Color(0xFFF8FAFC), RoundedCornerShape(12.dp))
                                 .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
-                                .padding(12.dp),
+                                .padding(horizontal = 12.dp, vertical = 12.dp),
                             decorationBox = { inner ->
-                                if (state.notes.isEmpty()) {
-                                    Text(
-                                        text = "Tambah catatan khusus pesanan...",
-                                        fontFamily = interfamily,
-                                        fontSize = 13.sp,
-                                        color = Color(0xFF94A3B8)
-                                    )
+                                Box(
+                                    contentAlignment = Alignment.CenterStart,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    if (state.notes.isEmpty()) {
+                                        Text(
+                                            text = "Tambah catatan khusus pesanan...",
+                                            fontFamily = interfamily,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF94A3B8),
+                                            modifier = Modifier.align(Alignment.CenterStart)
+                                        )
+                                    }
+                                    inner()
                                 }
-                                inner()
                             }
                         )
                     }
@@ -1074,17 +1103,24 @@ fun PembayaranScreen(
                                             color = Color(0xFF0F172A),
                                             fontSize = 18.sp,
                                             fontWeight = FontWeight.Bold,
-                                            fontFamily = interfamily
+                                            fontFamily = interfamily,
+                                            platformStyle = PlatformTextStyle(
+                                                includeFontPadding = false
+                                            )
                                         ),
                                         decorationBox = { innerTextField ->
-                                            Box(contentAlignment = Alignment.CenterStart) {
+                                            Box(
+                                                contentAlignment = Alignment.CenterStart,
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
                                                 if (state.uangDiterimaText.isEmpty()) {
                                                     Text(
                                                         text = "0",
                                                         fontFamily = interfamily,
                                                         fontSize = 18.sp,
                                                         fontWeight = FontWeight.Bold,
-                                                        color = Color(0xFFCBD5E1)
+                                                        color = Color(0xFFCBD5E1),
+                                                        modifier = Modifier.align(Alignment.CenterStart)
                                                     )
                                                 }
                                                 innerTextField()

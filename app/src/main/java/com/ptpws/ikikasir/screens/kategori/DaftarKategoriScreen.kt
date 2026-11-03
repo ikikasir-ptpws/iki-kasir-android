@@ -353,16 +353,16 @@ fun DaftarKategoriScreen(
                 containerColor = Color(0xFF4F46E5),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.wrapContentWidth().height(50.dp)
+                elevation = FloatingActionButtonDefaults.elevation(8.dp),
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .padding(bottom = 16.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text("Tambah Kategori", fontFamily = interfamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                }
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Tambah Kategori",
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     ) { padding ->

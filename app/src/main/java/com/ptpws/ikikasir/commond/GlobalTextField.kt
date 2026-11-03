@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -149,6 +150,12 @@ fun GlobalTextField(
                     }
                 }
 
+                val effectiveTextStyle = textStyle.copy(
+                    platformStyle = PlatformTextStyle(
+                        includeFontPadding = false
+                    )
+                )
+
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -158,27 +165,36 @@ fun GlobalTextField(
                     if (value.isEmpty() && placeholder.isNotEmpty()) {
                         Text(
                             text = placeholder,
-                            fontSize = 12.sp,
-                            fontFamily = interfamily,
-                            color = Color(0x80474747),
-                            maxLines = maxLines
+                            style = effectiveTextStyle.copy(color = Color(0x80474747)),
+                            maxLines = maxLines,
+                            modifier = Modifier.align(if (singleLine) Alignment.CenterStart else Alignment.TopStart)
                         )
                     }
 
                     BasicTextField(
                         value = value,
                         onValueChange = onValueChange,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(if (singleLine) Alignment.CenterStart else Alignment.TopStart),
                         singleLine = singleLine,
                         maxLines = maxLines,
                         minLines = minLines,
                         readOnly = readOnly,
                         enabled = enabled,
-                        textStyle = textStyle,
+                        textStyle = effectiveTextStyle,
                         cursorBrush = SolidColor(cursorColor),
                         visualTransformation = activeVisualTransformation,
                         keyboardOptions = keyboardOptions,
-                        keyboardActions = keyboardActions
+                        keyboardActions = keyboardActions,
+                        decorationBox = { innerTextField ->
+                            Box(
+                                contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                innerTextField()
+                            }
+                        }
                     )
                 }
 

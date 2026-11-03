@@ -295,7 +295,9 @@ fun DaftarProdukScreen(
                     val intent = Intent(context, TambahProdukActivity::class.java)
                     context.startActivity(intent)
                 },
-                modifier = Modifier.padding(bottom = 86.dp),
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .padding(bottom = 108.dp),
                 containerColor = Color(0xFF4F46E5),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
