@@ -61,10 +61,17 @@ import androidx.compose.material.icons.filled.ErrorOutline
 fun RiwayatTransaksiScreen(
     navController: NavController,
     viewModel: RiwayatTransaksiViewModel = hiltViewModel(),
+    initialFilter: String? = null,
     onDetailTransaksi: (String) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+
+    LaunchedEffect(initialFilter) {
+        if (!initialFilter.isNullOrBlank()) {
+            viewModel.onFilterSelect(initialFilter)
+        }
+    }
 
     BackHandler {
         navController.popBackStackSafely(expectedRoute = "riwayat")

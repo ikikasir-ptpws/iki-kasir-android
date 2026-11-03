@@ -86,7 +86,7 @@ class SidebarRepositoryImpl @Inject constructor() : SidebarRepository {
                     SidebarSubMenuItem(
                         id = "penjualan_transaksi",
                         title = "Transaksi",
-                        route = AppScreen.Riwayat.route,
+                        route = AppScreen.Riwayat.baseRoute,
                         iconRes = R.drawable.transaksi,
                         permissionName = "Transaksi"
                     ),

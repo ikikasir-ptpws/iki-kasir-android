@@ -62,8 +62,19 @@ sealed class AppScreen(
     object Riwayat : AppScreen(
         R.string.screen_riwayat,
         R.drawable.iconapk,
-        "riwayat"
-    )
+        "riwayat?initialFilter={initialFilter}"
+    ) {
+        val baseRoute = "riwayat"
+        fun routeWith(initialFilter: String? = null): String =
+            if (initialFilter != null) "riwayat?initialFilter=$initialFilter" else "riwayat"
+        val navArguments = listOf(
+            navArgument("initialFilter") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    }
 
     object Profil : AppScreen(
         R.string.screen_profil,

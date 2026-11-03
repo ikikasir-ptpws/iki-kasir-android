@@ -1,5 +1,6 @@
 package com.example.app.ui.screen
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
@@ -9,6 +10,7 @@ import com.ptpws.ikikasir.feature.role.data.local.dao.RoleDao
 import com.ptpws.ikikasir.feature.role.domain.model.Role
 import com.ptpws.ikikasir.feature.role.domain.usecase.GetRolesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -75,6 +77,7 @@ data class DashboardAnalytics(
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
+    @ApplicationContext private val appContext: Context,
     private val firebaseAuth: FirebaseAuth,
     private val userDao: UserDao,
     private val roleDao: RoleDao,
@@ -82,6 +85,19 @@ class DashboardViewModel @Inject constructor(
     private val userRemoteDataSource: UserRemoteDataSource,
     private val getAllTransaksiUseCase: GetAllTransaksiUseCase
 ) : ViewModel() {
+
+    private val dashboardPrefs = appContext.getSharedPreferences("dashboard_prefs", Context.MODE_PRIVATE)
+
+    private val _isBalanceVisible = MutableStateFlow(
+        dashboardPrefs.getBoolean("is_balance_visible", true)
+    )
+    val isBalanceVisible: StateFlow<Boolean> = _isBalanceVisible.asStateFlow()
+
+    fun toggleBalanceVisibility() {
+        val newValue = !_isBalanceVisible.value
+        _isBalanceVisible.value = newValue
+        dashboardPrefs.edit().putBoolean("is_balance_visible", newValue).apply()
+    }
 
     private val _sessionState = MutableStateFlow(UserSessionState())
     val sessionState: StateFlow<UserSessionState> = _sessionState.asStateFlow()

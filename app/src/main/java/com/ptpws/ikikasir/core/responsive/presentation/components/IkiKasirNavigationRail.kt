@@ -61,6 +61,8 @@ fun IkiKasirNavigationRail(
         visibleScreens.forEach { screen ->
             val isSelected = if (screen == AppScreen.Produk) {
                 currentRoute?.startsWith(AppScreen.Produk.baseRoute) == true
+            } else if (screen == AppScreen.Riwayat) {
+                currentRoute?.startsWith(AppScreen.Riwayat.baseRoute) == true
             } else {
                 currentRoute == screen.route
             }

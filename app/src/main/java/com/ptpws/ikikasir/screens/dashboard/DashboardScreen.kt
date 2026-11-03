@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
@@ -76,6 +78,7 @@ fun DashboardScreen(
     val customStartDateMillis by viewModel.customStartDateMillis.collectAsState()
     val customEndDateMillis by viewModel.customEndDateMillis.collectAsState()
     val customDateLabel by viewModel.customDateLabel.collectAsState()
+    val isBalanceVisible by viewModel.isBalanceVisible.collectAsState()
     var showDateRangePicker by remember { mutableStateOf(false) }
     val userName = sessionState.user?.fullName?.ifBlank { "Pengguna" } ?: "Pengguna"
 
@@ -168,12 +171,29 @@ fun DashboardScreen(
                             analytics = analyticsState,
                             selectedFilter = selectedFilter,
                             customDateLabel = customDateLabel,
-                            onCardClick = {
-                                if (showTransaksi) {
-                                    navController.navigate(AppScreen.Riwayat.route)
-                                } else if (showLaporanKeuangan) {
-                                    navController.navigate(AppScreen.LaporanKeuangan.route)
+                            isBalanceVisible = isBalanceVisible,
+                            onToggleVisibility = { viewModel.toggleBalanceVisibility() },
+                            onPenjualanClick = {
+                                val route = if (selectedFilter == PeriodeLaporanPenjualan.KUSTOM &&
+                                    customStartDateMillis != null && customEndDateMillis != null) {
+                                    AppScreen.LaporanPenjualan.routeWith(
+                                        periode = "KUSTOM",
+                                        startDate = customStartDateMillis,
+                                        endDate = customEndDateMillis
+                                    )
+                                } else {
+                                    AppScreen.LaporanPenjualan.routeWith(selectedFilter.name)
                                 }
+                                navController.navigate(route)
+                            },
+                            onTransaksiClick = {
+                                val riwayatFilter = when (selectedFilter) {
+                                    PeriodeLaporanPenjualan.HARI_INI -> "Hari Ini"
+                                    PeriodeLaporanPenjualan.TUJUH_HARI -> "7 Hari Terakhir"
+                                    PeriodeLaporanPenjualan.SEMUA -> "Semua"
+                                    else -> "Semua"
+                                }
+                                navController.navigate(AppScreen.Riwayat.routeWith(riwayatFilter))
                             }
                         )
                     }
@@ -416,6 +436,11 @@ fun StatCardsSection(
     analytics: DashboardAnalytics = DashboardAnalytics(),
     selectedFilter: PeriodeLaporanPenjualan = PeriodeLaporanPenjualan.HARI_INI,
     customDateLabel: String = "",
+    isBalanceVisible: Boolean = true,
+    onToggleVisibility: (() -> Unit)? = null,
+    onPenjualanClick: (() -> Unit)? = null,
+    onTransaksiClick: (() -> Unit)? = null,
+    // Legacy single-click kept for Preview compatibility
     onCardClick: (() -> Unit)? = null
 ) {
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
@@ -475,7 +500,9 @@ fun StatCardsSection(
                 .weight(1f)
                 .fillMaxHeight()
                 .then(
-                    if (onCardClick != null) Modifier.clickable { onCardClick() } else Modifier
+                    if (onPenjualanClick != null) Modifier.clickable { onPenjualanClick() }
+                    else if (onCardClick != null) Modifier.clickable { onCardClick() }
+                    else Modifier
                 ),
             shape = RoundedCornerShape(cardCornerRadius),
             elevation = CardDefaults.cardElevation(
@@ -499,16 +526,37 @@ fun StatCardsSection(
                     .padding(cardPadding)
             ) {
                 Column {
-                    Image(
-                        painter = painterResource(id = R.drawable.grafikicon),
-                        contentDescription = "Grafik",
-                        modifier = Modifier
-                            .size(iconBoxSize)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Color.White.copy(alpha = 0.2f))
-                            .padding(6.dp),
-                        contentScale = ContentScale.Fit
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.grafikicon),
+                            contentDescription = "Grafik",
+                            modifier = Modifier
+                                .size(iconBoxSize)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color.White.copy(alpha = 0.2f))
+                                .padding(6.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                        if (onToggleVisibility != null) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clickable { onToggleVisibility() },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (isBalanceVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = if (isBalanceVisible) "Sembunyikan saldo" else "Tampilkan saldo",
+                                    tint = Color.White.copy(alpha = 0.85f),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
 
@@ -533,25 +581,41 @@ fun StatCardsSection(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    Text(
-                        text = "Rp",
-                        fontSize = if (isSmallScreen) 12.sp else 14.sp,
-                        color = Color.White,
-                        fontWeight = FontWeight.Medium
-                    )
+                    if (isBalanceVisible) {
+                        Text(
+                            text = "Rp",
+                            fontSize = if (isSmallScreen) 12.sp else 14.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium
+                        )
 
-                    Text(
-                        text = formattedPenjualan,
-                        fontSize = if (isSmallScreen) {
-                            if (formattedPenjualan.length > 8) 16.sp else 20.sp
-                        } else {
-                            if (formattedPenjualan.length > 10) 19.sp else 24.sp
-                        },
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                        Text(
+                            text = formattedPenjualan,
+                            fontSize = if (isSmallScreen) {
+                                if (formattedPenjualan.length > 8) 16.sp else 20.sp
+                            } else {
+                                if (formattedPenjualan.length > 10) 19.sp else 24.sp
+                            },
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    } else {
+                        Text(
+                            text = "Rp",
+                            fontSize = if (isSmallScreen) 12.sp else 14.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "••••••",
+                            fontSize = if (isSmallScreen) 20.sp else 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            letterSpacing = 4.sp
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(if (isSmallScreen) 6.dp else 8.dp))
 
@@ -595,7 +659,9 @@ fun StatCardsSection(
                 .weight(1f)
                 .fillMaxHeight()
                 .then(
-                    if (onCardClick != null) Modifier.clickable { onCardClick() } else Modifier
+                    if (onTransaksiClick != null) Modifier.clickable { onTransaksiClick() }
+                    else if (onCardClick != null) Modifier.clickable { onCardClick() }
+                    else Modifier
                 ),
             shape = RoundedCornerShape(cardCornerRadius),
             elevation = CardDefaults.cardElevation(
@@ -811,7 +877,7 @@ fun PenjualanMenuSection(
                 iconRes = R.drawable.transaksi,
                 label = "Transaksi",
                 bgColor = Color(0xFFECFEFF),
-                onClick = { navController.navigate(AppScreen.Riwayat.route) }
+                onClick = { navController.navigate(AppScreen.Riwayat.baseRoute) }
             )
         }
     }

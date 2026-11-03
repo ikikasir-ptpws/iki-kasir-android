@@ -207,7 +207,7 @@ fun ManajemenStokScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { navController.navigate(AppScreen.Riwayat.route) }) {
+                    IconButton(onClick = { navController.navigate(AppScreen.Riwayat.baseRoute) }) {
                         Icon(
                             imageVector = Icons.Outlined.History,
                             contentDescription = "Riwayat Stok",

@@ -149,7 +149,7 @@ fun AppNavHost() {
                 }
             }
         } else if (cleanRoute == AppScreen.Produk.baseRoute ||
-            cleanRoute == AppScreen.Riwayat.route ||
+            cleanRoute == AppScreen.Riwayat.baseRoute ||
             cleanRoute == AppScreen.RiwayatAntrean.route
         ) {
             navController.navigate(targetRoute) {
@@ -238,10 +238,15 @@ fun AppNavHost() {
                     produkId = produkId
                 )
             }
-            composable(AppScreen.Riwayat.route) {
+            composable(
+                AppScreen.Riwayat.route,
+                arguments = AppScreen.Riwayat.navArguments
+            ) { backStackEntry ->
+                val initialFilter = backStackEntry.arguments?.getString("initialFilter")
                 val context = LocalContext.current
                 RiwayatTransaksiScreen(
                     navController = navController,
+                    initialFilter = initialFilter,
                     onDetailTransaksi = { txId ->
                         val intent = Intent(context, DetailTransaksiActivity::class.java).apply {
                             putExtra("TRANSACTION_ID", txId)
@@ -497,6 +502,8 @@ fun IkiKasirBottomBar(
                 // Untuk Produk, isSelected jika currentRoute diawali dengan "produk"
                 val isSelected = if (screen == AppScreen.Produk) {
                     currentRoute?.startsWith(AppScreen.Produk.baseRoute) == true
+                } else if (screen == AppScreen.Riwayat) {
+                    currentRoute?.startsWith(AppScreen.Riwayat.baseRoute) == true
                 } else {
                     currentRoute == screen.route
                 }
