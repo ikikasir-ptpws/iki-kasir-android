@@ -50,9 +50,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
+import com.ptpws.ikikasir.commond.GlobalImagePickerDialog
 import com.ptpws.ikikasir.commond.GlobalImageUploadOverlay
 import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.commond.ImageUploadType
+import com.ptpws.ikikasir.commond.rememberGlobalImagePicker
 import com.ptpws.ikikasir.core.util.ImageCompressorHelper
 import kotlinx.coroutines.delay
 import androidx.compose.ui.text.TextStyle
@@ -148,100 +150,15 @@ fun PembayaranScreen(
         }
     }
 
-    // ─── Bukti Pembayaran (Kamera & Galeri) Launchers ──────────────────────────
-    val coroutineScope = rememberCoroutineScope()
-    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success && tempCameraUri != null) {
-            val sourceUri = tempCameraUri!!
-            coroutineScope.launch {
-                viewModel.setUploadingBukti(true, 0.15f, "Memproses hasil foto...")
-                GlobalUploadProgress.showBuktiPembayaranUpload(progress = 0.15f, message = "Memeriksa ukuran foto...")
-                try {
-                    val compressedFile = ImageCompressorHelper.processAndCompressImage(
-                        context = context,
-                        sourceUri = sourceUri,
-                        targetSubfolder = "payment_proofs",
-                        onProgress = { p, msg ->
-                            viewModel.setUploadingBukti(true, p, msg)
-                            GlobalUploadProgress.updateProgress(p, msg)
-                        }
-                    )
-                    val fileUri = Uri.fromFile(compressedFile).toString()
-                    viewModel.onBuktiPembayaranChange(fileUri)
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Gagal memproses foto: ${e.message}", Toast.LENGTH_SHORT).show()
-                } finally {
-                    delay(150)
-                    viewModel.setUploadingBukti(false)
-                    GlobalUploadProgress.dismiss()
-                }
-            }
-        }
-    }
-
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            try {
-                val (_, uri) = ImageCompressorHelper.createCameraTempFileUri(context)
-                tempCameraUri = uri
-                cameraLauncher.launch(uri)
-            } catch (e: Exception) {
-                Toast.makeText(context, "Gagal membuka kamera: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            Toast.makeText(context, "Izin kamera diperlukan untuk mengambil foto bukti pembayaran.", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    val launchCamera = {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            try {
-                val (_, uri) = ImageCompressorHelper.createCameraTempFileUri(context)
-                tempCameraUri = uri
-                cameraLauncher.launch(uri)
-            } catch (e: Exception) {
-                Toast.makeText(context, "Gagal membuka kamera: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-        }
-    }
-
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            coroutineScope.launch {
-                viewModel.setUploadingBukti(true, 0.15f, "Memeriksa ukuran gambar...")
-                GlobalUploadProgress.showBuktiPembayaranUpload(progress = 0.15f, message = "Memeriksa ukuran gambar...")
-                try {
-                    val compressedFile = ImageCompressorHelper.processAndCompressImage(
-                        context = context,
-                        sourceUri = uri,
-                        targetSubfolder = "payment_proofs",
-                        onProgress = { p, msg ->
-                            viewModel.setUploadingBukti(true, p, msg)
-                            GlobalUploadProgress.updateProgress(p, msg)
-                        }
-                    )
-                    val fileUri = Uri.fromFile(compressedFile).toString()
-                    viewModel.onBuktiPembayaranChange(fileUri)
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Gagal memproses gambar: ${e.message}", Toast.LENGTH_SHORT).show()
-                } finally {
-                    delay(150)
-                    viewModel.setUploadingBukti(false)
-                    GlobalUploadProgress.dismiss()
-                }
-            }
-        }
-    }
+    // ─── Bukti Pembayaran (Kamera & Galeri Global Picker) ─────────────────────
+    val buktiPickerState = rememberGlobalImagePicker(
+        onImageProcessed = { permanentUri ->
+            viewModel.onBuktiPembayaranChange(permanentUri.toString())
+        },
+        targetSubfolder = "payment_proofs",
+        uploadType = ImageUploadType.BUKTI_PEMBAYARAN,
+        progressMessage = "Memeriksa bukti pembayaran..."
+    )
 
     // Periksa status printer Bluetooth saat membuka halaman pembayaran
     LaunchedEffect(Unit) {
@@ -1132,8 +1049,9 @@ fun PembayaranScreen(
                         isUploading = state.isUploadingBukti,
                         uploadProgress = state.uploadBuktiProgress,
                         uploadMessage = state.uploadBuktiMessage,
-                        onPickGallery = { galleryLauncher.launch("image/*") },
-                        onCaptureCamera = launchCamera,
+                        onOpenPicker = buktiPickerState.openPicker,
+                        onPickGallery = buktiPickerState.launchGallery,
+                        onCaptureCamera = buktiPickerState.launchCamera,
                         onRemoveBukti = { viewModel.onBuktiPembayaranChange(null) }
                     )
                 }
@@ -1265,6 +1183,16 @@ fun PembayaranScreen(
             }
         }
     }
+
+    // Dialog Pilihan Sumber Bukti Pembayaran (Kamera vs Galeri)
+    GlobalImagePickerDialog(
+        show = buktiPickerState.showDialog,
+        onDismissRequest = buktiPickerState.closePicker,
+        onCameraSelect = buktiPickerState.launchCamera,
+        onGallerySelect = buktiPickerState.launchGallery,
+        title = "Upload Bukti Pembayaran",
+        description = "Pilih metode pengambilan bukti pembayaran non-tunai:"
+    )
 }
 }
 
@@ -1367,6 +1295,7 @@ private fun BuktiPembayaranCard(
     isUploading: Boolean,
     uploadProgress: Float?,
     uploadMessage: String,
+    onOpenPicker: () -> Unit = {},
     onPickGallery: () -> Unit,
     onCaptureCamera: () -> Unit,
     onRemoveBukti: () -> Unit

@@ -32,10 +32,12 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.PointOfSale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.ptpws.ikikasir.commond.GlobalImagePickerDialog
 import com.ptpws.ikikasir.commond.GlobalImageUploadOverlay
 import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.commond.ImageUploadType
+import com.ptpws.ikikasir.commond.rememberGlobalImagePicker
 import com.ptpws.ikikasir.core.util.ImageCompressorHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -101,38 +103,15 @@ fun TambahProdukScreen(
     var isUploadingImage by remember { mutableStateOf(false) }
     var uploadProgress by remember { mutableStateOf<Float?>(null) }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            coroutineScope.launch {
-                isUploadingImage = true
-                uploadProgress = 0.15f
-                GlobalUploadProgress.showProductImageUpload(progress = 0.15f, message = "Memeriksa ukuran foto produk...")
-                try {
-                    val compressedFile = ImageCompressorHelper.processAndCompressImage(
-                        context = context,
-                        sourceUri = uri,
-                        targetSubfolder = "product_images",
-                        onProgress = { p, msg ->
-                            uploadProgress = p
-                            GlobalUploadProgress.updateProgress(p, msg)
-                        }
-                    )
-                    val permanentUri = Uri.fromFile(compressedFile)
-                    imageUri = permanentUri
-                    viewModel.onImageUrlChange(permanentUri.toString())
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Gagal memproses foto: ${e.message}", Toast.LENGTH_SHORT).show()
-                } finally {
-                    delay(150)
-                    isUploadingImage = false
-                    uploadProgress = null
-                    GlobalUploadProgress.dismiss()
-                }
-            }
-        }
-    }
+    val imagePickerState = rememberGlobalImagePicker(
+        onImageProcessed = { permanentUri ->
+            imageUri = permanentUri
+            viewModel.onImageUrlChange(permanentUri.toString())
+        },
+        targetSubfolder = "product_images",
+        uploadType = ImageUploadType.PRODUK,
+        progressMessage = "Memeriksa ukuran foto produk..."
+    )
 
     val triggerBarcodeScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { scannedCode ->
         viewModel.onBarcodeChange(scannedCode)
@@ -194,7 +173,7 @@ fun TambahProdukScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(if (isSmallScreen) 125.dp else 150.dp)
-                        .clickable(enabled = !isUploadingImage) { imagePickerLauncher.launch("image/*") },
+                        .clickable(enabled = !isUploadingImage) { imagePickerState.openPicker() },
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6)),
                     border = BorderStroke(1.dp, Color(0xFFC7D2FE))
@@ -839,6 +818,16 @@ fun TambahProdukScreen(
             }
         )
     }
+
+    // Dialog Pilihan Sumber Foto Produk (Kamera vs Galeri)
+    GlobalImagePickerDialog(
+        show = imagePickerState.showDialog,
+        onDismissRequest = imagePickerState.closePicker,
+        onCameraSelect = imagePickerState.launchCamera,
+        onGallerySelect = imagePickerState.launchGallery,
+        title = "Pilih Foto Produk",
+        description = "Pilih metode pengambilan foto untuk produk ini:"
+    )
 }
 
 // ─── Helper: Generate Barcode (Code128) Bitmap via ZXing ────────────────────

@@ -28,7 +28,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import com.ptpws.ikikasir.commond.GlobalImagePickerDialog
 import com.ptpws.ikikasir.commond.GlobalTextField
+import com.ptpws.ikikasir.commond.rememberGlobalImagePicker
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -154,39 +156,16 @@ fun TambahPenggunaScreen(
     var isUploadingImage by remember { mutableStateOf(false) }
     var uploadProgress by remember { mutableStateOf<Float?>(null) }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            coroutineScope.launch {
-                isUploadingImage = true
-                uploadProgress = 0.15f
-                GlobalUploadProgress.showProfilePhotoUpload(progress = 0.15f, message = "Memeriksa foto profil...")
-                try {
-                    val compressedFile = ImageCompressorHelper.processAndCompressImage(
-                        context = context,
-                        sourceUri = uri,
-                        targetSubfolder = "user_images",
-                        onProgress = { p, msg ->
-                            uploadProgress = p
-                            GlobalUploadProgress.updateProgress(p, msg)
-                        }
-                    )
-                    val permanentUri = Uri.fromFile(compressedFile)
-                    profileImageUri = permanentUri
-                    viewModel.onPhotoUrlChange(permanentUri.toString())
-                    localError = null
-                } catch (e: Exception) {
-                    localError = "Gagal memproses gambar: ${e.message}"
-                } finally {
-                    delay(150)
-                    isUploadingImage = false
-                    uploadProgress = null
-                    GlobalUploadProgress.dismiss()
-                }
-            }
-        }
-    }
+    val imagePickerState = rememberGlobalImagePicker(
+        onImageProcessed = { permanentUri ->
+            profileImageUri = permanentUri
+            viewModel.onPhotoUrlChange(permanentUri.toString())
+            localError = null
+        },
+        targetSubfolder = "user_images",
+        uploadType = ImageUploadType.FOTO_PROFIL,
+        progressMessage = "Memeriksa foto profil..."
+    )
 
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
@@ -241,7 +220,7 @@ fun TambahPenggunaScreen(
                 ) {
                     Box(
                         modifier = Modifier.clickable(enabled = !isUploadingImage) {
-                            imagePickerLauncher.launch("image/*")
+                            imagePickerState.openPicker()
                         }
                     ) {
                         Box(
@@ -789,6 +768,16 @@ fun TambahPenggunaScreen(
             }
         }
     }
+
+    // Dialog Pilihan Sumber Foto Profil Pengguna (Kamera vs Galeri)
+    GlobalImagePickerDialog(
+        show = imagePickerState.showDialog,
+        onDismissRequest = imagePickerState.closePicker,
+        onCameraSelect = imagePickerState.launchCamera,
+        onGallerySelect = imagePickerState.launchGallery,
+        title = "Pilih Foto Profil",
+        description = "Pilih metode pengambilan foto profil pengguna:"
+    )
 }
 
 // ── Preview

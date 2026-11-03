@@ -40,9 +40,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.ptpws.ikikasir.commond.GlobalImagePickerDialog
 import com.ptpws.ikikasir.commond.GlobalTextField
-import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.commond.GlobalUploadProgress
+import com.ptpws.ikikasir.commond.ImageUploadType
+import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.commond.rememberGlobalImagePicker
 import com.ptpws.ikikasir.core.util.ImageCompressorHelper
 import kotlinx.coroutines.delay
 import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
@@ -636,32 +639,14 @@ fun ProfilScreen(
         var editPhotoUrl by remember(currentUser) { mutableStateOf(currentUser?.photoUrl.orEmpty()) }
         var isSavingProfile by remember { mutableStateOf(false) }
 
-        val imagePickerLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.GetContent()
-        ) { uri: Uri? ->
-            uri?.let { sourceUri ->
-                coroutineScope.launch {
-                    GlobalUploadProgress.showProfilePhotoUpload(progress = 0.15f, message = "Memeriksa foto profil...")
-                    try {
-                        val compressedFile = ImageCompressorHelper.processAndCompressImage(
-                            context = context,
-                            sourceUri = sourceUri,
-                            targetSubfolder = "user_images",
-                            onProgress = { p, msg ->
-                                GlobalUploadProgress.updateProgress(p, msg)
-                            }
-                        )
-                        editPhotoUrl = Uri.fromFile(compressedFile).toString()
-                        GlobalUploadProgress.updateProgress(1.0f, "Foto profil berhasil dimuat")
-                        delay(200)
-                    } catch (e: Exception) {
-                        editPhotoUrl = sourceUri.toString()
-                    } finally {
-                        GlobalUploadProgress.dismiss()
-                    }
-                }
-            }
-        }
+        val profileImagePickerState = rememberGlobalImagePicker(
+            onImageProcessed = { permanentUri ->
+                editPhotoUrl = permanentUri.toString()
+            },
+            targetSubfolder = "user_images",
+            uploadType = ImageUploadType.FOTO_PROFIL,
+            progressMessage = "Memeriksa foto profil..."
+        )
 
         Dialog(onDismissRequest = { if (!isSavingProfile) showEditProfilDialog = false }) {
             Card(
@@ -710,7 +695,7 @@ fun ProfilScreen(
                             .clip(CircleShape)
                             .background(Color(0xFFE5E7EB))
                             .border(2.5.dp, Color(0xFFEEF2FF), CircleShape)
-                            .clickable { imagePickerLauncher.launch("image/*") },
+                            .clickable { profileImagePickerState.openPicker() },
                         contentAlignment = Alignment.Center
                     ) {
                         if (editPhotoUrl.isNotBlank()) {
@@ -733,7 +718,7 @@ fun ProfilScreen(
                     }
 
                     OutlinedButton(
-                        onClick = { imagePickerLauncher.launch("image/*") },
+                        onClick = { profileImagePickerState.openPicker() },
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         Text("Pilih / Ubah Foto Profil", fontFamily = interfamily, fontSize = 12.sp)
@@ -809,6 +794,16 @@ fun ProfilScreen(
                     }
                 }
             }
+
+            // Dialog Pilihan Sumber Foto Profil
+            GlobalImagePickerDialog(
+                show = profileImagePickerState.showDialog,
+                onDismissRequest = profileImagePickerState.closePicker,
+                onCameraSelect = profileImagePickerState.launchCamera,
+                onGallerySelect = profileImagePickerState.launchGallery,
+                title = "Pilih Foto Profil",
+                description = "Pilih metode pengambilan foto profil:"
+            )
         }
     }
 
@@ -1261,24 +1256,12 @@ private fun NotaSettingDialog(
     var ukuranKertas by remember(initialSetting) { mutableStateOf(if (initialSetting.paperWidth.isNotBlank()) initialSetting.paperWidth else "58mm") }
     var logoUrl by remember(initialSetting) { mutableStateOf(initialSetting.logoUrl) }
 
-    val notaLogoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
+    val logoPickerState = rememberGlobalImagePicker(
+        onImageProcessed = { permanentUri ->
             coroutineScope.launch {
-                GlobalUploadProgress.showLogoUpload(progress = 0.15f, message = "Memeriksa ukuran logo...")
+                GlobalUploadProgress.showLogoUpload(progress = 0.7f, message = "Menyesuaikan format logo...")
                 try {
-                    val compressedFile = ImageCompressorHelper.processAndCompressImage(
-                        context = context,
-                        sourceUri = uri,
-                        targetSubfolder = "store_logo",
-                        onProgress = { p, msg ->
-                            GlobalUploadProgress.updateProgress(p, msg)
-                        }
-                    )
-
-                    GlobalUploadProgress.updateProgress(0.7f, "Menyesuaikan format logo...")
-                    val compressedBitmap = BitmapFactory.decodeFile(compressedFile.absolutePath)
+                    val compressedBitmap = BitmapFactory.decodeFile(permanentUri.path)
                     if (compressedBitmap != null) {
                         val maxDimension = 800
                         val scale = minOf(maxDimension.toFloat() / compressedBitmap.width, maxDimension.toFloat() / compressedBitmap.height, 1f)
@@ -1309,8 +1292,11 @@ private fun NotaSettingDialog(
                     GlobalUploadProgress.dismiss()
                 }
             }
-        }
-    }
+        },
+        targetSubfolder = "store_logo",
+        uploadType = ImageUploadType.LOGO_STRUK,
+        progressMessage = "Memeriksa ukuran logo..."
+    )
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -1420,7 +1406,7 @@ private fun NotaSettingDialog(
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEEF2FF)) {
                                     IconButton(
-                                        onClick = { notaLogoPickerLauncher.launch("image/*") },
+                                        onClick = { logoPickerState.openPicker() },
                                         modifier = Modifier.size(36.dp)
                                     ) {
                                         Icon(
@@ -1451,7 +1437,7 @@ private fun NotaSettingDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .clickable { notaLogoPickerLauncher.launch("image/*") },
+                                .clickable { logoPickerState.openPicker() },
                             shape = RoundedCornerShape(12.dp),
                             color = Color(0xFFF9FAFB),
                             border = BorderStroke(1.dp, Color(0xFFD1D5DB))
@@ -1603,6 +1589,16 @@ private fun NotaSettingDialog(
                     }
                 }
             }
+
+            // Dialog Pilihan Sumber Logo Struk
+            GlobalImagePickerDialog(
+                show = logoPickerState.showDialog,
+                onDismissRequest = logoPickerState.closePicker,
+                onCameraSelect = logoPickerState.launchCamera,
+                onGallerySelect = logoPickerState.launchGallery,
+                title = "Pilih Logo Struk",
+                description = "Pilih metode pengambilan gambar logo toko:"
+            )
         }
     }
 }
