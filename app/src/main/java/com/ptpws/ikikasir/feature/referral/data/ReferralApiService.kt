@@ -50,6 +50,16 @@ class ReferralApiService {
         }
     }
 
+    private fun formatBaseUrl(baseUrl: String): String {
+        val cleanUrl = baseUrl.trim()
+        val withScheme = if (cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://")) {
+            cleanUrl
+        } else {
+            "http://$cleanUrl"
+        }
+        return if (withScheme.endsWith("/")) withScheme else "$withScheme/"
+    }
+
     /**
      * Mengambil ringkasan referral live dari backend (overview, downlines, withdrawals)
      */
@@ -59,7 +69,7 @@ class ReferralApiService {
 
         for (baseUrl in getCandidateUrls()) {
             try {
-                val formattedBaseUrl = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+                val formattedBaseUrl = formatBaseUrl(baseUrl)
                 Log.d("ReferralApi", "Mencoba fetch Overview ke: $formattedBaseUrl (email: $cleanEmail)")
 
                 val retrofit = Retrofit.Builder()
@@ -75,7 +85,7 @@ class ReferralApiService {
                     val body = response.body()!!
                     val data = body.data ?: ReferralOverviewResponseDto()
 
-                    SubscriptionApiConfig.BASE_URL = baseUrl
+                    SubscriptionApiConfig.BASE_URL = formattedBaseUrl
 
                     val infoDto = data.resolveReferralInfo()
                     val info = ReferralInfo(
@@ -190,7 +200,7 @@ class ReferralApiService {
 
         for (baseUrl in getCandidateUrls()) {
             try {
-                val formattedBaseUrl = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+                val formattedBaseUrl = formatBaseUrl(baseUrl)
                 val retrofit = Retrofit.Builder()
                     .baseUrl(formattedBaseUrl)
                     .client(okHttpClient)
@@ -201,7 +211,7 @@ class ReferralApiService {
                 val response = api.submitClient(req)
 
                 if (response.isSuccessful && response.body() != null) {
-                    SubscriptionApiConfig.BASE_URL = baseUrl
+                    SubscriptionApiConfig.BASE_URL = formattedBaseUrl
                     val msg = response.body()?.message ?: "Calon client berhasil diajukan!"
                     return@withContext Result.success(msg)
                 } else {
@@ -245,7 +255,7 @@ class ReferralApiService {
 
         for (baseUrl in getCandidateUrls()) {
             try {
-                val formattedBaseUrl = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+                val formattedBaseUrl = formatBaseUrl(baseUrl)
                 val retrofit = Retrofit.Builder()
                     .baseUrl(formattedBaseUrl)
                     .client(okHttpClient)
@@ -256,7 +266,7 @@ class ReferralApiService {
                 val response = api.requestWithdrawal(req)
 
                 if (response.isSuccessful && response.body() != null) {
-                    SubscriptionApiConfig.BASE_URL = baseUrl
+                    SubscriptionApiConfig.BASE_URL = formattedBaseUrl
                     val msg = response.body()?.message ?: "Permintaan penarikan berhasil diajukan!"
                     return@withContext Result.success(msg)
                 } else {

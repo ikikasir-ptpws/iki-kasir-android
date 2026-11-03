@@ -31,6 +31,16 @@ class SubscriptionApiService {
             .build()
     }
 
+    private fun formatBaseUrl(baseUrl: String): String {
+        val cleanUrl = baseUrl.trim()
+        val withScheme = if (cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://")) {
+            cleanUrl
+        } else {
+            "http://$cleanUrl"
+        }
+        return if (withScheme.endsWith("/")) withScheme else "$withScheme/"
+    }
+
     /**
      * Memeriksa status langganan menggunakan Retrofit
      */
@@ -47,7 +57,7 @@ class SubscriptionApiService {
 
         for (baseUrl in candidateUrls) {
             try {
-                val formattedBaseUrl = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+                val formattedBaseUrl = formatBaseUrl(baseUrl)
                 Log.d("SubscriptionApi", "Mencoba fetch API via Retrofit ke: $formattedBaseUrl (email: $cleanEmail)")
 
                 val retrofit = Retrofit.Builder()
@@ -66,7 +76,7 @@ class SubscriptionApiService {
                     val data = apiResponse.data ?: SubscriptionDataDto()
 
                     // Simpan URL yang berhasil terhubung sebagai BASE_URL aktif berikutnya
-                    SubscriptionApiConfig.BASE_URL = baseUrl
+                    SubscriptionApiConfig.BASE_URL = formattedBaseUrl
 
                     val isActive = data.isActive ?: data.canAccess ?: false
                     val canAccess = data.canAccess ?: isActive
