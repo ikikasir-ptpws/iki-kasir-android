@@ -330,72 +330,6 @@ fun PembayaranScreen(
                     containerColor = Color.White
                 )
             )
-        },
-        bottomBar = {
-            Surface(
-                color = Color.White,
-                shadowElevation = 12.dp,
-                tonalElevation = 8.dp
-            ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Button(
-                            onClick = { viewModel.prosesPembayaran() },
-                            enabled = !state.isLoading && state.subtotal > 0,
-                            modifier = Modifier
-                                .widthIn(max = 720.dp)
-                                .fillMaxWidth()
-                                .heightIn(min = 48.dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = PrimaryRoyalBlue,
-                                disabledContainerColor = Color(0xFFE2E8F0)
-                            )
-                        ) {
-                        if (state.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = Color.White,
-                                strokeWidth = 2.5.dp
-                            )
-                        } else {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text(
-                                    text = "Konfirmasi Bayar",
-                                    fontFamily = interfamily,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                                Text(
-                                    text = "  |  Rp ${formatRupiah(state.grandTotal)}",
-                                    fontFamily = interfamily,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
         }
     ) { paddingValues ->
         Box(
@@ -1272,6 +1206,61 @@ fun PembayaranScreen(
                         }
                     }
                 }
+            }
+
+            // ── 6. Tombol Konfirmasi Bayar (Item Terakhir di LazyColumn)
+            item {
+                Spacer(modifier = Modifier.height(10.dp))
+                Button(
+                    onClick = { viewModel.prosesPembayaran() },
+                    enabled = !state.isLoading && state.subtotal > 0,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryRoyalBlue,
+                        disabledContainerColor = Color(0xFFE2E8F0)
+                    )
+                ) {
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Konfirmasi Bayar",
+                                fontFamily = interfamily,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "  |  Rp ${formatRupiah(state.grandTotal)}",
+                                fontFamily = interfamily,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
