@@ -25,4 +25,7 @@ interface CatatanKeuanganDao {
 
     @Query("SELECT * FROM catatan_keuangan WHERE id = :id LIMIT 1")
     suspend fun getCatatanById(id: String): CatatanKeuanganEntity?
+
+    @Query("SELECT * FROM catatan_keuangan WHERE id = :id LIMIT 1")
+    fun getCatatanByIdFlow(id: String): Flow<CatatanKeuanganEntity?>
 }

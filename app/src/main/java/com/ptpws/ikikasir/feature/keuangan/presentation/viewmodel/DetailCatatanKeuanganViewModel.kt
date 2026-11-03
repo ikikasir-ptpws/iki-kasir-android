@@ -44,11 +44,12 @@ class DetailCatatanKeuanganViewModel @Inject constructor(
         }
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
-            val item = repository.getCatatanById(catatanId)
-            if (item != null) {
-                _state.update { it.copy(catatan = item, isLoading = false) }
-            } else {
-                _state.update { it.copy(isLoading = false, errorMessage = "Catatan tidak ditemukan") }
+            repository.getCatatanByIdFlow(catatanId).collect { item ->
+                if (item != null) {
+                    _state.update { it.copy(catatan = item, isLoading = false, errorMessage = null) }
+                } else if (_state.value.catatan == null) {
+                    _state.update { it.copy(isLoading = false, errorMessage = "Catatan tidak ditemukan") }
+                }
             }
         }
     }

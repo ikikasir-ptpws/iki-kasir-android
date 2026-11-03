@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface CatatanKeuanganRepository {
     fun getAllCatatanFlow(): Flow<List<CatatanKeuangan>>
     suspend fun getCatatanById(id: String): CatatanKeuangan?
+    fun getCatatanByIdFlow(id: String): Flow<CatatanKeuangan?>
     suspend fun insertCatatan(catatan: CatatanKeuangan)
     suspend fun updateCatatan(catatan: CatatanKeuangan)
     suspend fun deleteCatatanById(id: String)

@@ -635,10 +635,17 @@ fun TambahCatatanKeuanganScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
-                        viewModel.simpanCatatan {
-                            Toast.makeText(context, "Catatan keuangan berhasil disimpan", Toast.LENGTH_SHORT).show()
-                            handleBack()
-                        }
+                        viewModel.simpanCatatan(
+                            onSuccess = { isEdit ->
+                                GlobalCrudResultDialog.success(
+                                    if (isEdit) "Catatan keuangan berhasil diperbarui." else "Catatan keuangan berhasil disimpan."
+                                )
+                                handleBack()
+                            },
+                            onFailure = { errorMessage ->
+                                GlobalCrudResultDialog.failure(errorMessage)
+                            }
+                        )
                     },
                     enabled = !state.isLoading,
                     modifier = Modifier

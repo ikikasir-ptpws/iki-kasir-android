@@ -114,15 +114,22 @@ class TambahCatatanKeuanganViewModel @Inject constructor(
         _state.update { it.copy(buktiUri = uri, errorMessage = null) }
     }
 
-    fun simpanCatatan(onSuccess: () -> Unit) {
+    fun simpanCatatan(
+        onSuccess: (isEditMode: Boolean) -> Unit,
+        onFailure: (errorMessage: String) -> Unit
+    ) {
         val current = _state.value
         if (current.judul.isBlank()) {
-            _state.update { it.copy(errorMessage = "Judul catatan wajib diisi.") }
+            val err = "Judul catatan wajib diisi."
+            _state.update { it.copy(errorMessage = err) }
+            onFailure(err)
             return
         }
         val nominalDouble = current.nominalText.toDoubleOrNull() ?: 0.0
         if (nominalDouble <= 0) {
-            _state.update { it.copy(errorMessage = "Jumlah nominal wajib diisi dan harus lebih dari 0.") }
+            val err = "Jumlah nominal wajib diisi dan harus lebih dari 0."
+            _state.update { it.copy(errorMessage = err) }
+            onFailure(err)
             return
         }
 
@@ -130,7 +137,7 @@ class TambahCatatanKeuanganViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true, errorMessage = null) }
             var finalBuktiUrl = current.buktiUri
 
-            // Jika buktiUri merupakan file/content URI lokal, unggah ke Firebase Storage terlebih dahulu
+            // Upload foto ke Firebase Storage jika berupa file/content URI lokal
             if (!current.buktiUri.isNullOrBlank() && (current.buktiUri.startsWith("file://") || current.buktiUri.startsWith("content://"))) {
                 GlobalUploadProgress.show(
                     title = "Upload Bukti Pembayaran",
@@ -148,13 +155,15 @@ class TambahCatatanKeuanganViewModel @Inject constructor(
                         }
                     )
                 } catch (e: Exception) {
+                    val uploadErr = "Gagal mengunggah foto ke Firebase Storage: ${e.message}"
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = "Gagal mengunggah foto ke Firebase Storage: ${e.message}"
+                            errorMessage = uploadErr
                         )
                     }
                     GlobalUploadProgress.dismiss()
+                    onFailure(uploadErr)
                     return@launch
                 } finally {
                     GlobalUploadProgress.dismiss()
@@ -172,28 +181,34 @@ class TambahCatatanKeuanganViewModel @Inject constructor(
                 buktiUri = finalBuktiUrl
             )
 
-            if (current.isEditMode) {
-                repository.updateCatatan(item)
-                logActivityUseCase(
-                    title = "Edit Catatan Keuangan",
-                    description = "Memperbarui catatan ${item.jenis}: ${item.judul}",
-                    category = "KEUANGAN",
-                    action = "UPDATE",
-                    isWarning = false
-                )
-            } else {
-                repository.insertCatatan(item)
-                logActivityUseCase(
-                    title = "Tambah Catatan Keuangan",
-                    description = "Menambahkan catatan ${item.jenis}: ${item.judul}",
-                    category = "KEUANGAN",
-                    action = "CREATE",
-                    isWarning = false
-                )
-            }
+            try {
+                if (current.isEditMode) {
+                    repository.updateCatatan(item)
+                    logActivityUseCase(
+                        title = "Edit Catatan Keuangan",
+                        description = "Memperbarui catatan ${item.jenis}: ${item.judul}",
+                        category = "KEUANGAN",
+                        action = "UPDATE",
+                        isWarning = false
+                    )
+                } else {
+                    repository.insertCatatan(item)
+                    logActivityUseCase(
+                        title = "Tambah Catatan Keuangan",
+                        description = "Menambahkan catatan ${item.jenis}: ${item.judul}",
+                        category = "KEUANGAN",
+                        action = "CREATE",
+                        isWarning = false
+                    )
+                }
 
-            _state.update { it.copy(isLoading = false, isSuccess = true) }
-            onSuccess()
+                _state.update { it.copy(isLoading = false, isSuccess = true) }
+                onSuccess(current.isEditMode)
+            } catch (e: Exception) {
+                val saveErr = "Gagal menyimpan data: ${e.message}"
+                _state.update { it.copy(isLoading = false, errorMessage = saveErr) }
+                onFailure(saveErr)
+            }
         }
     }
 }

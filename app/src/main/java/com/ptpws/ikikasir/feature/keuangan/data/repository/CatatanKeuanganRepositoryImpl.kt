@@ -49,6 +49,12 @@ class CatatanKeuanganRepositoryImpl @Inject constructor(
         return dao.getCatatanById(id)?.toDomain()
     }
 
+    override fun getCatatanByIdFlow(id: String): Flow<CatatanKeuangan?> {
+        return dao.getCatatanByIdFlow(id).map { entity ->
+            entity?.toDomain()
+        }
+    }
+
     override suspend fun insertCatatan(catatan: CatatanKeuangan) {
         dao.insertCatatan(catatan.toEntity())
         try {
