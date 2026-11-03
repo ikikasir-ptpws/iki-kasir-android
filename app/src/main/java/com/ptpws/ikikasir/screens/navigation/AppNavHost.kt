@@ -243,10 +243,16 @@ fun AppNavHost() {
                 arguments = AppScreen.Riwayat.navArguments
             ) { backStackEntry ->
                 val initialFilter = backStackEntry.arguments?.getString("initialFilter")
+                val startDateStr = backStackEntry.arguments?.getString("startDate")
+                val endDateStr = backStackEntry.arguments?.getString("endDate")
+                val startDate = startDateStr?.toLongOrNull()
+                val endDate = endDateStr?.toLongOrNull()
                 val context = LocalContext.current
                 RiwayatTransaksiScreen(
                     navController = navController,
                     initialFilter = initialFilter,
+                    startDate = startDate,
+                    endDate = endDate,
                     onDetailTransaksi = { txId ->
                         val intent = Intent(context, DetailTransaksiActivity::class.java).apply {
                             putExtra("TRANSACTION_ID", txId)

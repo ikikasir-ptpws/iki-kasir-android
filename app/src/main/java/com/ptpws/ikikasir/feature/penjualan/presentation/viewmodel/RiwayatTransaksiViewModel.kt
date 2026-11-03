@@ -125,6 +125,18 @@ class RiwayatTransaksiViewModel @Inject constructor(
         }
     }
 
+    fun applyInitialFilter(filter: String?, startMillis: Long? = null, endMillis: Long? = null) {
+        if (filter.isNullOrBlank()) {
+            resetToDefault()
+            return
+        }
+        if ((filter == "Filter Tanggal" || filter == "KUSTOM") && startMillis != null && endMillis != null) {
+            onCustomDateRangeSelect(startMillis, endMillis)
+        } else {
+            onFilterSelect(filter)
+        }
+    }
+
     fun resetToDefault() {
         _state.update { current ->
             val filtered = filterTransactions(
@@ -231,6 +243,26 @@ class RiwayatTransaksiViewModel @Inject constructor(
                     set(Calendar.MILLISECOND, 0)
                 }.timeInMillis / 1000
                 filtered = filtered.filter { it.createdAt.seconds >= startOf7Days }
+            }
+            "30 Hari Terakhir" -> {
+                val startOf30Days = Calendar.getInstance().apply {
+                    add(Calendar.DAY_OF_YEAR, -30)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis / 1000
+                filtered = filtered.filter { it.createdAt.seconds >= startOf30Days }
+            }
+            "Bulan Ini" -> {
+                val startOfMonth = Calendar.getInstance().apply {
+                    set(Calendar.DAY_OF_MONTH, 1)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis / 1000
+                filtered = filtered.filter { it.createdAt.seconds >= startOfMonth }
             }
             "Refund" -> {
                 filtered = filtered.filter {

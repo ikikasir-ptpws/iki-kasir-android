@@ -62,15 +62,21 @@ fun RiwayatTransaksiScreen(
     navController: NavController,
     viewModel: RiwayatTransaksiViewModel = hiltViewModel(),
     initialFilter: String? = null,
+    startDate: Long? = null,
+    endDate: Long? = null,
     onDetailTransaksi: (String) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val listState = rememberLazyListState()
 
-    LaunchedEffect(initialFilter) {
+    LaunchedEffect(initialFilter, startDate, endDate) {
         if (!initialFilter.isNullOrBlank()) {
-            viewModel.onFilterSelect(initialFilter)
+            viewModel.applyInitialFilter(initialFilter, startDate, endDate)
+        } else {
+            viewModel.resetToDefault()
         }
+        listState.scrollToItem(0, 0)
     }
 
     BackHandler {
@@ -96,13 +102,6 @@ fun RiwayatTransaksiScreen(
             errorMessage = state.exportError ?: ""
             showExportErrorDialog = true
         }
-    }
-
-    val listState = rememberLazyListState()
-
-    LaunchedEffect(Unit) {
-        viewModel.resetToDefault()
-        listState.scrollToItem(0, 0)
     }
 
     // Scroll Pagination State (Tampilkan 10 data awal, muat 10 data berikutnya saat scroll)
@@ -538,6 +537,70 @@ fun RiwayatTransaksiScreen(
                         label = {
                             Text(
                                 text = "7 Hari Terakhir",
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF4F46E5),
+                            selectedLabelColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = Color(0xFF374151)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = Color.Transparent,
+                            borderColor = Color(0xFFE2E8F0),
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 0.dp
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                }
+
+                // Chip 4: 30 Hari Terakhir
+                item {
+                    val isSelected = state.selectedFilter == "30 Hari Terakhir"
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.onFilterSelect("30 Hari Terakhir") },
+                        label = {
+                            Text(
+                                text = "30 Hari Terakhir",
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF4F46E5),
+                            selectedLabelColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = Color(0xFF374151)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = Color.Transparent,
+                            borderColor = Color(0xFFE2E8F0),
+                            borderWidth = 1.dp,
+                            selectedBorderWidth = 0.dp
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                }
+
+                // Chip 5: Bulan Ini
+                item {
+                    val isSelected = state.selectedFilter == "Bulan Ini"
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.onFilterSelect("Bulan Ini") },
+                        label = {
+                            Text(
+                                text = "Bulan Ini",
                                 fontFamily = interfamily,
                                 fontSize = 13.sp,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal

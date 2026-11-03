@@ -187,13 +187,25 @@ fun DashboardScreen(
                                 navController.navigate(route)
                             },
                             onTransaksiClick = {
-                                val riwayatFilter = when (selectedFilter) {
-                                    PeriodeLaporanPenjualan.HARI_INI -> "Hari Ini"
-                                    PeriodeLaporanPenjualan.TUJUH_HARI -> "7 Hari Terakhir"
-                                    PeriodeLaporanPenjualan.SEMUA -> "Semua"
-                                    else -> "Semua"
+                                val route = if (selectedFilter == PeriodeLaporanPenjualan.KUSTOM &&
+                                    customStartDateMillis != null && customEndDateMillis != null) {
+                                    AppScreen.Riwayat.routeWith(
+                                        initialFilter = "Filter Tanggal",
+                                        startDate = customStartDateMillis,
+                                        endDate = customEndDateMillis
+                                    )
+                                } else {
+                                    val riwayatFilter = when (selectedFilter) {
+                                        PeriodeLaporanPenjualan.HARI_INI -> "Hari Ini"
+                                        PeriodeLaporanPenjualan.TUJUH_HARI -> "7 Hari Terakhir"
+                                        PeriodeLaporanPenjualan.TIGA_PULUH_HARI -> "30 Hari Terakhir"
+                                        PeriodeLaporanPenjualan.BULAN_INI -> "Bulan Ini"
+                                        PeriodeLaporanPenjualan.SEMUA -> "Semua"
+                                        PeriodeLaporanPenjualan.KUSTOM -> "Filter Tanggal"
+                                    }
+                                    AppScreen.Riwayat.routeWith(initialFilter = riwayatFilter)
                                 }
-                                navController.navigate(AppScreen.Riwayat.routeWith(riwayatFilter))
+                                navController.navigate(route)
                             }
                         )
                     }
