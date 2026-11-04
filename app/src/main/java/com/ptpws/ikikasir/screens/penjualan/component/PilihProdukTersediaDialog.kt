@@ -71,7 +71,11 @@ fun PilihProdukTersediaDialog(
             .filter { produk ->
                 // Tampilkan produk yang memiliki stok atau sudah terpilih di keranjang
                 val hasStock = produk.stock > 0 || state.getItemQuantity(produk.id) > 0
-                val isVisible = produk.isVisibleInCashier
+                val category = state.kategoriList.firstOrNull {
+                    it.id.equals(produk.categoryId, ignoreCase = true) ||
+                            it.name.equals(produk.categoryId, ignoreCase = true)
+                }
+                val isVisible = produk.isVisibleInCashier && category?.isVisibleInCashier != false
                 val matchesQuery = state.catalogSearchQuery.isBlank() ||
                         produk.name.contains(state.catalogSearchQuery, ignoreCase = true) ||
                         produk.barcode.contains(state.catalogSearchQuery, ignoreCase = true)

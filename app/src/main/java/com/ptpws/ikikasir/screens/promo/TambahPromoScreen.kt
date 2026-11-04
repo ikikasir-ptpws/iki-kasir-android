@@ -161,6 +161,7 @@ fun TambahPromoScreen(
     if (showPilihProdukDialog) {
         PilihProdukPromoDialog(
             availableProducts = state.availableProducts,
+            kategoriList = state.kategoriList,
             initialSelected = state.selectedProducts,
             isRefreshing = state.isRefreshingProducts,
             onRefresh = { viewModel.refreshProdukCatalog() },
@@ -655,6 +656,7 @@ fun TambahPromoScreen(
 @Composable
 fun PilihProdukPromoDialog(
     availableProducts: List<Produk>,
+    kategoriList: List<com.ptpws.ikikasir.feature.kategori.domain.model.Kategori> = emptyList(),
     initialSelected: List<Produk>,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
@@ -665,6 +667,15 @@ fun PilihProdukPromoDialog(
     var searchQuery by remember { mutableStateOf("") }
     val tempSelected = remember { mutableStateListOf<Produk>().apply { addAll(initialSelected) } }
     var isDialogLoading by remember { mutableStateOf(true) }
+    val selectableProducts = remember(availableProducts, kategoriList) {
+        availableProducts.filter { product ->
+            val category = kategoriList.firstOrNull {
+                it.id.equals(product.categoryId, ignoreCase = true) ||
+                        it.name.equals(product.categoryId, ignoreCase = true)
+            }
+            product.isVisibleInCashier && category?.isVisibleInCashier != false
+        }
+    }
 
     // Realtime synchronization saat dialog dibuka
     LaunchedEffect(Unit) {
@@ -674,20 +685,21 @@ fun PilihProdukPromoDialog(
     }
 
     // Sync data terbaru produk yang sedang terpilih jika availableProducts terupdate
-    LaunchedEffect(availableProducts) {
+    LaunchedEffect(selectableProducts) {
         if (availableProducts.isNotEmpty()) {
             for (i in tempSelected.indices) {
                 val current = tempSelected[i]
-                val latest = availableProducts.find { it.id == current.id }
+                val latest = selectableProducts.find { it.id == current.id }
                 if (latest != null && latest != current) {
                     tempSelected[i] = latest
                 }
             }
+            tempSelected.removeAll { selected -> selectableProducts.none { it.id == selected.id } }
         }
     }
 
-    val filteredList = remember(searchQuery, availableProducts) {
-        availableProducts.filter { item ->
+    val filteredList = remember(searchQuery, selectableProducts) {
+        selectableProducts.filter { item ->
             searchQuery.isBlank() ||
                     item.name.contains(searchQuery, ignoreCase = true) ||
                     item.barcode.contains(searchQuery, ignoreCase = true) ||
@@ -708,7 +720,7 @@ fun PilihProdukPromoDialog(
         val clean = rawCode.trim()
         if (clean.isNotBlank()) {
             searchQuery = clean
-            val matched = availableProducts.firstOrNull { item ->
+            val matched = selectableProducts.firstOrNull { item ->
                 item.barcode.equals(clean, ignoreCase = true) ||
                 item.id.equals(clean, ignoreCase = true) ||
                 (item.barcode.isNotBlank() && item.barcode.trimStart('0') == clean.trimStart('0'))
@@ -731,8 +743,8 @@ fun PilihProdukPromoDialog(
         handleScannedBarcode(code)
     }
 
-    val isAllSelected = remember(tempSelected.size, filteredList, availableProducts, searchQuery) {
-        val targetList = if (searchQuery.isBlank()) availableProducts else filteredList
+    val isAllSelected = remember(tempSelected.size, filteredList, selectableProducts, searchQuery) {
+        val targetList = if (searchQuery.isBlank()) selectableProducts else filteredList
         targetList.isNotEmpty() && targetList.all { item -> tempSelected.any { it.id == item.id } }
     }
 
@@ -942,7 +954,7 @@ fun PilihProdukPromoDialog(
                 }
 
                 // Fitur Pilih Semua Produk
-                if (availableProducts.isNotEmpty()) {
+                if (selectableProducts.isNotEmpty()) {
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -956,7 +968,7 @@ fun PilihProdukPromoDialog(
                                         tempSelected.removeAll { it.id in filteredIds }
                                     }
                                 } else {
-                                    val targets = if (searchQuery.isBlank()) availableProducts else filteredList
+                                    val targets = if (searchQuery.isBlank()) selectableProducts else filteredList
                                     targets.forEach { item ->
                                         if (tempSelected.none { it.id == item.id }) {
                                             tempSelected.add(item)
@@ -983,7 +995,7 @@ fun PilihProdukPromoDialog(
                                     checked = isAllSelected,
                                     onCheckedChange = { checked ->
                                         if (checked) {
-                                            val targets = if (searchQuery.isBlank()) availableProducts else filteredList
+                                            val targets = if (searchQuery.isBlank()) selectableProducts else filteredList
                                             targets.forEach { item ->
                                                 if (tempSelected.none { it.id == item.id }) {
                                                     tempSelected.add(item)
@@ -1014,7 +1026,7 @@ fun PilihProdukPromoDialog(
                             }
 
                             Text(
-                                text = "${tempSelected.size}/${availableProducts.size} dipilih",
+                                text = "${tempSelected.size}/${selectableProducts.size} dipilih",
                                 fontFamily = interfamily,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
@@ -1045,7 +1057,7 @@ fun PilihProdukPromoDialog(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (availableProducts.isEmpty()) "Belum ada produk tersedia" else "Tidak ada produk yang cocok",
+                            text = if (selectableProducts.isEmpty()) "Belum ada produk tersedia" else "Tidak ada produk yang cocok",
                             fontFamily = interfamily,
                             fontSize = 13.sp,
                             color = Color(0xFF94A3B8)

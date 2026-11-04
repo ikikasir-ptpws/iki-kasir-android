@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
+import com.ptpws.ikikasir.feature.kategori.domain.usecase.GetKategoriUseCase
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
@@ -29,6 +31,7 @@ data class TambahPromoFormState(
     val tipePromo: String = "",
     val selectedProducts: List<Produk> = emptyList(),
     val availableProducts: List<Produk> = emptyList(),
+    val kategoriList: List<Kategori> = emptyList(),
     val isRefreshingProducts: Boolean = false,
     val diskonType: String = "Rp", // "Rp" or "%"
     val nilaiDiskon: String = "",
@@ -43,6 +46,7 @@ data class TambahPromoFormState(
 @HiltViewModel
 class TambahPromoViewModel @Inject constructor(
     private val getProdukUseCase: GetProdukUseCase,
+    private val getKategoriUseCase: GetKategoriUseCase,
     private val insertPromoUseCase: InsertPromoUseCase,
     private val updatePromoUseCase: UpdatePromoUseCase,
     private val getPromoByIdUseCase: GetPromoByIdUseCase,
@@ -54,6 +58,15 @@ class TambahPromoViewModel @Inject constructor(
 
     init {
         loadProdukCatalog()
+        loadKategoriCatalog()
+    }
+
+    private fun loadKategoriCatalog() {
+        viewModelScope.launch {
+            getKategoriUseCase().collect { categories ->
+                _state.update { it.copy(kategoriList = categories) }
+            }
+        }
     }
 
     private fun loadProdukCatalog() {
