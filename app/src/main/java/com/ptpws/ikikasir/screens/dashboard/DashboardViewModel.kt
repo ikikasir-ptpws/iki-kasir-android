@@ -437,25 +437,21 @@ class DashboardViewModel @Inject constructor(
                 Pair(cur, prev)
             }
             PeriodeLaporanPenjualan.TUJUH_HARI -> {
-                val sevenDaysAgoCal = Calendar.getInstance().apply {
+                val startOfCurrentPeriodCal = Calendar.getInstance().apply {
+                    add(Calendar.DAY_OF_YEAR, -6)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val startOfPreviousPeriodCal = (startOfCurrentPeriodCal.clone() as Calendar).apply {
                     add(Calendar.DAY_OF_YEAR, -7)
-                    set(Calendar.HOUR_OF_DAY, 0)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
                 }
-                val fourteenDaysAgoCal = Calendar.getInstance().apply {
-                    add(Calendar.DAY_OF_YEAR, -14)
-                    set(Calendar.HOUR_OF_DAY, 0)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                }
-                val startOf7Sec = sevenDaysAgoCal.timeInMillis / 1000
-                val startOf14Sec = fourteenDaysAgoCal.timeInMillis / 1000
+                val startOfCurrentPeriodSec = startOfCurrentPeriodCal.timeInMillis / 1000
+                val startOfPreviousPeriodSec = startOfPreviousPeriodCal.timeInMillis / 1000
 
-                val cur = validTransactions.filter { it.createdAt.seconds in startOf7Sec..nowSec }
-                val prev = validTransactions.filter { it.createdAt.seconds in startOf14Sec until startOf7Sec }
+                val cur = validTransactions.filter { it.createdAt.seconds in startOfCurrentPeriodSec..nowSec }
+                val prev = validTransactions.filter { it.createdAt.seconds in startOfPreviousPeriodSec until startOfCurrentPeriodSec }
                 Pair(cur, prev)
             }
             PeriodeLaporanPenjualan.TIGA_PULUH_HARI -> {
