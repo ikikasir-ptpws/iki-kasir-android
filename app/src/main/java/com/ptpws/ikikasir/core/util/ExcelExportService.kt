@@ -1078,28 +1078,52 @@ class ExcelExportService @Inject constructor() {
             // Row 4: Empty separator
             rows += listOf(emptyList())
 
-            // Row 5: KPI Card Labels (A5:B5, C5:D5, E5:F5, G5:H5)
+            // KPI cards use two balanced rows across the seven report columns.
             rows += listOf(
-                ExcelCell("TOTAL UNIT TERJUAL", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("TOTAL OMZET PRODUK", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("VARIASI PRODUK", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("PRODUK TERLARIS (#1)", "KpiLabel"), ExcelCell("", "KpiLabel")
+                ExcelCell("TOTAL UNIT TERJUAL", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("TOTAL OMZET PRODUK", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("", "KpiLabel")
             )
 
-            // Row 6: KPI Card Values
             val bestSellerText = if (summary.produkTerlarisQty > 0) {
                 "${summary.produkTerlarisNama} (${summary.produkTerlarisQty} Pcs)"
             } else {
                 "-"
             }
             rows += listOf(
-                ExcelCell("${summary.totalUnitTerjual} Unit", "KpiValue"), ExcelCell("", "KpiValue"),
-                ExcelCell(summary.totalOmzet.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell("${summary.totalProdukUnik} Produk", "KpiValue"), ExcelCell("", "KpiValue"),
-                ExcelCell(bestSellerText, "KpiValue"), ExcelCell("", "KpiValue")
+                ExcelCell("${summary.totalUnitTerjual} Unit", "KpiValue"),
+                ExcelCell("", "KpiValue"),
+                ExcelCell("", "KpiValue"),
+                ExcelCell(summary.totalOmzet.formatRupiah(), "KpiValueCurrency"),
+                ExcelCell("", "KpiValueCurrency"),
+                ExcelCell("", "KpiValueCurrency"),
+                ExcelCell("", "KpiValueCurrency")
             )
 
-            // Row 7: Empty separator
+            rows += listOf(
+                ExcelCell("VARIASI PRODUK", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("PRODUK TERLARIS (#1)", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("", "KpiLabel")
+            )
+            rows += listOf(
+                ExcelCell("${summary.totalProdukUnik} Produk", "KpiValue"),
+                ExcelCell("", "KpiValue"),
+                ExcelCell("", "KpiValue"),
+                ExcelCell(bestSellerText, "KpiValue"),
+                ExcelCell("", "KpiValue"),
+                ExcelCell("", "KpiValue"),
+                ExcelCell("", "KpiValue")
+            )
+
+            // Separator before the product detail table.
             rows += listOf(emptyList())
 
             // Row 8: Table Column Headers
@@ -1147,13 +1171,15 @@ class ExcelExportService @Inject constructor() {
             )
 
             val mergeRanges = listOf(
-                "A5:B5", "C5:D5", "E5:F5",
-                "A6:B6", "C6:D6", "E6:F6",
+                "A5:C5", "D5:G5",
+                "A6:C6", "D6:G6",
+                "A7:C7", "D7:G7",
+                "A8:C8", "D8:G8",
                 "A$totalRowNumber:D$totalRowNumber"
             )
 
             val autoFilterEndRow = totalRowNumber - 1
-            val autoFilterRange = "A8:G$autoFilterEndRow"
+            val autoFilterRange = "A10:G$autoFilterEndRow"
 
             saveAndShare(
                 context,
@@ -1163,7 +1189,7 @@ class ExcelExportService @Inject constructor() {
                             name = "Laporan Produk Terjual",
                             rows = rows,
                             columnWidths = columnWidths,
-                            headerRowIndex = 7,
+                            headerRowIndex = 9,
                             mergeRanges = mergeRanges,
                             autoFilterRange = autoFilterRange
                         )
