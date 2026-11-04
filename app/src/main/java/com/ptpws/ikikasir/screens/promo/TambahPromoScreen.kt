@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
@@ -259,7 +258,7 @@ fun TambahPromoScreen(
                             value = state.tipePromo,
                             onValueChange = { viewModel.onTipePromoChange(it) },
                             label = "Tipe Promo",
-                            isRequired = true,
+                            isRequired = false,
                             placeholder = "Masukkan tipe promo",
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
@@ -289,7 +288,7 @@ fun TambahPromoScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "PRODUK PROMO",
+                                text = "PRODUK PROMO *",
                                 fontFamily = interfamily,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -424,7 +423,7 @@ fun TambahPromoScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "NILAI DISKON",
+                                text = "NILAI DISKON *",
                                 fontFamily = interfamily,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -532,7 +531,7 @@ fun TambahPromoScreen(
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Text(
-                                    text = "Mulai",
+                                    text = "Mulai *",
                                     fontFamily = interfamily,
                                     fontSize = 12.sp,
                                     color = Color(0xFF64748B)
@@ -569,7 +568,7 @@ fun TambahPromoScreen(
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Text(
-                                    text = "Berakhir",
+                                    text = "Berakhir *",
                                     fontFamily = interfamily,
                                     fontSize = 12.sp,
                                     color = Color(0xFF64748B)
@@ -796,30 +795,6 @@ fun PilihProdukPromoDialog(
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF0F172A)
                             )
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFFECFDF5)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(6.dp)
-                                            .clip(CircleShape)
-                                            .background(Color(0xFF10B981))
-                                    )
-                                    Text(
-                                        text = "Realtime",
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = Color(0xFF059669),
-                                        fontFamily = interfamily
-                                    )
-                                }
-                            }
                         }
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
@@ -834,31 +809,6 @@ fun PilihProdukPromoDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Surface(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clickable(enabled = !isRefreshing) { onRefresh() },
-                            shape = CircleShape,
-                            color = Color(0xFFF1F5F9)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                if (isRefreshing) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        strokeWidth = 2.dp,
-                                        color = Color(0xFF2563EB)
-                                    )
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Default.Refresh,
-                                        contentDescription = "Muat Ulang Realtime",
-                                        tint = Color(0xFF2563EB),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                        }
-
                         Surface(
                             modifier = Modifier
                                 .size(32.dp)

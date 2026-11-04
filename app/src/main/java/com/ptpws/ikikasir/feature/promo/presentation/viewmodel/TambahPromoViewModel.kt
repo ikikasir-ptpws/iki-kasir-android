@@ -21,6 +21,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.ParsePosition
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 
@@ -182,13 +185,38 @@ class TambahPromoViewModel @Inject constructor(
     fun simpanPromo() {
         val form = _state.value
         if (form.namaPromo.isBlank()) {
-            val message = "Nama promo tidak boleh kosong"
-            GlobalCrudResultDialog.failure(message)
-            _state.update { it.copy(errorMessage = message) }
-            return
+            return rejectForm("Nama promo wajib diisi.")
         }
 
-        val rawDiskon = form.nilaiDiskon.replace(".", "").replace(",", "").toDoubleOrNull() ?: 0.0
+        val rawDiskon = form.nilaiDiskon.trim().replace(",", ".").toDoubleOrNull() ?: 0.0
+        if (form.selectedProducts.isEmpty()) {
+            return rejectForm("Pilih minimal satu produk untuk promo.")
+        }
+        if (rawDiskon <= 0.0) {
+            return rejectForm("Nilai diskon wajib diisi dan harus lebih dari 0.")
+        }
+        if (form.diskonType == "%" && rawDiskon > 100.0) {
+            return rejectForm("Diskon persentase tidak boleh lebih dari 100%.")
+        }
+        if (form.tanggalMulai.isBlank() || form.tanggalBerakhir.isBlank()) {
+            return rejectForm("Tanggal mulai dan tanggal berakhir wajib diisi.")
+        }
+
+        val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).apply {
+            isLenient = false
+        }
+        val startPosition = ParsePosition(0)
+        val endPosition = ParsePosition(0)
+        val startDate = dateFormat.parse(form.tanggalMulai, startPosition)
+            ?.takeIf { startPosition.index == form.tanggalMulai.length }
+        val endDate = dateFormat.parse(form.tanggalBerakhir, endPosition)
+            ?.takeIf { endPosition.index == form.tanggalBerakhir.length }
+        if (startDate == null || endDate == null) {
+            return rejectForm("Format tanggal promo tidak valid.")
+        }
+        if (endDate.before(startDate)) {
+            return rejectForm("Tanggal berakhir tidak boleh sebelum tanggal mulai.")
+        }
 
         val promoItems = form.selectedProducts.map { produk ->
             PromoProductItem(
@@ -244,6 +272,11 @@ class TambahPromoViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun rejectForm(message: String) {
+        GlobalCrudResultDialog.failure(message)
+        _state.update { it.copy(errorMessage = message) }
     }
 
     fun clearMessage() {
