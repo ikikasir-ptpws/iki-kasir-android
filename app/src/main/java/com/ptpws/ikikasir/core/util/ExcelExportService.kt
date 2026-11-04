@@ -263,19 +263,28 @@ class ExcelExportService @Inject constructor() {
                 ExcelCell("SUMMARY FINANSIAL", "SectionHeader"),
                 ExcelCell("", "SectionHeader"),
                 ExcelCell("", "SectionHeader"),
+                ExcelCell("", "SectionHeader"),
+                ExcelCell("", "SectionHeader"),
+                ExcelCell("", "SectionHeader"),
                 ExcelCell("", "SectionHeader")
             )
             rows += listOf(
-                ExcelCell("Total Pemasukan", "KpiLabel"),
+                ExcelCell("Total Debit (Pemasukan)", "KpiLabel"),
                 ExcelCell(totalPemasukan.toExcelNumber(), "KpiValueCurrency"),
-                ExcelCell("Total Pengeluaran", "KpiLabel"),
-                ExcelCell(totalPengeluaran.toExcelNumber(), "KpiValueCurrency")
-            )
-            rows += listOf(
+                ExcelCell("Total Kredit (Pengeluaran)", "KpiLabel"),
+                ExcelCell(totalPengeluaran.toExcelNumber(), "KpiValueCurrency"),
                 ExcelCell("Saldo Bersih", "KpiLabel"),
                 ExcelCell(saldoBersih.toExcelNumber(), "KpiValueCurrency"),
+                ExcelCell("", "KpiLabel")
+            )
+            rows += listOf(
                 ExcelCell("Jumlah Catatan", "KpiLabel"),
-                ExcelCell(sortedList.size.toString(), "KpiValue")
+                ExcelCell(sortedList.size.toString(), "KpiValue"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("", "KpiValue"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("", "KpiValueCurrency"),
+                ExcelCell("", "KpiLabel")
             )
             rows += listOf(emptyList())
 
@@ -285,7 +294,8 @@ class ExcelExportService @Inject constructor() {
                 ExcelCell("JUDUL CATATAN", "TableHeader"),
                 ExcelCell("KETERANGAN", "TableHeader"),
                 ExcelCell("METODE", "TableHeaderCenter"),
-                ExcelCell("NOMINAL (RP)", "TableHeaderRight")
+                ExcelCell("DEBIT (RP)", "TableHeaderRight"),
+                ExcelCell("KREDIT (RP)", "TableHeaderRight")
             )
 
             sortedList.forEachIndexed { index, item ->
@@ -293,6 +303,7 @@ class ExcelExportService @Inject constructor() {
                 val jenisStr = if (item.jenis.equals("PEMASUKAN", ignoreCase = true)) "PEMASUKAN" else "PENGELUARAN"
                 val styleRow = if (index % 2 == 1) "DataRowAlt" else "DataRow"
                 val styleCurrency = if (index % 2 == 1) "CurrencyDataAlt" else "CurrencyData"
+                val isPemasukan = item.jenis.equals("PEMASUKAN", ignoreCase = true)
 
                 rows += listOf(
                     ExcelCell(dateStr, styleRow + "Center"),
@@ -300,11 +311,30 @@ class ExcelExportService @Inject constructor() {
                     ExcelCell(item.judul, styleRow),
                     ExcelCell(item.keterangan.ifBlank { "-" }, styleRow),
                     ExcelCell(item.metodePembayaran, styleRow + "Center"),
-                    ExcelCell(item.nominal.toExcelNumber(), styleCurrency)
+                    ExcelCell(if (isPemasukan) item.nominal.toExcelNumber() else "0", styleCurrency),
+                    ExcelCell(if (isPemasukan) "0" else item.nominal.toExcelNumber(), styleCurrency)
                 )
             }
 
-            val sheet = ExcelSheet("Catatan Keuangan", rows, listOf(22, 16, 26, 30, 16, 20))
+            val totalRowNumber = rows.size + 1
+            rows += listOf(
+                ExcelCell("TOTAL", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell(totalPemasukan.toExcelNumber(), "TotalValue"),
+                ExcelCell(totalPengeluaran.toExcelNumber(), "TotalValue")
+            )
+
+            val sheet = ExcelSheet(
+                name = "Catatan Keuangan",
+                rows = rows,
+                columnWidths = listOf(22, 16, 26, 34, 18, 20, 20),
+                headerRowIndex = 8,
+                mergeRanges = listOf("A5:G5", "A${totalRowNumber}:E${totalRowNumber}"),
+                autoFilterRange = "A9:G${totalRowNumber - 1}"
+            )
             val bytes = createSpreadsheetXlsx(listOf(sheet))
             val dateTag = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
             saveAndShare(context, bytes, "CatatanKeuangan_$dateTag.xlsx")

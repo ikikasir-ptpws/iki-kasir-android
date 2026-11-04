@@ -1,6 +1,8 @@
 package com.ptpws.ikikasir.screens.keuangan
 
-import android.net.Uri
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -16,6 +18,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
@@ -73,6 +76,8 @@ fun CatatanKeuanganScreen(
 
     var showDateRangePicker by remember { mutableStateOf(false) }
     var itemToDelete by remember { mutableStateOf<CatatanKeuangan?>(null) }
+    var showExportSuccessDialog by remember { mutableStateOf(false) }
+    var showExportErrorDialog by remember { mutableStateOf(false) }
 
     val currentEntry = navController.currentBackStackEntry
     val resultSuccessMessage by currentEntry?.savedStateHandle
@@ -87,19 +92,159 @@ fun CatatanKeuanganScreen(
         }
     }
 
-    // Export Dialog State
     LaunchedEffect(state.exportedFileUri) {
         if (state.exportedFileUri != null) {
-            GlobalCrudResultDialog.success("File Excel catatan keuangan berhasil diunduh dan tersimpan di HP Anda.")
-            viewModel.clearExportState()
+            showExportSuccessDialog = true
         }
     }
 
     LaunchedEffect(state.exportError) {
         if (!state.exportError.isNullOrBlank()) {
-            GlobalCrudResultDialog.failure(state.exportError ?: "Gagal mengekspor data.")
-            viewModel.clearExportState()
+            showExportErrorDialog = true
         }
+    }
+
+    if (showExportSuccessDialog && state.exportedFileUri != null) {
+        val exportedUri = state.exportedFileUri
+        AlertDialog(
+            onDismissRequest = {
+                showExportSuccessDialog = false
+                viewModel.clearExportState()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF10B981),
+                    modifier = Modifier.size(52.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Ekspor Excel Berhasil!",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF0F172A)
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "File Excel catatan keuangan berhasil diunduh dan tersimpan di HP Anda.",
+                        fontFamily = interfamily,
+                        fontSize = 14.sp,
+                        color = Color(0xFF475569),
+                        lineHeight = 20.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Surface(
+                        color = Color(0xFFF1F5F9),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "Lokasi Simpan (Berkas HP):",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp,
+                                color = Color(0xFF334155)
+                            )
+                            Text(
+                                text = "Memori Internal > Download > IkiKasir",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = Color(0xFF4F46E5)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Laporan: ${state.customDateLabel ?: state.selectedFilter} (${state.filteredList.size} catatan)",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val openIntent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(
+                                exportedUri,
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            )
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        try {
+                            context.startActivity(Intent.createChooser(openIntent, "Buka dengan"))
+                        } catch (_: ActivityNotFoundException) {
+                            Toast.makeText(context, "Tidak ada aplikasi untuk membuka file Excel", Toast.LENGTH_SHORT).show()
+                        }
+                        showExportSuccessDialog = false
+                        viewModel.clearExportState()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Buka File", fontFamily = interfamily, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showExportSuccessDialog = false
+                        viewModel.clearExportState()
+                    }
+                ) {
+                    Text("Tutup", fontFamily = interfamily, color = Color(0xFF64748B))
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    if (showExportErrorDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showExportErrorDialog = false
+                viewModel.clearExportState()
+            },
+            title = {
+                Text(
+                    text = "Gagal Ekspor",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFEF4444)
+                )
+            },
+            text = {
+                Text(
+                    text = state.exportError ?: "Terjadi kesalahan saat mengekspor catatan keuangan.",
+                    fontFamily = interfamily,
+                    color = Color(0xFF475569)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showExportErrorDialog = false
+                        viewModel.clearExportState()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Mengerti", fontFamily = interfamily)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
+        )
     }
 
     // Modal Date Range Picker
