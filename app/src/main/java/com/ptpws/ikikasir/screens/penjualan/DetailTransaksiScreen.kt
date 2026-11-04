@@ -740,9 +740,8 @@ fun DetailTransaksiScreen(
                                             .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                             .clickable { showProofImageDialog = true }
                                     ) {
-                                        AsyncImage(
-                                            model = tx.paymentProofUrl,
-                                            contentDescription = "Bukti Pembayaran",
+                                        BuktiPembayaranImage(
+                                            imageUrl = tx.paymentProofUrl,
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier.fillMaxSize()
                                         )
@@ -935,15 +934,14 @@ fun DetailTransaksiScreen(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .heightIn(max = 420.dp)
+                                    .heightIn(min = 200.dp, max = 420.dp)
                                     .clip(RoundedCornerShape(12.dp))
                                     .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                             ) {
-                                AsyncImage(
-                                    model = tx.paymentProofUrl,
-                                    contentDescription = "Bukti Pembayaran Full",
+                                BuktiPembayaranImage(
+                                    imageUrl = tx.paymentProofUrl,
                                     contentScale = ContentScale.Fit,
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxSize()
                                 )
                             }
 
@@ -1098,6 +1096,48 @@ fun DetailTransaksiScreen(
                     },
                     containerColor = Color.White,
                     shape = RoundedCornerShape(20.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BuktiPembayaranImage(
+    imageUrl: String,
+    contentScale: ContentScale,
+    modifier: Modifier = Modifier
+) {
+    var imageLoadFailed by remember(imageUrl) { mutableStateOf(false) }
+
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = "Bukti Pembayaran",
+            contentScale = contentScale,
+            modifier = Modifier.fillMaxSize(),
+            onError = { imageLoadFailed = true }
+        )
+
+        if (imageLoadFailed) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF8FAFC)),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ImageNotSupported,
+                    contentDescription = null,
+                    tint = Color(0xFF94A3B8),
+                    modifier = Modifier.size(32.dp)
+                )
+                Text(
+                    text = "Bukti pembayaran tidak dapat dimuat",
+                    fontFamily = interfamily,
+                    fontSize = 12.sp,
+                    color = Color(0xFF64748B)
                 )
             }
         }
