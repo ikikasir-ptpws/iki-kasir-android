@@ -288,7 +288,7 @@ fun PilihProdukTersediaDialog(
                             }
                         }
 
-                        items(state.kategoriList, key = { it.id }) { kategori ->
+                        items(state.kategoriList.filter { it.isVisibleInCashier }, key = { it.id }) { kategori ->
                             val isSelected = state.selectedCategoryId == kategori.id
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
