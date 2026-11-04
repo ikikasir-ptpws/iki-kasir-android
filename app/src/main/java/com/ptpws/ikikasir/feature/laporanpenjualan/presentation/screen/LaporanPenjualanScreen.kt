@@ -369,7 +369,7 @@ fun LaporanPenjualanScreen(
                         ) {
                             if (state.searchQuery.isEmpty()) {
                                 Text(
-                                    text = if (isCompact) "Cari produk / kategori..." else "Cari produk terjual atau kategori...",
+                                    text = "Cari produk terjual...",
                                     fontFamily = interfamily,
                                     fontSize = if (isCompact) 12.sp else 13.sp,
                                     color = Color(0xFF94A3B8),
@@ -732,7 +732,7 @@ fun ProdukTerjualCard(item: ProdukTerjualItem) {
                     Spacer(modifier = Modifier.width(if (isCompact) 6.dp else 10.dp))
                 }
 
-                // Name & Category
+                // Product name and unit price
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = item.namaProduk,
@@ -744,35 +744,16 @@ fun ProdukTerjualCard(item: ProdukTerjualItem) {
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.height(2.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = Color(0xFFF1F5F9)
-                        ) {
-                            Text(
-                                text = item.kategori,
-                                fontFamily = interfamily,
-                                fontSize = if (isCompact) 9.sp else 10.sp,
-                                color = Color(0xFF64748B),
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.5.dp),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                        if (item.hargaSatuan > 0) {
-                            Text(
-                                text = "@ ${formatRupiah(item.hargaSatuan)}",
-                                fontFamily = interfamily,
-                                fontSize = if (isCompact) 9.5.sp else 11.sp,
-                                color = Color(0xFF94A3B8),
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                    if (item.hargaSatuan > 0) {
+                        Text(
+                            text = "@ ${formatRupiah(item.hargaSatuan)}",
+                            fontFamily = interfamily,
+                            fontSize = if (isCompact) 9.5.sp else 11.sp,
+                            color = Color(0xFF94A3B8),
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
 
