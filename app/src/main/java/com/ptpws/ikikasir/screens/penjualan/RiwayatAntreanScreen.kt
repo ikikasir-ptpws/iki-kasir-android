@@ -59,6 +59,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 import androidx.activity.compose.BackHandler
 import com.ptpws.ikikasir.screens.navigation.AppScreen
@@ -79,6 +80,7 @@ fun RiwayatAntreanScreen(
     }
 
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
@@ -257,7 +259,26 @@ fun RiwayatAntreanScreen(
 
     // Launcher for legacy ZXing barcode scanner fallback
     val triggerBarcodeScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { contents ->
-        viewModel.onSearchQueryChanged(contents)
+        val scannedCode = contents.trim().trimStart('#')
+        val normalizedCode = scannedCode.lowercase()
+        val history = (uiState as? QueueHistoryUiState.Success)?.data.orEmpty()
+        val matchedHistory = history.firstOrNull { item ->
+            val transaction = transaksiMap.values.firstOrNull { tx ->
+                tx.transactionId.trim().trimStart('#').equals(normalizedCode, ignoreCase = true) ||
+                    tx.transactionNumber.trim().trimStart('#').equals(normalizedCode, ignoreCase = true)
+            }
+            item.transactionId.trim().trimStart('#').equals(normalizedCode, ignoreCase = true) ||
+                transaction?.transactionId?.trim()?.trimStart('#')
+                    ?.equals(item.transactionId.trim().trimStart('#'), ignoreCase = true) == true
+        }
+
+        if (matchedHistory != null) {
+            viewModel.onSearchQueryChanged(matchedHistory.transactionId)
+        } else {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar("Kode tidak dikenali sebagai antrean transaksi. Scan QR/barcode dari struk transaksi.")
+            }
+        }
     }
 
     // Filter items based on searchQuery & selectedFilter

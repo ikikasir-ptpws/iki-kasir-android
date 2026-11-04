@@ -147,11 +147,11 @@ class TambahProdukViewModel @Inject constructor(
         _formState.update { it.copy(isVisibleInCashier = isVisible) }
     }
 
-    fun cetakBarcode(productName: String, barcode: String) {
+    fun cetakBarcode(productName: String, barcode: String, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             try {
                 printProductBarcodeUseCase(productName, barcode)
-                GlobalCrudResultDialog.success("Barcode dan QR berhasil dikirim ke printer.")
+                onSuccess()
             } catch (error: Exception) {
                 GlobalCrudResultDialog.failure(
                     error.message ?: "Gagal mencetak barcode. Periksa koneksi printer Bluetooth."

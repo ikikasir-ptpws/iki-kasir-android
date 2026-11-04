@@ -99,6 +99,7 @@ fun TambahProdukScreen(
     val horizontalScreenPadding = if (isSmallScreen) 12.dp else 16.dp
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var showPrintDialog by remember { mutableStateOf(false) }
+    var showPrintSuccessDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     var isUploadingImage by remember { mutableStateOf(false) }
     var uploadProgress by remember { mutableStateOf<Float?>(null) }
@@ -809,13 +810,49 @@ fun TambahProdukScreen(
             onPrint = {
                 viewModel.cetakBarcode(
                     formState.name.ifBlank { "Produk" },
-                    formState.barcode
+                    formState.barcode,
+                    onSuccess = {
+                        showPrintDialog = false
+                        showPrintSuccessDialog = true
+                    }
                 )
-                showPrintDialog = false
             },
             onSavePdf = { bmp ->
                 saveBarcodeAsPdf(context, formState.barcode, formState.name.ifBlank { "Produk" }, bmp)
             }
+        )
+    }
+
+    if (showPrintSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { showPrintSuccessDialog = false },
+            title = {
+                Text(
+                    text = "Cetak Berhasil",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF059669)
+                )
+            },
+            text = {
+                Text(
+                    text = "Barcode dan QR code berhasil dikirim ke printer.",
+                    fontFamily = interfamily,
+                    fontSize = 14.sp,
+                    color = Color(0xFF475569)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showPrintSuccessDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Tutup", fontFamily = interfamily, color = Color.White)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
         )
     }
 

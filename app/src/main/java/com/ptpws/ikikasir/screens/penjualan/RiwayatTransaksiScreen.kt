@@ -51,6 +51,7 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 import androidx.activity.compose.BackHandler
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
@@ -69,6 +70,7 @@ fun RiwayatTransaksiScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(initialFilter, startDate, endDate) {
         if (!initialFilter.isNullOrBlank()) {
@@ -281,19 +283,22 @@ fun RiwayatTransaksiScreen(
     // Handler saat barcode / QR transaksi berhasil discan: langsung arahkan ke detail transaksi
     val handleScannedTransaction: (String) -> Unit = { rawCode ->
         val clean = rawCode.trim()
-        val cleanNoHash = clean.removePrefix("#").trim()
+        val cleanNoHash = clean.trimStart('#').trim()
+        val normalizedCode = cleanNoHash.lowercase()
 
         val matched = state.transaksiList.firstOrNull { tx ->
-            tx.transactionId.equals(clean, ignoreCase = true) ||
-            tx.transactionId.equals(cleanNoHash, ignoreCase = true) ||
-            tx.transactionNumber.equals(clean, ignoreCase = true) ||
-            tx.transactionNumber.equals(cleanNoHash, ignoreCase = true) ||
-            tx.transactionNumber.removePrefix("#").equals(cleanNoHash, ignoreCase = true)
+            tx.transactionId.trim().trimStart('#').equals(normalizedCode, ignoreCase = true) ||
+            tx.transactionNumber.trim().trimStart('#').equals(normalizedCode, ignoreCase = true)
         }
 
-        val targetTxId = matched?.transactionId ?: clean
-        viewModel.onSearchQueryChange(matched?.transactionNumber ?: clean)
-        onDetailTransaksi(targetTxId)
+        if (matched != null) {
+            viewModel.onSearchQueryChange(matched.transactionNumber)
+            onDetailTransaksi(matched.transactionId)
+        } else {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar("Kode tidak dikenali sebagai transaksi. Scan QR/barcode dari struk transaksi.")
+            }
+        }
     }
 
     val triggerBarcodeScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { contents ->
