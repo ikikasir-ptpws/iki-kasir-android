@@ -592,6 +592,8 @@ fun DetailTransaksiScreen(
                     val formattedPercent = tx.getFormattedPercentage()
                     val effectivePpn = tx.getEffectivePpnAmount()
                     val totalPembayaran = if (tx.total > 0) tx.total else (totalSubtotal - tx.discount + (if (isPpnEksklusif) effectivePpn else 0.0)).coerceAtLeast(0.0)
+                    val isPembayaranTunai = tx.paymentMethod.contains("tunai", ignoreCase = true) ||
+                            tx.paymentMethod.contains("cash", ignoreCase = true)
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -647,6 +649,19 @@ fun DetailTransaksiScreen(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 20.sp,
                                     color = Color(0xFF4F46E5)
+                                )
+                            }
+
+                            if (isPembayaranTunai) {
+                                RingkasanBaris(
+                                    label = "Uang Diterima",
+                                    nilai = "Rp ${formatRupiah(tx.paymentAmount)}",
+                                    nilaiColor = Color(0xFF334155)
+                                )
+                                RingkasanBaris(
+                                    label = "Kembalian",
+                                    nilai = "Rp ${formatRupiah(tx.change)}",
+                                    nilaiColor = Color(0xFF059669)
                                 )
                             }
 
