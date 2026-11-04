@@ -70,7 +70,7 @@ private fun formatRupiah(amount: Double): String {
 fun TambahPromoScreen(
     promoId: String? = null,
     onBack: () -> Unit = {},
-    onSimpanPromo: () -> Unit = {},
+    onSimpanPromo: (String) -> Unit = {},
     viewModel: TambahPromoViewModel = hiltViewModel()
 ) {
     var isBackProcessing by remember { mutableStateOf(false) }
@@ -92,7 +92,7 @@ fun TambahPromoScreen(
 
     LaunchedEffect(state.isSavedSuccess) {
         if (state.isSavedSuccess) {
-            onSimpanPromo()
+            onSimpanPromo(state.userMessage ?: "Promo berhasil disimpan!")
         }
     }
 

@@ -26,11 +26,18 @@ class TambahPromoActivity : BaseActivity() {
                     TambahPromoScreen(
                         promoId = promoId,
                         onBack = { finish() },
-                        onSimpanPromo = { finish() }
+                        onSimpanPromo = { message ->
+                            setResult(RESULT_OK, intent.putExtra(EXTRA_PROMO_SUCCESS_MESSAGE, message))
+                            finish()
+                        }
                     )
-                    GlobalCrudResultDialogHost()
+                    GlobalCrudResultDialogHost(showSuccess = false)
                 }
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_PROMO_SUCCESS_MESSAGE = "PROMO_SUCCESS_MESSAGE"
     }
 }

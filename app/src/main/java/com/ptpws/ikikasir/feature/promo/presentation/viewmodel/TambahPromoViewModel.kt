@@ -251,10 +251,6 @@ class TambahPromoViewModel @Inject constructor(
             flow.collect { result ->
                 result.onSuccess {
                     val msg = if (isEdit) "Promo berhasil diperbarui!" else "Promo berhasil disimpan!"
-                    GlobalCrudResultDialog.success(
-                        if (isEdit) "Promo \"${form.namaPromo}\" berhasil diperbarui."
-                        else "Promo \"${form.namaPromo}\" berhasil ditambahkan."
-                    )
                     val actionName = if (isEdit) "UPDATE" else "CREATE"
                     val actionTitle = if (isEdit) "Perubahan Promo: ${form.namaPromo}" else "Promo Baru: ${form.namaPromo}"
                     logActivityUseCase(

@@ -44,6 +44,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import com.ptpws.ikikasir.screens.produk.DaftarProdukScreen
 import com.ptpws.ikikasir.screens.produk.DetailProdukScreen
 import com.ptpws.ikikasir.commond.interfamily
@@ -342,16 +344,25 @@ fun AppNavHost() {
             }
             composable(AppScreen.Promo.route) {
                 val context = LocalContext.current
+                val promoActivityLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.StartActivityForResult()
+                ) { result ->
+                    if (result.resultCode == android.app.Activity.RESULT_OK) {
+                        result.data
+                            ?.getStringExtra(TambahPromoActivity.EXTRA_PROMO_SUCCESS_MESSAGE)
+                            ?.let(com.ptpws.ikikasir.commond.GlobalCrudResultDialog::success)
+                    }
+                }
                 ManajemenPromoScreen(
                     onBack = { navController.popBackStackSafely(AppScreen.Promo.route) },
                     onTambahPromo = {
-                        context.startActivity(Intent(context, TambahPromoActivity::class.java))
+                        promoActivityLauncher.launch(Intent(context, TambahPromoActivity::class.java))
                     },
                     onEditPromo = { promoId ->
                         val intent = Intent(context, TambahPromoActivity::class.java).apply {
                             putExtra("PROMO_ID", promoId)
                         }
-                        context.startActivity(intent)
+                        promoActivityLauncher.launch(intent)
                     }
                 )
             }
