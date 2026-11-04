@@ -382,7 +382,7 @@ fun ManajemenPromoScreen(
                                 val nilaidiskonText = if (promo.discountType == "%") {
                                     "Diskon ${promo.discountValue.toInt()}%"
                                 } else {
-                                    "Potongan Rp ${promo.discountValue.toInt()}"
+                                    "Potongan ${formatRupiah(promo.discountValue)}"
                                 }
                                 Text(
                                     text = nilaidiskonText,
@@ -646,7 +646,11 @@ fun DetailPromoDialog(
                             fontFamily = interfamily,
                             color = Color(0xFF64748B)
                         )
-                        val diskonText = if (promo.discountType == "%") "${promo.discountValue.toInt()}%" else "Rp ${promo.discountValue.toInt()}"
+                        val diskonText = if (promo.discountType == "%") {
+                            "${promo.discountValue.toInt()}%"
+                        } else {
+                            formatRupiah(promo.discountValue)
+                        }
                         Text(
                             text = diskonText,
                             fontSize = 14.sp,
