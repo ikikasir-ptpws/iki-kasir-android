@@ -10,11 +10,12 @@ object FirebaseStorageHelper {
     suspend fun uploadImageToStorage(
         fileUri: Uri,
         folderName: String = "financial_record_payment_proofs",
+        fileExtension: String = "jpg",
         onProgress: ((Float, String) -> Unit)? = null
     ): String {
         onProgress?.invoke(0.2f, "Mengunggah gambar ke Firebase Storage...")
         
-        val filename = "${UUID.randomUUID()}_${System.currentTimeMillis()}.jpg"
+        val filename = "${UUID.randomUUID()}_${System.currentTimeMillis()}.$fileExtension"
         val storageRef = FirebaseStorage.getInstance().reference.child("$folderName/$filename")
         
         val uploadTask = storageRef.putFile(fileUri)

@@ -51,6 +51,7 @@ class StrukPrintDocumentAdapter(
         val notaSetting = com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences(context).getSetting()
         var calculatedHeight = 620 + (transaksi.items.size * 45)
         if (transaksi.notes.isNotBlank()) calculatedHeight += 50
+        if (notaSetting.storePhone.isNotBlank()) calculatedHeight += 14
         if (notaSetting.wifiName.isNotBlank() || notaSetting.wifiPassword.isNotBlank()) calculatedHeight += 40
         if (notaSetting.logoUrl.isNotBlank()) calculatedHeight += 85
 

@@ -16,6 +16,7 @@ class NotaSettingPreferences(context: Context) {
     fun getSetting(): NotaSetting = NotaSetting(
         storeName    = prefs.getString(KEY_STORE_NAME,    "") ?: "",
         storeAddress = prefs.getString(KEY_STORE_ADDRESS, "") ?: "",
+        storePhone   = prefs.getString(KEY_STORE_PHONE,   "") ?: "",
         wifiName     = prefs.getString(KEY_WIFI_NAME,     "") ?: "",
         wifiPassword = prefs.getString(KEY_WIFI_PASSWORD, "") ?: "",
         paperWidth   = prefs.getString(KEY_PAPER_WIDTH,  "58mm") ?: "58mm",
@@ -26,6 +27,7 @@ class NotaSettingPreferences(context: Context) {
         prefs.edit()
             .putString(KEY_STORE_NAME,    setting.storeName)
             .putString(KEY_STORE_ADDRESS, setting.storeAddress)
+            .putString(KEY_STORE_PHONE,   setting.storePhone)
             .putString(KEY_WIFI_NAME,     setting.wifiName)
             .putString(KEY_WIFI_PASSWORD, setting.wifiPassword)
             .putString(KEY_PAPER_WIDTH,   setting.paperWidth)
@@ -37,6 +39,7 @@ class NotaSettingPreferences(context: Context) {
         private const val PREFS_NAME        = "ikikasir_nota_setting"
         private const val KEY_STORE_NAME     = "store_name"
         private const val KEY_STORE_ADDRESS  = "store_address"
+        private const val KEY_STORE_PHONE    = "store_phone"
         private const val KEY_WIFI_NAME      = "wifi_name"
         private const val KEY_WIFI_PASSWORD  = "wifi_password"
         private const val KEY_PAPER_WIDTH    = "paper_width"

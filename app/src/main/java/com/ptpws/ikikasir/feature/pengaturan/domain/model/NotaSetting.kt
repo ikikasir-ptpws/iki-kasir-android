@@ -11,6 +11,7 @@ data class NotaSetting(
     val id: String = "default_nota_setting",
     val storeName: String = "",
     val storeAddress: String = "",
+    val storePhone: String = "",
     val wifiName: String = "",
     val wifiPassword: String = "",
     val paperWidth: String = "58mm", // "58mm" or "80mm"
@@ -21,6 +22,7 @@ data class NotaSetting(
     // Backward compatibility helper properties if referenced elsewhere
     val namaToko: String get() = storeName
     val alamatToko: String get() = storeAddress
+    val nomorHpToko: String get() = storePhone
     val namaWifi: String get() = wifiName
     val kataSandiWifi: String get() = wifiPassword
     val lebarKertas: String get() = paperWidth

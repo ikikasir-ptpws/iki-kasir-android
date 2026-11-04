@@ -46,7 +46,7 @@ import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.commond.ImageUploadType
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.commond.rememberGlobalImagePicker
-import com.ptpws.ikikasir.core.util.ImageCompressorHelper
+import com.ptpws.ikikasir.core.util.FirebaseStorageHelper
 import kotlinx.coroutines.delay
 import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting
@@ -64,7 +64,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import kotlinx.coroutines.launch
@@ -505,13 +504,14 @@ fun ProfilScreen(
     if (showStrukDialog) {
         val currentSetting = if (liveNotaSetting.storeName.isNotBlank() ||
             liveNotaSetting.storeAddress.isNotBlank() ||
+            liveNotaSetting.storePhone.isNotBlank() ||
             liveNotaSetting.logoUrl.isNotBlank() ||
             liveNotaSetting.wifiName.isNotBlank()
         ) {
             liveNotaSetting
         } else {
             val pref = notaPrefs.getSetting()
-            if (pref.storeName.isNotBlank() || pref.storeAddress.isNotBlank() || pref.logoUrl.isNotBlank() || pref.wifiName.isNotBlank()) {
+            if (pref.storeName.isNotBlank() || pref.storeAddress.isNotBlank() || pref.storePhone.isNotBlank() || pref.logoUrl.isNotBlank() || pref.wifiName.isNotBlank()) {
                 pref
             } else {
                 liveNotaSetting
@@ -1251,6 +1251,7 @@ private fun NotaSettingDialog(
 
     var namaToko by remember(initialSetting) { mutableStateOf(initialSetting.storeName) }
     var alamatToko by remember(initialSetting) { mutableStateOf(initialSetting.storeAddress) }
+    var nomorHpToko by remember(initialSetting) { mutableStateOf(initialSetting.storePhone) }
     var namaWifi by remember(initialSetting) { mutableStateOf(initialSetting.wifiName) }
     var kataSandiWifi by remember(initialSetting) { mutableStateOf(initialSetting.wifiPassword) }
     var ukuranKertas by remember(initialSetting) { mutableStateOf(if (initialSetting.paperWidth.isNotBlank()) initialSetting.paperWidth else "58mm") }
@@ -1259,36 +1260,46 @@ private fun NotaSettingDialog(
     val logoPickerState = rememberGlobalImagePicker(
         onImageProcessed = { permanentUri ->
             coroutineScope.launch {
-                GlobalUploadProgress.showLogoUpload(progress = 0.7f, message = "Menyesuaikan format logo...")
+                GlobalUploadProgress.showLogoUpload(progress = 0.15f, message = "Menyesuaikan format logo...")
+                var resizedLogoFile: File? = null
                 try {
                     val compressedBitmap = BitmapFactory.decodeFile(permanentUri.path)
-                    if (compressedBitmap != null) {
-                        val maxDimension = 800
-                        val scale = minOf(maxDimension.toFloat() / compressedBitmap.width, maxDimension.toFloat() / compressedBitmap.height, 1f)
-                        val targetWidth = (compressedBitmap.width * scale).toInt().coerceAtLeast(1)
-                        val targetHeight = (compressedBitmap.height * scale).toInt().coerceAtLeast(1)
-                        val scaledBitmap = if (scale < 1f) {
-                            Bitmap.createScaledBitmap(compressedBitmap, targetWidth, targetHeight, true)
-                        } else {
-                            compressedBitmap
-                        }
-
-                        GlobalUploadProgress.updateProgress(0.85f, "Menyimpan logo nota...")
-                        val baos = ByteArrayOutputStream()
-                        scaledBitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
-                        val imageBytes = baos.toByteArray()
-
-                        val base64String = "data:image/png;base64," + android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP)
-                        logoUrl = base64String
-
-                        GlobalUploadProgress.updateProgress(1.0f, "Logo berhasil dipasang!")
-                        delay(200)
+                        ?: throw IllegalStateException("Gagal memproses gambar logo")
+                    val maxDimension = 800
+                    val scale = minOf(
+                        maxDimension.toFloat() / compressedBitmap.width,
+                        maxDimension.toFloat() / compressedBitmap.height,
+                        1f
+                    )
+                    val targetWidth = (compressedBitmap.width * scale).toInt().coerceAtLeast(1)
+                    val targetHeight = (compressedBitmap.height * scale).toInt().coerceAtLeast(1)
+                    val scaledBitmap = if (scale < 1f) {
+                        Bitmap.createScaledBitmap(compressedBitmap, targetWidth, targetHeight, true)
                     } else {
-                        Toast.makeText(context, "Gagal memproses gambar logo", Toast.LENGTH_SHORT).show()
+                        compressedBitmap
                     }
+
+                    GlobalUploadProgress.updateProgress(0.25f, "Mengunggah logo ke penyimpanan...")
+                    resizedLogoFile = File(context.cacheDir, "store_logo_${System.currentTimeMillis()}.png")
+                    FileOutputStream(resizedLogoFile).use { output ->
+                        check(scaledBitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) {
+                            "Gagal menyimpan gambar logo"
+                        }
+                    }
+                    logoUrl = FirebaseStorageHelper.uploadImageToStorage(
+                        fileUri = Uri.fromFile(resizedLogoFile),
+                        folderName = "store_logos",
+                        fileExtension = "png",
+                        onProgress = { progress, message ->
+                            GlobalUploadProgress.updateProgress(progress, message)
+                        }
+                    )
+                    GlobalUploadProgress.updateProgress(1f, "Logo berhasil diunggah!")
+                    delay(200)
                 } catch (e: Exception) {
                     Toast.makeText(context, "Terjadi kesalahan saat memproses logo: ${e.message}", Toast.LENGTH_SHORT).show()
                 } finally {
+                    resizedLogoFile?.delete()
                     GlobalUploadProgress.dismiss()
                 }
             }
@@ -1504,6 +1515,14 @@ private fun NotaSettingDialog(
                 )
 
                 GlobalTextField(
+                    value = nomorHpToko,
+                    onValueChange = { nomorHpToko = it },
+                    label = "Nomor HP Toko",
+                    placeholder = "Masukkan nomor HP toko",
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                )
+
+                GlobalTextField(
                     value = namaWifi,
                     onValueChange = { namaWifi = it },
                     label = "Nama WiFi",
@@ -1574,6 +1593,7 @@ private fun NotaSettingDialog(
                             val updatedSetting = initialSetting.copy(
                                 storeName    = namaToko,
                                 storeAddress = alamatToko,
+                                storePhone   = nomorHpToko,
                                 wifiName     = namaWifi,
                                 wifiPassword = kataSandiWifi,
                                 paperWidth   = ukuranKertas,

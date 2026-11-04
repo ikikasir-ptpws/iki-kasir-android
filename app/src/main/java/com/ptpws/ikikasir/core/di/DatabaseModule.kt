@@ -2,6 +2,8 @@ package com.ptpws.ikikasir.core.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ptpws.ikikasir.core.database.AppDatabase
 import com.ptpws.ikikasir.feature.antrean.data.local.dao.AntreanDao
 import com.ptpws.ikikasir.feature.antrean.data.local.dao.QueueHistoryDao
@@ -18,6 +20,14 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+private val MIGRATION_37_38 = object : Migration(37, 38) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            "ALTER TABLE nota_settings ADD COLUMN storePhone TEXT NOT NULL DEFAULT ''"
+        )
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
@@ -32,6 +42,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
+            .addMigrations(MIGRATION_37_38)
             .fallbackToDestructiveMigration()
             .build()
     }

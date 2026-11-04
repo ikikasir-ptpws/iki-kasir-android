@@ -138,6 +138,7 @@ class PrintStrukUseCase {
         command(0x1D, 0x21, 0x00)
         command(0x1B, 0x45, 0x00)
         if (notaSetting.storeAddress.isNotBlank()) centered(notaSetting.storeAddress)
+        if (notaSetting.storePhone.isNotBlank()) centered("Telp: ${notaSetting.storePhone}")
         command(0x1B, 0x61, 0x00)
         feedLine(line)
 

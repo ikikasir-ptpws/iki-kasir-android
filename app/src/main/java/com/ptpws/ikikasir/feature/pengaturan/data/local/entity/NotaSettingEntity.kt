@@ -18,6 +18,9 @@ data class NotaSettingEntity(
     @ColumnInfo(name = "storeAddress")
     val storeAddress: String = "",
 
+    @ColumnInfo(name = "storePhone")
+    val storePhone: String = "",
+
     @ColumnInfo(name = "wifiName")
     val wifiName: String = "",
 
@@ -41,6 +44,7 @@ data class NotaSettingEntity(
             id = id,
             storeName = storeName,
             storeAddress = storeAddress,
+            storePhone = storePhone,
             wifiName = wifiName,
             wifiPassword = wifiPassword,
             paperWidth = paperWidth,
@@ -56,6 +60,7 @@ fun NotaSetting.toEntity(isSynced: Boolean = this.isSynced): NotaSettingEntity {
         id = id,
         storeName = storeName,
         storeAddress = storeAddress,
+        storePhone = storePhone,
         wifiName = wifiName,
         wifiPassword = wifiPassword,
         paperWidth = paperWidth,

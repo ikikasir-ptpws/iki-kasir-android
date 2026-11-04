@@ -39,6 +39,7 @@ object StrukPdfHelper {
         if (isPpnAktif) calculatedHeight += 20
         if (transaksi.discount > 0) calculatedHeight += 20
         if (transaksi.notes.isNotBlank()) calculatedHeight += 50
+        if (notaSetting.storePhone.isNotBlank()) calculatedHeight += 14
         if (notaSetting.wifiName.isNotBlank() || notaSetting.wifiPassword.isNotBlank()) calculatedHeight += 40
         if (notaSetting.logoUrl.isNotBlank()) calculatedHeight += 85
 
@@ -137,6 +138,14 @@ object StrukPdfHelper {
             paint.textSize = 10f
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             canvas.drawText(notaSetting.storeAddress, width / 2f, y, paint)
+            y += 14f
+        }
+
+        if (notaSetting.storePhone.isNotBlank()) {
+            paint.color = Color.parseColor("#64748B")
+            paint.textSize = 10f
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            canvas.drawText("Telp: ${notaSetting.storePhone}", width / 2f, y, paint)
             y += 14f
         }
 

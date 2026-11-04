@@ -14,6 +14,9 @@ data class NotaSettingDto(
     @get:PropertyName("storeAddress") @set:PropertyName("storeAddress")
     var storeAddress: String = "",
 
+    @get:PropertyName("storePhone") @set:PropertyName("storePhone")
+    var storePhone: String = "",
+
     @get:PropertyName("wifiName") @set:PropertyName("wifiName")
     var wifiName: String = "",
 
@@ -34,6 +37,7 @@ data class NotaSettingDto(
             id = id.ifBlank { "default_nota_setting" },
             storeName = storeName,
             storeAddress = storeAddress,
+            storePhone = storePhone,
             wifiName = wifiName,
             wifiPassword = wifiPassword,
             paperWidth = paperWidth,
@@ -49,6 +53,7 @@ fun NotaSetting.toDto(): NotaSettingDto {
         id = id,
         storeName = storeName,
         storeAddress = storeAddress,
+        storePhone = storePhone,
         wifiName = wifiName,
         wifiPassword = wifiPassword,
         paperWidth = paperWidth,
