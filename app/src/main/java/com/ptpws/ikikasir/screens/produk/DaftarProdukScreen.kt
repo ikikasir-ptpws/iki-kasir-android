@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import com.ptpws.ikikasir.commond.GlobalTextField
+import com.ptpws.ikikasir.commond.BarcodeMismatchDialog
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -76,6 +77,7 @@ fun DaftarProdukScreen(
     val state by viewModel.state.collectAsState()
     val kategoriState by kategoriViewModel.state.collectAsState()
     val context = LocalContext.current
+    var showInvalidScanDialog by remember { mutableStateOf(false) }
 
     BackHandler {
         if (!navController.popBackStackSafely()) {
@@ -196,24 +198,20 @@ fun DaftarProdukScreen(
                 putExtra("produkId", matched.id)
             }
             context.startActivity(intent)
-        } else if (state.produkList.isEmpty()) {
-            // Jika daftar produk di memori belum terload, coba buka via ID/barcode langsung
-            val intent = Intent(context, DetailProdukActivity::class.java).apply {
-                putExtra("produkId", clean)
-            }
-            context.startActivity(intent)
         } else {
-            viewModel.onSearchQueryChange(clean)
-            Toast.makeText(
-                context,
-                "Produk dengan barcode \"$clean\" tidak ditemukan",
-                Toast.LENGTH_LONG
-            ).show()
+            showInvalidScanDialog = true
         }
     }
 
     val triggerScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { code ->
         handleScannedBarcode(code)
+    }
+
+    if (showInvalidScanDialog) {
+        BarcodeMismatchDialog(
+            message = "Kode yang dipindai bukan barcode atau QR produk yang terdaftar.",
+            onDismiss = { showInvalidScanDialog = false }
+        )
     }
 
     Scaffold(

@@ -40,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
+import com.ptpws.ikikasir.commond.BarcodeMismatchDialog
 import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.ProdukCardShimmer
 import com.ptpws.ikikasir.commond.interfamily
@@ -664,6 +665,7 @@ fun PilihProdukPromoDialog(
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
+    var showInvalidScanDialog by remember { mutableStateOf(false) }
     val tempSelected = remember { mutableStateListOf<Produk>().apply { addAll(initialSelected) } }
     var isDialogLoading by remember { mutableStateOf(true) }
     val selectableProducts = remember(availableProducts, kategoriList) {
@@ -718,7 +720,6 @@ fun PilihProdukPromoDialog(
     val handleScannedBarcode: (String) -> Unit = { rawCode ->
         val clean = rawCode.trim()
         if (clean.isNotBlank()) {
-            searchQuery = clean
             val matched = selectableProducts.firstOrNull { item ->
                 item.barcode.equals(clean, ignoreCase = true) ||
                 item.id.equals(clean, ignoreCase = true) ||
@@ -726,6 +727,7 @@ fun PilihProdukPromoDialog(
             }
 
             if (matched != null) {
+                searchQuery = clean
                 if (tempSelected.none { it.id == matched.id }) {
                     tempSelected.add(matched)
                     Toast.makeText(context, "\"${matched.name}\" berhasil dipilih ke promo", Toast.LENGTH_SHORT).show()
@@ -733,13 +735,20 @@ fun PilihProdukPromoDialog(
                     Toast.makeText(context, "\"${matched.name}\" sudah dipilih sebelumnya", Toast.LENGTH_SHORT).show()
                 }
             } else {
-                Toast.makeText(context, "Produk dengan barcode \"$clean\" tidak ditemukan", Toast.LENGTH_SHORT).show()
+                showInvalidScanDialog = true
             }
         }
     }
 
     val triggerBarcodeScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { code ->
         handleScannedBarcode(code)
+    }
+
+    if (showInvalidScanDialog) {
+        BarcodeMismatchDialog(
+            message = "Kode yang dipindai bukan barcode atau QR produk yang dapat dipilih untuk promo.",
+            onDismiss = { showInvalidScanDialog = false }
+        )
     }
 
     val isAllSelected = remember(tempSelected.size, filteredList, selectableProducts, searchQuery) {
