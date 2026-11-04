@@ -590,7 +590,10 @@ private fun AntreanCard(
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val rupiahFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+                    val rupiahFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
+                        maximumFractionDigits = 0
+                        minimumFractionDigits = 0
+                    }
 
                     if (transaksi != null && transaksi.items.isNotEmpty()) {
                         Text(
