@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,10 +56,10 @@ fun WaitingListScreen(
         navController.popBackStackSafely(expectedRoute = AppScreen.WaitingList.route)
     }
 
-    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val transaksiMap by viewModel.transaksiMap.collectAsState()
+    val isBulkProcessing by viewModel.isBulkProcessing.collectAsState()
 
     val filteredList = when (val state = uiState) {
         is AntreanUiState.Success -> state.data.filter { antrean ->
@@ -104,6 +102,10 @@ fun WaitingListScreen(
     val displayedWaitingList = remember(filteredList, displayedCount) {
         filteredList.take(displayedCount)
     }
+    var selectedIds by remember(searchQuery) { mutableStateOf(emptySet<String>()) }
+    val selectedAntreanIds = filteredList.filter { it.id in selectedIds }.map { it.id }
+    val selectedCount = selectedAntreanIds.size
+    val allFilteredSelected = filteredList.isNotEmpty() && selectedCount == filteredList.size
 
     Scaffold(
         containerColor = Color(0xFFF0F4FF),
@@ -141,89 +143,140 @@ fun WaitingListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // ── Search bar + QR button ──────────────────────────────
-            Row(
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
+                BasicTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChanged(it) },
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        color = Color.Black,
+                        fontSize = 13.sp,
+                        fontFamily = interfamily
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    decorationBox = { innerTextField ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Cari",
+                                tint = Color(0xFF9CA3AF),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier.weight(1f),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (searchQuery.isEmpty()) {
+                                    Text(
+                                        text = "Cari antrean, nama, atau invoice...",
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF9CA3AF),
+                                        fontFamily = interfamily,
+                                        modifier = Modifier.align(Alignment.CenterStart)
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        }
+                    }
+                )
+            }
+
+            if (uiState is AntreanUiState.Success && filteredList.isNotEmpty()) {
                 Card(
                     modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp),
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
-                    BasicTextField(
-                        value = searchQuery,
-                        onValueChange = { viewModel.onSearchQueryChanged(it) },
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            color = Color.Black,
-                            fontSize = 13.sp,
-                            fontFamily = interfamily
-                        ),
-                        modifier = Modifier.fillMaxSize(),
-                        decorationBox = { innerTextField ->
+                    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = allFilteredSelected,
+                                onCheckedChange = { checked ->
+                                    selectedIds = if (checked) {
+                                        selectedIds + filteredList.map { it.id }
+                                    } else {
+                                        selectedIds - filteredList.map { it.id }.toSet()
+                                    }
+                                },
+                                enabled = !isBulkProcessing,
+                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF3D5AF1))
+                            )
+                            Text(
+                                text = "Pilih semua antrean",
+                                modifier = Modifier.weight(1f),
+                                fontFamily = interfamily,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF111827)
+                            )
+                            Text(
+                                text = if (isBulkProcessing) "Memproses..." else "$selectedCount dipilih",
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                color = Color(0xFF6B7280)
+                            )
+                        }
+                        if (selectedCount > 0) {
+                            HorizontalDivider(color = Color(0xFFF3F4F6))
                             Row(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = "Cari",
-                                    tint = Color(0xFF9CA3AF),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Box(
+                                Button(
+                                    onClick = {
+                                        viewModel.selesaikanBanyak(selectedAntreanIds)
+                                        selectedIds = emptySet()
+                                    },
+                                    enabled = !isBulkProcessing,
                                     modifier = Modifier.weight(1f),
-                                    contentAlignment = Alignment.CenterStart
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF15803D)),
+                                    shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp)
                                 ) {
-                                    if (searchQuery.isEmpty()) {
-                                        Text(
-                                            text = "Cari antrean, nama, atau invoice...",
-                                            fontSize = 13.sp,
-                                            color = Color(0xFF9CA3AF),
-                                            fontFamily = interfamily,
-                                            modifier = Modifier.align(Alignment.CenterStart)
-                                        )
-                                    }
-                                    innerTextField()
+                                    Text("Selesaikan ($selectedCount)", fontSize = 12.sp, fontFamily = interfamily)
+                                }
+                                Button(
+                                    onClick = {
+                                        viewModel.batalkanBanyak(selectedAntreanIds)
+                                        selectedIds = emptySet()
+                                    },
+                                    enabled = !isBulkProcessing,
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                                    shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp)
+                                ) {
+                                    Text("Batalkan ($selectedCount)", fontSize = 12.sp, fontFamily = interfamily)
                                 }
                             }
                         }
-                    )
-                }
-
-                Card(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clickable { /* QR Scan action */ },
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan QR",
-                            tint = Color(0xFF3D5AF1),
-                            modifier = Modifier.size(22.dp)
-                        )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
 
             // ── Main Content ────────────────────────────────────────
             Box(
@@ -305,6 +358,15 @@ fun WaitingListScreen(
                                         nomor = globalNumber,
                                         antrean = antrean,
                                         transaksi = matchedTransaksi,
+                                        isSelected = antrean.id in selectedIds,
+                                        selectionEnabled = !isBulkProcessing,
+                                        onSelectionChanged = { selected ->
+                                            selectedIds = if (selected) {
+                                                selectedIds + antrean.id
+                                            } else {
+                                                selectedIds - antrean.id
+                                            }
+                                        },
                                         onSelesai = { viewModel.selesaikan(antrean.id) },
                                         onBatal = { viewModel.batalkan(antrean.id) }
                                     )
@@ -354,10 +416,12 @@ private fun AntreanCard(
     nomor: Int,
     antrean: Antrean,
     transaksi: PenjualanTransaksi?,
+    isSelected: Boolean,
+    selectionEnabled: Boolean,
+    onSelectionChanged: (Boolean) -> Unit,
     onSelesai: () -> Unit,
     onBatal: () -> Unit
 ) {
-    val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -377,6 +441,13 @@ private fun AntreanCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = onSelectionChanged,
+                    enabled = selectionEnabled,
+                    colors = CheckboxDefaults.colors(checkedColor = Color(0xFF3D5AF1))
+                )
+
                 // Queue Sequence Number
                 Box(
                     modifier = Modifier
@@ -446,7 +517,7 @@ private fun AntreanCard(
                             .clip(CircleShape)
                             .background(Color(0xFFDCFCE7))
                             .border(1.dp, Color(0xFF86EFAC), CircleShape)
-                            .clickable { onSelesai() },
+                            .clickable(enabled = selectionEnabled) { onSelesai() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -464,7 +535,7 @@ private fun AntreanCard(
                             .clip(CircleShape)
                             .background(Color(0xFFFEE2E2))
                             .border(1.dp, Color(0xFFFCA5A5), CircleShape)
-                            .clickable { onBatal() },
+                            .clickable(enabled = selectionEnabled) { onBatal() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(

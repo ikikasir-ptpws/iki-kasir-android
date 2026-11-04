@@ -44,6 +44,9 @@ class AntreanViewModel @Inject constructor(
     private val _transaksiMap = MutableStateFlow<Map<String, PenjualanTransaksi>>(emptyMap())
     val transaksiMap: StateFlow<Map<String, PenjualanTransaksi>> = _transaksiMap.asStateFlow()
 
+    private val _isBulkProcessing = MutableStateFlow(false)
+    val isBulkProcessing: StateFlow<Boolean> = _isBulkProcessing.asStateFlow()
+
     init {
         loadAntrean()
         loadTransaksiMap()
@@ -96,72 +99,108 @@ class AntreanViewModel @Inject constructor(
     }
 
     fun selesaikan(id: String) {
-        processAntreanRemoval(id, status = "DONE")
+        processAntreanRemoval(listOf(id), status = "DONE")
     }
 
     fun batalkan(id: String) {
-        processAntreanRemoval(id, status = "CANCELLED")
+        processAntreanRemoval(listOf(id), status = "CANCELLED")
     }
 
-    private fun processAntreanRemoval(id: String, status: String) {
+    fun selesaikanBanyak(ids: List<String>) {
+        processAntreanRemoval(ids, status = "DONE", isBulk = true)
+    }
+
+    fun batalkanBanyak(ids: List<String>) {
+        processAntreanRemoval(ids, status = "CANCELLED", isBulk = true)
+    }
+
+    private fun processAntreanRemoval(ids: List<String>, status: String, isBulk: Boolean = false) {
         viewModelScope.launch {
+            if (isBulk) _isBulkProcessing.value = true
             try {
                 val currentList = (uiState.value as? AntreanUiState.Success)?.data ?: emptyList()
-                val targetItem = currentList.find { it.id == id || it.transactionId == id }
-
-                if (targetItem == null) {
-                    GlobalCrudResultDialog.failure("Antrean tidak ditemukan.")
+                if (ids.isEmpty()) {
+                    GlobalCrudResultDialog.failure("Pilih antrean yang akan diproses.")
                     return@launch
                 }
-                val targetTxId = targetItem.transactionId.ifBlank { targetItem.id }
 
-                // 1. Save to QueueHistory with identical transaction ID & tableNumber
-                val history = QueueHistory(
-                    id = targetTxId,
-                    transactionId = targetTxId,
-                    status = status,
-                    customerName = targetItem.customerName,
-                    tableNumber = targetItem.tableNumber,
-                    queueSequence = targetItem.queueSequence,
-                    completedAt = Timestamp.now(),
-                    createdAt = targetItem.createdAt,
-                    updatedAt = Timestamp.now()
-                )
-                insertQueueHistoryUseCase(history).collect { result -> result.getOrThrow() }
-                Log.d(TAG, "QueueHistory inserted for $targetTxId (sequence #${targetItem.queueSequence}) with status $status")
-
-                // 2. Delete item from active queues (Room DB + Firestore)
-                antreanRepository.deleteAntrean(targetItem.id).collect { result -> result.getOrThrow() }
-                if (targetTxId != targetItem.id) {
-                    antreanRepository.deleteAntrean(targetTxId).collect { result -> result.getOrThrow() }
+                var succeeded = 0
+                var failed = 0
+                val succeededItems = mutableListOf<Antrean>()
+                ids.distinct().forEach { id ->
+                    val targetItem = currentList.find { it.id == id || it.transactionId == id }
+                    if (targetItem == null) {
+                        failed++
+                        Log.w(TAG, "Antrean $id not found while processing $status")
+                    } else {
+                        try {
+                            processAntreanItem(targetItem, status)
+                            succeeded++
+                            succeededItems += targetItem
+                        } catch (e: Exception) {
+                            failed++
+                            Log.e(TAG, "Failed processing antrean ${targetItem.id} ($status): ${e.message}", e)
+                        }
+                    }
                 }
-                Log.d(TAG, "Active antrean $id deleted from queues")
 
-                val isDone = status == "DONE"
-                val actionTitle = if (isDone) "Antrean Selesai: #${targetItem.queueSequence}" else "Antrean Dibatalkan: #${targetItem.queueSequence}"
-                val actionDesc = if (isDone) {
-                    "Pesanan atas nama ${targetItem.customerName} (Meja ${targetItem.tableNumber}) telah diselesaikan."
+                val actionName = if (status == "DONE") "diselesaikan" else "dibatalkan"
+                if (failed == 0) {
+                    val message = if (isBulk) {
+                        "$succeeded antrean berhasil $actionName."
+                    } else {
+                        "Antrean #${succeededItems.first().queueSequence} berhasil $actionName."
+                    }
+                    GlobalCrudResultDialog.success(message)
+                } else if (succeeded == 0) {
+                    GlobalCrudResultDialog.failure(
+                        if (isBulk) "Gagal memproses $failed antrean." else "Antrean tidak ditemukan atau gagal diproses."
+                    )
                 } else {
-                    "Pesanan atas nama ${targetItem.customerName} (Meja ${targetItem.tableNumber}) telah dibatalkan."
+                    GlobalCrudResultDialog.failure(
+                        "$succeeded antrean berhasil $actionName, $failed antrean gagal diproses."
+                    )
                 }
-
-                logActivityUseCase(
-                    title = actionTitle,
-                    description = actionDesc,
-                    category = "TRANSACTION",
-                    action = if (isDone) "UPDATE" else "CANCEL",
-                    isWarning = !isDone
-                )
-                GlobalCrudResultDialog.success(
-                    if (isDone) "Antrean #${targetItem.queueSequence} berhasil diselesaikan."
-                    else "Antrean #${targetItem.queueSequence} berhasil dibatalkan."
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed processing antrean removal ($status): ${e.message}", e)
-                GlobalCrudResultDialog.failure(
-                    e.message ?: if (status == "DONE") "Gagal menyelesaikan antrean." else "Gagal membatalkan antrean."
-                )
+            } finally {
+                if (isBulk) _isBulkProcessing.value = false
             }
         }
+    }
+
+    private suspend fun processAntreanItem(targetItem: Antrean, status: String) {
+        val targetTxId = targetItem.transactionId.ifBlank { targetItem.id }
+        val timestamp = Timestamp.now()
+        val history = QueueHistory(
+            id = targetTxId,
+            transactionId = targetTxId,
+            status = status,
+            customerName = targetItem.customerName,
+            tableNumber = targetItem.tableNumber,
+            queueSequence = targetItem.queueSequence,
+            completedAt = timestamp,
+            createdAt = targetItem.createdAt,
+            updatedAt = timestamp
+        )
+        insertQueueHistoryUseCase(history).collect { result -> result.getOrThrow() }
+        Log.d(TAG, "QueueHistory inserted for $targetTxId (sequence #${targetItem.queueSequence}) with status $status")
+
+        antreanRepository.deleteAntrean(targetItem.id).collect { result -> result.getOrThrow() }
+        if (targetTxId != targetItem.id) {
+            antreanRepository.deleteAntrean(targetTxId).collect { result -> result.getOrThrow() }
+        }
+        Log.d(TAG, "Active antrean ${targetItem.id} deleted from queues")
+
+        val isDone = status == "DONE"
+        logActivityUseCase(
+            title = if (isDone) "Antrean Selesai: #${targetItem.queueSequence}" else "Antrean Dibatalkan: #${targetItem.queueSequence}",
+            description = if (isDone) {
+                "Pesanan atas nama ${targetItem.customerName} (Meja ${targetItem.tableNumber}) telah diselesaikan."
+            } else {
+                "Pesanan atas nama ${targetItem.customerName} (Meja ${targetItem.tableNumber}) telah dibatalkan."
+            },
+            category = "TRANSACTION",
+            action = if (isDone) "UPDATE" else "CANCEL",
+            isWarning = !isDone
+        )
     }
 }
