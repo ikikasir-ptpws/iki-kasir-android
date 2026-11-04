@@ -74,6 +74,19 @@ fun CatatanKeuanganScreen(
     var showDateRangePicker by remember { mutableStateOf(false) }
     var itemToDelete by remember { mutableStateOf<CatatanKeuangan?>(null) }
 
+    val currentEntry = navController.currentBackStackEntry
+    val resultSuccessMessage by currentEntry?.savedStateHandle
+        ?.getStateFlow<String?>("crud_result_success", null)
+        ?.collectAsState() ?: remember { mutableStateOf(null) }
+
+    LaunchedEffect(resultSuccessMessage) {
+        val msg = resultSuccessMessage
+        if (!msg.isNullOrBlank()) {
+            GlobalCrudResultDialog.success(msg)
+            currentEntry?.savedStateHandle?.remove<String>("crud_result_success")
+        }
+    }
+
     // Export Dialog State
     LaunchedEffect(state.exportedFileUri) {
         if (state.exportedFileUri != null) {

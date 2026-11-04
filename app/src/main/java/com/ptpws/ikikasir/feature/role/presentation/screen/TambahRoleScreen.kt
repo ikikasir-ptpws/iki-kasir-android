@@ -113,6 +113,7 @@ fun TambahRoleScreen(
         MenuItemInfo("Riwayat Antrean", "Riwayat Antrean", Icons.Outlined.History),
         MenuItemInfo("Laporan Penjualan", "Laporan Penjualan", Icons.Outlined.Assessment),
         MenuItemInfo("Laporan Keuangan", "Laporan Keuangan", Icons.Outlined.Assessment),
+        MenuItemInfo("Catatan Keuangan", "Catatan Keuangan", Icons.Outlined.Assessment),
         MenuItemInfo("Manajemen Pengguna", "Manajemen Pengguna", Icons.Outlined.Person),
         MenuItemInfo("Audit Log", "Audit Log", Icons.Outlined.FactCheck)
     )

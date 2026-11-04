@@ -637,7 +637,8 @@ fun TambahCatatanKeuanganScreen(
                     onClick = {
                         viewModel.simpanCatatan(
                             onSuccess = { isEdit ->
-                                GlobalCrudResultDialog.success(
+                                navController.previousBackStackEntry?.savedStateHandle?.set(
+                                    "crud_result_success",
                                     if (isEdit) "Catatan keuangan berhasil diperbarui." else "Catatan keuangan berhasil disimpan."
                                 )
                                 handleBack()

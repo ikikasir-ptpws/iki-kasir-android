@@ -70,6 +70,19 @@ fun DetailCatatanKeuanganScreen(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showFullImageDialog by remember { mutableStateOf(false) }
 
+    val currentEntry = navController.currentBackStackEntry
+    val resultSuccessMessage by currentEntry?.savedStateHandle
+        ?.getStateFlow<String?>("crud_result_success", null)
+        ?.collectAsState() ?: remember { mutableStateOf(null) }
+
+    LaunchedEffect(resultSuccessMessage) {
+        val msg = resultSuccessMessage
+        if (!msg.isNullOrBlank()) {
+            GlobalCrudResultDialog.success(msg)
+            currentEntry?.savedStateHandle?.remove<String>("crud_result_success")
+        }
+    }
+
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
         topBar = {

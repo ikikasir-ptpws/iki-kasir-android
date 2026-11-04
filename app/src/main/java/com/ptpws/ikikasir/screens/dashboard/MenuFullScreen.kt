@@ -62,7 +62,8 @@ fun MenuFullScreen(
     val hasPenjualanSection = showKasir || showTransaksi || showAntrean || showRiwayatAntrean || showPromo || showLaporanPenjualan
 
     val showLaporanKeuangan = viewModel.isAllowed("Laporan Keuangan") && matchSearch(query, "laporan keuangan", "laporan", "keuangan")
-    val hasKeuanganSection = showLaporanKeuangan
+    val showCatatanKeuangan = viewModel.isAllowed("Catatan Keuangan") && matchSearch(query, "catatan keuangan", "catatan", "pemasukan", "pengeluaran")
+    val hasKeuanganSection = showLaporanKeuangan || showCatatanKeuangan
 
     val showManajemenPengguna = viewModel.isAllowed("Manajemen Pengguna") && matchSearch(query, "manajemen pengguna", "pengguna", "user")
     val showAuditLog = viewModel.isAllowed("Audit Log") && matchSearch(query, "audit log", "auditlog", "audit", "log")
@@ -148,7 +149,13 @@ fun MenuFullScreen(
 
             if (!sessionState.isLoading && hasKeuanganSection) {
                 item { SectionTitle(title = "Keuangan") }
-                item { KeuanganMenuSection(navController = navController, showLaporan = showLaporanKeuangan) }
+                item {
+                    KeuanganMenuSection(
+                        navController = navController,
+                        showLaporan = showLaporanKeuangan,
+                        showCatatan = showCatatanKeuangan
+                    )
+                }
                 item { Spacer(modifier = Modifier.height(12.dp)) }
             }
 
@@ -171,9 +178,10 @@ fun MenuFullScreen(
 @Composable
 fun KeuanganMenuSection(
     navController: NavController,
-    showLaporan: Boolean = true
+    showLaporan: Boolean = true,
+    showCatatan: Boolean = true
 ) {
-    if (!showLaporan) return
+    if (!showLaporan && !showCatatan) return
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
     val sectionHorizontalPadding = if (isSmallScreen) 14.dp else 20.dp
@@ -186,19 +194,23 @@ fun KeuanganMenuSection(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         maxItemsInEachRow = 4
     ) {
-        MenuIconItem(
-            iconRes = R.drawable.laporankeuangan,
-            label = "Laporan\nKeuangan",
-            bgColor = Color(0xFFFFF0F6),
-            onClick = { navController.navigate(AppScreen.LaporanKeuangan.route) }
-        )
-        MenuIconItem(
-            iconVector = Icons.Outlined.Description,
-            iconTint = Color(0xFF0D9488),
-            label = "Catatan\nKeuangan",
-            bgColor = Color(0xFFECFDF5),
-            onClick = { navController.navigate(AppScreen.CatatanKeuangan.route) }
-        )
+        if (showLaporan) {
+            MenuIconItem(
+                iconRes = R.drawable.laporankeuangan,
+                label = "Laporan\nKeuangan",
+                bgColor = Color(0xFFFFF0F6),
+                onClick = { navController.navigate(AppScreen.LaporanKeuangan.route) }
+            )
+        }
+        if (showCatatan) {
+            MenuIconItem(
+                iconVector = Icons.Outlined.Description,
+                iconTint = Color(0xFF0D9488),
+                label = "Catatan\nKeuangan",
+                bgColor = Color(0xFFECFDF5),
+                onClick = { navController.navigate(AppScreen.CatatanKeuangan.route) }
+            )
+        }
     }
 }
 
