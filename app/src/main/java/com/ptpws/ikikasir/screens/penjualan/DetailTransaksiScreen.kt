@@ -84,38 +84,40 @@ fun DetailTransaksiScreen(
     val printStrukUseCase = remember { PrintStrukUseCase() }
     val generateStrukPdfUseCase = remember { GenerateStrukPdfUseCase() }
 
-    val onSavePdf = {
+    val onSavePdf: () -> Unit = {
         val transaksi = state.transaksi
         if (transaksi != null) {
-            try {
-                val pdfFile = generateStrukPdfUseCase(context, transaksi)
-                if (pdfFile != null && pdfFile.exists()) {
-                    Toast.makeText(
-                        context,
-                        "PDF Struk berhasil disimpan di Downloads",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    try {
-                        val uri = FileProvider.getUriForFile(
+            printScope.launch {
+                try {
+                    val pdfFile = generateStrukPdfUseCase(context, transaksi)
+                    if (pdfFile != null && pdfFile.exists()) {
+                        Toast.makeText(
                             context,
-                            "${context.packageName}.fileprovider",
-                            pdfFile
-                        )
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(uri, "application/pdf")
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            "PDF Struk berhasil disimpan di Downloads",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        try {
+                            val uri = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.fileprovider",
+                                pdfFile
+                            )
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(uri, "application/pdf")
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(
+                                Intent.createChooser(intent, "Buka Struk PDF")
+                            )
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                         }
-                        context.startActivity(
-                            Intent.createChooser(intent, "Buka Struk PDF")
-                        )
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+                    } else {
+                        Toast.makeText(context, "Gagal membuat file PDF struk.", Toast.LENGTH_SHORT).show()
                     }
-                } else {
-                    Toast.makeText(context, "Gagal membuat file PDF struk.", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
-            } catch (e: Exception) {
-                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         } else {
             Toast.makeText(context, "Data transaksi belum siap.", Toast.LENGTH_SHORT).show()

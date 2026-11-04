@@ -3,11 +3,11 @@ package com.ptpws.ikikasir.feature.penjualan.data.pdf
 import android.content.Context
 import android.graphics.*
 import android.graphics.pdf.PdfDocument
-import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
+import com.ptpws.ikikasir.core.util.RemoteImageBitmapLoader
 import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import java.io.File
@@ -99,7 +99,7 @@ object StrukPdfHelper {
 
         // ── 0. Logo Toko ────────
         if (notaSetting.logoUrl.isNotBlank()) {
-            val logoBitmap = loadLogoBitmap(context, notaSetting.logoUrl, maxResolution = 1024)
+            val logoBitmap = RemoteImageBitmapLoader.load(context, notaSetting.logoUrl, maxDimension = 1024)
             if (logoBitmap != null) {
                 val maxDisplayWidth = 100f
                 val maxDisplayHeight = 65f
@@ -490,36 +490,4 @@ object StrukPdfHelper {
         }
     }
 
-    private fun loadLogoBitmap(context: Context, logoUrl: String, maxResolution: Int = 1024): Bitmap? {
-        if (logoUrl.isBlank()) return null
-        return try {
-            val bitmap = if (logoUrl.startsWith("data:image") || logoUrl.startsWith("data:application")) {
-                val base64Data = logoUrl.substringAfter("base64,")
-                val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
-                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-            } else {
-                val uri = Uri.parse(logoUrl)
-                if (uri.scheme == "file" || uri.scheme == null) {
-                    val path = uri.path ?: logoUrl
-                    BitmapFactory.decodeFile(path)
-                } else {
-                    context.contentResolver.openInputStream(uri)?.use {
-                        BitmapFactory.decodeStream(it)
-                    }
-                }
-            } ?: return null
-
-            // Pertahankan resolusi tinggi (HD hingga 1024px) agar logo di PDF tidak pecah/blur saat diperbesar
-            if (bitmap.width > maxResolution || bitmap.height > maxResolution) {
-                val scale = minOf(maxResolution.toFloat() / bitmap.width, maxResolution.toFloat() / bitmap.height)
-                val targetW = (bitmap.width * scale).toInt().coerceAtLeast(1)
-                val targetH = (bitmap.height * scale).toInt().coerceAtLeast(1)
-                Bitmap.createScaledBitmap(bitmap, targetW, targetH, true)
-            } else {
-                bitmap
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
 }

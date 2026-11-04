@@ -2,8 +2,6 @@ package com.ptpws.ikikasir.feature.penjualan.domain.usecase
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
 import com.ptpws.ikikasir.feature.bluetooth.data.BluetoothPrinterConnection
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
@@ -11,6 +9,7 @@ import com.ptpws.ikikasir.feature.bluetooth.data.preferences.BluetoothPrinterPre
 import com.ptpws.ikikasir.feature.bluetooth.domain.model.BluetoothPrinterSetting
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
+import com.ptpws.ikikasir.core.util.RemoteImageBitmapLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -123,7 +122,7 @@ class PrintStrukUseCase {
         // ── 0. Logo Toko (jika ada) ────────
         if (notaSetting.logoUrl.isNotBlank()) {
             val maxLogoWidth = if (columns >= 48) 384 else 256
-            val logoBitmap = loadLogoBitmap(context, notaSetting.logoUrl, maxLogoWidth)
+            val logoBitmap = RemoteImageBitmapLoader.load(context, notaSetting.logoUrl, maxLogoWidth)
             if (logoBitmap != null) {
                 printBitmap(bytes, logoBitmap)
                 feedLine()
@@ -246,37 +245,6 @@ class PrintStrukUseCase {
     private fun String.toAscii(): String = map { character ->
         if (character.code in 32..126) character else '?'
     }.joinToString("")
-
-    private fun loadLogoBitmap(context: Context, logoUrl: String, maxWidth: Int): Bitmap? {
-        if (logoUrl.isBlank()) return null
-        return try {
-            val bitmap = if (logoUrl.startsWith("data:image") || logoUrl.startsWith("data:application")) {
-                val base64Data = logoUrl.substringAfter("base64,")
-                val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
-                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-            } else {
-                val uri = Uri.parse(logoUrl)
-                if (uri.scheme == "file" || uri.scheme == null) {
-                    val path = uri.path ?: logoUrl
-                    BitmapFactory.decodeFile(path)
-                } else {
-                    context.contentResolver.openInputStream(uri)?.use {
-                        BitmapFactory.decodeStream(it)
-                    }
-                }
-            } ?: return null
-
-            if (bitmap.width <= maxWidth) {
-                bitmap
-            } else {
-                val ratio = maxWidth.toFloat() / bitmap.width
-                val targetHeight = (bitmap.height * ratio).toInt().coerceAtLeast(1)
-                Bitmap.createScaledBitmap(bitmap, maxWidth, targetHeight, true)
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
 
     private fun printBitmap(output: ByteArrayOutputStream, bitmap: Bitmap) {
         val bytesPerRow = (bitmap.width + 7) / 8
