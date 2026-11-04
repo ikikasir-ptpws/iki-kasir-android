@@ -70,7 +70,6 @@ fun RiwayatTransaksiScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(initialFilter, startDate, endDate) {
         if (!initialFilter.isNullOrBlank()) {
@@ -90,6 +89,7 @@ fun RiwayatTransaksiScreen(
     var showExportErrorDialog by remember { mutableStateOf(false) }
     var exportedUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var errorMessage by remember { mutableStateOf("") }
+    var showInvalidScanDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state.exportedFileUri) {
@@ -295,14 +295,54 @@ fun RiwayatTransaksiScreen(
             viewModel.onSearchQueryChange(matched.transactionNumber)
             onDetailTransaksi(matched.transactionId)
         } else {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Kode tidak dikenali sebagai transaksi. Scan QR/barcode dari struk transaksi.")
-            }
+            showInvalidScanDialog = true
         }
     }
 
     val triggerBarcodeScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { contents ->
         handleScannedTransaction(contents)
+    }
+
+    if (showInvalidScanDialog) {
+        AlertDialog(
+            onDismissRequest = { showInvalidScanDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.ErrorOutline,
+                    contentDescription = null,
+                    tint = Color(0xFFDC2626),
+                    modifier = Modifier.size(44.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Kode Tidak Cocok",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A)
+                )
+            },
+            text = {
+                Text(
+                    text = "Kode yang dipindai bukan kode transaksi yang terdaftar. Gunakan QR code atau barcode pada struk transaksi.",
+                    fontFamily = interfamily,
+                    fontSize = 14.sp,
+                    color = Color(0xFF475569),
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showInvalidScanDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Mengerti", fontFamily = interfamily, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
+        )
     }
 
     var showDateRangePicker by remember { mutableStateOf(false) }

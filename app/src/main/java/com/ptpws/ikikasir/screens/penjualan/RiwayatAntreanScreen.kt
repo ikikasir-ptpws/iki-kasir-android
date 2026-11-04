@@ -80,7 +80,6 @@ fun RiwayatAntreanScreen(
     }
 
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
@@ -97,6 +96,7 @@ fun RiwayatAntreanScreen(
     var showExportErrorDialog by remember { mutableStateOf(false) }
     var exportedUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var errorMessage by remember { mutableStateOf("") }
+    var showInvalidScanDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     // ── Export state observers ──────────────────────────────────────────────
@@ -275,10 +275,50 @@ fun RiwayatAntreanScreen(
         if (matchedHistory != null) {
             viewModel.onSearchQueryChanged(matchedHistory.transactionId)
         } else {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Kode tidak dikenali sebagai antrean transaksi. Scan QR/barcode dari struk transaksi.")
-            }
+            showInvalidScanDialog = true
         }
+    }
+
+    if (showInvalidScanDialog) {
+        AlertDialog(
+            onDismissRequest = { showInvalidScanDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.ErrorOutline,
+                    contentDescription = null,
+                    tint = Color(0xFFDC2626),
+                    modifier = Modifier.size(44.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Kode Tidak Cocok",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A)
+                )
+            },
+            text = {
+                Text(
+                    text = "Kode yang dipindai bukan kode antrean transaksi yang terdaftar. Gunakan QR code atau barcode pada struk transaksi.",
+                    fontFamily = interfamily,
+                    fontSize = 14.sp,
+                    color = Color(0xFF475569),
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showInvalidScanDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Mengerti", fontFamily = interfamily, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
+        )
     }
 
     // Filter items based on searchQuery & selectedFilter
