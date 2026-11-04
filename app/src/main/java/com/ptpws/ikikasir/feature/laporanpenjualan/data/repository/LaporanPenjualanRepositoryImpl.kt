@@ -79,7 +79,13 @@ class LaporanPenjualanRepositoryImpl @Inject constructor(
 
         filteredTransactions.forEach { tx ->
             if (tx.items.isNotEmpty()) {
-                tx.items.forEach { item ->
+                val itemAmounts = tx.items.map { it.totalPrice.coerceAtLeast(0.0) }
+                val itemAmountTotal = itemAmounts.sum()
+                val transactionOmzet = getTransactionOmzet(tx)
+                var allocatedOmzet = 0.0
+                val lastPositiveAmountIndex = itemAmounts.indexOfLast { it > 0.0 }
+
+                tx.items.forEachIndexed { index, item ->
                     val key = if (item.produk.id.isNotBlank()) item.produk.id else item.name.trim().lowercase()
                     val catName = kategoriMap[item.produk.categoryId] ?: "Umum"
                     val acc = productMap.getOrPut(key) {
@@ -92,7 +98,13 @@ class LaporanPenjualanRepositoryImpl @Inject constructor(
                         )
                     }
                     acc.unitTerjual += item.quantity
-                    acc.totalOmzet += item.totalPrice
+                    val itemOmzet = when {
+                        itemAmountTotal <= 0.0 -> 0.0
+                        index == lastPositiveAmountIndex -> transactionOmzet - allocatedOmzet
+                        else -> transactionOmzet * itemAmounts[index] / itemAmountTotal
+                    }
+                    acc.totalOmzet += itemOmzet
+                    allocatedOmzet += itemOmzet
                     if (acc.hargaSatuan <= 0 && item.price > 0) acc.hargaSatuan = item.price
                     if (acc.imageUrl.isBlank() && item.produk.imageUrl.isNotBlank()) acc.imageUrl = item.produk.imageUrl
                     if (acc.kategori.isBlank() || acc.kategori == "Umum") {
@@ -103,7 +115,7 @@ class LaporanPenjualanRepositoryImpl @Inject constructor(
         }
 
         val totalUnit = productMap.values.sumOf { it.unitTerjual }
-        val totalOmzet = productMap.values.sumOf { it.totalOmzet }
+        val totalOmzet = filteredTransactions.sumOf(::getTransactionOmzet)
         val totalProdukUnik = productMap.size
 
         // Sort by unitTerjual descending, secondary totalOmzet descending
@@ -137,6 +149,9 @@ class LaporanPenjualanRepositoryImpl @Inject constructor(
             items = items
         )
     }
+
+    private fun getTransactionOmzet(tx: PenjualanTransaksi): Double =
+        if (tx.total > 0) tx.total else tx.subtotal
 
     private fun computeTimeRange(
         periode: PeriodeLaporanPenjualan,

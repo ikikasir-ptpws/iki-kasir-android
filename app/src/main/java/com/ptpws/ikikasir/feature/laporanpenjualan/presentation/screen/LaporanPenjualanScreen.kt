@@ -825,7 +825,7 @@ fun ProdukTerjualCard(item: ProdukTerjualItem) {
 
 private fun formatRupiah(value: Double): String {
     val formatter = NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID")).apply {
-        maximumFractionDigits = if (value % 1.0 == 0.0) 0 else 2
+        maximumFractionDigits = 0
     }
     return "Rp ${formatter.format(value)}"
 }
