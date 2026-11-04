@@ -58,6 +58,7 @@ import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
 import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectivePrice
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.KasirViewModel
 import com.ptpws.ikikasir.screens.penjualan.component.PilihProdukTersediaDialog
+import com.ptpws.ikikasir.commond.BarcodeMismatchDialog
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -94,11 +95,11 @@ fun KasirScreen(
         viewModel.refreshKatalog()
     }
 
-    LaunchedEffect(state.errorMessage) {
-        state.errorMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            viewModel.clearError()
-        }
+    state.errorMessage?.let { message ->
+        BarcodeMismatchDialog(
+            message = "$message. Pastikan kode yang dipindai adalah barcode atau QR produk yang terdaftar.",
+            onDismiss = viewModel::clearError
+        )
     }
 
     val windowSizeInfo = com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo.current
