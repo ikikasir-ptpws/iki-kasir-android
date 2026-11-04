@@ -381,22 +381,40 @@ fun RiwayatAntreanScreen(
                     }
                 },
                 actions = {
-                    IconButton(
+                    FilledTonalButton(
                         onClick = { viewModel.exportToExcel(context, filteredList) },
-                        enabled = !isExporting && filteredList.isNotEmpty()
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFFEFF6FF),
+                            contentColor = Color(0xFF2563EB)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        enabled = !isExporting && filteredList.isNotEmpty(),
+                        modifier = Modifier.padding(end = 12.dp)
                     ) {
                         if (isExporting) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(22.dp),
-                                color = Color(0xFF4F46E5),
-                                strokeWidth = 2.5.dp
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFF2563EB)
                             )
                         } else {
-                            Icon(
-                                imageVector = Icons.Default.FileDownload,
-                                contentDescription = "Ekspor Excel",
-                                tint = if (filteredList.isNotEmpty()) Color(0xFF4F46E5) else Color(0xFFCBD5E1)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.FileDownload,
+                                    contentDescription = "Ekspor",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = "Ekspor",
+                                    fontFamily = interfamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
                         }
                     }
                 },
