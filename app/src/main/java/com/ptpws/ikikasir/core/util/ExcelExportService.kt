@@ -385,7 +385,7 @@ class ExcelExportService @Inject constructor() {
                     "H6:J6",
                     "A${totalDebitRowNumber}:E${totalDebitRowNumber}",
                     "A${totalKreditRowNumber}:E${totalKreditRowNumber}",
-                    "A${saldoRowNumber}:I${saldoRowNumber}"
+                    "A${saldoRowNumber}:E${saldoRowNumber}"
                 ),
                 autoFilterRange = "A8:J${totalDebitRowNumber - 1}"
             )
