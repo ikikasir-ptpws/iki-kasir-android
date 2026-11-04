@@ -46,7 +46,7 @@ class ExcelExportService @Inject constructor() {
             val rows = mutableListOf<List<ExcelCell>>()
 
             // Row 1: Brand Title
-            rows += listOf(ExcelCell("IKI KASIR - POINT OF SALE", style = "BrandTitle"))
+            rows += listOf(ExcelCell("IKIKASIR - POINT OF SALE", style = "BrandTitle"))
 
             // Row 2: Main Report Title
             rows += listOf(ExcelCell("LAPORAN RIWAYAT TRANSAKSI", style = "ReportTitle"))
@@ -408,11 +408,11 @@ class ExcelExportService @Inject constructor() {
             // ── SHEET 1: RINGKASAN FINANSIAL & P&L STATEMENT ──
             // ════════════════════════════════════════════════════════════════
             val summaryRows = mutableListOf<List<ExcelCell>>()
-            summaryRows += listOf(ExcelCell("IKI KASIR - SMART POINT OF SALE", "BrandTitle"))
+            summaryRows += listOf(ExcelCell("IKIKASIR - SMART POINT OF SALE", "BrandTitle"))
             summaryRows += listOf(ExcelCell("LAPORAN KEUANGAN & LABA RUGI (P&L)", "ReportTitle"))
             summaryRows += listOf(
                 ExcelCell(
-                    "Periode: ${reportData.filterLabel}   |   Dicetak: ${dateTimeFormat.format(Date())}   |   Status: 100% Data Riil Transaksi",
+                    "Periode: ${reportData.filterLabel}   |   Dicetak: ${dateTimeFormat.format(Date())}   |   Berdasarkan transaksi dan catatan keuangan",
                     "Subtitle"
                 )
             )
@@ -420,40 +420,38 @@ class ExcelExportService @Inject constructor() {
 
             // Section 1: KPI Finansial Utama
             summaryRows += listOf(ExcelCell("RINGKASAN METRIK FINANSIAL UTAMA", "BrandTitle"))
-            summaryRows += listOf(
-                ExcelCell("TOTAL OMZET (REVENUE)", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("LABA KOTOR (GROSS PROFIT)", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("LABA BERSIH (NET PROFIT)", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("BIAYA MODAL (HPP)", "KpiLabel"), ExcelCell("", "KpiLabel")
+            val kpiCards = listOf(
+                "TOTAL OMZET (REVENUE)" to reportData.totalOmzet.formatRupiah(),
+                "LABA KOTOR (GROSS PROFIT)" to reportData.totalLabaKotor.formatRupiah(),
+                "LABA BERSIH (NET PROFIT)" to reportData.totalLabaBersih.formatRupiah(),
+                "BIAYA MODAL (HPP)" to reportData.totalHpp.formatRupiah(),
+                "PEMASUKAN LAINNYA" to reportData.totalPemasukanLainnya.formatRupiah(),
+                "PENGELUARAN & BEBAN" to reportData.totalPengeluaranBeban.formatRupiah(),
+                "DISKON & PROMO" to reportData.totalDiskon.formatRupiah(),
+                "TOTAL PPN / PAJAK" to reportData.totalPajak.formatRupiah(),
+                "TOTAL PESANAN SELESAI" to "${reportData.totalTransaksiCount} Order",
+                "RATA-RATA ORDER" to reportData.rataRataTransaksi.formatRupiah(),
+                "VOLUME PRODUK TERJUAL" to "${reportData.totalProdukTerjual} Produk",
+                "REFUND & BATAL" to
+                    "${reportData.totalRefundNominal.formatRupiah()} (${reportData.totalRefundCount} Batal)"
             )
-            summaryRows += listOf(
-                ExcelCell(reportData.totalOmzet.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell(reportData.totalLabaKotor.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell(reportData.totalLabaBersih.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell(reportData.totalHpp.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency")
-            )
-            summaryRows += listOf(
-                ExcelCell("TOTAL PESANAN SELESAI", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("TOTAL PPN / PAJAK", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("TOTAL REFUND", "KpiLabel"), ExcelCell("", "KpiLabel"),
-                ExcelCell("TRANSAKSI BATAL", "KpiLabel"), ExcelCell("", "KpiLabel")
-            )
-            summaryRows += listOf(
-                ExcelCell("${reportData.totalTransaksiCount} Order Selesai", "KpiValue"), ExcelCell("", "KpiValue"),
-                ExcelCell(reportData.totalPajak.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell(reportData.totalRefundNominal.formatRupiah(), "KpiValueCurrency"), ExcelCell("", "KpiValueCurrency"),
-                ExcelCell("${reportData.totalRefundCount} Transaksi Batal", "KpiValue"), ExcelCell("", "KpiValue")
-            )
+            kpiCards.chunked(4).forEach { cardRow ->
+                summaryRows += cardRow.flatMap { (label, _) ->
+                    listOf(ExcelCell(label, "KpiLabel"), ExcelCell("", "KpiLabel"))
+                }
+                summaryRows += cardRow.flatMap { (_, value) ->
+                    val style = if (value.startsWith("Rp")) "KpiValueCurrency" else "KpiValue"
+                    listOf(ExcelCell(value, style), ExcelCell("", style))
+                }
+            }
             summaryRows += listOf(emptyList())
 
-            // Section 2: Struktur Laba Rugi (P&L)
-            // Initialize merge ranges with KPI card merged blocks (Rows 6-9)
-            val summaryMergeRanges = mutableListOf<String>(
-                "A6:B6", "C6:D6", "E6:F6", "G6:H6",
-                "A7:B7", "C7:D7", "E7:F7", "G7:H7",
-                "A8:B8", "C8:D8", "E8:F8", "G8:H8",
-                "A9:B9", "C9:D9", "E9:F9", "G9:H9"
-            )
+            val summaryMergeRanges = mutableListOf<String>()
+            for (row in 6..11) {
+                summaryMergeRanges += listOf(
+                    "A$row:B$row", "C$row:D$row", "E$row:F$row", "G$row:H$row"
+                )
+            }
 
             // Section 2: Struktur Laba Rugi (P&L)
             summaryRows += listOf(ExcelCell("STRUKTUR LABA & BEBAN (PROFIT & LOSS STATEMENT)", "BrandTitle"))
@@ -488,15 +486,13 @@ class ExcelExportService @Inject constructor() {
                     description = "Total potongan harga dan voucher promo yang diberikan"
                 )
             )
-            if (reportData.totalRefundNominal > 0) {
-                pnlItems.add(
-                    PnLItemData(
-                        label = "Pengembalian Dana (Refund)",
-                        value = -reportData.totalRefundNominal,
-                        description = "Total transaksi yang dibatalkan / dana dikembalikan"
-                    )
+            pnlItems.add(
+                PnLItemData(
+                    label = "Refund / Batal",
+                    value = -reportData.totalRefundNominal,
+                    description = "${reportData.totalRefundCount} transaksi dibatalkan / dana dikembalikan"
                 )
-            }
+            )
             pnlItems.add(
                 PnLItemData(
                     label = "Penjualan Bersih (Net Sales / Omzet)",
@@ -652,7 +648,7 @@ class ExcelExportService @Inject constructor() {
             // ── SHEET 2: TREN PENJUALAN HARIAN ──
             // ════════════════════════════════════════════════════════════════
             val dailyRows = mutableListOf<List<ExcelCell>>()
-            dailyRows += listOf(ExcelCell("IKI KASIR - SMART POINT OF SALE", "BrandTitle"))
+            dailyRows += listOf(ExcelCell("IKIKASIR - SMART POINT OF SALE", "BrandTitle"))
             dailyRows += listOf(ExcelCell("TREN PENJUALAN HARIAN", "ReportTitle"))
             dailyRows += listOf(ExcelCell("Periode: ${reportData.filterLabel}   |   Dicetak: ${dateTimeFormat.format(Date())}", "Subtitle"))
             dailyRows += listOf(emptyList())
@@ -721,7 +717,7 @@ class ExcelExportService @Inject constructor() {
             // ── SHEET 3: TOP PRODUK TERLARIS ──
             // ════════════════════════════════════════════════════════════════
             val topRows = mutableListOf<List<ExcelCell>>()
-            topRows += listOf(ExcelCell("IKI KASIR - SMART POINT OF SALE", "BrandTitle"))
+            topRows += listOf(ExcelCell("IKIKASIR - SMART POINT OF SALE", "BrandTitle"))
             topRows += listOf(ExcelCell("LEADERBOARD 5 PRODUK TERLARIS", "ReportTitle"))
             topRows += listOf(ExcelCell("Periode: ${reportData.filterLabel}   |   Dicetak: ${dateTimeFormat.format(Date())}", "Subtitle"))
             topRows += listOf(emptyList())
@@ -789,7 +785,7 @@ class ExcelExportService @Inject constructor() {
             // ── SHEET 4: RINCIAN TRANSAKSI PENJUALAN ──
             // ════════════════════════════════════════════════════════════════
             val txRows = mutableListOf<List<ExcelCell>>()
-            txRows += listOf(ExcelCell("IKI KASIR - SMART POINT OF SALE", "BrandTitle"))
+            txRows += listOf(ExcelCell("IKIKASIR - SMART POINT OF SALE", "BrandTitle"))
             txRows += listOf(ExcelCell("RINCIAN TRANSAKSI PENJUALAN KASIR", "ReportTitle"))
             txRows += listOf(ExcelCell("Periode: ${reportData.filterLabel}   |   Dicetak: ${dateTimeFormat.format(Date())}   |   Total Data: ${sortedTransactions.size} Transaksi", "Subtitle"))
             txRows += listOf(emptyList())
@@ -940,7 +936,7 @@ class ExcelExportService @Inject constructor() {
             val rows = mutableListOf<List<ExcelCell>>()
 
             // Row 1: Brand Title
-            rows += listOf(ExcelCell("IKI KASIR - KITCHEN & QUEUE", style = "BrandTitle"))
+            rows += listOf(ExcelCell("IKIKASIR - KITCHEN & QUEUE", style = "BrandTitle"))
 
             // Row 2: Main Report Title
             rows += listOf(ExcelCell("LAPORAN RIWAYAT ANTREAN", style = "ReportTitle"))
@@ -1080,7 +1076,7 @@ class ExcelExportService @Inject constructor() {
             val rows = mutableListOf<List<ExcelCell>>()
 
             // Row 1: Brand Title
-            rows += listOf(ExcelCell("IKI KASIR - SMART POINT OF SALE", style = "BrandTitle"))
+            rows += listOf(ExcelCell("IKIKASIR - SMART POINT OF SALE", style = "BrandTitle"))
 
             // Row 2: Main Report Title
             rows += listOf(ExcelCell("LAPORAN PENJUALAN PRODUK TERJUAL", style = "ReportTitle"))
