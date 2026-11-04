@@ -242,98 +242,152 @@ class ExcelExportService @Inject constructor() {
         filterLabel: String
     ): Result<Uri> = withContext(Dispatchers.IO) {
         runCatching {
-            val sortedList = catatanList.sortedByDescending { it.tanggalMillis }
+            val sortedList = catatanList.sortedBy { it.tanggalMillis }
             val rows = mutableListOf<List<ExcelCell>>()
 
-            rows += listOf(ExcelCell("IKI KASIR - CATATAN KEUANGAN", "BrandTitle"))
-            rows += listOf(ExcelCell("LAPORAN CATATAN PEMASUKAN & PENGELUARAN", "ReportTitle"))
+            rows += listOf(ExcelCell("IKIKASIR - POINT OF SALE", "BrandTitle"))
+            rows += listOf(ExcelCell("LAPORAN CATATAN KEUANGAN (DEBIT & KREDIT)", "ReportTitle"))
             rows += listOf(
                 ExcelCell(
-                    "Filter: $filterLabel   |   Dicetak: ${dateTimeFormat.format(Date())}   |   Total Data: ${sortedList.size} Catatan",
+                    "Periode Filter: $filterLabel   |   Dicetak: ${dateTimeFormat.format(Date())}   |   Total Data: ${sortedList.size} Catatan",
                     "Subtitle"
                 )
             )
             rows += listOf(emptyList())
 
-            val totalPemasukan = sortedList.filter { it.jenis.equals("PEMASUKAN", ignoreCase = true) }.sumOf { it.nominal }
-            val totalPengeluaran = sortedList.filter { it.jenis.equals("PENGELUARAN", ignoreCase = true) }.sumOf { it.nominal }
-            val saldoBersih = totalPemasukan - totalPengeluaran
+            val totalDebit = sortedList
+                .filter { it.jenis.equals("PEMASUKAN", ignoreCase = true) }
+                .sumOf { it.nominal }
+            val totalKredit = sortedList
+                .filter { it.jenis.equals("PENGELUARAN", ignoreCase = true) }
+                .sumOf { it.nominal }
+            val saldoAkhir = totalDebit - totalKredit
 
             rows += listOf(
-                ExcelCell("SUMMARY FINANSIAL", "SectionHeader"),
-                ExcelCell("", "SectionHeader"),
-                ExcelCell("", "SectionHeader"),
-                ExcelCell("", "SectionHeader"),
-                ExcelCell("", "SectionHeader"),
-                ExcelCell("", "SectionHeader"),
-                ExcelCell("", "SectionHeader")
-            )
-            rows += listOf(
-                ExcelCell("Total Debit (Pemasukan)", "KpiLabel"),
-                ExcelCell(totalPemasukan.toExcelNumber(), "KpiValueCurrency"),
-                ExcelCell("Total Kredit (Pengeluaran)", "KpiLabel"),
-                ExcelCell(totalPengeluaran.toExcelNumber(), "KpiValueCurrency"),
-                ExcelCell("Saldo Bersih", "KpiLabel"),
-                ExcelCell(saldoBersih.toExcelNumber(), "KpiValueCurrency"),
+                ExcelCell("TOTAL DEBIT (PEMASUKAN)", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("TOTAL KREDIT (PENGELUARAN)", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
+                ExcelCell("SALDO BERSIH (NETTO)", "KpiLabel"),
+                ExcelCell("", "KpiLabel"),
                 ExcelCell("", "KpiLabel")
             )
             rows += listOf(
-                ExcelCell("Jumlah Catatan", "KpiLabel"),
-                ExcelCell(sortedList.size.toString(), "KpiValue"),
-                ExcelCell("", "KpiLabel"),
-                ExcelCell("", "KpiValue"),
-                ExcelCell("", "KpiLabel"),
+                ExcelCell(totalDebit.formatRupiah(), "KpiValueCurrency"),
                 ExcelCell("", "KpiValueCurrency"),
-                ExcelCell("", "KpiLabel")
+                ExcelCell("", "KpiValueCurrency"),
+                ExcelCell(totalKredit.formatRupiah(), "KpiValueCurrency"),
+                ExcelCell("", "KpiValueCurrency"),
+                ExcelCell("", "KpiValueCurrency"),
+                ExcelCell("", "KpiValueCurrency"),
+                ExcelCell(saldoAkhir.formatRupiah(), "KpiValueCurrency"),
+                ExcelCell("", "KpiValueCurrency"),
+                ExcelCell("", "KpiValueCurrency")
             )
             rows += listOf(emptyList())
 
             rows += listOf(
-                ExcelCell("TANGGAL", "TableHeaderCenter"),
-                ExcelCell("JENIS", "TableHeaderCenter"),
-                ExcelCell("JUDUL CATATAN", "TableHeader"),
-                ExcelCell("KETERANGAN", "TableHeader"),
-                ExcelCell("METODE", "TableHeaderCenter"),
-                ExcelCell("DEBIT (RP)", "TableHeaderRight"),
-                ExcelCell("KREDIT (RP)", "TableHeaderRight")
+                ExcelCell("No", "Header"),
+                ExcelCell("Tanggal", "Header"),
+                ExcelCell("Jam", "Header"),
+                ExcelCell("Tipe", "Header"),
+                ExcelCell("Judul / Keterangan", "HeaderLeft"),
+                ExcelCell("Debit (Rp)", "HeaderRight"),
+                ExcelCell("Kredit (Rp)", "HeaderRight"),
+                ExcelCell("Metode Bayar", "Header"),
+                ExcelCell("Catatan Tambahan", "HeaderLeft"),
+                ExcelCell("Saldo (Rp)", "HeaderRight")
             )
 
+            val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.forLanguageTag("id-ID"))
+            val timeFormat = SimpleDateFormat("HH:mm 'WIB'", Locale.forLanguageTag("id-ID"))
+            var runningBalance = 0.0
             sortedList.forEachIndexed { index, item ->
-                val dateStr = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID")).format(Date(item.tanggalMillis))
-                val jenisStr = if (item.jenis.equals("PEMASUKAN", ignoreCase = true)) "PEMASUKAN" else "PENGELUARAN"
-                val styleRow = if (index % 2 == 1) "DataRowAlt" else "DataRow"
-                val styleCurrency = if (index % 2 == 1) "CurrencyDataAlt" else "CurrencyData"
-                val isPemasukan = item.jenis.equals("PEMASUKAN", ignoreCase = true)
+                val tanggal = Date(item.tanggalMillis)
+                val isDebit = item.jenis.equals("PEMASUKAN", ignoreCase = true)
+                val jenisStr = if (isDebit) "PEMASUKAN" else "PENGELUARAN"
+                runningBalance += if (isDebit) item.nominal else -item.nominal
+                val styleRow = if (index % 2 == 1) "DataAlt" else "Data"
+                val styleCenter = if (index % 2 == 1) "DataCenterAlt" else "DataCenter"
+                val styleCurrency = if (index % 2 == 1) "NumberAlt" else "Number"
 
                 rows += listOf(
-                    ExcelCell(dateStr, styleRow + "Center"),
-                    ExcelCell(jenisStr, styleRow + "Center"),
+                    ExcelCell((index + 1).toString(), styleCenter),
+                    ExcelCell(dateFormat.format(tanggal), styleCenter),
+                    ExcelCell(timeFormat.format(tanggal), styleCenter),
+                    ExcelCell(jenisStr, if (isDebit) "SuccessPill" else "DangerPill"),
                     ExcelCell(item.judul, styleRow),
+                    ExcelCell(if (isDebit) item.nominal.formatRupiah() else "-", styleCurrency),
+                    ExcelCell(if (isDebit) "-" else item.nominal.formatRupiah(), styleCurrency),
+                    ExcelCell(item.metodePembayaran, styleCenter),
                     ExcelCell(item.keterangan.ifBlank { "-" }, styleRow),
-                    ExcelCell(item.metodePembayaran, styleRow + "Center"),
-                    ExcelCell(if (isPemasukan) item.nominal.toExcelNumber() else "0", styleCurrency),
-                    ExcelCell(if (isPemasukan) "0" else item.nominal.toExcelNumber(), styleCurrency)
+                    ExcelCell(runningBalance.formatRupiah(), styleCurrency)
                 )
             }
 
-            val totalRowNumber = rows.size + 1
+            val totalDebitRowNumber = rows.size + 1
             rows += listOf(
-                ExcelCell("TOTAL", "TotalLabel"),
+                ExcelCell("TOTAL DEBIT (PEMASUKAN)", "TotalLabel"),
                 ExcelCell("", "TotalLabel"),
                 ExcelCell("", "TotalLabel"),
                 ExcelCell("", "TotalLabel"),
                 ExcelCell("", "TotalLabel"),
-                ExcelCell(totalPemasukan.toExcelNumber(), "TotalValue"),
-                ExcelCell(totalPengeluaran.toExcelNumber(), "TotalValue")
+                ExcelCell(totalDebit.formatRupiah(), "TotalValue"),
+                ExcelCell("-", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("-", "TotalLabel")
+            )
+            val totalKreditRowNumber = rows.size + 1
+            rows += listOf(
+                ExcelCell("TOTAL KREDIT (PENGELUARAN)", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("-", "TotalLabel"),
+                ExcelCell(totalKredit.formatRupiah(), "TotalValue"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("-", "TotalLabel")
+            )
+            val saldoRowNumber = rows.size + 1
+            rows += listOf(
+                ExcelCell("SALDO AKHIR (NETTO)", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell("", "TotalLabel"),
+                ExcelCell(saldoAkhir.formatRupiah(), "TotalValue")
             )
 
             val sheet = ExcelSheet(
                 name = "Catatan Keuangan",
                 rows = rows,
-                columnWidths = listOf(22, 16, 26, 34, 18, 20, 20),
-                headerRowIndex = 8,
-                mergeRanges = listOf("A5:G5", "A${totalRowNumber}:E${totalRowNumber}"),
-                autoFilterRange = "A9:G${totalRowNumber - 1}"
+                columnWidths = listOf(8, 17, 14, 18, 30, 20, 20, 20, 30, 20),
+                headerRowIndex = 7,
+                mergeRanges = listOf(
+                    "A1:J1",
+                    "A2:J2",
+                    "A3:J3",
+                    "A5:C5",
+                    "D5:G5",
+                    "H5:J5",
+                    "A6:C6",
+                    "D6:G6",
+                    "H6:J6",
+                    "A${totalDebitRowNumber}:E${totalDebitRowNumber}",
+                    "A${totalKreditRowNumber}:E${totalKreditRowNumber}",
+                    "A${saldoRowNumber}:I${saldoRowNumber}"
+                ),
+                autoFilterRange = "A8:J${totalDebitRowNumber - 1}"
             )
             val bytes = createSpreadsheetXlsx(listOf(sheet))
             val dateTag = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
