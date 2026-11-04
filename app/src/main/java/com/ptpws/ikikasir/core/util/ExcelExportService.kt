@@ -1487,16 +1487,11 @@ class ExcelExportService @Inject constructor() {
         return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
     }
 
-    private fun Double.toExcelNumber(): String =
-        if (!isFinite()) "0"
-        else if (this % 1.0 == 0.0) toLong().toString()
-        else toString()
-
     private fun Double.formatRupiah(): String {
         if (!isFinite()) return "Rp 0"
         val formatter = NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID")).apply {
             minimumFractionDigits = 0
-            maximumFractionDigits = 2
+            maximumFractionDigits = 0
         }
         val absValue = kotlin.math.abs(this)
         val formatted = formatter.format(absValue)
