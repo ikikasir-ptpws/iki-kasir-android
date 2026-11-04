@@ -43,9 +43,9 @@ data class CatatanKeuanganDto(
 )
 
 fun CatatanKeuanganDto.toDomain(): CatatanKeuangan {
-    val createdTime = createdAt?.toDate()?.time ?: 0L
+    val createdTime = createdAt?.toDate()?.time ?: updatedAt?.toDate()?.time ?: 0L
 
-    val bestMillis = if (createdTime > 0) {
+    val timeInMillis = if (createdTime > 0L) {
         createdTime
     } else {
         try {
@@ -62,26 +62,28 @@ fun CatatanKeuanganDto.toDomain(): CatatanKeuangan {
         jenis = if (type.isNotBlank()) type else "PEMASUKAN",
         judul = title,
         keterangan = note,
-        tanggalMillis = bestMillis,
+        tanggalMillis = timeInMillis,
         metodePembayaran = paymentMethod,
         nominal = amount,
         buktiUri = proofImageUrl.ifBlank { null },
-        createdAtMillis = if (createdTime > 0) createdTime else bestMillis
+        createdAtMillis = if (createdTime > 0L) createdTime else timeInMillis
     )
 }
 
 fun CatatanKeuangan.toDto(): CatatanKeuanganDto {
     val dateStr = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).format(Date(tanggalMillis))
+    val createdTimestamp = if (createdAtMillis > 0L) Timestamp(Date(createdAtMillis)) else Timestamp(Date(tanggalMillis))
+
     return CatatanKeuanganDto(
         id = id,
         amount = nominal,
-        createdAt = null,
+        createdAt = createdTimestamp,
         date = dateStr,
         note = keterangan,
         paymentMethod = metodePembayaran,
         proofImageUrl = buktiUri.orEmpty(),
         title = judul,
         type = jenis,
-        updatedAt = null
+        updatedAt = Timestamp.now()
     )
 }
