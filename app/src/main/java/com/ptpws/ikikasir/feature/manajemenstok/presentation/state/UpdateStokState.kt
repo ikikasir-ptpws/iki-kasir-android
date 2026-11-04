@@ -8,6 +8,7 @@ data class UpdateStokState(
     val newStock: Int = 0,
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
+    val successMessage: String? = null,
     val errorMessage: String? = null,
     val showProductDropdown: Boolean = false
 )

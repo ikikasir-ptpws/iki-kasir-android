@@ -313,7 +313,10 @@ fun AppNavHost() {
             ) {
                 UpdateStokScreen(
                     onBack = { navController.popBackStackSafely(AppScreen.UpdateStok.route) },
-                    onSuccessUpdate = { navController.popBackStackSafely(AppScreen.UpdateStok.route) }
+                    onSuccessUpdate = { message ->
+                        navController.previousBackStackEntry?.savedStateHandle?.set("stock_update_success", message)
+                        navController.popBackStackSafely(AppScreen.UpdateStok.route)
+                    }
                 )
             }
 

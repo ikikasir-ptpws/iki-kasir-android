@@ -151,13 +151,11 @@ class UpdateStokViewModel @Inject constructor(
                         isWarning = false
                     )
 
-                    GlobalCrudResultDialog.success(
-                        "Stok produk \"${currentProduk.name}\" berhasil diperbarui menjadi $targetStock unit."
-                    )
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            isSuccess = true
+                            isSuccess = true,
+                            successMessage = "Stok produk \"${currentProduk.name}\" berhasil diperbarui menjadi $targetStock unit."
                         )
                     }
                 } else {
@@ -179,6 +177,6 @@ class UpdateStokViewModel @Inject constructor(
     }
 
     fun clearSuccess() {
-        _state.update { it.copy(isSuccess = false) }
+        _state.update { it.copy(isSuccess = false, successMessage = null) }
     }
 }

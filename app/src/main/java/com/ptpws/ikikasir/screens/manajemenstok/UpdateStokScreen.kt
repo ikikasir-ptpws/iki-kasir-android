@@ -45,7 +45,7 @@ import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.UpdateSto
 @Composable
 fun UpdateStokScreen(
     onBack: () -> Unit = {},
-    onSuccessUpdate: () -> Unit = {},
+    onSuccessUpdate: (String) -> Unit = {},
     viewModel: UpdateStokViewModel = hiltViewModel()
 ) {
     var isBackProcessing by remember { mutableStateOf(false) }
@@ -62,8 +62,11 @@ fun UpdateStokScreen(
 
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
+            val successMessage = state.successMessage
             viewModel.clearSuccess()
-            onSuccessUpdate()
+            if (!successMessage.isNullOrBlank()) {
+                onSuccessUpdate(successMessage)
+            }
         }
     }
 

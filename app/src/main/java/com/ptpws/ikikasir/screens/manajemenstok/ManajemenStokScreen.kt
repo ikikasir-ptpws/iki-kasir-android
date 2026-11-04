@@ -24,7 +24,6 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.*
@@ -51,6 +50,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.ManajemenStokViewModel
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
@@ -76,6 +76,18 @@ fun ManajemenStokScreen(
 
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val currentEntry = navController.currentBackStackEntry
+    val stockUpdateSuccessMessage by currentEntry?.savedStateHandle
+        ?.getStateFlow<String?>("stock_update_success", null)
+        ?.collectAsState() ?: remember { mutableStateOf(null) }
+
+    LaunchedEffect(stockUpdateSuccessMessage) {
+        val message = stockUpdateSuccessMessage
+        if (!message.isNullOrBlank()) {
+            GlobalCrudResultDialog.success(message)
+            currentEntry?.savedStateHandle?.remove<String>("stock_update_success")
+        }
+    }
 
     val triggerBarcodeScanner = com.ptpws.ikikasir.core.util.rememberBarcodeScanner { scannedCode ->
         viewModel.onSearchQueryChange(scannedCode)
@@ -203,15 +215,6 @@ fun ManajemenStokScreen(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
                             tint = Color(0xFF111827)
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { navController.navigate(AppScreen.Riwayat.baseRoute) }) {
-                        Icon(
-                            imageVector = Icons.Outlined.History,
-                            contentDescription = "Riwayat Stok",
-                            tint = Color(0xFF1E293B)
                         )
                     }
                 },

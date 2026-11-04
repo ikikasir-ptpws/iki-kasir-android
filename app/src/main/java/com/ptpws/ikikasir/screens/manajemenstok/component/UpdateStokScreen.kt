@@ -7,7 +7,7 @@ import com.ptpws.ikikasir.screens.manajemenstok.UpdateStokScreen as MainUpdateSt
 @Composable
 fun UpdateStokScreen(
     onBack: () -> Unit = {},
-    onSimpanPerubahan: () -> Unit = {},
+    onSimpanPerubahan: (String) -> Unit = {},
     viewModel: UpdateStokViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
     MainUpdateStokScreen(
