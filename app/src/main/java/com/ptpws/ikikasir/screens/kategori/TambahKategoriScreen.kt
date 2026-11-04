@@ -51,7 +51,7 @@ fun TambahKategoriScreen(
     LaunchedEffect(formState.isSuccess) {
         if (formState.isSuccess) {
             viewModel.resetSuccess()
-            onSimpanKategori(); onBack()
+            onSimpanKategori()
         }
     }
 

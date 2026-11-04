@@ -26,7 +26,7 @@ class TambahKategoriActivity : BaseActivity() {
                         onBack = { finish() },
                         onSimpanKategori = { finish() }
                     )
-                    GlobalCrudResultDialogHost()
+                    GlobalCrudResultDialogHost(showSuccess = false)
                 }
             }
         }
