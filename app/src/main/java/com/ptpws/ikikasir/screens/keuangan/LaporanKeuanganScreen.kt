@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -735,7 +736,34 @@ fun LaporanKeuanganScreen(
                         )
                     }
 
-                    // Row 4: Total Refund & Transaksi Batal (Muncul jika ada transaksi refund)
+                    // Row 4: Pemasukan Lainnya & Pengeluaran/Beban
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        KpiCard(
+                            title = "PEMASUKAN LAINNYA",
+                            value = formatRupiah(state.totalPemasukanLainnya),
+                            badge = if (isCompact) "Pemasukan" else "Catatan Pemasukan",
+                            icon = Icons.AutoMirrored.Filled.TrendingUp,
+                            accentColor = Color(0xFF059669),
+                            containerColor = Color(0xFFECFDF5),
+                            borderColor = Color(0xFFA7F3D0),
+                            modifier = Modifier.weight(1f)
+                        )
+                        KpiCard(
+                            title = "PENGELUARAN & BEBAN",
+                            value = formatRupiah(state.totalPengeluaranBeban),
+                            badge = if (isCompact) "Beban" else "Catatan Pengeluaran",
+                            icon = Icons.Default.TrendingDown,
+                            accentColor = Color(0xFFDC2626),
+                            containerColor = Color(0xFFFEF2F2),
+                            borderColor = Color(0xFFFECACA),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    // Row 5: Total Refund & Transaksi Batal (Muncul jika ada transaksi refund)
                     if (state.totalRefundNominal > 0 || state.totalRefundCount > 0) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -977,19 +1005,36 @@ fun LaporanKeuanganScreen(
                             color = Color(0xFF0F172A)
                         )
 
+                        val grossSales = state.totalOmzet + state.totalDiskon + state.totalRefundNominal
                         PnLRow(
-                            label = if (isCompact) "Penjualan Kotor (Gross)" else "Penjualan Kotor (Gross Sales)",
-                            value = formatRupiah(state.totalOmzet + state.totalDiskon),
+                            label = "Penjualan Kotor (Gross)",
+                            value = formatRupiah(grossSales),
                             isPositive = true
                         )
                         PnLRow(
-                            label = if (isCompact) "HPP / Modal Produk" else "Harga Pokok Penjualan (HPP / Modal)",
+                            label = "Diskon & Promo",
+                            value = "- " + formatRupiah(state.totalDiskon),
+                            isPositive = false,
+                            highlightRed = state.totalDiskon > 0
+                        )
+                        PnLRow(
+                            label = "Refund / Batal",
+                            value = "- " + formatRupiah(state.totalRefundNominal),
+                            isPositive = false,
+                            highlightRed = state.totalRefundNominal > 0
+                        )
+                        PnLRow(
+                            label = "Penjualan Bersih (Omzet)",
+                            value = formatRupiah(state.totalOmzet),
+                            isPositive = true
+                        )
+                        PnLRow(
+                            label = "HPP / Modal Produk",
                             value = "- " + formatRupiah(state.totalHpp),
                             isPositive = false,
                             highlightRed = state.totalHpp > 0
                         )
 
-                        // Highlight Subtotal Laba Kotor
                         Surface(
                             shape = RoundedCornerShape(10.dp),
                             color = Color(0xFFF0FDF4),
@@ -1025,14 +1070,19 @@ fun LaporanKeuanganScreen(
                         }
 
                         PnLRow(
-                            label = if (isCompact) "Diskon & Promo" else "Potongan Diskon & Promo",
-                            value = "- " + formatRupiah(state.totalDiskon),
-                            isPositive = false,
-                            highlightRed = state.totalDiskon > 0
+                            label = "Pemasukan Lainnya",
+                            value = "+ " + formatRupiah(state.totalPemasukanLainnya),
+                            isPositive = true
                         )
                         PnLRow(
-                            label = if (isCompact) "PPN / Pajak" else "PPN / Pajak Terkumpul",
-                            value = "+ " + formatRupiah(state.totalPajak),
+                            label = "Beban & Pengeluaran",
+                            value = "- " + formatRupiah(state.totalPengeluaranBeban),
+                            isPositive = false,
+                            highlightRed = state.totalPengeluaranBeban > 0
+                        )
+                        PnLRow(
+                            label = "PPN Terkumpul (Titipan)",
+                            value = formatRupiah(state.totalPajak),
                             isPositive = true
                         )
 
@@ -1067,7 +1117,7 @@ fun LaporanKeuanganScreen(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = if (isCompact) "Setelah modal, diskon & beban" else "Setelah dikurangi modal, diskon & beban",
+                                        text = "Setelah pemasukan dan beban lain",
                                         fontFamily = interfamily,
                                         fontSize = if (isCompact) 9.5.sp else 11.sp,
                                         color = Color(0xFF065F46),

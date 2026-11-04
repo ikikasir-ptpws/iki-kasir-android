@@ -9,6 +9,8 @@ import com.ptpws.ikikasir.feature.keuangan.domain.model.DailySalesExportEntry
 import com.ptpws.ikikasir.feature.keuangan.domain.model.FinancialReportExportData
 import com.ptpws.ikikasir.feature.keuangan.domain.model.PaymentMethodExportEntry
 import com.ptpws.ikikasir.feature.keuangan.domain.model.TopProductExportEntry
+import com.ptpws.ikikasir.feature.keuangan.domain.model.CatatanKeuangan
+import com.ptpws.ikikasir.feature.keuangan.domain.repository.CatatanKeuanganRepository
 import com.ptpws.ikikasir.feature.keuangan.domain.usecase.ExportLaporanKeuanganToExcelUseCase
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.DailySalesEntry
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.LaporanKeuanganState
@@ -32,6 +34,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LaporanKeuanganViewModel @Inject constructor(
     private val getAllTransaksiUseCase: GetAllTransaksiUseCase,
+    private val catatanKeuanganRepository: CatatanKeuanganRepository,
     private val exportLaporanKeuanganToExcelUseCase: ExportLaporanKeuanganToExcelUseCase,
     private val logActivityUseCase: LogActivityUseCase
 ) : ViewModel() {
@@ -40,6 +43,7 @@ class LaporanKeuanganViewModel @Inject constructor(
     val state: StateFlow<LaporanKeuanganState> = _state.asStateFlow()
 
     private var rawTransaksiList: List<PenjualanTransaksi> = emptyList()
+    private var rawCatatanList: List<CatatanKeuangan> = emptyList()
 
     init {
         loadData()
@@ -53,6 +57,39 @@ class LaporanKeuanganViewModel @Inject constructor(
                 calculateAnalytics()
             }
         }
+        viewModelScope.launch {
+            catatanKeuanganRepository.getAllCatatanFlow().collect { list ->
+                rawCatatanList = list
+                calculateAnalytics()
+            }
+        }
+    }
+
+    private fun getFilteredCatatan(): List<CatatanKeuangan> {
+        val periode = _state.value.selectedPeriode
+        val now = System.currentTimeMillis()
+        val (start, end) = when (periode) {
+            PeriodeFilter.SEMUA -> return rawCatatanList
+            PeriodeFilter.HARI_INI -> getStartOfDay(now) to getEndOfDay(now)
+            PeriodeFilter.TUJUH_HARI -> getStartOfDay(now - 6L * 86400000L) to getEndOfDay(now)
+            PeriodeFilter.TIGA_PULUH_HARI -> getStartOfDay(now - 29L * 86400000L) to getEndOfDay(now)
+            PeriodeFilter.BULAN_INI -> {
+                val monthStart = Calendar.getInstance().apply {
+                    set(Calendar.DAY_OF_MONTH, 1)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis
+                monthStart to getEndOfDay(now)
+            }
+            PeriodeFilter.KUSTOM -> {
+                val startMillis = _state.value.customStartDateMillis ?: return emptyList()
+                val endMillis = _state.value.customEndDateMillis ?: return emptyList()
+                getStartOfDay(startMillis) to getEndOfDay(endMillis)
+            }
+        }
+        return rawCatatanList.filter { it.tanggalMillis in start..end }
     }
 
     fun setPeriode(periode: PeriodeFilter) {
@@ -103,6 +140,8 @@ class LaporanKeuanganViewModel @Inject constructor(
                 totalHpp = st.totalHpp,
                 totalRefundNominal = st.totalRefundNominal,
                 totalRefundCount = st.totalRefundCount,
+                totalPemasukanLainnya = st.totalPemasukanLainnya,
+                totalPengeluaranBeban = st.totalPengeluaranBeban,
                 dailySales = st.dailySales.map {
                     DailySalesExportEntry(
                         dayLabel = it.dayLabel,
@@ -192,6 +231,8 @@ class LaporanKeuanganViewModel @Inject constructor(
                 totalHpp = st.totalHpp,
                 totalRefundNominal = st.totalRefundNominal,
                 totalRefundCount = st.totalRefundCount,
+                totalPemasukanLainnya = st.totalPemasukanLainnya,
+                totalPengeluaranBeban = st.totalPengeluaranBeban,
                 dailySales = st.dailySales.map {
                     DailySalesExportEntry(
                         dayLabel = it.dayLabel,
@@ -334,6 +375,13 @@ class LaporanKeuanganViewModel @Inject constructor(
 
         val totalRefundNominal = refunded.sumOf { if (it.total > 0) it.total else it.subtotal }
         val totalRefundCount = refunded.size
+        val catatanTerfilter = getFilteredCatatan()
+        val pemasukanLainnya = catatanTerfilter
+            .filter { it.jenis.equals("PEMASUKAN", ignoreCase = true) }
+            .sumOf { it.nominal }
+        val pengeluaranBeban = catatanTerfilter
+            .filter { it.jenis.equals("PENGELUARAN", ignoreCase = true) }
+            .sumOf { it.nominal }
 
         // Hitung Metrik Riil dari database (100% data riil dari transaksi yang tidak di-refund)
         var omzet = 0.0
@@ -393,7 +441,7 @@ class LaporanKeuanganViewModel @Inject constructor(
 
         val labaKotor = (omzet - hpp).coerceAtLeast(0.0)
         val marginKotor = if (omzet > 0) ((labaKotor / omzet) * 100).toFloat() else 0f
-        val labaBersih = (omzet - hpp - diskon).coerceAtLeast(0.0)
+        val labaBersih = (labaKotor + pemasukanLainnya - pengeluaranBeban).coerceAtLeast(0.0)
         val profitMargin = if (omzet > 0) ((labaBersih / omzet) * 100).toFloat() else 0f
         val aov = if (completed.isNotEmpty()) omzet / completed.size else 0.0
 
@@ -445,6 +493,8 @@ class LaporanKeuanganViewModel @Inject constructor(
                 totalDiskon = diskon,
                 totalPajak = pajak,
                 totalHpp = hpp,
+                totalPemasukanLainnya = pemasukanLainnya,
+                totalPengeluaranBeban = pengeluaranBeban,
                 totalRefundNominal = totalRefundNominal,
                 totalRefundCount = totalRefundCount,
                 dailySales = dailyList,

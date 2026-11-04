@@ -477,7 +477,7 @@ class ExcelExportService @Inject constructor() {
                 PnLItemData(
                     label = "Penjualan Kotor (Gross Sales)",
                     value = grossSales,
-                    description = "Basis nilai seluruh transaksi sebelum diskon & refund",
+                    description = "Omzet bersih ditambah diskon dan transaksi refund/batal",
                     customRatio = "100.0%"
                 )
             )
@@ -523,16 +523,30 @@ class ExcelExportService @Inject constructor() {
             )
             pnlItems.add(
                 PnLItemData(
-                    label = "Pajak Pertambahan Nilai (PPN)",
+                    label = "Pemasukan Lainnya",
+                    value = reportData.totalPemasukanLainnya,
+                    description = "Pemasukan dari catatan keuangan selain penjualan"
+                )
+            )
+            pnlItems.add(
+                PnLItemData(
+                    label = "Beban & Pengeluaran",
+                    value = -reportData.totalPengeluaranBeban,
+                    description = "Beban dari catatan pengeluaran keuangan"
+                )
+            )
+            pnlItems.add(
+                PnLItemData(
+                    label = "PPN Terkumpul (Titipan)",
                     value = reportData.totalPajak,
-                    description = "Pajak kasir yang berhasil dihimpun"
+                    description = "Informasi pajak yang dipungut; tidak dihitung sebagai laba"
                 )
             )
             pnlItems.add(
                 PnLItemData(
                     label = "TOTAL LABA BERSIH (NET PROFIT)",
                     value = reportData.totalLabaBersih,
-                    description = "Keuntungan bersih akhir toko pada periode ini",
+                    description = "Laba kotor ditambah pemasukan lain dan dikurangi beban",
                     isSubtotalOrTotal = true,
                     customRatio = "Margin ${String.format(Locale.US, "%.1f", reportData.profitMarginPersen)}%"
                 )

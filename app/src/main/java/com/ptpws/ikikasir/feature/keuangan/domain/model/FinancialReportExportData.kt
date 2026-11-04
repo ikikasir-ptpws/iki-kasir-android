@@ -15,6 +15,8 @@ data class FinancialReportExportData(
     val totalHpp: Double,
     val totalRefundNominal: Double = 0.0,
     val totalRefundCount: Int = 0,
+    val totalPemasukanLainnya: Double = 0.0,
+    val totalPengeluaranBeban: Double = 0.0,
     val dailySales: List<DailySalesExportEntry> = emptyList(),
     val topProdukList: List<TopProductExportEntry> = emptyList(),
     val metodePembayaranList: List<PaymentMethodExportEntry> = emptyList()
