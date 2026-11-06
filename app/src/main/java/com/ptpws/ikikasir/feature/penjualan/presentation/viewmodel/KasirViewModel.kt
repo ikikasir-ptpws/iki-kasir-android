@@ -164,6 +164,24 @@ class KasirViewModel @Inject constructor(
         }
     }
 
+    fun setCartItemQuantity(produk: Produk, quantity: Int) {
+        if (quantity > produk.stock) {
+            _state.update {
+                it.copy(userMessage = "Jumlah produk \"${produk.name}\" tidak boleh melebihi stok (${produk.stock} unit)")
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            when {
+                quantity <= 0 -> manageCartUseCase.removeFromCart(produk.id)
+                _state.value.getItemQuantity(produk.id) > 0 ->
+                    manageCartUseCase.updateQuantity(produk.id, quantity)
+                else -> manageCartUseCase.addToCart(produk, quantity)
+            }
+        }
+    }
+
     fun removeFromCart(produkId: String) {
         viewModelScope.launch {
             manageCartUseCase.removeFromCart(produkId)

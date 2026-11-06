@@ -94,8 +94,7 @@ fun KasirCompactScreen(
             onDismiss = { viewModel.openProductCatalogDialog(false) },
             onSearchQueryChange = { viewModel.onCatalogSearchQueryChange(it) },
             onCategoryFilterChange = { viewModel.onCategoryFilterChange(it) },
-            onIncrement = { viewModel.incrementCartItem(it) },
-            onDecrement = { viewModel.decrementCartItem(it) },
+            onSetQuantity = { produk, quantity -> viewModel.setCartItemQuantity(produk, quantity) },
             onSelesai = { viewModel.openProductCatalogDialog(false) },
             onRefresh = { viewModel.refreshKatalog() }
         )

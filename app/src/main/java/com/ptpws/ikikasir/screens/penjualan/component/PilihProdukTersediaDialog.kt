@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -21,11 +23,15 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -51,8 +57,7 @@ fun PilihProdukTersediaDialog(
     onDismiss: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onCategoryFilterChange: (String?) -> Unit,
-    onIncrement: (Produk) -> Unit,
-    onDecrement: (Produk) -> Unit,
+    onSetQuantity: (Produk, Int) -> Unit,
     onSelesai: () -> Unit,
     onRefresh: () -> Unit = {}
 ) {
@@ -128,6 +133,7 @@ fun PilihProdukTersediaDialog(
         val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
         val isCompactWidth = screenWidth < 600.dp
         val isCompactHeight = screenHeight < 520.dp
+        val focusManager = LocalFocusManager.current
 
         // Penyesuaian ukuran dialog adaptif sesuai layar (HP Portrait, HP Landscape, Tablet Portrait, Tablet Landscape)
         val (dialogWidthFraction, maxDialogWidth, dialogHeightFraction) = when {
@@ -346,8 +352,15 @@ fun PilihProdukTersediaDialog(
                         items(displayedList, key = { it.id }) { produk ->
                             val currentQty = state.getItemQuantity(produk.id)
                             val isSelected = currentQty > 0
-                            val canIncrement = currentQty < produk.stock
-                            val canDecrement = currentQty > 0
+                            var quantityText by remember(produk.id) {
+                                mutableStateOf(currentQty.toString())
+                            }
+                            var wasQuantityFocused by remember(produk.id) {
+                                mutableStateOf(false)
+                            }
+                            val inputQty = quantityText.toIntOrNull() ?: currentQty
+                            val canIncrement = inputQty < produk.stock
+                            val canDecrement = inputQty > 0
 
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
@@ -529,7 +542,10 @@ fun PilihProdukTersediaDialog(
                                                     .clip(CircleShape)
                                                     .background(if (canDecrement) Color.White else Color(0xFFF1F5F9))
                                                     .clickable(enabled = canDecrement) {
-                                                        if (canDecrement) onDecrement(produk)
+                                                        if (canDecrement) {
+                                                            quantityText = (inputQty - 1).toString()
+                                                            onSetQuantity(produk, inputQty - 1)
+                                                        }
                                                     },
                                                 contentAlignment = Alignment.Center
                                             ) {
@@ -541,15 +557,65 @@ fun PilihProdukTersediaDialog(
                                                 )
                                             }
 
-                                            Text(
-                                                text = "$currentQty",
-                                                fontFamily = interfamily,
-                                                fontSize = if (isCompactWidth) 12.5.sp else 13.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (canDecrement) Color(0xFF0F172A) else Color(0xFF94A3B8),
-                                                modifier = Modifier.widthIn(min = 16.dp),
-                                                textAlign = TextAlign.Center
-                                            )
+                                            Surface(
+                                                modifier = Modifier
+                                                    .width(if (isCompactWidth) 44.dp else 52.dp)
+                                                    .height(32.dp),
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = Color.White,
+                                                border = BorderStroke(
+                                                    1.dp,
+                                                    if (isSelected) Color(0xFF3B32D1).copy(alpha = 0.5f)
+                                                    else Color(0xFFE2E8F0)
+                                                )
+                                            ) {
+                                                BasicTextField(
+                                                    value = quantityText,
+                                                    onValueChange = { input ->
+                                                        if (input.all { it in '0'..'9' }) {
+                                                            quantityText = input
+                                                        }
+                                                    },
+                                                    singleLine = true,
+                                                    textStyle = TextStyle(
+                                                        color = Color(0xFF0F172A),
+                                                        fontSize = 13.sp,
+                                                        fontFamily = interfamily,
+                                                        fontWeight = FontWeight.Bold,
+                                                        textAlign = TextAlign.Center
+                                                    ),
+                                                    keyboardOptions = KeyboardOptions(
+                                                        keyboardType = KeyboardType.Number,
+                                                        imeAction = ImeAction.Done
+                                                    ),
+                                                    keyboardActions = KeyboardActions(
+                                                        onDone = { focusManager.clearFocus() }
+                                                    ),
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .onFocusChanged { focusState ->
+                                                            if (focusState.isFocused) {
+                                                                wasQuantityFocused = true
+                                                            } else if (wasQuantityFocused) {
+                                                                wasQuantityFocused = false
+                                                                val requestedQty = quantityText.toIntOrNull()
+                                                                if (requestedQty != null && requestedQty <= produk.stock) {
+                                                                    onSetQuantity(produk, requestedQty)
+                                                                } else {
+                                                                    quantityText = state.getItemQuantity(produk.id).toString()
+                                                                }
+                                                            }
+                                                        },
+                                                    decorationBox = { innerTextField ->
+                                                        Box(
+                                                            modifier = Modifier.fillMaxSize(),
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            innerTextField()
+                                                        }
+                                                    }
+                                                )
+                                            }
 
                                             // Plus Icon Button (Solid Blue when available, Grayed & disabled when max stock reached)
                                             Box(
@@ -558,7 +624,10 @@ fun PilihProdukTersediaDialog(
                                                     .clip(CircleShape)
                                                     .background(if (canIncrement) Color(0xFF3B32D1) else Color(0xFFCBD5E1))
                                                     .clickable(enabled = canIncrement) {
-                                                        if (canIncrement) onIncrement(produk)
+                                                        if (canIncrement) {
+                                                            quantityText = (inputQty + 1).toString()
+                                                            onSetQuantity(produk, inputQty + 1)
+                                                        }
                                                     },
                                                 contentAlignment = Alignment.Center
                                             ) {
