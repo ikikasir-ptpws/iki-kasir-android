@@ -435,29 +435,27 @@ fun PilihProdukTersediaDialog(
                                             it.id.equals(produk.categoryId, ignoreCase = true) ||
                                             it.name.equals(produk.categoryId, ignoreCase = true)
                                         }
-                                        val categoryName = matchedCategory?.name ?: produk.categoryId.takeIf { it.isNotBlank() } ?: ""
+                                        val categoryName = matchedCategory?.name ?: "Belum ada kategori"
 
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
-                                            if (categoryName.isNotBlank()) {
-                                                Text(
-                                                    text = categoryName,
-                                                    fontFamily = interfamily,
-                                                    fontSize = 11.sp,
-                                                    color = Color(0xFF94A3B8),
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis,
-                                                    modifier = Modifier.weight(1f, fill = false)
-                                                )
-                                                Text(
-                                                    text = "•",
-                                                    fontFamily = interfamily,
-                                                    fontSize = 11.sp,
-                                                    color = Color(0xFFCBD5E1)
-                                                )
-                                            }
+                                            Text(
+                                                text = categoryName,
+                                                fontFamily = interfamily,
+                                                fontSize = 11.sp,
+                                                color = if (matchedCategory == null) Color(0xFFB45309) else Color(0xFF94A3B8),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.weight(1f, fill = false)
+                                            )
+                                            Text(
+                                                text = "•",
+                                                fontFamily = interfamily,
+                                                fontSize = 11.sp,
+                                                color = Color(0xFFCBD5E1)
+                                            )
                                             val isOutOfStock = produk.stock <= 0
                                             val isLowStock = produk.stock <= produk.lowStockThreshold
                                             Surface(

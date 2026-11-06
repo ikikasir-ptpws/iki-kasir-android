@@ -23,15 +23,6 @@ data class KategoriDto(
     @get:PropertyName("isVisibleInCashier") @set:PropertyName("isVisibleInCashier")
     var isVisibleInCashier: Boolean = true,
 
-    @get:PropertyName("productCount") @set:PropertyName("productCount")
-    var productCount: Int = 0,
-
-    @get:PropertyName("lowStockCount") @set:PropertyName("lowStockCount")
-    var lowStockCount: Int = 0,
-
-    @get:PropertyName("outOfStockCount") @set:PropertyName("outOfStockCount")
-    var outOfStockCount: Int = 0,
-
     // @ServerTimestamp: jika null saat write, Firestore otomatis isi dengan waktu server
     @get:PropertyName("createdAt") @set:PropertyName("createdAt")
     @get:ServerTimestamp
@@ -48,9 +39,6 @@ data class KategoriDto(
             description = description,
             iconUrl = iconUrl,
             isVisibleInCashier = isVisibleInCashier,
-            productCount = productCount,
-            lowStockCount = lowStockCount,
-            outOfStockCount = outOfStockCount,
             createdAt = createdAt ?: Timestamp.now(),
             updatedAt = updatedAt ?: Timestamp.now(),
             isSynced = true
@@ -64,9 +52,6 @@ data class KategoriDto(
             description = description,
             iconUrl = iconUrl,
             isVisibleInCashier = isVisibleInCashier,
-            productCount = productCount,
-            lowStockCount = lowStockCount,
-            outOfStockCount = outOfStockCount,
             createdAt = createdAt ?: Timestamp.now(),
             updatedAt = updatedAt ?: Timestamp.now(),
             isSynced = true,
@@ -86,9 +71,6 @@ fun Kategori.toDto(): KategoriDto {
         description = description,
         iconUrl = iconUrl,
         isVisibleInCashier = isVisibleInCashier,
-        productCount = productCount,
-        lowStockCount = lowStockCount,
-        outOfStockCount = outOfStockCount,
         createdAt = null,
         updatedAt = null
     )

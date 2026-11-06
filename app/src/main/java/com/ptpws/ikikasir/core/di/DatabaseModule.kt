@@ -28,6 +28,41 @@ private val MIGRATION_37_38 = object : Migration(37, 38) {
     }
 }
 
+private val MIGRATION_38_39 = object : Migration(38, 39) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            """
+            CREATE TABLE categories_new (
+                id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,
+                iconUrl TEXT NOT NULL,
+                isVisibleInCashier INTEGER NOT NULL,
+                createdAt INTEGER NOT NULL,
+                updatedAt INTEGER NOT NULL,
+                isSynced INTEGER NOT NULL,
+                isDeleted INTEGER NOT NULL,
+                PRIMARY KEY(id)
+            )
+            """.trimIndent()
+        )
+        database.execSQL(
+            """
+            INSERT INTO categories_new (
+                id, name, description, iconUrl, isVisibleInCashier,
+                createdAt, updatedAt, isSynced, isDeleted
+            )
+            SELECT
+                id, name, description, iconUrl, isVisibleInCashier,
+                createdAt, updatedAt, isSynced, isDeleted
+            FROM categories
+            """.trimIndent()
+        )
+        database.execSQL("DROP TABLE categories")
+        database.execSQL("ALTER TABLE categories_new RENAME TO categories")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
@@ -42,7 +77,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_37_38)
+            .addMigrations(MIGRATION_37_38, MIGRATION_38_39)
             .fallbackToDestructiveMigration()
             .build()
     }

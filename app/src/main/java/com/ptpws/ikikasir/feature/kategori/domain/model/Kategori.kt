@@ -8,9 +8,6 @@ data class Kategori(
     val description: String = "",
     val iconUrl: String = "LocalCafe|#4F46E5",
     val isVisibleInCashier: Boolean = true,
-    val productCount: Int = 0,
-    val lowStockCount: Int = 0,
-    val outOfStockCount: Int = 0,
     val createdAt: Timestamp = Timestamp.now(),
     val updatedAt: Timestamp = Timestamp.now(),
     val isSynced: Boolean = true
@@ -35,6 +32,4 @@ data class Kategori(
             "#4F46E5"
         }
     }
-
-    val jumlahProduk: Int get() = productCount
 }

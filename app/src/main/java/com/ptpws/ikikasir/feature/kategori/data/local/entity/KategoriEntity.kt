@@ -24,15 +24,6 @@ data class KategoriEntity(
     @ColumnInfo(name = "isVisibleInCashier")
     val isVisibleInCashier: Boolean = true,
 
-    @ColumnInfo(name = "productCount")
-    val productCount: Int = 0,
-
-    @ColumnInfo(name = "lowStockCount")
-    val lowStockCount: Int = 0,
-
-    @ColumnInfo(name = "outOfStockCount")
-    val outOfStockCount: Int = 0,
-
     // Room menyimpan sebagai Long via TimestampConverter, tapi tipenya Timestamp
     @ColumnInfo(name = "createdAt")
     val createdAt: Timestamp = Timestamp.now(),
@@ -67,8 +58,6 @@ data class KategoriEntity(
         }
     }
 
-    val jumlahProduk: Int get() = productCount
-
     fun toDomain(): Kategori {
         return Kategori(
             id = id,
@@ -76,9 +65,6 @@ data class KategoriEntity(
             description = description,
             iconUrl = iconUrl,
             isVisibleInCashier = isVisibleInCashier,
-            productCount = productCount,
-            lowStockCount = lowStockCount,
-            outOfStockCount = outOfStockCount,
             createdAt = createdAt,
             updatedAt = updatedAt,
             isSynced = isSynced
@@ -93,9 +79,6 @@ fun Kategori.toEntity(isSynced: Boolean = true, isDeleted: Boolean = false): Kat
         description = description,
         iconUrl = iconUrl,
         isVisibleInCashier = isVisibleInCashier,
-        productCount = productCount,
-        lowStockCount = lowStockCount,
-        outOfStockCount = outOfStockCount,
         createdAt = createdAt,
         updatedAt = updatedAt,
         isSynced = isSynced,

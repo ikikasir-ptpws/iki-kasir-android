@@ -461,59 +461,6 @@ fun DaftarProdukScreen(
                 }
             }
 
-            // Warning Banner jika terdapat produk yang belum memiliki kategori terdaftar
-            if (unassignedCategoryCount > 0 && !isUnassignedFilterSelected) {
-                item {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFFFFBEB),
-                        border = BorderStroke(1.dp, Color(0xFFFDE68A)),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                isUnassignedFilterSelected = true
-                                isLowStockFilterSelected = false
-                                viewModel.onCategoryFilterChange(null)
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = Color(0xFFD97706),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "$unassignedCategoryCount produk belum memilih kategori terdaftar",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF92400E),
-                                    fontFamily = interfamily
-                                )
-                                Text(
-                                    text = "Ketuk untuk menyaring dan menetapkan kategori",
-                                    fontSize = 11.sp,
-                                    color = Color(0xFFB45309),
-                                    fontFamily = interfamily
-                                )
-                            }
-                            Text(
-                                text = "Pilih",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFD97706),
-                                fontFamily = interfamily
-                            )
-                        }
-                    }
-                }
-            }
-
             // Subheader: Label Jumlah Produk & Sorting Dropdown
             item {
                 Row(

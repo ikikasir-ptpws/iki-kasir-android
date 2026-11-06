@@ -62,9 +62,6 @@ class TambahKategoriViewModel @Inject constructor(
                 iconName = kategori.iconName,
                 colorHex = kategori.colorHex,
                 isVisibleInCashier = kategori.isVisibleInCashier,
-                productCount = kategori.productCount,
-                lowStockCount = kategori.lowStockCount,
-                outOfStockCount = kategori.outOfStockCount,
                 isEditMode = true
             )
         }
@@ -112,9 +109,6 @@ class TambahKategoriViewModel @Inject constructor(
                 description = currentState.deskripsi.trim(),
                 iconUrl = combinedIconUrl,
                 isVisibleInCashier = currentState.isVisibleInCashier,
-                productCount = currentState.productCount,
-                lowStockCount = currentState.lowStockCount,
-                outOfStockCount = currentState.outOfStockCount,
                 updatedAt = Timestamp.now()
             )
 
