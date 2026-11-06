@@ -441,6 +441,7 @@ fun DaftarUserScreen(
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 15.sp,
                                         color = Color(0xFF111827),
+                                        modifier = Modifier.weight(1f, fill = false),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -453,8 +454,12 @@ fun DaftarUserScreen(
                                             text = role,
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF4B5563)
+                                            color = Color(0xFF4B5563),
+                                            maxLines = 1
                                         )
+                                    }
+                                    if (!user.isSynced) {
+                                        SyncStatusBadge()
                                     }
                                 }
 
@@ -464,11 +469,10 @@ fun DaftarUserScreen(
                                     text = user.email,
                                     fontFamily = interfamily,
                                     fontSize = 12.sp,
-                                    color = Color(0xFF6B7280)
+                                    color = Color(0xFF6B7280),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
-                                if (!user.isSynced) {
-                                    SyncStatusBadge()
-                                }
                             }
 
                             Spacer(modifier = Modifier.width(8.dp))

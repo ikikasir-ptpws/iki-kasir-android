@@ -28,12 +28,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -851,6 +853,7 @@ private fun MetodePembayaranDialog(
     var isQrisAktif by remember(initialSetting) { mutableStateOf(initialSetting.isQrisEnabled) }
     var isTransferAktif by remember(initialSetting) { mutableStateOf(initialSetting.isTransferEnabled) }
     var isKartuKreditAktif by remember(initialSetting) { mutableStateOf(initialSetting.isKartuKreditEnabled) }
+    val dialogScrollState = rememberScrollState()
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -862,23 +865,31 @@ private fun MetodePembayaranDialog(
                 .padding(horizontal = 4.dp)
         ) {
             Column(
-                modifier = Modifier.padding(22.dp),
+                modifier = Modifier
+                    .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * 0.85f)
+                    .verticalScroll(dialogScrollState)
+                    .padding(22.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Header (Judul & Close Button)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Pengaturan Metode Pembayaran",
-                        fontFamily = interfamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 17.sp,
-                        color = Color(0xFF1E293B)
-                    )
-                    if (!initialSetting.isSynced) SyncStatusBadge()
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Pengaturan Metode Pembayaran",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color(0xFF1E293B),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (!initialSetting.isSynced) SyncStatusBadge()
+                    }
                     IconButton(
                         onClick = onDismiss,
                         modifier = Modifier.size(24.dp)
