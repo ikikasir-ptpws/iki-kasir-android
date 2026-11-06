@@ -41,7 +41,7 @@ object StrukPdfHelper {
         if (transaksi.notes.isNotBlank()) calculatedHeight += 50
         if (notaSetting.storePhone.isNotBlank()) calculatedHeight += 14
         if (notaSetting.wifiName.isNotBlank() || notaSetting.wifiPassword.isNotBlank()) calculatedHeight += 40
-        if (notaSetting.logoUrl.isNotBlank()) calculatedHeight += 85
+        if (notaSetting.logoUrl.isNotBlank() || notaSetting.logoLocalPath.isNotBlank()) calculatedHeight += 85
 
         val pageInfo = PdfDocument.PageInfo.Builder(width, calculatedHeight, 1).create()
         val page = pdfDoc.startPage(pageInfo)
@@ -98,8 +98,13 @@ object StrukPdfHelper {
         val notaSetting = NotaSettingPreferences(context).getSetting()
 
         // ── 0. Logo Toko ────────
-        if (notaSetting.logoUrl.isNotBlank()) {
-            val logoBitmap = RemoteImageBitmapLoader.load(context, notaSetting.logoUrl, maxDimension = 1024)
+        if (notaSetting.logoUrl.isNotBlank() || notaSetting.logoLocalPath.isNotBlank()) {
+            val logoBitmap = RemoteImageBitmapLoader.loadReceiptLogo(
+                context = context,
+                remoteUrl = notaSetting.logoUrl,
+                localPath = notaSetting.logoLocalPath,
+                maxDimension = 1024
+            )
             if (logoBitmap != null) {
                 val maxDisplayWidth = 100f
                 val maxDisplayHeight = 65f

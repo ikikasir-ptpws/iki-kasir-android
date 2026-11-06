@@ -2,6 +2,7 @@ package com.ptpws.ikikasir.feature.produk.data.repository
 
 import android.util.Log
 import com.ptpws.ikikasir.core.network.NetworkMonitor
+import com.ptpws.ikikasir.core.util.FirebaseStorageHelper
 import com.ptpws.ikikasir.feature.produk.data.local.dao.ProdukDao
 import com.ptpws.ikikasir.feature.produk.data.local.entity.toEntity
 import com.ptpws.ikikasir.feature.produk.data.remote.datasource.ProdukRemoteDataSource
@@ -55,7 +56,10 @@ class ProdukRepositoryImpl @Inject constructor(
                     remoteDataSource.getProdukFlow()
                         .collect { remoteList ->
                             Log.d(TAG, "Realtime Firestore produk update received: ${remoteList.size} items")
-                            val entities = remoteList.map { it.toEntity() }
+                            val unsyncedIds = localDao.getUnsyncedProduk().map { it.id }.toSet()
+                            val entities = remoteList
+                                .filterNot { it.id in unsyncedIds }
+                                .map { it.toEntity() }
                             localDao.insertOrUpdateAll(entities)
                             val remoteIds = remoteList.map { it.id }
                             if (remoteIds.isNotEmpty()) {
@@ -77,7 +81,10 @@ class ProdukRepositoryImpl @Inject constructor(
             try {
                 val remoteList = remoteDataSource.getAllProduk()
                 if (remoteList.isNotEmpty()) {
-                    localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                    val unsyncedIds = localDao.getUnsyncedProduk().map { it.id }.toSet()
+                    localDao.insertOrUpdateAll(
+                        remoteList.filterNot { it.id in unsyncedIds }.map { it.toEntity() }
+                    )
                     localDao.deleteSyncedNotInRemote(remoteList.map { it.id })
                 } else {
                     localDao.deleteAllSynced()
@@ -114,18 +121,18 @@ class ProdukRepositoryImpl @Inject constructor(
 
     override suspend fun insertProduk(produk: Produk): Flow<Result<Unit>> = flow {
         val isOnline = networkMonitor.isConnected()
-        Log.d(TAG, "insertProduk triggered: name='', isOnline=")
+        localDao.insertOrUpdate(produk.toEntity(isSynced = false))
 
         if (isOnline) {
+            var produkToSave = produk
             try {
-                Log.d(TAG, "Online: Mengirim data ke Firestore collection 'products' with ID ''...")
-                remoteDataSource.saveProduk(produk.toDto())
-                Log.d(TAG, "Online: Sukses simpan ke Firestore! Menyimpan ke Room DB (isSynced = true)")
-                localDao.insertOrUpdate(produk.toEntity(isSynced = true))
+                produkToSave = uploadLocalImage(produk)
+                remoteDataSource.saveProduk(produkToSave.toDto())
+                localDao.insertOrUpdate(produkToSave.toEntity(isSynced = true))
                 emit(Result.success(Unit))
             } catch (e: Exception) {
-                Log.e(TAG, "Gagal simpan ke Firestore (akan disimpan ke Room DB lokal dengan isSynced = false). Error: ", e)
-                localDao.insertOrUpdate(produk.toEntity(isSynced = false))
+                Log.e(TAG, "Produk disimpan lokal dan akan disinkronkan saat koneksi tersedia.", e)
+                localDao.insertOrUpdate(produkToSave.toEntity(isSynced = false))
                 emit(Result.success(Unit))
             }
         } else {
@@ -137,17 +144,18 @@ class ProdukRepositoryImpl @Inject constructor(
 
     override suspend fun updateProduk(produk: Produk): Flow<Result<Unit>> = flow {
         val isOnline = networkMonitor.isConnected()
+        localDao.insertOrUpdate(produk.toEntity(isSynced = false))
 
         if (isOnline) {
+            var produkToSave = produk
             try {
-                Log.d(TAG, "Online: Updating produk in Firestore...")
-                remoteDataSource.updateProduk(produk.toDto())
-                Log.d(TAG, "Online: Firestore update success, updating Room DB with isSynced = true")
-                localDao.insertOrUpdate(produk.toEntity(isSynced = true))
+                produkToSave = uploadLocalImage(produk)
+                remoteDataSource.updateProduk(produkToSave.toDto())
+                localDao.insertOrUpdate(produkToSave.toEntity(isSynced = true))
                 emit(Result.success(Unit))
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to update in Firestore online, falling back to local DB: ")
-                localDao.insertOrUpdate(produk.toEntity(isSynced = false))
+                Log.w(TAG, "Produk diperbarui lokal dan akan disinkronkan saat koneksi tersedia.", e)
+                localDao.insertOrUpdate(produkToSave.toEntity(isSynced = false))
                 emit(Result.success(Unit))
             }
         } else {
@@ -209,12 +217,12 @@ class ProdukRepositoryImpl @Inject constructor(
                     Log.e(TAG, "Failed to sync delete for : ")
                 }
             } else {
-                Log.d(TAG, "Syncing upsert for ID:  ()")
                 try {
-                    remoteDataSource.saveProduk(item.toDomain().toDto())
-                    localDao.markAsSynced(item.id)
+                    val produkWithUploadedImage = uploadLocalImage(item.toDomain())
+                    remoteDataSource.saveProduk(produkWithUploadedImage.toDto())
+                    localDao.insertOrUpdate(produkWithUploadedImage.toEntity(isSynced = true))
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to sync upsert for : ")
+                    Log.e(TAG, "Failed to sync product ${item.id}: ${e.message}", e)
                 }
             }
         }
@@ -223,7 +231,10 @@ class ProdukRepositoryImpl @Inject constructor(
         try {
             val remoteList = remoteDataSource.getAllProduk()
             if (remoteList.isNotEmpty()) {
-                localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                val unsyncedIds = localDao.getUnsyncedProduk().map { it.id }.toSet()
+                localDao.insertOrUpdateAll(
+                    remoteList.filterNot { it.id in unsyncedIds }.map { it.toEntity() }
+                )
                 localDao.deleteSyncedNotInRemote(remoteList.map { it.id })
             } else {
                 localDao.deleteAllSynced()
@@ -231,5 +242,13 @@ class ProdukRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Failed to pull remote products during sync: ${e.message}")
         }
+    }
+
+    private suspend fun uploadLocalImage(produk: Produk): Produk {
+        val downloadUrl = FirebaseStorageHelper.uploadLocalImage(
+            imageReference = produk.imageUrl,
+            folderName = "product_images"
+        )
+        return produk.copy(imageUrl = downloadUrl)
     }
 }

@@ -2,6 +2,7 @@ package com.ptpws.ikikasir.feature.penjualan.data.repository
 
 import android.util.Log
 import com.ptpws.ikikasir.core.network.NetworkMonitor
+import com.ptpws.ikikasir.core.util.FirebaseStorageHelper
 import com.ptpws.ikikasir.feature.penjualan.data.local.dao.TransactionDao
 import com.ptpws.ikikasir.feature.penjualan.data.local.entity.toEntity
 import com.ptpws.ikikasir.feature.penjualan.data.remote.datasource.PenjualanRemoteDataSource
@@ -101,7 +102,12 @@ class PenjualanRepositoryImpl @Inject constructor(
                 try {
                     val remoteList = remoteDataSource.getAllTransactions()
                     if (remoteList.isNotEmpty()) {
-                        localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                        val unsyncedIds = localDao.getUnsyncedTransactions()
+                            .map { it.transactionId }
+                            .toSet()
+                        localDao.insertOrUpdateAll(
+                            remoteList.filterNot { it.transactionId in unsyncedIds }.map { it.toEntity() }
+                        )
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to fetch remote transactions: ", e)
@@ -122,24 +128,25 @@ class PenjualanRepositoryImpl @Inject constructor(
     override suspend fun simpanTransaksi(transaksi: PenjualanTransaksi): Flow<Result<Unit>> = flow {
         val isOnline = networkMonitor.isConnected()
         Log.d(TAG, "simpanTransaksi: id='${transaksi.transactionId}', number='${transaksi.transactionNumber}', status='${transaksi.status}', isOnline=$isOnline")
+        var transactionToSave = transaksi
+        localDao.insertOrUpdate(transactionToSave.toEntity(isSynced = false))
 
         if (isOnline) {
             try {
-                Log.d(TAG, "Online: Saving transaction to Firestore ('transactions')...")
-                remoteDataSource.saveTransaction(transaksi.toDto())
+                transactionToSave = uploadPaymentProof(transaksi)
+                remoteDataSource.saveTransaction(transactionToSave.toDto())
                 Log.d(TAG, "Online: Firestore save success, saving to Room (isSynced=true)")
-                localDao.insertOrUpdate(transaksi.toEntity(isSynced = true))
+                localDao.insertOrUpdate(transactionToSave.toEntity(isSynced = true))
                 clearCart()
                 emit(Result.success(Unit))
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to save transaction to Firestore, saving locally (isSynced=false): ", e)
-                localDao.insertOrUpdate(transaksi.toEntity(isSynced = false))
+                localDao.insertOrUpdate(transactionToSave.toEntity(isSynced = false))
                 clearCart()
                 emit(Result.success(Unit))
             }
         } else {
             Log.d(TAG, "Offline: Saving transaction to Room (isSynced=false)")
-            localDao.insertOrUpdate(transaksi.toEntity(isSynced = false))
             clearCart()
             emit(Result.success(Unit))
         }
@@ -166,8 +173,9 @@ class PenjualanRepositoryImpl @Inject constructor(
 
         for (item in unsyncedItems) {
             try {
-                remoteDataSource.saveTransaction(item.toDomain().toDto())
-                localDao.markAsSynced(item.transactionId)
+                val transactionToSave = uploadPaymentProof(item.toDomain())
+                remoteDataSource.saveTransaction(transactionToSave.toDto())
+                localDao.insertOrUpdate(transactionToSave.toEntity(isSynced = true))
                 Log.d(TAG, "Synced transactionId: ${item.transactionId}")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to sync transactionId ${item.transactionId}: ", e)
@@ -177,10 +185,27 @@ class PenjualanRepositoryImpl @Inject constructor(
         try {
             val remoteList = remoteDataSource.getAllTransactions()
             if (remoteList.isNotEmpty()) {
-                localDao.insertOrUpdateAll(remoteList.map { it.toEntity() })
+                val unsyncedIds = localDao.getUnsyncedTransactions()
+                    .map { it.transactionId }
+                    .toSet()
+                localDao.insertOrUpdateAll(
+                    remoteList.filterNot { it.transactionId in unsyncedIds }.map { it.toEntity() }
+                )
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to pull remote transactions: ", e)
         }
+    }
+
+    private suspend fun uploadPaymentProof(
+        transaction: PenjualanTransaksi
+    ): PenjualanTransaksi {
+        val proof = transaction.paymentProofUrl
+        if (proof.isBlank()) return transaction
+        val uploadedUrl = FirebaseStorageHelper.uploadLocalImage(
+            imageReference = proof,
+            folderName = "payment_proofs"
+        )
+        return transaction.copy(paymentProofUrl = uploadedUrl)
     }
 }

@@ -53,7 +53,7 @@ class StrukPrintDocumentAdapter(
         if (transaksi.notes.isNotBlank()) calculatedHeight += 50
         if (notaSetting.storePhone.isNotBlank()) calculatedHeight += 14
         if (notaSetting.wifiName.isNotBlank() || notaSetting.wifiPassword.isNotBlank()) calculatedHeight += 40
-        if (notaSetting.logoUrl.isNotBlank()) calculatedHeight += 85
+        if (notaSetting.logoUrl.isNotBlank() || notaSetting.logoLocalPath.isNotBlank()) calculatedHeight += 85
 
         val pageInfo = PdfDocument.PageInfo.Builder(width, calculatedHeight, 1).create()
         val page = pdfDoc.startPage(pageInfo)

@@ -15,5 +15,6 @@ data class CatatanKeuanganEntity(
     val metodePembayaran: String = "Tunai", // "Tunai", "QRIS", "Kartu Debit", "Transfer"
     val nominal: Double = 0.0,
     val buktiUri: String? = null,
-    val createdAtMillis: Long = System.currentTimeMillis()
+    val createdAtMillis: Long = System.currentTimeMillis(),
+    val isSynced: Boolean = true
 )

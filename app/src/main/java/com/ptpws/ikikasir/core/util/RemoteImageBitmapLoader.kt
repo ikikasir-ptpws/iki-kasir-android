@@ -1,6 +1,8 @@
 package com.ptpws.ikikasir.core.util
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -9,6 +11,25 @@ import android.util.Log
 import java.net.HttpURLConnection
 
 object RemoteImageBitmapLoader {
+
+    fun loadReceiptLogo(
+        context: Context,
+        remoteUrl: String,
+        localPath: String,
+        maxDimension: Int = 0
+    ): Bitmap? {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        val capabilities = connectivityManager?.activeNetwork?.let(connectivityManager::getNetworkCapabilities)
+        val isOnline = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
+            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+
+        return if (isOnline) {
+            load(context, remoteUrl, maxDimension) ?: load(context, localPath, maxDimension)
+        } else {
+            load(context, localPath, maxDimension)
+        }
+    }
 
     fun load(context: Context, imageUrl: String, maxDimension: Int = 0): Bitmap? {
         if (imageUrl.isBlank()) return null

@@ -46,7 +46,6 @@ import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.commond.ImageUploadType
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.commond.rememberGlobalImagePicker
-import com.ptpws.ikikasir.core.util.FirebaseStorageHelper
 import kotlinx.coroutines.delay
 import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting
@@ -1256,6 +1255,15 @@ private fun NotaSettingDialog(
     var kataSandiWifi by remember(initialSetting) { mutableStateOf(initialSetting.wifiPassword) }
     var ukuranKertas by remember(initialSetting) { mutableStateOf(if (initialSetting.paperWidth.isNotBlank()) initialSetting.paperWidth else "58mm") }
     var logoUrl by remember(initialSetting) { mutableStateOf(initialSetting.logoUrl) }
+    var logoLocalPath by remember(initialSetting) {
+        mutableStateOf(
+            initialSetting.logoLocalPath.ifBlank {
+                initialSetting.logoUrl.takeIf {
+                    Uri.parse(it).scheme.equals("file", ignoreCase = true)
+                }.orEmpty()
+            }
+        )
+    }
 
     val logoPickerState = rememberGlobalImagePicker(
         onImageProcessed = { permanentUri ->
@@ -1279,27 +1287,25 @@ private fun NotaSettingDialog(
                         compressedBitmap
                     }
 
-                    GlobalUploadProgress.updateProgress(0.25f, "Mengunggah logo ke penyimpanan...")
-                    resizedLogoFile = File(context.cacheDir, "store_logo_${System.currentTimeMillis()}.png")
+                    GlobalUploadProgress.updateProgress(0.25f, "Menyimpan logo di perangkat...")
+                    val logoDirectory = File(context.filesDir, "store_logo")
+                    if (!logoDirectory.exists() && !logoDirectory.mkdirs()) {
+                        throw IllegalStateException("Gagal membuat penyimpanan logo lokal")
+                    }
+                    resizedLogoFile = File(logoDirectory, "store_logo_${System.currentTimeMillis()}.png")
                     FileOutputStream(resizedLogoFile).use { output ->
                         check(scaledBitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) {
                             "Gagal menyimpan gambar logo"
                         }
                     }
-                    logoUrl = FirebaseStorageHelper.uploadImageToStorage(
-                        fileUri = Uri.fromFile(resizedLogoFile),
-                        folderName = "store_logos",
-                        fileExtension = "png",
-                        onProgress = { progress, message ->
-                            GlobalUploadProgress.updateProgress(progress, message)
-                        }
-                    )
-                    GlobalUploadProgress.updateProgress(1f, "Logo berhasil diunggah!")
+                    val localLogoUri = Uri.fromFile(resizedLogoFile).toString()
+                    logoUrl = localLogoUri
+                    logoLocalPath = localLogoUri
+                    GlobalUploadProgress.updateProgress(1f, "Logo tersimpan dan akan disinkronkan saat online.")
                     delay(200)
                 } catch (e: Exception) {
                     Toast.makeText(context, "Terjadi kesalahan saat memproses logo: ${e.message}", Toast.LENGTH_SHORT).show()
                 } finally {
-                    resizedLogoFile?.delete()
                     GlobalUploadProgress.dismiss()
                 }
             }
@@ -1364,16 +1370,20 @@ private fun NotaSettingDialog(
                         color = Color(0xFF374151)
                     )
 
-                    if (logoUrl.isNotBlank()) {
-                        val logoModel = remember(logoUrl) {
-                            if (logoUrl.startsWith("data:image")) {
+                    if (logoUrl.isNotBlank() || logoLocalPath.isNotBlank()) {
+                        val displayLogo = if (
+                            logoUrl.startsWith("http", ignoreCase = true) ||
+                            logoUrl.startsWith("gs://", ignoreCase = true)
+                        ) logoUrl else logoLocalPath.ifBlank { logoUrl }
+                        val logoModel = remember(displayLogo) {
+                            if (displayLogo.startsWith("data:image")) {
                                 try {
-                                    android.util.Base64.decode(logoUrl.substringAfter("base64,"), android.util.Base64.DEFAULT)
+                                    android.util.Base64.decode(displayLogo.substringAfter("base64,"), android.util.Base64.DEFAULT)
                                 } catch (_: Exception) {
-                                    logoUrl
+                                    displayLogo
                                 }
                             } else {
-                                logoUrl
+                                displayLogo
                             }
                         }
                         Row(
@@ -1430,7 +1440,10 @@ private fun NotaSettingDialog(
                                 }
                                 Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
                                     IconButton(
-                                        onClick = { logoUrl = "" },
+                                        onClick = {
+                                            logoUrl = ""
+                                            logoLocalPath = ""
+                                        },
                                         modifier = Modifier.size(36.dp)
                                     ) {
                                         Icon(
@@ -1597,7 +1610,8 @@ private fun NotaSettingDialog(
                                 wifiName     = namaWifi,
                                 wifiPassword = kataSandiWifi,
                                 paperWidth   = ukuranKertas,
-                                logoUrl      = logoUrl
+                                logoUrl      = logoUrl,
+                                logoLocalPath = logoLocalPath
                             )
                             onSave(updatedSetting)
                         },

@@ -3,9 +3,37 @@ package com.ptpws.ikikasir.core.util
 import android.net.Uri
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
+import java.io.File
 import java.util.UUID
 
 object FirebaseStorageHelper {
+
+    suspend fun uploadLocalImage(
+        imageReference: String,
+        folderName: String,
+        fileExtension: String = "jpg"
+    ): String {
+        val value = imageReference.trim()
+        if (value.isBlank()) return value
+
+        val uri = Uri.parse(value)
+        val localUri = when (uri.scheme?.lowercase()) {
+            "file", "content" -> uri
+            "http", "https", "gs", "data" -> return value
+            null -> {
+                val file = File(value)
+                require(file.isFile) { "File gambar lokal tidak ditemukan: $value" }
+                Uri.fromFile(file)
+            }
+            else -> return value
+        }
+
+        return uploadImageToStorage(
+            fileUri = localUri,
+            folderName = folderName,
+            fileExtension = fileExtension
+        )
+    }
 
     suspend fun uploadImageToStorage(
         fileUri: Uri,

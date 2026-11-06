@@ -8,6 +8,7 @@ import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.ptpws.ikikasir.core.network.NetworkMonitor
+import com.ptpws.ikikasir.core.util.FirebaseStorageHelper
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.dao.UserDao
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.entity.UserEntity
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.entity.toEntity
@@ -109,7 +110,10 @@ class UserRepositoryImpl @Inject constructor(
 
             // 2. Simpan atau perbarui user dari Firestore ke Room DB
             if (remoteList.isNotEmpty()) {
-                val entitiesToUpdate = remoteList.map { it.toEntity() }
+                val unsyncedIds = currentLocal.filterNot { it.isSynced }.map { it.id }.toSet()
+                val entitiesToUpdate = remoteList
+                    .filterNot { it.id in unsyncedIds }
+                    .map { it.toEntity() }
                 localDao.insertOrUpdateAll(entitiesToUpdate)
             }
 
@@ -277,17 +281,20 @@ class UserRepositoryImpl @Inject constructor(
 
             // Buat akun langsung di Firebase Authentication menggunakan password input
             createAuthUserIfOnline(email = user.email, plainPassword = plainPassword)
+            localDao.insertOrUpdate(user.toEntity(isSynced = false))
+            var userToSave = user
             try {
+                userToSave = uploadUserPhoto(user)
                 Log.d(
                     TAG,
                     "Online: Mengirim data ke Firestore collection 'users' dengan ID '${user.id}' (tanpa password)..."
                 )
-                remoteDataSource.saveUser(user.toDto())
+                remoteDataSource.saveUser(userToSave.toDto())
                 Log.d(
                     TAG,
                     "Online: Berhasil simpan ke Firestore! Menyimpan ke Room DB (isSynced = true, tanpa password)"
                 )
-                localDao.insertOrUpdate(user.toEntity(isSynced = true))
+                localDao.insertOrUpdate(userToSave.toEntity(isSynced = true))
                 emit(Result.success(Unit))
             } catch (e: Exception) {
                 Log.e(
@@ -295,7 +302,7 @@ class UserRepositoryImpl @Inject constructor(
                     "Gagal simpan ke Firestore (disimpan ke Room DB dengan isSynced = false). Error: ${e.message}",
                     e
                 )
-                localDao.insertOrUpdate(user.toEntity(isSynced = false))
+                localDao.insertOrUpdate(userToSave.toEntity(isSynced = false))
                 emit(Result.success(Unit))
             }
         } else {
@@ -545,9 +552,11 @@ class UserRepositoryImpl @Inject constructor(
             }
 
             // Simpan ke Firestore & Room DB (tanpa password)
-            val updatedUserToSave = user
+            var updatedUserToSave = user
+            localDao.insertOrUpdate(updatedUserToSave.toEntity(isSynced = false))
 
             try {
+                updatedUserToSave = uploadUserPhoto(user)
                 Log.d(TAG, "Online: Update user di Firestore (tanpa password)...")
                 remoteDataSource.updateUser(updatedUserToSave.toDto())
                 Log.d(TAG, "Online: Firestore update sukses, update Room DB dengan isSynced = true")
@@ -666,12 +675,21 @@ class UserRepositoryImpl @Inject constructor(
             } else {
                 Log.d(TAG, "Sinkronisasi upsert untuk ID: ${item.id} (${item.fullName})")
                 try {
-                    remoteDataSource.saveUser(item.toDomain().toDto())
-                    localDao.markAsSynced(item.id)
+                    val syncedUser = uploadUserPhoto(item.toDomain())
+                    remoteDataSource.saveUser(syncedUser.toDto())
+                    localDao.insertOrUpdate(syncedUser.toEntity(isSynced = true))
+                    val currentAuthUser = FirebaseAuth.getInstance().currentUser
+                    if (currentAuthUser?.uid == syncedUser.id && syncedUser.photoUrl.isNotBlank()) {
+                        val profileRequest = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                            .setPhotoUri(android.net.Uri.parse(syncedUser.photoUrl))
+                            .build()
+                        currentAuthUser.updateProfile(profileRequest).await()
+                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Gagal sinkronisasi upsert untuk ${item.id}: ${e.message}")
                 }
             }
+
         }
 
         // Setelah push data lokal, tarik data terbaru dari Firestore dan jalankan rekonsiliasi penuh
@@ -681,5 +699,14 @@ class UserRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Gagal menarik data remote users saat sync: ${e.message}")
         }
+    }
+
+    private suspend fun uploadUserPhoto(user: User): User {
+        if (user.photoUrl.isBlank()) return user
+        val uploadedUrl = FirebaseStorageHelper.uploadLocalImage(
+            imageReference = user.photoUrl,
+            folderName = "user_images"
+        )
+        return user.copy(photoUrl = uploadedUrl)
     }
 }

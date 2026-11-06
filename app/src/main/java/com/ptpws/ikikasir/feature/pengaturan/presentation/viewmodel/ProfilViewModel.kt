@@ -3,14 +3,13 @@ package com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.UserProfileChangeRequest
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
+import com.ptpws.ikikasir.core.network.NetworkMonitor
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.dao.UserDao
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.entity.toEntity
-import com.ptpws.ikikasir.feature.manajemenpengguna.data.remote.datasource.UserRemoteDataSource
-import com.ptpws.ikikasir.feature.manajemenpengguna.data.remote.dto.toDto
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.model.User
+import com.ptpws.ikikasir.feature.manajemenpengguna.domain.repository.UserRepository
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.PaymentMethodSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.TableSetting
@@ -54,7 +53,8 @@ class ProfilViewModel @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val userDao: UserDao,
     private val roleDao: RoleDao,
-    private val userRemoteDataSource: UserRemoteDataSource
+    private val userRepository: UserRepository,
+    private val networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
     private val _userProfileState = MutableStateFlow(UserProfileState())
@@ -130,36 +130,24 @@ class ProfilViewModel @Inject constructor(
 
             withContext(Dispatchers.IO) {
                 try {
-                    // Update Firebase Auth user profile
-                    firebaseAuth.currentUser?.let { fUser ->
-                        val changeRequest = UserProfileChangeRequest.Builder()
-                            .setDisplayName(newFullName.trim())
-                            .apply {
-                                if (newPhotoUrl.isNotBlank()) setPhotoUri(android.net.Uri.parse(newPhotoUrl))
+                    userDao.insertOrUpdate(updatedUser.toEntity(isSynced = false))
+                    if (networkMonitor.isConnected()) {
+                        userRepository.syncPendingUsers().collect { result ->
+                            result.exceptionOrNull()?.let { error ->
+                                android.util.Log.w(
+                                    "ProfilViewModel",
+                                    "Profil tersimpan lokal dan menunggu sinkronisasi: ${error.message}"
+                                )
                             }
-                            .build()
-                        try {
-                            fUser.updateProfile(changeRequest).await()
-                        } catch (e: Exception) {
-                            android.util.Log.w("ProfilViewModel", "Firebase Auth update profile error: ${e.message}")
                         }
                     }
+                    val userToSave = userDao.getUserById(updatedUser.id)?.toDomain() ?: updatedUser
 
-                    // Update Room DB
-                    userDao.insertOrUpdate(updatedUser.toEntity(isSynced = true))
-
-                    // Update Firestore
-                    try {
-                        userRemoteDataSource.updateUser(updatedUser.toDto())
-                    } catch (e: Exception) {
-                        userDao.insertOrUpdate(updatedUser.toEntity(isSynced = false))
-                    }
-
-                    _userProfileState.value = _userProfileState.value.copy(user = updatedUser)
+                    _userProfileState.value = _userProfileState.value.copy(user = userToSave)
 
                     logActivityUseCase(
                         title = "Pembaruan Profil",
-                        description = "Profil pengguna '${updatedUser.fullName}' diperbarui.",
+                        description = "Profil pengguna '${userToSave.fullName}' diperbarui.",
                         category = "USER_MANAGEMENT",
                         action = "UPDATE"
                     )

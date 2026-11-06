@@ -1,11 +1,7 @@
 package com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ptpws.ikikasir.commond.GlobalUploadProgress
-import com.ptpws.ikikasir.commond.ImageUploadType
-import com.ptpws.ikikasir.core.util.FirebaseStorageHelper
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GetCartUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.ManageCartUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.ProsesPembayaranUseCase
@@ -453,39 +449,6 @@ class PembayaranViewModel @Inject constructor(
             val ppnPercentage = if (tax.isActive && tax.percentage > 0) tax.percentage else 0.0
             val ppnType = if (tax.isActive && tax.percentage > 0) tax.type else ""
             val buktiPembayaran = currentState.buktiPembayaranUri.orEmpty()
-            val paymentProofUrl = if (
-                Uri.parse(buktiPembayaran).scheme in setOf("file", "content")
-            ) {
-                GlobalUploadProgress.show(
-                    title = "Upload Bukti Pembayaran",
-                    message = "Mengunggah bukti pembayaran...",
-                    type = ImageUploadType.BUKTI_PEMBAYARAN,
-                    progress = 0.15f
-                )
-                try {
-                    FirebaseStorageHelper.uploadImageToStorage(
-                        fileUri = Uri.parse(buktiPembayaran),
-                        folderName = "payment_proofs",
-                        onProgress = { progress, message ->
-                            GlobalUploadProgress.updateProgress(progress, message)
-                        }
-                    )
-                } catch (e: Exception) {
-                    val message = "Gagal mengunggah bukti pembayaran: ${e.message}"
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            showFailedDialog = true,
-                            errorMessage = message
-                        )
-                    }
-                    return@launch
-                } finally {
-                    GlobalUploadProgress.dismiss()
-                }
-            } else {
-                buktiPembayaran
-            }
 
             prosesPembayaranUseCase(
                 kodeTransaksi = currentState.orderId,
@@ -500,7 +463,7 @@ class PembayaranViewModel @Inject constructor(
                 notes = currentState.notes,
                 customerName = currentState.customerName,
                 tableNumber = currentState.tableNumber,
-                paymentProofUrl = paymentProofUrl,
+                paymentProofUrl = buktiPembayaran,
                 isTaxInclusive = isTaxInclusive
             ).collect { result ->
                 _state.update { it.copy(isLoading = false) }

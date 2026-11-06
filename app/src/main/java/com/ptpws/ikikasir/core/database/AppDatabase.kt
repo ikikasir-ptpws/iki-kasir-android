@@ -54,7 +54,7 @@ import com.ptpws.ikikasir.feature.keuangan.data.local.entity.CatatanKeuanganEnti
         AuditLogEntity::class,
         CatatanKeuanganEntity::class
     ],
-    version = 39,
+    version = 41,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class, MapConverter::class)

@@ -12,7 +12,8 @@ data class CatatanKeuangan(
     val metodePembayaran: String = "Tunai",
     val nominal: Double = 0.0,
     val buktiUri: String? = null,
-    val createdAtMillis: Long = System.currentTimeMillis()
+    val createdAtMillis: Long = System.currentTimeMillis(),
+    val isSynced: Boolean = true
 )
 
 fun CatatanKeuanganEntity.toDomain(): CatatanKeuangan = CatatanKeuangan(
@@ -24,10 +25,11 @@ fun CatatanKeuanganEntity.toDomain(): CatatanKeuangan = CatatanKeuangan(
     metodePembayaran = metodePembayaran,
     nominal = nominal,
     buktiUri = buktiUri,
-    createdAtMillis = createdAtMillis
+    createdAtMillis = createdAtMillis,
+    isSynced = isSynced
 )
 
-fun CatatanKeuangan.toEntity(): CatatanKeuanganEntity = CatatanKeuanganEntity(
+fun CatatanKeuangan.toEntity(isSynced: Boolean = this.isSynced): CatatanKeuanganEntity = CatatanKeuanganEntity(
     id = id,
     jenis = jenis,
     judul = judul,
@@ -36,5 +38,6 @@ fun CatatanKeuangan.toEntity(): CatatanKeuanganEntity = CatatanKeuanganEntity(
     metodePembayaran = metodePembayaran,
     nominal = nominal,
     buktiUri = buktiUri,
-    createdAtMillis = createdAtMillis
+    createdAtMillis = createdAtMillis,
+    isSynced = isSynced
 )

@@ -33,6 +33,9 @@ data class NotaSettingEntity(
     @ColumnInfo(name = "logoUrl")
     val logoUrl: String = "",
 
+    @ColumnInfo(name = "logoLocalPath")
+    val logoLocalPath: String = "",
+
     @ColumnInfo(name = "updatedAt")
     val updatedAt: Timestamp = Timestamp.now(),
 
@@ -49,6 +52,7 @@ data class NotaSettingEntity(
             wifiPassword = wifiPassword,
             paperWidth = paperWidth,
             logoUrl = logoUrl,
+            logoLocalPath = logoLocalPath,
             updatedAt = updatedAt,
             isSynced = isSynced
         )
@@ -65,6 +69,7 @@ fun NotaSetting.toEntity(isSynced: Boolean = this.isSynced): NotaSettingEntity {
         wifiPassword = wifiPassword,
         paperWidth = paperWidth,
         logoUrl = logoUrl,
+        logoLocalPath = logoLocalPath,
         updatedAt = updatedAt,
         isSynced = isSynced
     )

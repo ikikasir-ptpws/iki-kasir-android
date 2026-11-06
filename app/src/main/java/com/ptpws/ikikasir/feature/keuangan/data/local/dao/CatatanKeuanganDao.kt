@@ -28,4 +28,10 @@ interface CatatanKeuanganDao {
 
     @Query("SELECT * FROM catatan_keuangan WHERE id = :id LIMIT 1")
     fun getCatatanByIdFlow(id: String): Flow<CatatanKeuanganEntity?>
+
+    @Query("SELECT * FROM catatan_keuangan WHERE isSynced = 0")
+    suspend fun getUnsyncedCatatan(): List<CatatanKeuanganEntity>
+
+    @Query("UPDATE catatan_keuangan SET isSynced = 1 WHERE id = :id")
+    suspend fun markAsSynced(id: String)
 }

@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.pengaturan.data.repository
 import android.content.Context
 import android.util.Log
 import com.ptpws.ikikasir.core.network.NetworkMonitor
+import com.ptpws.ikikasir.core.util.FirebaseStorageHelper
 import com.ptpws.ikikasir.feature.pengaturan.data.local.dao.NotaSettingDao
 import com.ptpws.ikikasir.feature.pengaturan.data.local.entity.toEntity
 import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
@@ -52,11 +53,20 @@ class NotaSettingRepositoryImpl @Inject constructor(
         if (networkMonitor.isConnected()) {
             repositoryScope.launch {
                 try {
+                    if (localDao.getNotaSetting() == null) {
+                        localDao.insertOrUpdate(prefsFallback.getSetting().toEntity(isSynced = false))
+                    }
                     val remote = remoteDataSource.getNotaSetting()
-                    if (remote != null) {
-                        localDao.insertOrUpdate(remote.toDomain().toEntity(isSynced = true))
+                    val localSetting = localDao.getNotaSetting()
+                    if (remote != null && localSetting?.isSynced != false) {
+                        val mergedSetting = remote.toDomain().copy(
+                            logoLocalPath = localSetting?.logoLocalPath
+                                ?.takeIf(String::isNotBlank)
+                                ?: prefsFallback.getSetting().logoLocalPath
+                        )
+                        localDao.insertOrUpdate(mergedSetting.toEntity(isSynced = true))
                         // Also update SharedPreferences for fast legacy reads
-                        prefsFallback.saveSetting(remote.toDomain())
+                        prefsFallback.saveSetting(mergedSetting)
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed fetching remote NotaSetting: ${e.message}")
@@ -85,19 +95,21 @@ class NotaSettingRepositoryImpl @Inject constructor(
 
         // Sync legacy SharedPreferences
         prefsFallback.saveSetting(setting)
+        localDao.insertOrUpdate(setting.toEntity(isSynced = false))
 
         if (isOnline) {
+            var settingToSave = setting
             try {
-                remoteDataSource.saveNotaSetting(setting.toDto())
-                localDao.insertOrUpdate(setting.toEntity(isSynced = true))
+                settingToSave = uploadLocalLogo(setting)
+                remoteDataSource.saveNotaSetting(settingToSave.toDto())
+                localDao.insertOrUpdate(settingToSave.toEntity(isSynced = true))
                 emit(Result.success(Unit))
             } catch (e: Exception) {
                 Log.w(TAG, "Firestore save failed, saving to Room DB offline: ${e.message}")
-                localDao.insertOrUpdate(setting.toEntity(isSynced = false))
+                localDao.insertOrUpdate(settingToSave.toEntity(isSynced = false))
                 emit(Result.success(Unit))
             }
         } else {
-            localDao.insertOrUpdate(setting.toEntity(isSynced = false))
             emit(Result.success(Unit))
         }
     }
@@ -120,20 +132,46 @@ class NotaSettingRepositoryImpl @Inject constructor(
         val unsyncedList = localDao.getUnsyncedNotaSettings()
         for (item in unsyncedList) {
             try {
-                remoteDataSource.saveNotaSetting(item.toDomain().toDto())
-                localDao.markAsSynced(item.id)
+                val uploadedSetting = uploadLocalLogo(item.toDomain())
+                remoteDataSource.saveNotaSetting(uploadedSetting.toDto())
+                localDao.insertOrUpdate(uploadedSetting.toEntity(isSynced = true))
+                prefsFallback.saveSetting(uploadedSetting)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed syncing item ${item.id}: ${e.message}")
             }
         }
         try {
             val remote = remoteDataSource.getNotaSetting()
-            if (remote != null) {
-                localDao.insertOrUpdate(remote.toDomain().toEntity(isSynced = true))
-                prefsFallback.saveSetting(remote.toDomain())
+            if (remote != null && localDao.getUnsyncedNotaSettings().isEmpty()) {
+                val localPath = localDao.getNotaSetting()?.logoLocalPath
+                    ?.takeIf(String::isNotBlank)
+                    ?: prefsFallback.getSetting().logoLocalPath
+                val mergedSetting = remote.toDomain().copy(logoLocalPath = localPath)
+                localDao.insertOrUpdate(mergedSetting.toEntity(isSynced = true))
+                prefsFallback.saveSetting(mergedSetting)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed pulling remote setting during sync: ${e.message}")
         }
+    }
+
+    private suspend fun uploadLocalLogo(setting: NotaSetting): NotaSetting {
+        if (setting.logoUrl.isBlank()) {
+            return setting.copy(logoLocalPath = "")
+        }
+        val uri = android.net.Uri.parse(setting.logoUrl)
+        val localPath = if (uri.scheme.equals("file", ignoreCase = true) ||
+            uri.scheme.equals("content", ignoreCase = true)
+        ) {
+            setting.logoUrl
+        } else {
+            setting.logoLocalPath
+        }
+        val uploadedUrl = FirebaseStorageHelper.uploadLocalImage(
+            imageReference = setting.logoUrl,
+            folderName = "store_logos",
+            fileExtension = "png"
+        )
+        return setting.copy(logoUrl = uploadedUrl, logoLocalPath = localPath)
     }
 }

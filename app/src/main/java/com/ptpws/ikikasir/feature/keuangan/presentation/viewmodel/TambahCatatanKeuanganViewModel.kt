@@ -1,12 +1,8 @@
 package com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel
 
-import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ptpws.ikikasir.commond.GlobalUploadProgress
-import com.ptpws.ikikasir.commond.ImageUploadType
-import com.ptpws.ikikasir.core.util.FirebaseStorageHelper
 import com.ptpws.ikikasir.feature.auditlog.domain.usecase.LogActivityUseCase
 import com.ptpws.ikikasir.feature.keuangan.domain.model.CatatanKeuangan
 import com.ptpws.ikikasir.feature.keuangan.domain.repository.CatatanKeuanganRepository
@@ -135,40 +131,6 @@ class TambahCatatanKeuanganViewModel @Inject constructor(
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
-            var finalBuktiUrl = current.buktiUri
-
-            // Upload foto ke Firebase Storage jika berupa file/content URI lokal
-            if (!current.buktiUri.isNullOrBlank() && (current.buktiUri.startsWith("file://") || current.buktiUri.startsWith("content://"))) {
-                GlobalUploadProgress.show(
-                    title = "Upload Bukti Pembayaran",
-                    message = "Mengunggah bukti ke Firebase Storage...",
-                    type = ImageUploadType.BUKTI_PEMBAYARAN,
-                    progress = 0.15f
-                )
-                try {
-                    val localUri = Uri.parse(current.buktiUri)
-                    finalBuktiUrl = FirebaseStorageHelper.uploadImageToStorage(
-                        fileUri = localUri,
-                        folderName = "financial_record_payment_proofs",
-                        onProgress = { p, msg ->
-                            GlobalUploadProgress.updateProgress(p, msg)
-                        }
-                    )
-                } catch (e: Exception) {
-                    val uploadErr = "Gagal mengunggah foto ke Firebase Storage: ${e.message}"
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = uploadErr
-                        )
-                    }
-                    GlobalUploadProgress.dismiss()
-                    onFailure(uploadErr)
-                    return@launch
-                } finally {
-                    GlobalUploadProgress.dismiss()
-                }
-            }
 
             val item = CatatanKeuangan(
                 id = current.id,
@@ -178,7 +140,8 @@ class TambahCatatanKeuanganViewModel @Inject constructor(
                 tanggalMillis = current.tanggalMillis,
                 metodePembayaran = current.metodePembayaran,
                 nominal = nominalDouble,
-                buktiUri = finalBuktiUrl
+                buktiUri = current.buktiUri,
+                isSynced = false
             )
 
             try {

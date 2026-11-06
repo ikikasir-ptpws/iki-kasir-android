@@ -16,6 +16,7 @@ data class NotaSetting(
     val wifiPassword: String = "",
     val paperWidth: String = "58mm", // "58mm" or "80mm"
     val logoUrl: String = "",
+    val logoLocalPath: String = "",
     val updatedAt: Timestamp = Timestamp.now(),
     val isSynced: Boolean = true
 ) {

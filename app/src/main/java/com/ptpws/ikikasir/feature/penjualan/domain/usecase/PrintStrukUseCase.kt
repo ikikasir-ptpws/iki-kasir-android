@@ -120,9 +120,14 @@ class PrintStrukUseCase {
         command(0x1D, 0x57, (columns * 12) and 0xFF, ((columns * 12) shr 8) and 0xFF)
 
         // ── 0. Logo Toko (jika ada) ────────
-        if (notaSetting.logoUrl.isNotBlank()) {
+        if (notaSetting.logoUrl.isNotBlank() || notaSetting.logoLocalPath.isNotBlank()) {
             val maxLogoWidth = if (columns >= 48) 384 else 256
-            val logoBitmap = RemoteImageBitmapLoader.load(context, notaSetting.logoUrl, maxLogoWidth)
+            val logoBitmap = RemoteImageBitmapLoader.loadReceiptLogo(
+                context = context,
+                remoteUrl = notaSetting.logoUrl,
+                localPath = notaSetting.logoLocalPath,
+                maxDimension = maxLogoWidth
+            )
             if (logoBitmap != null) {
                 printBitmap(bytes, logoBitmap)
                 feedLine()

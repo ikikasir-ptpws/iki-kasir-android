@@ -63,6 +63,29 @@ private val MIGRATION_38_39 = object : Migration(38, 39) {
     }
 }
 
+private val MIGRATION_39_40 = object : Migration(39, 40) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            "ALTER TABLE catatan_keuangan ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 1"
+        )
+    }
+}
+
+private val MIGRATION_40_41 = object : Migration(40, 41) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            "ALTER TABLE nota_settings ADD COLUMN logoLocalPath TEXT NOT NULL DEFAULT ''"
+        )
+        database.execSQL(
+            """
+            UPDATE nota_settings
+            SET logoLocalPath = logoUrl
+            WHERE logoUrl LIKE 'file:%'
+            """.trimIndent()
+        )
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
@@ -77,7 +100,12 @@ object DatabaseModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_37_38, MIGRATION_38_39)
+            .addMigrations(
+                MIGRATION_37_38,
+                MIGRATION_38_39,
+                MIGRATION_39_40,
+                MIGRATION_40_41
+            )
             .fallbackToDestructiveMigration()
             .build()
     }
