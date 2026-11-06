@@ -17,5 +17,6 @@ data class PaymentMethodSetting(
     val isQrisEnabled: Boolean = true,
     val isTransferEnabled: Boolean = true,
     val isKartuKreditEnabled: Boolean = true,
-    val updatedAt: Timestamp = Timestamp.now()
+    val updatedAt: Timestamp = Timestamp.now(),
+    val isSynced: Boolean = true
 )

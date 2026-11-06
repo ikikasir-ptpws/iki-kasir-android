@@ -37,7 +37,8 @@ data class PaymentMethodSettingEntity(
             isQrisEnabled = isQrisEnabled,
             isTransferEnabled = isTransferEnabled,
             isKartuKreditEnabled = isKartuKreditEnabled,
-            updatedAt = updatedAt
+            updatedAt = updatedAt,
+            isSynced = isSynced
         )
     }
 

@@ -48,7 +48,7 @@ class TableSettingRepositoryImpl @Inject constructor(
             repositoryScope.launch {
                 try {
                     val remote = remoteDataSource.getSetting()
-                    if (remote != null) {
+                    if (remote != null && dao.getSetting()?.isSynced != false) {
                         dao.insertOrUpdate(
                             TableSettingEntity(
                                 id = remote.id,
@@ -113,7 +113,7 @@ class TableSettingRepositoryImpl @Inject constructor(
 
         try {
             val remote = remoteDataSource.getSetting()
-            if (remote != null) {
+            if (remote != null && dao.getUnsyncedSettings().isEmpty()) {
                 dao.insertOrUpdate(
                     TableSettingEntity(
                         id = remote.id,

@@ -46,7 +46,7 @@ class PaymentMethodSettingRepositoryImpl @Inject constructor(
             repositoryScope.launch {
                 try {
                     val remote = remoteDataSource.getSetting()
-                    if (remote != null) {
+                    if (remote != null && localDao.getSetting()?.isSynced != false) {
                         localDao.insertOrUpdate(
                             PaymentMethodSettingEntity.fromDomain(remote.toDomain(), isSynced = true)
                         )
@@ -103,7 +103,7 @@ class PaymentMethodSettingRepositoryImpl @Inject constructor(
 
         try {
             val remote = remoteDataSource.getSetting()
-            if (remote != null) {
+            if (remote != null && localDao.getUnsyncedSettings().isEmpty()) {
                 localDao.insertOrUpdate(
                     PaymentMethodSettingEntity.fromDomain(remote.toDomain(), isSynced = true)
                 )

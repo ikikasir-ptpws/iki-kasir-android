@@ -10,6 +10,6 @@ import com.google.firebase.Timestamp
 data class TableSetting(
     val id: String = "default",
     val isTableEnabled: Boolean = true,
-    val updatedAt: Timestamp = Timestamp.now()
+    val updatedAt: Timestamp = Timestamp.now(),
+    val isSynced: Boolean = true
 )
-

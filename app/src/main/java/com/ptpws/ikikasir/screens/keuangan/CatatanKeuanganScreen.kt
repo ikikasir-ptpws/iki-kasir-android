@@ -50,6 +50,7 @@ import androidx.navigation.NavController
 import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.commond.GlobalTextField
+import com.ptpws.ikikasir.commond.SyncStatusBadge
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.keuangan.domain.model.CatatanKeuangan
 import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.CatatanKeuanganViewModel
@@ -791,15 +792,22 @@ private fun CatatanCardItem(
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(
-                        text = item.judul,
-                        fontFamily = interfamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.5.sp,
-                        color = Color(0xFF0F172A),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = item.judul,
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.5.sp,
+                            color = Color(0xFF0F172A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (!item.isSynced) SyncStatusBadge()
+                    }
                     Text(
                         text = "$amountPrefix${formatNominalRupiah(item.nominal)}",
                         fontFamily = interfamily,

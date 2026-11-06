@@ -33,7 +33,8 @@ data class TaxSettingEntity(
             isActive = isActive,
             percentage = percentage,
             type = type,
-            updatedAt = updatedAt
+            updatedAt = updatedAt,
+            isSynced = isSynced
         )
     }
 }

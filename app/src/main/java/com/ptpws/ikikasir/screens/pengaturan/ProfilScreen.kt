@@ -44,6 +44,7 @@ import com.ptpws.ikikasir.commond.GlobalImagePickerDialog
 import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.commond.ImageUploadType
+import com.ptpws.ikikasir.commond.SyncStatusBadge
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.commond.rememberGlobalImagePicker
 import kotlinx.coroutines.delay
@@ -103,6 +104,7 @@ fun ProfilScreen(
     val liveTaxSetting by viewModel.taxSetting.collectAsState()
     val livePaymentMethodSetting by viewModel.paymentMethodSetting.collectAsState()
     val liveTableSetting by viewModel.tableSetting.collectAsState()
+    val isOnline by viewModel.isOnline.collectAsState()
 
     var showEditProfilDialog by remember { mutableStateOf(false) }
     var showPpnDialog by remember { mutableStateOf(false) }
@@ -255,6 +257,9 @@ fun ProfilScreen(
                             fontSize = 13.sp,
                             color = Color(0xFF6B7280)
                         )
+                        if (user?.isSynced == false) {
+                            SyncStatusBadge()
+                        }
 
                         Spacer(modifier = Modifier.height(10.dp))
 
@@ -303,6 +308,7 @@ fun ProfilScreen(
                                 iconBackground = Color(0xFFEEF2FF),
                                 iconTint = Color(0xFF4F46E5),
                                 label = "Keamanan",
+                                badgeLabel = if (isOnline) null else "Perlu online",
                                 onClick = {
                                     onKeamanan()
                                     securityViewModel.clearForm()
@@ -316,6 +322,7 @@ fun ProfilScreen(
                                 iconBackground = Color(0xFFDBEAFE),
                                 iconTint = Color(0xFF1D4ED8),
                                 label = "Metode Pembayaran",
+                                badgeLabel = if (!livePaymentMethodSetting.isSynced) "Pending" else null,
                                 onClick = {
                                     showMetodePembayaranDialog = true
                                     onMetodePembayaran()
@@ -327,6 +334,7 @@ fun ProfilScreen(
                                 iconBackground = Color(0xFFECFDF5),
                                 iconTint = Color(0xFF059669),
                                 label = "Setting PPN / Pajak",
+                                badgeLabel = if (!liveTaxSetting.isSynced) "Pending" else null,
                                 onClick = {
                                     showPpnDialog = true
                                     onSettingPpn()
@@ -338,6 +346,7 @@ fun ProfilScreen(
                                 iconBackground = Color(0xFFF3E8FF),
                                 iconTint = Color(0xFF7E22CE),
                                 label = "Setting Nota / Struk Pembayaran",
+                                badgeLabel = if (!liveNotaSetting.isSynced) "Pending" else null,
                                 onClick = {
                                     showStrukDialog = true
                                     onSettingStruk()
@@ -349,6 +358,7 @@ fun ProfilScreen(
                                 iconBackground = Color(0xFFFEF3C7),
                                 iconTint = Color(0xFFD97706),
                                 label = "Setting Meja",
+                                badgeLabel = if (!liveTableSetting.isSynced) "Pending" else null,
                                 onClick = {
                                     showMejaDialog = true
                                 }
@@ -673,6 +683,7 @@ fun ProfilScreen(
                             fontSize = 18.sp,
                             color = Color(0xFF1E293B)
                         )
+                        if (currentUser?.isSynced == false) SyncStatusBadge()
                         IconButton(
                             onClick = { showEditProfilDialog = false },
                             modifier = Modifier.size(24.dp)
@@ -809,6 +820,7 @@ fun ProfilScreen(
     if (showSecurityDialog) {
         ChangePasswordDialog(
             state = securityState,
+            isOnline = isOnline,
             onDismiss = {
                 if (!securityState.isLoading) {
                     showSecurityDialog = false
@@ -866,6 +878,7 @@ private fun MetodePembayaranDialog(
                         fontSize = 17.sp,
                         color = Color(0xFF1E293B)
                     )
+                    if (!initialSetting.isSynced) SyncStatusBadge()
                     IconButton(
                         onClick = onDismiss,
                         modifier = Modifier.size(24.dp)
@@ -1105,6 +1118,7 @@ private fun TaxSettingDialog(
                         fontSize = 18.sp,
                         color = Color(0xFF111827)
                     )
+                    if (!initialSetting.isSynced) SyncStatusBadge()
                     IconButton(
                         onClick = onDismiss,
                         modifier = Modifier.size(24.dp)
@@ -1336,13 +1350,19 @@ private fun NotaSettingDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "Setting Nota / Struk",
-                        fontFamily = interfamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = Color(0xFF111827)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Setting Nota / Struk",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color(0xFF111827)
+                        )
+                        if (!initialSetting.isSynced) SyncStatusBadge()
+                    }
                     IconButton(
                         onClick = onDismiss,
                         modifier = Modifier.size(24.dp)
@@ -1671,6 +1691,7 @@ private fun TableSettingDialog(
                         fontSize = 17.sp,
                         color = Color(0xFF1E293B)
                     )
+                    if (!initialSetting.isSynced) SyncStatusBadge()
                     IconButton(
                         onClick = onDismiss,
                         modifier = Modifier.size(24.dp)
@@ -1775,6 +1796,7 @@ private fun TableSettingDialog(
 @Composable
 private fun ChangePasswordDialog(
     state: com.ptpws.ikikasir.feature.auth.presentation.state.SecurityState,
+    isOnline: Boolean,
     onDismiss: () -> Unit,
     onCurrentPasswordChange: (String) -> Unit,
     onNewPasswordChange: (String) -> Unit,
@@ -1797,15 +1819,26 @@ private fun ChangePasswordDialog(
                     .padding(22.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Ubah Kata Sandi",
+                        fontFamily = interfamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color(0xFF1E293B)
+                    )
+                    if (!isOnline) SyncStatusBadge(label = "Perlu online")
+                }
                 Text(
-                    text = "Ubah Kata Sandi",
-                    fontFamily = interfamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = Color(0xFF1E293B)
-                )
-                Text(
-                    text = "Masukkan kata sandi saat ini, lalu tentukan kata sandi baru.",
+                    text = if (isOnline) {
+                        "Masukkan kata sandi saat ini, lalu tentukan kata sandi baru."
+                    } else {
+                        "Perubahan kata sandi perlu koneksi internet dan tidak dapat disimpan sebagai pending."
+                    },
                     fontFamily = interfamily,
                     fontSize = 13.sp,
                     color = Color(0xFF64748B)
@@ -1913,6 +1946,7 @@ fun MenuAkunItem(
     iconBackground: Color,
     iconTint: Color,
     label: String,
+    badgeLabel: String? = null,
     onClick: () -> Unit
 ) {
     Row(
@@ -1945,6 +1979,23 @@ fun MenuAkunItem(
             color = Color(0xFF111827),
             modifier = Modifier.weight(1f)
         )
+        badgeLabel?.let { labelText ->
+            if (labelText == "Pending") {
+                SyncStatusBadge(label = labelText)
+            } else {
+                Text(
+                    text = labelText,
+                    fontFamily = interfamily,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFB45309),
+                    modifier = Modifier
+                        .background(Color(0xFFFFF7ED), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 7.dp, vertical = 4.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(6.dp))
+        }
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,

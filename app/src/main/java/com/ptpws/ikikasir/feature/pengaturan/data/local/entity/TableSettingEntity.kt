@@ -25,7 +25,8 @@ data class TableSettingEntity(
         return TableSetting(
             id = id,
             isTableEnabled = isTableEnabled,
-            updatedAt = updatedAt
+            updatedAt = updatedAt,
+            isSynced = isSynced
         )
     }
 

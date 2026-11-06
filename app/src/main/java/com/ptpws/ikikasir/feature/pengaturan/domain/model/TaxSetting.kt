@@ -15,7 +15,8 @@ data class TaxSetting(
     val isActive: Boolean = true,
     val percentage: Double = 11.0,
     val type: String = TAX_TYPE_EXCLUSIVE,
-    val updatedAt: Timestamp = Timestamp.now()
+    val updatedAt: Timestamp = Timestamp.now(),
+    val isSynced: Boolean = true
 ) {
     companion object {
         const val TAX_TYPE_EXCLUSIVE = "EXCLUSIVE" // Belum Termasuk (Eksklusif)

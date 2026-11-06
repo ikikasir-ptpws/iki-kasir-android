@@ -47,7 +47,7 @@ class TaxSettingRepositoryImpl @Inject constructor(
             repositoryScope.launch {
                 try {
                     val remote = remoteDataSource.getTaxSetting()
-                    if (remote != null) {
+                    if (remote != null && localDao.getTaxSetting()?.isSynced != false) {
                         localDao.insertOrUpdate(remote.toEntity())
                     }
                 } catch (e: Exception) {
@@ -104,7 +104,7 @@ class TaxSettingRepositoryImpl @Inject constructor(
 
         try {
             val remote = remoteDataSource.getTaxSetting()
-            if (remote != null) {
+            if (remote != null && localDao.getUnsyncedTaxSettings().isEmpty()) {
                 localDao.insertOrUpdate(remote.toEntity())
             }
         } catch (e: Exception) {

@@ -18,7 +18,8 @@ data class TableSettingDto(
         return TableSetting(
             id = id,
             isTableEnabled = isTableEnabled,
-            updatedAt = updatedAt
+            updatedAt = updatedAt,
+            isSynced = true
         )
     }
 }

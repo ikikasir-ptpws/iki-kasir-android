@@ -25,6 +25,7 @@ import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.SaveTaxSettingUseCas
 import com.ptpws.ikikasir.feature.role.data.local.dao.RoleDao
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -57,6 +58,9 @@ class ProfilViewModel @Inject constructor(
     private val networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
+    private val _isOnline = MutableStateFlow(networkMonitor.isConnected())
+    val isOnline = _isOnline.asStateFlow()
+
     private val _userProfileState = MutableStateFlow(UserProfileState())
     val userProfileState: StateFlow<UserProfileState> = _userProfileState.asStateFlow()
 
@@ -73,6 +77,9 @@ class ProfilViewModel @Inject constructor(
     val tableSetting: StateFlow<TableSetting> = _tableSetting.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            networkMonitor.isOnline.collect { online -> _isOnline.value = online }
+        }
         loadUserProfile()
         loadNotaSetting()
         loadTaxSetting()
@@ -203,7 +210,6 @@ class ProfilViewModel @Inject constructor(
             saveNotaSettingUseCase(setting).collect { result ->
                 result.fold(
                     onSuccess = {
-                        _notaSetting.value = setting
                         GlobalCrudResultDialog.success("Pengaturan nota berhasil disimpan.")
                         logActivityUseCase(
                             title = "Perubahan Pengaturan Nota",
@@ -227,7 +233,6 @@ class ProfilViewModel @Inject constructor(
             saveTaxSettingUseCase(setting).collect { result ->
                 result.fold(
                     onSuccess = {
-                        _taxSetting.value = setting
                         GlobalCrudResultDialog.success("Pengaturan pajak berhasil disimpan.")
                         logActivityUseCase(
                             title = "Perubahan Pengaturan Pajak",
@@ -251,7 +256,6 @@ class ProfilViewModel @Inject constructor(
             val result = savePaymentMethodSettingUseCase(setting)
             result.fold(
                 onSuccess = {
-                    _paymentMethodSetting.value = setting
                     GlobalCrudResultDialog.success("Pengaturan metode pembayaran berhasil disimpan.")
                     logActivityUseCase(
                         title = "Perubahan Metode Pembayaran",
@@ -274,7 +278,6 @@ class ProfilViewModel @Inject constructor(
             val result = saveTableSettingUseCase(setting)
             result.fold(
                 onSuccess = {
-                    _tableSetting.value = setting
                     GlobalCrudResultDialog.success("Pengaturan meja berhasil disimpan.")
                     logActivityUseCase(
                         title = "Perubahan Pengaturan Meja",

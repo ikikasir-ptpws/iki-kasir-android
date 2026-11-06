@@ -64,6 +64,7 @@ import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.GlobalTextField
+import com.ptpws.ikikasir.commond.SyncStatusBadge
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserViewModel
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
@@ -465,6 +466,9 @@ fun DaftarUserScreen(
                                     fontSize = 12.sp,
                                     color = Color(0xFF6B7280)
                                 )
+                                if (!user.isSynced) {
+                                    SyncStatusBadge()
+                                }
                             }
 
                             Spacer(modifier = Modifier.width(8.dp))
