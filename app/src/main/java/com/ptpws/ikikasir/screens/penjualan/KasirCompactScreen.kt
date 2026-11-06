@@ -101,7 +101,9 @@ fun KasirCompactScreen(
     }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .imePadding(),
         containerColor = Color.White,
         topBar = {
             TopAppBar(
@@ -520,9 +522,7 @@ fun KasirCompactScreen(
                             }
                         } else {
                             LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .imePadding(),
+                                modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
                                 contentPadding = PaddingValues(bottom = 68.dp)
                             ) {
