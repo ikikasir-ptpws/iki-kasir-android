@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
@@ -70,6 +71,7 @@ fun PilihProdukTersediaDialog(
             NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID")).format(amount.toLong())
         }
     }
+    var stockWarningProduct by remember { mutableStateOf<Produk?>(null) }
 
     val filteredList = remember(state.produkKatalog, state.catalogSearchQuery, state.selectedCategoryId, state.cartItems, state.kategoriList) {
         state.produkKatalog
@@ -358,6 +360,11 @@ fun PilihProdukTersediaDialog(
                             var wasQuantityFocused by remember(produk.id) {
                                 mutableStateOf(false)
                             }
+                            LaunchedEffect(currentQty) {
+                                if (!wasQuantityFocused) {
+                                    quantityText = currentQty.toString()
+                                }
+                            }
                             val inputQty = quantityText.toIntOrNull() ?: currentQty
                             val canIncrement = inputQty < produk.stock
                             val canDecrement = inputQty > 0
@@ -574,6 +581,15 @@ fun PilihProdukTersediaDialog(
                                                     onValueChange = { input ->
                                                         if (input.all { it in '0'..'9' }) {
                                                             quantityText = input
+                                                            val requestedQty = input.toIntOrNull()
+                                                            if (requestedQty != null) {
+                                                                if (requestedQty > produk.stock) {
+                                                                    stockWarningProduct = produk
+                                                                    focusManager.clearFocus()
+                                                                } else {
+                                                                    onSetQuantity(produk, requestedQty)
+                                                                }
+                                                            }
                                                         }
                                                     },
                                                     singleLine = true,
@@ -668,7 +684,10 @@ fun PilihProdukTersediaDialog(
                 }
 
                 Button(
-                    onClick = onSelesai,
+                    onClick = {
+                        focusManager.clearFocus()
+                        onSelesai()
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(buttonHeight),
@@ -707,6 +726,23 @@ fun PilihProdukTersediaDialog(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.5.dp)
                             )
                         }
+                    }
+
+                    stockWarningProduct?.let { produk ->
+                        StokTidakCukupDialog(
+                            namaProduk = produk.name,
+                            stokTersedia = produk.stock,
+                            onGunakanStok = {
+                                stockWarningProduct = null
+                                onSetQuantity(produk, produk.stock)
+                            },
+                            onUbahJumlah = {
+                                stockWarningProduct = null
+                            },
+                            onDismiss = {
+                                stockWarningProduct = null
+                            }
+                        )
                     }
                 }
             }

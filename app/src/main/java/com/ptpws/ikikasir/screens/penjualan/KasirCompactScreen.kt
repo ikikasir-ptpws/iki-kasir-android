@@ -520,7 +520,9 @@ fun KasirCompactScreen(
                             }
                         } else {
                             LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .imePadding(),
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
                                 contentPadding = PaddingValues(bottom = 68.dp)
                             ) {
@@ -536,6 +538,7 @@ fun KasirCompactScreen(
                                         taxSetting = state.taxSetting,
                                         onIncrement = { viewModel.updateQuantity(item.produk.id, item.quantity + 1) },
                                         onDecrement = { viewModel.updateQuantity(item.produk.id, item.quantity - 1) },
+                                        onSetQuantity = { viewModel.updateQuantity(item.produk.id, it) },
                                         onRemove = { viewModel.removeFromCart(item.produk.id) },
                                         formatRupiah = formatRupiah
                                     )

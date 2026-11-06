@@ -40,6 +40,7 @@ fun KasirCartPane(
     state: KasirState,
     onIncrement: (String, Int) -> Unit,
     onDecrement: (String, Int) -> Unit,
+    onSetQuantity: (String, Int) -> Unit,
     onRemove: (String) -> Unit,
     onClearCart: () -> Unit,
     onBayar: () -> Unit,
@@ -162,7 +163,9 @@ fun KasirCartPane(
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .imePadding(),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(vertical = 4.dp)
                 ) {
@@ -177,6 +180,7 @@ fun KasirCartPane(
                             taxSetting = state.taxSetting,
                             onIncrement = { onIncrement(item.produk.id, item.quantity + 1) },
                             onDecrement = { onDecrement(item.produk.id, item.quantity - 1) },
+                            onSetQuantity = { quantity -> onSetQuantity(item.produk.id, quantity) },
                             onRemove = { onRemove(item.produk.id) },
                             formatRupiah = formatRupiah
                         )

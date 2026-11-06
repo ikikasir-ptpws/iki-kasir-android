@@ -10,9 +10,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -25,19 +29,24 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -58,7 +67,9 @@ import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
 import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectivePrice
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.KasirViewModel
 import com.ptpws.ikikasir.screens.penjualan.component.PilihProdukTersediaDialog
+import com.ptpws.ikikasir.screens.penjualan.component.StokTidakCukupDialog
 import com.ptpws.ikikasir.commond.BarcodeMismatchDialog
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -187,9 +198,23 @@ fun CartItemCard(
     taxSetting: TaxSetting = TaxSetting(),
     onIncrement: () -> Unit,
     onDecrement: () -> Unit,
+    onSetQuantity: (Int) -> Unit,
     onRemove: () -> Unit,
     formatRupiah: (Double) -> String
 ) {
+    var quantityText by remember(item.produk.id) { mutableStateOf(item.quantity.toString()) }
+    var wasQuantityFocused by remember(item.produk.id) { mutableStateOf(false) }
+    var showStockWarning by remember(item.produk.id) { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(item.quantity) {
+        if (!wasQuantityFocused) {
+            quantityText = item.quantity.toString()
+        }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -357,15 +382,74 @@ fun CartItemCard(
                                 )
                             }
 
-                            Text(
-                                text = "${item.quantity}",
-                                fontFamily = interfamily,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F172A),
-                                modifier = Modifier.widthIn(min = 16.dp),
-                                textAlign = TextAlign.Center
-                            )
+                            Surface(
+                                modifier = Modifier
+                                    .width(48.dp)
+                                    .height(32.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.White,
+                                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                            ) {
+                                BasicTextField(
+                                    value = quantityText,
+                                    onValueChange = { input ->
+                                        if (input.all { it in '0'..'9' }) {
+                                            quantityText = input
+                                            val requestedQty = input.toIntOrNull()
+                                            if (requestedQty != null) {
+                                                if (requestedQty > item.produk.stock) {
+                                                    showStockWarning = true
+                                                    focusManager.clearFocus()
+                                                } else {
+                                                    onSetQuantity(requestedQty)
+                                                }
+                                            }
+                                        }
+                                    },
+                                    singleLine = true,
+                                    textStyle = TextStyle(
+                                        color = Color(0xFF0F172A),
+                                        fontSize = 13.sp,
+                                        fontFamily = interfamily,
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.Center
+                                    ),
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number,
+                                        imeAction = ImeAction.Done
+                                    ),
+                                    keyboardActions = KeyboardActions(
+                                        onDone = { focusManager.clearFocus() }
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .bringIntoViewRequester(bringIntoViewRequester)
+                                        .onFocusChanged { focusState ->
+                                            if (focusState.isFocused) {
+                                                wasQuantityFocused = true
+                                                coroutineScope.launch {
+                                                    bringIntoViewRequester.bringIntoView()
+                                                }
+                                            } else if (wasQuantityFocused) {
+                                                wasQuantityFocused = false
+                                                val requestedQty = quantityText.toIntOrNull()
+                                                if (requestedQty != null && requestedQty <= item.produk.stock) {
+                                                    onSetQuantity(requestedQty)
+                                                } else {
+                                                    quantityText = item.quantity.toString()
+                                                }
+                                            }
+                                        },
+                                    decorationBox = { innerTextField ->
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            innerTextField()
+                                        }
+                                    }
+                                )
+                            }
 
                             val canIncrement = item.quantity < item.produk.stock
                             Box(
@@ -373,7 +457,9 @@ fun CartItemCard(
                                     .size(26.dp)
                                     .clip(CircleShape)
                                     .background(if (canIncrement) PrimaryRoyalBlue else Color(0xFFCBD5E1))
-                                    .clickable { onIncrement() },
+                                    .clickable {
+                                        if (canIncrement) onIncrement() else showStockWarning = true
+                                    },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -386,6 +472,26 @@ fun CartItemCard(
                         }
                     }
                 }
+            }
+
+            if (showStockWarning) {
+                StokTidakCukupDialog(
+                    namaProduk = item.produk.name,
+                    stokTersedia = item.produk.stock,
+                    onGunakanStok = {
+                        showStockWarning = false
+                        quantityText = item.produk.stock.toString()
+                        onSetQuantity(item.produk.stock)
+                    },
+                    onUbahJumlah = {
+                        showStockWarning = false
+                        quantityText = item.quantity.toString()
+                    },
+                    onDismiss = {
+                        showStockWarning = false
+                        quantityText = item.quantity.toString()
+                    }
+                )
             }
         }
     }

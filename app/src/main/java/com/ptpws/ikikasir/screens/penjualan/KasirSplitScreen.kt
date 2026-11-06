@@ -109,6 +109,7 @@ fun KasirSplitScreen(
                     state = state,
                     onIncrement = { produkId, qty -> viewModel.updateQuantity(produkId, qty) },
                     onDecrement = { produkId, qty -> viewModel.updateQuantity(produkId, qty) },
+                    onSetQuantity = { produkId, qty -> viewModel.updateQuantity(produkId, qty) },
                     onRemove = { produkId -> viewModel.removeFromCart(produkId) },
                     onClearCart = { viewModel.clearCart() },
                     onBayar = onBayar
