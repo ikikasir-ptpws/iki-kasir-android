@@ -55,6 +55,7 @@ import com.ptpws.ikikasir.commond.GlobalImageUploadOverlay
 import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.commond.ImageUploadType
 import com.ptpws.ikikasir.commond.rememberGlobalImagePicker
+import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.core.util.ImageCompressorHelper
 import kotlinx.coroutines.delay
 import androidx.compose.ui.text.TextStyle
@@ -102,6 +103,7 @@ fun PembayaranScreen(
     }
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val paymentContentMaxWidth = if (LocalWindowSizeInfo.current.shouldUsePermanentDrawer) 900.dp else 720.dp
     val printScope = rememberCoroutineScope()
     val printStrukUseCase = remember { PrintStrukUseCase() }
 
@@ -259,7 +261,7 @@ fun PembayaranScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .widthIn(max = 720.dp)
+                    .widthIn(max = paymentContentMaxWidth)
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -498,7 +500,7 @@ fun PembayaranScreen(
                         }
 
                         val eligiblePromos = state.eligiblePromos
-                        Box(modifier = Modifier.fillMaxWidth()) {
+                        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
                                 color = if (state.selectedPromo != null) Color(0xFFEEF2FF) else Color(0xFFF8FAFC),
@@ -571,7 +573,7 @@ fun PembayaranScreen(
                                 DropdownMenu(
                                     expanded = promoDropdownExpanded,
                                     onDismissRequest = { promoDropdownExpanded = false },
-                                    modifier = Modifier.fillMaxWidth(0.9f)
+                                    modifier = Modifier.width(maxWidth)
                                 ) {
                                     DropdownMenuItem(
                                         text = {
