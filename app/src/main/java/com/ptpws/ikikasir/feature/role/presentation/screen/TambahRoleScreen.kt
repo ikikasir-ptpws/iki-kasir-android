@@ -66,6 +66,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
@@ -152,9 +153,8 @@ fun TambahRoleScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        AdaptiveFormList(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(paddingValues),
             contentPadding = PaddingValues(
                 start = 16.dp,

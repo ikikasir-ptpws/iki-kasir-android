@@ -27,6 +27,7 @@ import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.TambahKategoriViewModel
 
 data class IconItem(val name: String, val icon: ImageVector)
@@ -110,9 +111,8 @@ fun TambahKategoriScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        AdaptiveFormList(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),

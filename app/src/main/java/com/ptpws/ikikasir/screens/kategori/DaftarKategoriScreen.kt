@@ -46,6 +46,7 @@ import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.ProdukViewModel
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import androidx.activity.compose.BackHandler
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
+import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 
 enum class KategoriFilterOption(val title: String) {
     SEMUA("Semua Kategori"),
@@ -70,6 +71,7 @@ fun DaftarKategoriScreen(
     }
 
     val context = LocalContext.current
+    val isTabletLandscape = LocalWindowSizeInfo.current.shouldUsePermanentDrawer
     val state by viewModel.state.collectAsState()
     val produkState by produkViewModel.state.collectAsState()
     // Map Produk to Category ID for Real Data Calculation
@@ -349,7 +351,13 @@ fun DaftarKategoriScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { context.startActivity(Intent(context, TambahKategoriActivity::class.java)) },
+                onClick = {
+                    if (isTabletLandscape) {
+                        navController.navigate(AppScreen.TambahKategori.route)
+                    } else {
+                        context.startActivity(Intent(context, TambahKategoriActivity::class.java))
+                    }
+                },
                 containerColor = Color(0xFF4F46E5),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
@@ -511,15 +519,19 @@ fun DaftarKategoriScreen(
                         }
                     },
                     onEdit = {
-                        val intent = Intent(context, TambahKategoriActivity::class.java).apply {
+                        if (isTabletLandscape) {
+                            navController.navigate(AppScreen.TambahKategori.routeWith(kategori.id))
+                        } else {
+                            val intent = Intent(context, TambahKategoriActivity::class.java).apply {
                             putExtra("kategoriId", kategori.id)
                             putExtra("kategoriNama", kategori.nama)
                             putExtra("kategoriDeskripsi", kategori.deskripsi)
                             putExtra("kategoriIcon", kategori.iconName)
                             putExtra("kategoriColor", kategori.colorHex)
                             putExtra("kategoriIsVisible", kategori.isVisibleInCashier)
+                            }
+                            context.startActivity(intent)
                         }
-                        context.startActivity(intent)
                     },
                     onDelete = { viewModel.requestDeleteKategori(kategori) },
                     onToggleCashier = { viewModel.toggleCashierVisibility(kategori) }

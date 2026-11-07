@@ -39,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.res.painterResource
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
 import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.UpdateStokViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -128,9 +129,8 @@ fun UpdateStokScreen(
         }
     ) { paddingValues ->
 
-        LazyColumn(
+        AdaptiveFormList(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(paddingValues),
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)

@@ -48,6 +48,7 @@ import java.util.Locale
 fun DetailProdukScreen(
     onBack: () -> Unit = {},
     produkId: String? = null,
+    onEditProduk: ((Produk) -> Unit)? = null,
     viewModel: DetailProdukViewModel = hiltViewModel()
 ) {
     var isBackProcessing by remember { mutableStateOf(false) }
@@ -176,7 +177,9 @@ fun DetailProdukScreen(
 
                         // Tombol Edit Produk (Biru Utama)
                         Button(
-                            onClick = { navigateToEditProduk(context, produk) },
+                            onClick = {
+                                onEditProduk?.invoke(produk) ?: navigateToEditProduk(context, produk)
+                            },
                             modifier = Modifier
                                 .weight(1f)
                                 .height(if (isSmallScreen) 44.dp else 48.dp),
@@ -356,7 +359,7 @@ fun DetailProdukScreen(
                                         border = if (hasBarcode) null else BorderStroke(1.dp, Color(0xFFFDE68A)),
                                         modifier = if (!hasBarcode) {
                                             Modifier.clickable {
-                                                navigateToEditProduk(context, produk)
+                                                onEditProduk?.invoke(produk) ?: navigateToEditProduk(context, produk)
                                             }
                                         } else Modifier
                                     ) {
@@ -602,7 +605,9 @@ fun DetailProdukScreen(
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = interfamily,
                                         color = Color(0xFF4F46E5),
-                                        modifier = Modifier.clickable { navigateToEditProduk(context, produk) }
+                                        modifier = Modifier.clickable {
+                                            onEditProduk?.invoke(produk) ?: navigateToEditProduk(context, produk)
+                                        }
                                     )
                                 }
 

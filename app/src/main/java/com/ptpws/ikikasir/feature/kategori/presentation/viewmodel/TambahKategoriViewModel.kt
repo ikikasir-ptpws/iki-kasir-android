@@ -8,11 +8,13 @@ import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.InsertKategoriUseCase
 import com.ptpws.ikikasir.feature.kategori.domain.usecase.UpdateKategoriUseCase
+import com.ptpws.ikikasir.feature.kategori.domain.usecase.GetKategoriUseCase
 import com.ptpws.ikikasir.feature.kategori.presentation.state.KategoriFormState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,6 +26,7 @@ class TambahKategoriViewModel @Inject constructor(
     private val insertKategoriUseCase: InsertKategoriUseCase,
     private val updateKategoriUseCase: UpdateKategoriUseCase,
     private val logActivityUseCase: LogActivityUseCase,
+    private val getKategoriUseCase: GetKategoriUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -49,6 +52,14 @@ class TambahKategoriViewModel @Inject constructor(
                     isVisibleInCashier = kategoriIsVisible,
                     isEditMode = true
                 )
+            }
+
+            if (kategoriNama.isNullOrBlank()) {
+                viewModelScope.launch {
+                    getKategoriUseCase().firstOrNull()
+                        ?.firstOrNull { it.id == kategoriId }
+                        ?.let(::initFromKategori)
+                }
             }
         }
     }

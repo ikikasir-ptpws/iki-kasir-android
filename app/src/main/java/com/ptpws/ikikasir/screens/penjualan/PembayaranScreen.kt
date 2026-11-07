@@ -55,7 +55,7 @@ import com.ptpws.ikikasir.commond.GlobalImageUploadOverlay
 import com.ptpws.ikikasir.commond.GlobalUploadProgress
 import com.ptpws.ikikasir.commond.ImageUploadType
 import com.ptpws.ikikasir.commond.rememberGlobalImagePicker
-import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
+import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
 import com.ptpws.ikikasir.core.util.ImageCompressorHelper
 import kotlinx.coroutines.delay
 import androidx.compose.ui.text.TextStyle
@@ -103,7 +103,6 @@ fun PembayaranScreen(
     }
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
-    val paymentContentMaxWidth = if (LocalWindowSizeInfo.current.shouldUsePermanentDrawer) 900.dp else 720.dp
     val printScope = rememberCoroutineScope()
     val printStrukUseCase = remember { PrintStrukUseCase() }
 
@@ -258,10 +257,9 @@ fun PembayaranScreen(
                 .imePadding(),
             contentAlignment = Alignment.TopCenter
         ) {
-            LazyColumn(
+            AdaptiveFormList(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .widthIn(max = paymentContentMaxWidth)
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),

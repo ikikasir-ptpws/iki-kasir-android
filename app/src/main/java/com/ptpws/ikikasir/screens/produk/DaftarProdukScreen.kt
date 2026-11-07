@@ -61,6 +61,7 @@ import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewMo
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.ProdukViewModel
 import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import java.text.NumberFormat
 import java.util.Locale
@@ -257,8 +258,12 @@ fun DaftarProdukScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    val intent = Intent(context, TambahProdukActivity::class.java)
-                    context.startActivity(intent)
+                    if (isTabletLandscape) {
+                        navController.navigate(AppScreen.TambahProduk.route)
+                    } else {
+                        val intent = Intent(context, TambahProdukActivity::class.java)
+                        context.startActivity(intent)
+                    }
                 },
                 modifier = Modifier
                     .navigationBarsPadding()
@@ -610,16 +615,23 @@ fun DaftarProdukScreen(
                     hasValidCategory = hasValidCategory,
                     isCategoryActive = isCategoryActive,
                     onClick = {
-                        val intent = Intent(context, DetailProdukActivity::class.java).apply {
-                            putExtra("produkId", produk.id)
+                        if (isTabletLandscape) {
+                            navController.navigate(AppScreen.DetailProduk.routeWith(produk.id))
+                        } else {
+                            val intent = Intent(context, DetailProdukActivity::class.java).apply {
+                                putExtra("produkId", produk.id)
+                            }
+                            context.startActivity(intent)
                         }
-                        context.startActivity(intent)
                     },
                     onAssignCategory = {
                         produkToAssignCategory = produk
                     },
                     onEdit = {
-                        val intent = Intent(context, TambahProdukActivity::class.java).apply {
+                        if (isTabletLandscape) {
+                            navController.navigate(AppScreen.TambahProduk.routeWith(produk.id))
+                        } else {
+                            val intent = Intent(context, TambahProdukActivity::class.java).apply {
                             putExtra("produkId", produk.id)
                             putExtra("produkName", produk.name)
                             putExtra("produkCostPrice", produk.costPrice.toString())
@@ -633,8 +645,9 @@ fun DaftarProdukScreen(
                             putExtra("produkDiscountType", produk.discountType)
                             putExtra("produkBarcode", produk.barcode)
                             putExtra("produkIsVisibleInCashier", produk.isVisibleInCashier)
+                            }
+                            context.startActivity(intent)
                         }
-                        context.startActivity(intent)
                     },
                     onDelete = {
                         viewModel.requestDeleteProduk(produk)

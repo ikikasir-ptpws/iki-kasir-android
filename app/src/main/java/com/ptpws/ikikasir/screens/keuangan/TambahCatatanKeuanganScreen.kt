@@ -52,6 +52,7 @@ import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.ImageUploadType
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.commond.rememberGlobalImagePicker
+import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
 import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.TambahCatatanKeuanganViewModel
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
@@ -146,8 +147,7 @@ fun TambahCatatanKeuanganScreen(
                 .padding(paddingValues)
                 .imePadding()
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+            AdaptiveFormList(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {

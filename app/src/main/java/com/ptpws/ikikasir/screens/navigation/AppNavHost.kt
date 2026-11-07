@@ -48,6 +48,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.ptpws.ikikasir.screens.produk.DaftarProdukScreen
 import com.ptpws.ikikasir.screens.produk.DetailProdukScreen
+import com.ptpws.ikikasir.screens.produk.TambahProdukScreen
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
 import com.ptpws.ikikasir.commond.GlobalUploadProgressHost
@@ -58,6 +59,7 @@ import com.ptpws.ikikasir.core.responsive.presentation.components.IkiKasirNaviga
 import com.ptpws.ikikasir.feature.sidebar.presentation.components.TabletSidebarDrawer
 import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.screens.kategori.DaftarKategoriScreen
+import com.ptpws.ikikasir.screens.kategori.TambahKategoriScreen
 import com.ptpws.ikikasir.screens.manajemenstok.ManajemenStokScreen
 import com.ptpws.ikikasir.screens.manajemenstok.UpdateStokScreen
 
@@ -74,6 +76,7 @@ import com.ptpws.ikikasir.screens.keuangan.LaporanKeuanganScreen
 import com.ptpws.ikikasir.screens.keuangan.TambahCatatanKeuanganScreen
 import com.ptpws.ikikasir.feature.laporanpenjualan.presentation.screen.LaporanPenjualanScreen
 import com.ptpws.ikikasir.screens.manajemenpengguna.ManajemenPenggunaScreen
+import com.ptpws.ikikasir.screens.manajemenpengguna.TambahPenggunaScreen
 import com.ptpws.ikikasir.screens.manajemenpengguna.TambahPenggunaActivity
 import com.ptpws.ikikasir.screens.pengaturan.PengaturanDashboardScreen
 import com.ptpws.ikikasir.screens.penjualan.DetailTransaksiActivity
@@ -85,6 +88,8 @@ import com.ptpws.ikikasir.screens.penjualan.WaitingListScreen
 import com.ptpws.ikikasir.screens.penjualan.RiwayatAntreanScreen
 import com.ptpws.ikikasir.screens.promo.ManajemenPromoScreen
 import com.ptpws.ikikasir.screens.promo.TambahPromoActivity
+import com.ptpws.ikikasir.screens.promo.TambahPromoScreen
+import com.ptpws.ikikasir.feature.role.presentation.screen.TambahRoleScreen
 
 // Daftar item bottom navigation
 
@@ -234,13 +239,26 @@ fun AppNavHost() {
                 )
             }
             composable(
+                route = AppScreen.TambahProduk.route,
+                arguments = AppScreen.TambahProduk.navArguments
+            ) { backStackEntry ->
+                TambahProdukScreen(
+                    onBack = { navController.popBackStackSafely(AppScreen.TambahProduk.baseRoute) }
+                )
+            }
+            composable(
                 route = AppScreen.DetailProduk.route,
                 arguments = listOf(androidx.navigation.navArgument("produkId") { type = androidx.navigation.NavType.StringType })
             ) { backStackEntry ->
                 val produkId = backStackEntry.arguments?.getString("produkId")
                 DetailProdukScreen(
                     onBack = { navController.popBackStackSafely(AppScreen.DetailProduk.route) },
-                    produkId = produkId
+                    produkId = produkId,
+                    onEditProduk = if (windowSizeInfo.shouldUsePermanentDrawer) {
+                        { produk -> navController.navigate(AppScreen.TambahProduk.routeWith(produk.id)) }
+                    } else {
+                        null
+                    }
                 )
             }
             composable(
@@ -288,6 +306,15 @@ fun AppNavHost() {
             }
             composable(AppScreen.CatatanKeuangan.route) {
                 CatatanKeuanganScreen(navController = navController)
+            }
+            composable(
+                route = AppScreen.TambahKategori.route,
+                arguments = AppScreen.TambahKategori.navArguments
+            ) { backStackEntry ->
+                TambahKategoriScreen(
+                    onBack = { navController.popBackStackSafely(AppScreen.TambahKategori.baseRoute) },
+                    onSimpanKategori = { navController.popBackStackSafely(AppScreen.TambahKategori.baseRoute) }
+                )
             }
             composable(
                 AppScreen.TambahCatatanKeuangan.route,
@@ -356,13 +383,34 @@ fun AppNavHost() {
                 ManajemenPromoScreen(
                     onBack = { navController.popBackStackSafely(AppScreen.Promo.route) },
                     onTambahPromo = {
-                        promoActivityLauncher.launch(Intent(context, TambahPromoActivity::class.java))
+                        if (windowSizeInfo.shouldUsePermanentDrawer) {
+                            navController.navigate(AppScreen.TambahPromo.route)
+                        } else {
+                            promoActivityLauncher.launch(Intent(context, TambahPromoActivity::class.java))
+                        }
                     },
                     onEditPromo = { promoId ->
-                        val intent = Intent(context, TambahPromoActivity::class.java).apply {
-                            putExtra("PROMO_ID", promoId)
+                        if (windowSizeInfo.shouldUsePermanentDrawer) {
+                            navController.navigate(AppScreen.TambahPromo.routeWith(promoId))
+                        } else {
+                            val intent = Intent(context, TambahPromoActivity::class.java).apply {
+                                putExtra("PROMO_ID", promoId)
+                            }
+                            promoActivityLauncher.launch(intent)
                         }
-                        promoActivityLauncher.launch(intent)
+                    }
+                )
+            }
+            composable(
+                route = AppScreen.TambahPromo.route,
+                arguments = AppScreen.TambahPromo.navArguments
+            ) { backStackEntry ->
+                TambahPromoScreen(
+                    promoId = backStackEntry.arguments?.getString("promoId"),
+                    onBack = { navController.popBackStackSafely(AppScreen.TambahPromo.baseRoute) },
+                    onSimpanPromo = { message ->
+                        com.ptpws.ikikasir.commond.GlobalCrudResultDialog.success(message)
+                        navController.popBackStackSafely(AppScreen.TambahPromo.baseRoute)
                     }
                 )
             }
@@ -382,6 +430,27 @@ fun AppNavHost() {
                     onTambahUser = {
                         context.startActivity(Intent(context, TambahPenggunaActivity::class.java))
                     }
+                )
+            }
+            composable(
+                route = AppScreen.TambahPengguna.route,
+                arguments = AppScreen.TambahPengguna.navArguments
+            ) { backStackEntry ->
+                TambahPenggunaScreen(
+                    userId = backStackEntry.arguments?.getString("userId"),
+                    onBack = { navController.popBackStackSafely(AppScreen.TambahPengguna.baseRoute) },
+                    onSimpanPengguna = { navController.popBackStackSafely(AppScreen.TambahPengguna.baseRoute) }
+                )
+            }
+            composable(
+                route = AppScreen.TambahRole.route,
+                arguments = AppScreen.TambahRole.navArguments
+            ) { backStackEntry ->
+                TambahRoleScreen(
+                    roleId = backStackEntry.arguments?.getString("roleId"),
+                    permissionsOnly = backStackEntry.arguments?.getBoolean("permissionsOnly") ?: false,
+                    onBack = { navController.popBackStackSafely(AppScreen.TambahRole.baseRoute) },
+                    onSimpanRole = { navController.popBackStackSafely(AppScreen.TambahRole.baseRoute) }
                 )
             }
             composable(AppScreen.PengaturanMenu.route) {

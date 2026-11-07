@@ -26,6 +26,7 @@ import androidx.navigation.NavController
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
+import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.feature.role.presentation.screen.RoleIzinScreen
 import com.ptpws.ikikasir.feature.role.presentation.screen.TambahRoleActivity
 import kotlinx.coroutines.launch
@@ -45,6 +46,7 @@ fun ManajemenPenggunaScreen(
     BackHandler(onBack = handleBack)
 
     val context = LocalContext.current
+    val isTabletLandscape = LocalWindowSizeInfo.current.shouldUsePermanentDrawer
     val pagerState = rememberPagerState(pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
 
@@ -80,9 +82,17 @@ fun ManajemenPenggunaScreen(
             FloatingActionButton(
                 onClick = {
                     if (pagerState.currentPage == 0) {
-                        context.startActivity(Intent(context, TambahPenggunaActivity::class.java))
+                        if (isTabletLandscape) {
+                            navController.navigate(AppScreen.TambahPengguna.route)
+                        } else {
+                            context.startActivity(Intent(context, TambahPenggunaActivity::class.java))
+                        }
                     } else {
-                        context.startActivity(Intent(context, TambahRoleActivity::class.java))
+                        if (isTabletLandscape) {
+                            navController.navigate(AppScreen.TambahRole.route)
+                        } else {
+                            context.startActivity(Intent(context, TambahRoleActivity::class.java))
+                        }
                     }
                 },
                 containerColor = Color(0xFF4F46E5),
@@ -173,28 +183,44 @@ fun ManajemenPenggunaScreen(
                 when (page) {
                     0 -> DaftarUserScreen(
                         onEditUser = { userId ->
-                            val intent = Intent(context, TambahPenggunaActivity::class.java).apply {
-                                putExtra("USER_ID", userId)
+                            if (isTabletLandscape) {
+                                navController.navigate(AppScreen.TambahPengguna.routeWith(userId))
+                            } else {
+                                val intent = Intent(context, TambahPenggunaActivity::class.java).apply {
+                                    putExtra("USER_ID", userId)
+                                }
+                                context.startActivity(intent)
                             }
-                            context.startActivity(intent)
                         }
                     )
                     1 -> RoleIzinScreen(
                         onAddRoleClick = {
-                            context.startActivity(Intent(context, TambahRoleActivity::class.java))
+                            if (isTabletLandscape) {
+                                navController.navigate(AppScreen.TambahRole.route)
+                            } else {
+                                context.startActivity(Intent(context, TambahRoleActivity::class.java))
+                            }
                         },
                         onEditRoleClick = { role ->
-                            val intent = Intent(context, TambahRoleActivity::class.java).apply {
-                                putExtra("ROLE_ID", role.id)
+                            if (isTabletLandscape) {
+                                navController.navigate(AppScreen.TambahRole.routeWith(role.id))
+                            } else {
+                                val intent = Intent(context, TambahRoleActivity::class.java).apply {
+                                    putExtra("ROLE_ID", role.id)
+                                }
+                                context.startActivity(intent)
                             }
-                            context.startActivity(intent)
                         },
                         onEditPermissionsClick = { role ->
-                            val intent = Intent(context, TambahRoleActivity::class.java).apply {
-                                putExtra("ROLE_ID", role.id)
-                                putExtra("PERMISSIONS_ONLY", true)
+                            if (isTabletLandscape) {
+                                navController.navigate(AppScreen.TambahRole.routeWith(role.id, permissionsOnly = true))
+                            } else {
+                                val intent = Intent(context, TambahRoleActivity::class.java).apply {
+                                    putExtra("ROLE_ID", role.id)
+                                    putExtra("PERMISSIONS_ONLY", true)
+                                }
+                                context.startActivity(intent)
                             }
-                            context.startActivity(intent)
                         }
                     )
                 }

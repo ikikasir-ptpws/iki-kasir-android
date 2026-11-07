@@ -292,6 +292,16 @@ private fun isSubRouteActive(subRoute: String, currentRoute: String?): Boolean {
 
     if (cleanCurrent == cleanSub) return true
 
+    if (cleanCurrent in setOf("tambah_produk", "tambah_kategori", "tambah_pengguna", "tambah_role", "tambah_promo")) {
+        val parentRoute = when (cleanCurrent) {
+            "tambah_produk" -> "produk"
+            "tambah_kategori" -> "kategori_produk"
+            "tambah_pengguna", "tambah_role" -> "pengguna"
+            else -> "promo"
+        }
+        if (cleanSub == parentRoute) return true
+    }
+
     // Khusus produk: pastikan tidak bentrok dengan kategori_produk
     if (cleanSub == "produk" && cleanCurrent.startsWith("produk") && !cleanCurrent.startsWith("kategori")) {
         return true

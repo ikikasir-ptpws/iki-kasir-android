@@ -8,11 +8,13 @@ import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.domain.usecase.InsertProdukUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.PrintProductBarcodeUseCase
 import com.ptpws.ikikasir.feature.produk.domain.usecase.UpdateProdukUseCase
+import com.ptpws.ikikasir.feature.produk.domain.usecase.GetProdukUseCase
 import com.ptpws.ikikasir.feature.produk.presentation.state.ProdukFormState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -28,6 +30,7 @@ class TambahProdukViewModel @Inject constructor(
     private val printProductBarcodeUseCase: PrintProductBarcodeUseCase,
     private val logActivityUseCase: LogActivityUseCase,
     private val getKategoriUseCase: GetKategoriUseCase,
+    private val getProdukUseCase: GetProdukUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -75,6 +78,12 @@ class TambahProdukViewModel @Inject constructor(
                     isVisibleInCashier = savedStateHandle.get<Boolean>("produkIsVisibleInCashier") ?: true,
                     isEditMode = true
                 )
+            }
+
+            if (savedStateHandle.get<String>("produkName").isNullOrBlank()) {
+                viewModelScope.launch {
+                    getProdukUseCase.getById(produkId).firstOrNull()?.let(::initFromProduk)
+                }
             }
         }
     }

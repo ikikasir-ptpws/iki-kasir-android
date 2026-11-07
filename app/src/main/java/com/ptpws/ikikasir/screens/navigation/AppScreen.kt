@@ -18,11 +18,70 @@ sealed class AppScreen(
         "splash"
     )
 
+    object TambahPengguna : AppScreen(
+        R.string.screen_pengguna,
+        R.drawable.logoikikasir,
+        "tambah_pengguna?userId={userId}"
+    ) {
+        val baseRoute = "tambah_pengguna"
+        fun routeWith(userId: String? = null) =
+            if (userId.isNullOrBlank()) "tambah_pengguna" else "tambah_pengguna?userId=$userId"
+        val navArguments = listOf(
+            navArgument("userId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    }
+
+    object TambahRole : AppScreen(
+        R.string.screen_pengguna,
+        R.drawable.logoikikasir,
+        "tambah_role?roleId={roleId}&permissionsOnly={permissionsOnly}"
+    ) {
+        val baseRoute = "tambah_role"
+        fun routeWith(roleId: String? = null, permissionsOnly: Boolean = false): String {
+            val params = mutableListOf<String>()
+            if (!roleId.isNullOrBlank()) params.add("roleId=$roleId")
+            if (permissionsOnly) params.add("permissionsOnly=true")
+            return if (params.isEmpty()) "tambah_role" else "tambah_role?${params.joinToString("&")}"
+        }
+        val navArguments = listOf(
+            navArgument("roleId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            },
+            navArgument("permissionsOnly") {
+                type = NavType.BoolType
+                defaultValue = false
+            }
+        )
+    }
+
     object Login : AppScreen(
         R.string.screen_login,
         R.drawable.iconapk,
         "login"
     )
+
+    object TambahPromo : AppScreen(
+        R.string.screen_transaksi,
+        R.drawable.promo,
+        "tambah_promo?promoId={promoId}"
+    ) {
+        val baseRoute = "tambah_promo"
+        fun routeWith(promoId: String? = null) =
+            if (promoId.isNullOrBlank()) "tambah_promo" else "tambah_promo?promoId=$promoId"
+        val navArguments = listOf(
+            navArgument("promoId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    }
 
     object Dashboard : AppScreen(
         R.string.screen_dashboard,
@@ -52,6 +111,40 @@ sealed class AppScreen(
             if (categoryId != null) "produk?categoryId=$categoryId" else "produk"
         val navArguments = listOf(
             navArgument("categoryId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    }
+
+    object TambahProduk : AppScreen(
+        R.string.screen_produk,
+        R.drawable.iconapk,
+        "tambah_produk?produkId={produkId}"
+    ) {
+        val baseRoute = "tambah_produk"
+        fun routeWith(produkId: String? = null) =
+            if (produkId.isNullOrBlank()) "tambah_produk" else "tambah_produk?produkId=$produkId"
+        val navArguments = listOf(
+            navArgument("produkId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    }
+
+    object TambahKategori : AppScreen(
+        R.string.screen_kategori_produk,
+        R.drawable.iconapk,
+        "tambah_kategori?kategoriId={kategoriId}"
+    ) {
+        val baseRoute = "tambah_kategori"
+        fun routeWith(kategoriId: String? = null) =
+            if (kategoriId.isNullOrBlank()) "tambah_kategori" else "tambah_kategori?kategoriId=$kategoriId"
+        val navArguments = listOf(
+            navArgument("kategoriId") {
                 type = NavType.StringType
                 nullable = true
                 defaultValue = null

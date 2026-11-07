@@ -66,6 +66,7 @@ import com.google.zxing.EncodeHintType
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
 import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.TambahProdukViewModel
 import androidx.activity.compose.BackHandler
@@ -155,9 +156,8 @@ fun TambahProdukScreen(
         }
     ) { paddingValues ->
 
-        LazyColumn(
+        AdaptiveFormList(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(paddingValues),
             contentPadding = PaddingValues(
                 start = horizontalScreenPadding,

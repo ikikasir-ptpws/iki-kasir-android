@@ -44,6 +44,7 @@ import com.ptpws.ikikasir.commond.BarcodeMismatchDialog
 import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.ProdukCardShimmer
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
 import kotlinx.coroutines.delay
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.TambahPromoViewModel
@@ -211,9 +212,8 @@ fun TambahPromoScreen(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
+        AdaptiveFormList(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(paddingValues),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)

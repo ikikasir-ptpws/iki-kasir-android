@@ -99,6 +99,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ptpws.ikikasir.commond.interfamily
 import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
 import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserViewModel
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
@@ -198,9 +199,8 @@ fun TambahPenggunaScreen(
         }
     ) { paddingValues ->
 
-        LazyColumn(
+        AdaptiveFormList(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(paddingValues),
             contentPadding = PaddingValues(
                 start = if (isCompact) 12.dp else 16.dp,
