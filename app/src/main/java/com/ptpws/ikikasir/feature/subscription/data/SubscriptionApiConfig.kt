@@ -63,4 +63,3 @@ object SubscriptionApiConfig {
     const val ADMIN_WA_NUMBER = "628132538603"
 }
 
-
