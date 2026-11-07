@@ -55,6 +55,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
@@ -77,6 +78,7 @@ fun DaftarProdukScreen(
     val state by viewModel.state.collectAsState()
     val kategoriState by kategoriViewModel.state.collectAsState()
     val context = LocalContext.current
+    val isTabletLandscape = LocalWindowSizeInfo.current.shouldUsePermanentDrawer
     var showInvalidScanDialog by remember { mutableStateOf(false) }
 
     BackHandler {
@@ -260,7 +262,7 @@ fun DaftarProdukScreen(
                 },
                 modifier = Modifier
                     .navigationBarsPadding()
-                    .padding(bottom = 108.dp),
+                    .padding(bottom = if (isTabletLandscape) 16.dp else 108.dp),
                 containerColor = Color(0xFF4F46E5),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
