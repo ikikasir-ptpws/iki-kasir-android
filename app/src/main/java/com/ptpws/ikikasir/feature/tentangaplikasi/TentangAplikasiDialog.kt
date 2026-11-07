@@ -85,6 +85,12 @@ private val dummyTentangAplikasiInfo = TentangAplikasiInfo(
             ikonType = "LAPORAN"
         ),
         FiturAplikasiItem(
+            judul = "Catatan Keuangan",
+            deskripsiSingkat = "Catat pemasukan dan pengeluaran usaha lengkap dengan judul, keterangan, tanggal, dan metode pembayaran. Cari atau filter catatan, pantau ringkasan pemasukan, pengeluaran, serta saldo bersih, lalu ekspor data ke Excel.",
+            tagKategori = "Keuangan",
+            ikonType = "CATATAN_KEUANGAN"
+        ),
+        FiturAplikasiItem(
             judul = "Fitur Refund & Batal Transaksi",
             deskripsiSingkat = "Kelola pengembalian dana transaksi (refund) dengan transparansi, menjaga pembukuan tetap seimbang.",
             tagKategori = "Pengembalian",
@@ -409,6 +415,7 @@ private fun FiturItemCard(
         "PEMBAYARAN" -> Triple(Icons.Default.Payment, Color(0xFFFFFBEB), Color(0xFFF59E0B))
         "PRINTER" -> Triple(Icons.Default.Print, Color(0xFFF3E8FF), Color(0xFF9333EA))
         "LAPORAN" -> Triple(Icons.Default.Assessment, Color(0xFFE0F2FE), Color(0xFF0284C7))
+        "CATATAN_KEUANGAN" -> Triple(Icons.Default.AccountBalanceWallet, Color(0xFFDBEAFE), Color(0xFF2563EB))
         "REFUND" -> Triple(Icons.Default.Replay, Color(0xFFFFEDD5), Color(0xFFEA580C))
         "CLOUD" -> Triple(Icons.Default.Sync, Color(0xFFF0FDF4), Color(0xFF16A34A))
         else -> Triple(Icons.Default.Shield, Color(0xFFF1F5F9), Color(0xFF475569))
