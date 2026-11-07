@@ -277,10 +277,14 @@ fun AppNavHost() {
                     startDate = startDate,
                     endDate = endDate,
                     onDetailTransaksi = { txId ->
-                        val intent = Intent(context, DetailTransaksiActivity::class.java).apply {
-                            putExtra("TRANSACTION_ID", txId)
+                        if (windowSizeInfo.shouldUsePermanentDrawer) {
+                            navController.navigate(AppScreen.DetailTransaksi.routeWith(txId))
+                        } else {
+                            val intent = Intent(context, DetailTransaksiActivity::class.java).apply {
+                                putExtra("TRANSACTION_ID", txId)
+                            }
+                            context.startActivity(intent)
                         }
-                        context.startActivity(intent)
                     }
                 )
             }
@@ -349,9 +353,15 @@ fun AppNavHost() {
                 )
             }
 
-            composable(AppScreen.DetailTransaksi.route) {
+            composable(
+                route = AppScreen.DetailTransaksi.route,
+                arguments = AppScreen.DetailTransaksi.navArguments
+            ) { backStackEntry ->
                 DetailTransaksiScreen(
-                    onBack = { navController.popBackStackSafely(AppScreen.DetailTransaksi.route) }
+                    transactionId = backStackEntry.arguments?.getString("transactionId").orEmpty(),
+                    onBack = {
+                        navController.popBackStackSafely(AppScreen.DetailTransaksi.baseRoute)
+                    }
                 )
             }
             composable(AppScreen.LaporanKeuangan.route) {

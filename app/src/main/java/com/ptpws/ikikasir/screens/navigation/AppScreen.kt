@@ -1,5 +1,6 @@
 package com.ptpws.ikikasir.screens.navigation
 
+import android.net.Uri
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.navigation.NavType
@@ -237,8 +238,19 @@ sealed class AppScreen(
     object DetailTransaksi : AppScreen(
         R.string.screen_transaksi,
         R.drawable.iconapk,
-        "detailtransaksi"
-    )
+        "detailtransaksi?transactionId={transactionId}"
+    ) {
+        val baseRoute = "detailtransaksi"
+        fun routeWith(transactionId: String) =
+            "detailtransaksi?transactionId=${Uri.encode(transactionId)}"
+        val navArguments = listOf(
+            navArgument("transactionId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    }
 
     object LaporanKeuangan : AppScreen(
         R.string.screen_laporan_keuangan,
