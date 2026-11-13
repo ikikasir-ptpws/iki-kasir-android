@@ -51,11 +51,13 @@ import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.SyncStatusBadge
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.role.domain.model.Role
+import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleListUiProvider
+import com.ptpws.ikikasir.feature.role.presentation.viewmodel.HiltRoleListUiProvider
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
 
 @Composable
 fun RoleIzinScreen(
-    viewModel: RoleViewModel = hiltViewModel(),
+    viewModel: RoleListUiProvider = HiltRoleListUiProvider(hiltViewModel<RoleViewModel>()),
     onAddRoleClick: () -> Unit = {},
     onEditRoleClick: (Role) -> Unit = {},
     onEditPermissionsClick: (Role) -> Unit = {}
@@ -330,3 +332,16 @@ fun RoleCard(
         }
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun RoleIzinScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     RoleIzinScreen()
+// }

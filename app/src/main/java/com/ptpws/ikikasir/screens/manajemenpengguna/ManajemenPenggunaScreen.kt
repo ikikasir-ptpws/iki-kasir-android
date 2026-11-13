@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -128,14 +129,20 @@ fun ManajemenPenggunaScreen(
                     fontWeight = FontWeight.Bold,
                     fontFamily = interfamily,
                     color = Color(0xFF111827),
-                    fontSize = 24.sp
+                    fontSize = 24.sp,
+                    // Responsif: judul dibatasi 2 baris agar tidak keluar dari layar 320dp
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Kelola pengguna dan role secara realtime",
                     fontFamily = interfamily,
                     color = Color(0xFF6B7280),
-                    fontSize = 13.sp
+                    fontSize = 13.sp,
+                    // Responsif: subtitle dibatasi 2 baris agar tetap rapi di layar sempit
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -169,7 +176,10 @@ fun ManajemenPenggunaScreen(
                             fontFamily = interfamily,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                             fontSize = 13.sp,
-                            color = if (selected) Color.White else Color(0xFF6B7280)
+                            color = if (selected) Color.White else Color(0xFF6B7280),
+                            // Responsif: label tab dipotong agar tidak keluar dari kotak tab
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -228,3 +238,16 @@ fun ManajemenPenggunaScreen(
         }
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun ManajemenPenggunaScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     ManajemenPenggunaScreen()
+// }

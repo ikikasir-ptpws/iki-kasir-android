@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ptpws.ikikasir.R
@@ -55,11 +56,23 @@ fun KasirCartPane(
     val cartItems = state.cartItems
     val totalItemCount = state.totalItemCount
 
+    // Responsif: token ukuran menyesuaikan lebar layar agar panel tetap rapi
+    // di HP sempit (320dp) maupun di POS layar lebar.
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp <= 340
+    val panePadding = if (isSmallScreen) 12.dp else 16.dp
+    val summaryPadding = if (isSmallScreen) 12.dp else 14.dp
+    val summarySpacing = if (isSmallScreen) 8.dp else 10.dp
+    val headerFontSize = if (isSmallScreen) 15.sp else 16.sp
+    val totalFontSize = if (isSmallScreen) 16.sp else 18.sp
+    val valueFontSize = if (isSmallScreen) 12.sp else 13.sp
+    val emptyTextPadding = if (isSmallScreen) 16.dp else 24.dp
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(16.dp)
+            .padding(panePadding)
     ) {
         // ── 1. Header Keranjang
         Row(
@@ -69,19 +82,23 @@ fun KasirCartPane(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f, fill = false)) {
                 Text(
                     text = "Keranjang Pesanan",
                     fontFamily = interfamily,
-                    fontSize = 16.sp,
+                    fontSize = headerFontSize,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
+                    color = Color(0xFF0F172A),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = "$totalItemCount Item Terpilih",
                     fontFamily = interfamily,
                     fontSize = 12.sp,
-                    color = Color(0xFF64748B)
+                    color = Color(0xFF64748B),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -158,7 +175,7 @@ fun KasirCartPane(
                         fontSize = 12.sp,
                         color = Color(0xFF94A3B8),
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 24.dp)
+                        modifier = Modifier.padding(horizontal = emptyTextPadding)
                     )
                 }
             } else {
@@ -196,8 +213,8 @@ fun KasirCartPane(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .padding(summaryPadding),
+                verticalArrangement = Arrangement.spacedBy(summarySpacing)
             ) {
                 // Rincian Subtotal
                 Row(
@@ -209,14 +226,19 @@ fun KasirCartPane(
                         text = "Subtotal ($totalItemCount Item)",
                         fontFamily = interfamily,
                         fontSize = 12.sp,
-                        color = Color(0xFF64748B)
+                        color = Color(0xFF64748B),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
                     Text(
                         text = "Rp ${formatRupiah(state.subtotal)}",
                         fontFamily = interfamily,
-                        fontSize = 13.sp,
+                        fontSize = valueFontSize,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF0F172A)
+                        color = Color(0xFF0F172A),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -231,14 +253,19 @@ fun KasirCartPane(
                             text = "Diskon Promo",
                             fontFamily = interfamily,
                             fontSize = 12.sp,
-                            color = Color(0xFF16A34A)
+                            color = Color(0xFF16A34A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
                         Text(
                             text = "- Rp ${formatRupiah(state.promoDiscountAmount)}",
                             fontFamily = interfamily,
-                            fontSize = 13.sp,
+                            fontSize = valueFontSize,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF16A34A)
+                            color = Color(0xFF16A34A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -254,13 +281,18 @@ fun KasirCartPane(
                         fontFamily = interfamily,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color = if (state.taxSetting.isActive) Color(0xFF059669) else Color(0xFF94A3B8)
+                        color = if (state.taxSetting.isActive) Color(0xFF059669) else Color(0xFF94A3B8),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
                     Text(
                         text = "Rp ${formatRupiah(state.ppnAmount)}",
                         fontFamily = interfamily,
                         fontSize = 12.sp,
-                        color = Color(0xFF64748B)
+                        color = Color(0xFF64748B),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -277,14 +309,19 @@ fun KasirCartPane(
                         fontFamily = interfamily,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
+                        color = Color(0xFF0F172A),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
                     Text(
                         text = "Rp ${formatRupiah(state.grandTotal)}",
                         fontFamily = interfamily,
-                        fontSize = 18.sp,
+                        fontSize = totalFontSize,
                         fontWeight = FontWeight.Bold,
-                        color = PrimaryRoyalBlue
+                        color = PrimaryRoyalBlue,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 

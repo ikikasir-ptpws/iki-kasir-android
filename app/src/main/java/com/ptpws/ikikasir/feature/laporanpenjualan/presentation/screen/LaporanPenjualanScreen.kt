@@ -53,6 +53,8 @@ import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.PeriodeLaporanPenjualan
 import com.ptpws.ikikasir.feature.laporanpenjualan.domain.model.ProdukTerjualItem
+import com.ptpws.ikikasir.feature.laporanpenjualan.presentation.viewmodel.LaporanPenjualanUiProvider
+import com.ptpws.ikikasir.feature.laporanpenjualan.presentation.viewmodel.HiltLaporanPenjualanUiProvider
 import com.ptpws.ikikasir.feature.laporanpenjualan.presentation.viewmodel.LaporanPenjualanViewModel
 import java.text.NumberFormat
 import java.util.Locale
@@ -62,7 +64,7 @@ import java.util.Locale
 fun LaporanPenjualanScreen(
     navController: NavController,
     onBack: () -> Unit = { navController.popBackStackSafely(AppScreen.LaporanPenjualan.route) },
-    viewModel: LaporanPenjualanViewModel = hiltViewModel()
+    viewModel: LaporanPenjualanUiProvider = HiltLaporanPenjualanUiProvider(hiltViewModel<LaporanPenjualanViewModel>())
 ) {
     val windowSizeInfo = LocalWindowSizeInfo.current
     val isCompact = windowSizeInfo.isCompactPhone
@@ -277,7 +279,10 @@ fun LaporanPenjualanScreen(
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
                         color = Color(0xFF0F172A),
-                        fontSize = if (isCompact) 18.sp else 20.sp
+                        fontSize = if (isCompact) 18.sp else 20.sp,
+                        // Responsif: judul dipotong agar tombol "Ekspor" tidak tertimpa di layar 320dp
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
                 navigationIcon = {
@@ -833,3 +838,17 @@ private fun formatRupiah(value: Double): String {
 private fun formatNumber(value: Int): String {
     return NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID")).format(value)
 }
+
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun LaporanPenjualanScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase + NavController, perlu composable stateless
+//     LaporanPenjualanScreen(navController = androidx.navigation.compose.rememberNavController())
+// }

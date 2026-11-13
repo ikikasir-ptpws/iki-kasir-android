@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ptpws.ikikasir.commond.interfamily
@@ -81,7 +82,10 @@ fun SidebarSubMenuItemRow(
                 fontSize = 13.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 color = if (isSelected) PrimaryRoyalBlue else TextDark,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                // Responsif: judul sub-menu dipotong satu baris agar badge aktif tetap terlihat
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
 
             // Active pill tick jika terpilih

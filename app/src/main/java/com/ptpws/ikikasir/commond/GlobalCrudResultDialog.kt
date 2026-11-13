@@ -10,6 +10,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,7 +60,10 @@ fun GlobalCrudResultDialogHost(showSuccess: Boolean = true) {
             Text(
                 text = if (isSuccess) "Berhasil" else "Gagal",
                 fontWeight = FontWeight.Bold,
-                color = accentColor
+                color = accentColor,
+                // Responsif: judul dipotong agar tidak menabrak tombol pada font besar / HP 320dp
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         },
         text = {
@@ -74,7 +78,12 @@ fun GlobalCrudResultDialogHost(showSuccess: Boolean = true) {
                 onClick = GlobalCrudResultDialog::dismiss,
                 colors = ButtonDefaults.buttonColors(containerColor = accentColor)
             ) {
-                Text("Tutup", color = Color.White)
+                Text(
+                    text = "Tutup",
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         },
         containerColor = Color.White,

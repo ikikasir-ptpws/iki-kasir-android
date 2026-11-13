@@ -52,11 +52,16 @@ fun LoginScreen(
     var forgotStep by remember { mutableStateOf(ForgotStep.INPUT) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .imePadding()
     ) {
+        // Responsif: logo ikut menyesuaikan lebar layar. Rasio 220/360 = 0.6111 menghasilkan
+        // ukuran PERSIS sama dengan aslinya (220 dp) di 360 dp, menyusut di layar 320 dp,
+        // dan tetap 220 dp di layar >= 360 dp (dibatasi maks) supaya tampilan tidak berubah.
+        val logoSize = minOf(maxWidth * 0.6111f, 220.dp)
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -69,7 +74,7 @@ fun LoginScreen(
             item {
                 Image(
                     painter = painterResource(R.drawable.logoikikasir),
-                    contentDescription = "logo", modifier = Modifier.size(220.dp)
+                    contentDescription = "logo", modifier = Modifier.size(logoSize)
                 )
                 Spacer(modifier = Modifier.height(30.dp))
             }
@@ -147,7 +152,7 @@ fun LoginScreen(
                         Spacer(modifier = Modifier.height(28.dp))
                         Button(
                             onClick = { onLoginClick(email, password) },
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF4F46E5),

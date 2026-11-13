@@ -43,6 +43,8 @@ import com.ptpws.ikikasir.feature.referral.domain.model.ReferralInfo
 import com.ptpws.ikikasir.feature.referral.domain.model.UserReferralItem
 import com.ptpws.ikikasir.feature.referral.domain.model.WithdrawalStatus
 import com.ptpws.ikikasir.feature.referral.domain.model.WithdrawalTransaction
+import com.ptpws.ikikasir.feature.referral.presentation.viewmodel.ReferralUiProvider
+import com.ptpws.ikikasir.feature.referral.presentation.viewmodel.HiltReferralUiProvider
 import com.ptpws.ikikasir.feature.referral.presentation.viewmodel.ReferralViewModel
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
@@ -58,7 +60,7 @@ private fun formatRupiah(amount: Double): String {
 @Composable
 fun ReferralScreen(
     navController: NavController,
-    viewModel: ReferralViewModel = hiltViewModel()
+    viewModel: ReferralUiProvider = HiltReferralUiProvider(hiltViewModel<ReferralViewModel>())
 ) {
     val handleBack = {
         navController.popBackStackSafely(AppScreen.Referral.route)
@@ -362,7 +364,9 @@ fun KodeReferralCard(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        // Responsif: blok kiri diberi bobot agar badge reward tidak terdorong keluar layar 320dp
+                        modifier = Modifier.weight(1f)
                     ) {
                         Box(
                             modifier = Modifier
@@ -383,7 +387,9 @@ fun KodeReferralCard(
                             fontFamily = interfamily,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = Color.White,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
@@ -423,7 +429,7 @@ fun KodeReferralCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "KODE REFERAL",
                                 fontFamily = interfamily,
@@ -438,7 +444,11 @@ fun KodeReferralCard(
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color(0xFF3730A3),
-                                letterSpacing = 1.5.sp
+                                letterSpacing = 1.5.sp,
+                                // Responsif: kode dipotong agar tombol Salin/Bagikan tetap terlihat di layar 320dp
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -531,7 +541,9 @@ fun AkuTerikatKeSiapaCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    // Responsif: judul diberi bobot agar badge "Terhubung" tidak tertimpa
+                    modifier = Modifier.weight(1f)
                 ) {
                     Box(
                         modifier = Modifier
@@ -552,7 +564,9 @@ fun AkuTerikatKeSiapaCard(
                         fontFamily = interfamily,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B)
+                        color = Color(0xFF1E293B),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -592,7 +606,9 @@ fun AkuTerikatKeSiapaCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    // Responsif: blok info diberi bobot agar chevron kanan tetap terlihat
+                    modifier = Modifier.weight(1f)
                 ) {
                     // Avatar Pengundang
                     Box(
@@ -615,7 +631,7 @@ fun AkuTerikatKeSiapaCard(
                         )
                     }
 
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -625,7 +641,11 @@ fun AkuTerikatKeSiapaCard(
                                 fontFamily = interfamily,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F172A)
+                                color = Color(0xFF0F172A),
+                                // Responsif: nama upline dipotong agar badge "Upline" tetap terlihat
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Surface(
                                 color = Color(0xFFEEF2FF),
@@ -645,7 +665,9 @@ fun AkuTerikatKeSiapaCard(
                             text = "Kode: ${referralInfo.uplineCode} • Terhubung sejak ${referralInfo.uplineBoundDate}",
                             fontFamily = interfamily,
                             fontSize = 12.sp,
-                            color = Color(0xFF64748B)
+                            color = Color(0xFF64748B),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -687,7 +709,9 @@ fun JumlahPenghasilanCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    // Responsif: judul diberi bobot agar badge "Saldo Komisi" tidak tertimpa
+                    modifier = Modifier.weight(1f)
                 ) {
                     Box(
                         modifier = Modifier
@@ -708,7 +732,9 @@ fun JumlahPenghasilanCard(
                         fontFamily = interfamily,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B)
+                        color = Color(0xFF1E293B),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -733,7 +759,7 @@ fun JumlahPenghasilanCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Saldo Tersedia",
                         fontFamily = interfamily,
@@ -746,7 +772,11 @@ fun JumlahPenghasilanCard(
                         fontFamily = interfamily,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF0F172A)
+                        color = Color(0xFF0F172A),
+                        // Responsif: nominal dipotong agar tombol "Tarik Saldo" tetap terlihat di layar 320dp
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -756,7 +786,7 @@ fun JumlahPenghasilanCard(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B32D1)),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
-                    modifier = Modifier.height(44.dp)
+                    modifier = Modifier.heightIn(min = 44.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.AccountBalanceWallet,
@@ -918,7 +948,11 @@ fun UserReferralHeader(
                 fontFamily = interfamily,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF6B7280)
+                color = Color(0xFF6B7280),
+                // Responsif: judul dipotong agar tombol "Ajukan Calon Client" tetap terlihat di layar 320dp
+                modifier = Modifier.weight(1f, fill = false),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             FilledTonalButton(
                 onClick = onAjukanClient,
@@ -1030,7 +1064,10 @@ fun UserReferralHeader(
                 fontFamily = interfamily,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF059669)
+                color = Color(0xFF059669),
+                // Responsif: counter diberi bobot agar tetap terlihat dan tidak menabrak chip filter di 320dp
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.End
             )
         }
     }
@@ -1072,7 +1109,10 @@ fun UserReferralListItem(item: UserReferralItem) {
                     )
                 }
 
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
                     Text(
                         text = item.storeName,
                         fontFamily = interfamily,
@@ -1198,7 +1238,9 @@ fun WithdrawalListItem(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    // Responsif: blok kiri diberi bobot agar nominal penarikan tidak tertimpa
+                    modifier = Modifier.weight(1f)
                 ) {
                     Box(
                         modifier = Modifier
@@ -1215,19 +1257,23 @@ fun WithdrawalListItem(
                         )
                     }
 
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "${transaction.bankOrWallet} • ${transaction.accountNumber}",
                             fontFamily = interfamily,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
+                            color = Color(0xFF0F172A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = transaction.accountHolder,
                             fontFamily = interfamily,
                             fontSize = 11.sp,
-                            color = Color(0xFF64748B)
+                            color = Color(0xFF64748B),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -1237,7 +1283,10 @@ fun WithdrawalListItem(
                     fontFamily = interfamily,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF0F172A)
+                    color = Color(0xFF0F172A),
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -1618,7 +1667,7 @@ fun AjukanCalonClientDialog(
                         enabled = !isSubmitting,
                         modifier = Modifier
                             .weight(1f)
-                            .height(46.dp),
+                            .heightIn(min = 46.dp),
                         shape = RoundedCornerShape(10.dp),
                         border = BorderStroke(1.dp, Color(0xFFCBD5E1))
                     ) {
@@ -1639,7 +1688,7 @@ fun AjukanCalonClientDialog(
                         enabled = !isSubmitting && name.isNotBlank() && businessName.isNotBlank() && phone.isNotBlank() && email.isNotBlank(),
                         modifier = Modifier
                             .weight(1f)
-                            .height(46.dp),
+                            .heightIn(min = 46.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
                     ) {
@@ -1971,6 +2020,8 @@ fun DetailPenarikanDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    // Responsif: konten dialog bisa digulir agar tombol tidak terpotong di layar pendek
+                    .verticalScroll(rememberScrollState())
                     .padding(22.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
@@ -2121,7 +2172,7 @@ fun DetailPenarikanDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B32D1)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(46.dp)
+                        .heightIn(min = 46.dp)
                 ) {
                     Text(
                         text = "Tutup",
@@ -2234,6 +2285,8 @@ fun AkuTerikatDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    // Responsif: konten dialog bisa digulir agar tombol tidak terpotong di layar pendek
+                    .verticalScroll(rememberScrollState())
                     .padding(22.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -2327,7 +2380,7 @@ fun AkuTerikatDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(46.dp)
+                        .heightIn(min = 46.dp)
                 ) {
                     Text(
                         text = "Mengerti",
@@ -2340,3 +2393,17 @@ fun AkuTerikatDialog(
         }
     }
 }
+
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun ReferralScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase + NavController, perlu composable stateless
+//     ReferralScreen(navController = androidx.navigation.compose.rememberNavController())
+// }

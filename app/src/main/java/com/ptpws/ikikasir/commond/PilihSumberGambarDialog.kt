@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -45,7 +46,10 @@ fun PilihSumberGambarDialog(
                     fontFamily = interfamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    color = Color(0xFF0F172A)
+                    color = Color(0xFF0F172A),
+                    // Responsif: judul dipotong maksimal 2 baris agar tombol pilihan tetap muat di HP 320dp
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -54,7 +58,9 @@ fun PilihSumberGambarDialog(
                     text = subtitle,
                     fontFamily = interfamily,
                     fontSize = 12.sp,
-                    color = Color(0xFF64748B)
+                    color = Color(0xFF64748B),
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -101,7 +107,9 @@ fun PilihSumberGambarDialog(
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 14.sp,
-                                color = Color(0xFF1E1B4B)
+                                color = Color(0xFF1E1B4B),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -144,7 +152,9 @@ fun PilihSumberGambarDialog(
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 14.sp,
-                                color = Color(0xFF064E3B)
+                                color = Color(0xFF064E3B),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -161,7 +171,9 @@ fun PilihSumberGambarDialog(
                         fontFamily = interfamily,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF64748B),
-                        fontSize = 14.sp
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

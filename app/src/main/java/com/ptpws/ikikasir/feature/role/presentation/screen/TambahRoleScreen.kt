@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -62,6 +63,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,6 +71,8 @@ import androidx.activity.compose.BackHandler
 import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleFormUiProvider
+import com.ptpws.ikikasir.feature.role.presentation.viewmodel.HiltRoleFormUiProvider
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
 
 data class MenuItemInfo(
@@ -84,7 +88,7 @@ fun TambahRoleScreen(
     permissionsOnly: Boolean = false,
     onBack: () -> Unit = {},
     onSimpanRole: () -> Unit = {},
-    viewModel: RoleViewModel = hiltViewModel()
+    viewModel: RoleFormUiProvider = HiltRoleFormUiProvider(hiltViewModel<RoleViewModel>())
 ) {
     var isBackProcessing by remember { mutableStateOf(false) }
     val handleBack = {
@@ -350,7 +354,10 @@ fun TambahRoleScreen(
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = Color(0xFF1E293B),
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
+                                    // Responsif: label menu dipotong agar switch tidak tertimpa di layar 320dp
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
 
                                 Switch(
@@ -391,7 +398,7 @@ fun TambahRoleScreen(
                     enabled = !formState.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .heightIn(min = 52.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
                 ) {
@@ -430,3 +437,17 @@ fun TambahRoleScreenPreview() {
         TambahRoleScreen()
     }
 }
+
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun TambahRoleScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     TambahRoleScreen()
+// }

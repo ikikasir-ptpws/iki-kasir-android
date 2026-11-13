@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -149,7 +150,9 @@ fun PembayaranSuccessDialog(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = PrimaryRoyalBlue
+                            color = PrimaryRoyalBlue,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
@@ -169,7 +172,9 @@ fun PembayaranSuccessDialog(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -194,7 +199,9 @@ private fun DetailRow(
             fontFamily = interfamily,
             fontSize = 12.sp,
             color = Color(0xFF64748B),
-            modifier = Modifier.weight(1f, fill = false)
+            modifier = Modifier.weight(1f, fill = false),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
@@ -203,7 +210,30 @@ private fun DetailRow(
             fontSize = 13.sp,
             fontWeight = if (isHighlight) FontWeight.Bold else FontWeight.SemiBold,
             color = if (isHighlight) Color(0xFF16A34A) else Color(0xFF0F172A),
-            textAlign = TextAlign.End
+            textAlign = TextAlign.End,
+            // Responsif: nilai dipotong agar tidak menabrak label di HP 320dp
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+// import com.ptpws.ikikasir.ui.theme.IKIKASIRTheme
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun PembayaranSuccessDialogResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     IKIKASIRTheme {
+//         PembayaranSuccessDialog(
+//             transaksi = null,
+//             onCetakStruk = {},
+//             onTransaksiBaru = {}
+//         )
+//     }
+// }

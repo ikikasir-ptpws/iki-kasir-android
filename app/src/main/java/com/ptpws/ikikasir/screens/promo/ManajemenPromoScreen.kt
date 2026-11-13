@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,6 +47,8 @@ import com.ptpws.ikikasir.feature.promo.domain.model.isAvailableOn
 import com.ptpws.ikikasir.feature.promo.domain.model.isEndingWithinDays
 import com.ptpws.ikikasir.feature.promo.domain.model.isExpiredOn
 import com.ptpws.ikikasir.feature.promo.domain.model.isUpcomingOn
+import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.PromoUiProvider
+import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.HiltPromoUiProvider
 import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.PromoViewModel
 import java.text.NumberFormat
 import java.util.Locale
@@ -61,7 +64,7 @@ fun ManajemenPromoScreen(
     onBack: () -> Unit = {},
     onTambahPromo: () -> Unit = {},
     onEditPromo: (String) -> Unit = {},
-    viewModel: PromoViewModel = hiltViewModel()
+    viewModel: PromoUiProvider = HiltPromoUiProvider(hiltViewModel<PromoViewModel>())
 ) {
     val state by viewModel.state.collectAsState()
     var promoToDelete by remember { mutableStateOf<Promo?>(null) }
@@ -102,7 +105,10 @@ fun ManajemenPromoScreen(
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
                         color = Color(0xFF0F172A),
-                        fontSize = 20.sp
+                        fontSize = 20.sp,
+                        // Responsif: judul top bar dipotong agar tidak menabrak ikon navigasi di HP 320dp
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
                 navigationIcon = {
@@ -175,7 +181,9 @@ fun ManajemenPromoScreen(
                     Card(
                         modifier = Modifier
                             .weight(1f)
-                            .height(95.dp),
+                            // Responsif: tinggi minimum 95dp (sama seperti sebelumnya) tapi boleh bertambah
+                            // bila font diperbesar, agar angka tidak terpotong
+                            .heightIn(min = 95.dp),
                         shape = RoundedCornerShape(18.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFF4F46E5)),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -229,7 +237,9 @@ fun ManajemenPromoScreen(
                     Card(
                         modifier = Modifier
                             .weight(1f)
-                            .height(95.dp),
+                            // Responsif: tinggi minimum 95dp (sama seperti sebelumnya) tapi boleh bertambah
+                            // bila font diperbesar, agar angka tidak terpotong
+                            .heightIn(min = 95.dp),
                         shape = RoundedCornerShape(18.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFFFE4E6)),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -377,7 +387,10 @@ fun ManajemenPromoScreen(
                                     fontFamily = interfamily,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF334155)
+                                    color = Color(0xFF334155),
+                                    // Responsif: nama promo panjang dibatasi 2 baris agar kolom kanan tidak terdesak
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 val nilaidiskonText = if (promo.discountType == "%") {
                                     "Diskon ${promo.discountValue.toInt()}%"
@@ -389,13 +402,18 @@ fun ManajemenPromoScreen(
                                     fontFamily = interfamily,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2563EB)
+                                    color = Color(0xFF2563EB),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = "Periode: ${promo.startDate} - ${promo.endDate}",
                                     fontFamily = interfamily,
                                     fontSize = 11.sp,
-                                    color = Color(0xFF64748B)
+                                    color = Color(0xFF64748B),
+                                    // Responsif: periode dipotong agar tidak menabrak kontrol di kanan
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
 
@@ -511,7 +529,9 @@ fun ManajemenPromoScreen(
                         text = "Hapus Promo",
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             },
@@ -586,7 +606,11 @@ fun DetailPromoDialog(
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
                         fontSize = 18.sp,
-                        color = Color(0xFF0F172A)
+                        color = Color(0xFF0F172A),
+                        // Responsif: judul dipotong agar badge status tetap terlihat di HP 320dp
+                        modifier = Modifier.weight(1f, fill = false),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -630,7 +654,9 @@ fun DetailPromoDialog(
                         fontSize = 15.sp,
                         fontFamily = interfamily,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
+                        color = Color(0xFF0F172A),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -656,7 +682,9 @@ fun DetailPromoDialog(
                             fontSize = 14.sp,
                             fontFamily = interfamily,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF2563EB)
+                            color = Color(0xFF2563EB),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
@@ -673,7 +701,9 @@ fun DetailPromoDialog(
                                 fontSize = 14.sp,
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF0F172A)
+                                color = Color(0xFF0F172A),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -692,7 +722,9 @@ fun DetailPromoDialog(
                         fontSize = 13.sp,
                         fontFamily = interfamily,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF334155)
+                        color = Color(0xFF334155),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -728,14 +760,18 @@ fun DetailPromoDialog(
                                             fontFamily = interfamily,
                                             fontWeight = FontWeight.Medium,
                                             color = Color(0xFF0F172A),
-                                            modifier = Modifier.weight(1f)
+                                            modifier = Modifier.weight(1f),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                         if (item.price > 0) {
                                             Text(
                                                 text = formatRupiah(item.price),
                                                 fontSize = 12.sp,
                                                 fontFamily = interfamily,
-                                                color = Color(0xFF64748B)
+                                                color = Color(0xFF64748B),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         }
                                     }

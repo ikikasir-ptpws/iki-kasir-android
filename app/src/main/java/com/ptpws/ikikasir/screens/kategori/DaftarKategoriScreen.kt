@@ -5,6 +5,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -41,6 +43,10 @@ import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
 import com.ptpws.ikikasir.feature.kategori.presentation.util.KategoriIconHelper
+import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.ProdukUiProvider
+import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriUiProvider
+import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.HiltKategoriUiProvider
+import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.HiltProdukUiProvider
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
 import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.ProdukViewModel
 import com.ptpws.ikikasir.screens.navigation.AppScreen
@@ -58,13 +64,13 @@ enum class KategoriFilterOption(val title: String) {
     MENU_TERBANYAK("Menu Terbanyak")
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DaftarKategoriScreen(
     navController: NavController,
     onTambahPromo: () -> Unit = {},
-    viewModel: KategoriViewModel = hiltViewModel(),
-    produkViewModel: ProdukViewModel = hiltViewModel()
+    viewModel: KategoriUiProvider = HiltKategoriUiProvider(hiltViewModel<KategoriViewModel>()),
+    produkViewModel: ProdukUiProvider = HiltProdukUiProvider(hiltViewModel<ProdukViewModel>())
 ) {
     BackHandler {
         navController.popBackStackSafely(expectedRoute = AppScreen.KategoriProduk.route)
@@ -182,14 +188,19 @@ fun DaftarKategoriScreen(
                             fontWeight = FontWeight.Bold,
                             fontFamily = interfamily,
                             fontSize = 19.sp,
-                            color = Color(0xFF0F172A)
+                            color = Color(0xFF0F172A),
+                            // Responsif: judul dipotong (ellipsis) agar tidak menabrak badge jumlah kategori di HP 320dp
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Katalog POS & Manajemen Stok",
                             fontFamily = interfamily,
                             fontSize = 12.sp,
-                            color = Color(0xFF64748B)
+                            color = Color(0xFF64748B),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
@@ -381,15 +392,18 @@ fun DaftarKategoriScreen(
         ) {
             // ── Summary banner ───────────────────────────────────────────────
             item {
-                Row(
+                // Responsif: FlowRow agar chip ringkasan turun ke baris berikutnya di HP 320dp,
+                // pada HP 360dp kedua chip tetap satu baris (tampilan tidak berubah).
+                FlowRow(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Surface(
                         shape = RoundedCornerShape(20.dp),
                         color = Color.Transparent,
                         modifier = Modifier
+                            .align(Alignment.CenterVertically)
                             .clip(RoundedCornerShape(20.dp))
                             .clickable {
                                 isMenuMenipisFilterActive = false
@@ -423,6 +437,7 @@ fun DaftarKategoriScreen(
                             color = if (isMenuMenipisFilterActive || selectedFilterOption == KategoriFilterOption.STOK_MENIPIS) Color(0xFFEA580C) else Color(0xFFFFF7ED),
                             border = BorderStroke(1.dp, if (isMenuMenipisFilterActive || selectedFilterOption == KategoriFilterOption.STOK_MENIPIS) Color(0xFFC2410C) else Color(0xFFFED7AA)),
                             modifier = Modifier
+                                .align(Alignment.CenterVertically)
                                 .clip(RoundedCornerShape(20.dp))
                                 .clickable {
                                     val newActive = !(isMenuMenipisFilterActive || selectedFilterOption == KategoriFilterOption.STOK_MENIPIS)
@@ -708,7 +723,10 @@ fun KategoriCardItem(
                                         text = if (isHabis) "Habis Terjual / Stok Kosong" else "${outOfStockCount + lowStockCount} Stok Kurang",
                                         fontSize = 11.sp,
                                         fontFamily = interfamily,
-                                        color = Color(0xFFEF4444)
+                                        color = Color(0xFFEF4444),
+                                        // Responsif: teks chip panjang dipotong (ellipsis) di HP 320dp
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -867,3 +885,21 @@ fun DaftarKategoriScreenPreview() {
         DaftarKategoriScreen(navController = rememberNavController())
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun DaftarKategoriScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     MaterialTheme {
+//         DaftarKategoriScreen(
+//             navController = rememberNavController(),
+//             onTambahPromo = {}
+//         )
+//     }
+// }

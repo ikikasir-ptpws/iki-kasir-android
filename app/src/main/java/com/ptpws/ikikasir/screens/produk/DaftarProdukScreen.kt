@@ -9,6 +9,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -57,6 +59,10 @@ import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.feature.kategori.domain.model.Kategori
+import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriUiProvider
+import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.ProdukUiProvider
+import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.HiltProdukUiProvider
+import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.HiltKategoriUiProvider
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.ProdukViewModel
@@ -73,8 +79,8 @@ fun DaftarProdukScreen(
     onBack: () -> Unit = {},
     onTambah: () -> Unit = {},
     initialCategoryId: String? = null,
-    viewModel: ProdukViewModel = hiltViewModel(),
-    kategoriViewModel: KategoriViewModel = hiltViewModel()
+    viewModel: ProdukUiProvider = HiltProdukUiProvider(hiltViewModel<ProdukViewModel>()),
+    kategoriViewModel: KategoriUiProvider = HiltKategoriUiProvider(hiltViewModel<KategoriViewModel>())
 ) {
     val state by viewModel.state.collectAsState()
     val kategoriState by kategoriViewModel.state.collectAsState()
@@ -483,7 +489,11 @@ fun DaftarProdukScreen(
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF64748B),
                         fontFamily = interfamily,
-                        letterSpacing = 0.3.sp
+                        letterSpacing = 0.3.sp,
+                        // Responsif: judul boleh menyusut (ellipsis) dan tidak terdorong keluar layar di HP kecil
+                        modifier = Modifier.weight(1f, fill = false),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     Box {
@@ -814,7 +824,8 @@ fun DaftarProdukScreen(
 fun CategoryBadge(
     categoryName: String,
     hasValidCategory: Boolean = true,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
 ) {
     if (!hasValidCategory || categoryName.isBlank()) {
         Surface(
@@ -822,7 +833,8 @@ fun CategoryBadge(
             enabled = onClick != null,
             shape = RoundedCornerShape(6.dp),
             color = Color(0xFFFEF3C7),
-            border = BorderStroke(1.dp, Color(0xFFFCD34D))
+            border = BorderStroke(1.dp, Color(0xFFFCD34D)),
+            modifier = modifier
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -860,7 +872,8 @@ fun CategoryBadge(
     }
     Surface(
         shape = RoundedCornerShape(6.dp),
-        color = bgColor
+        color = bgColor,
+        modifier = modifier
     ) {
         Text(
             text = categoryName,
@@ -873,6 +886,7 @@ fun CategoryBadge(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProdukCardItem(
     produk: Produk,
@@ -954,20 +968,25 @@ fun ProdukCardItem(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    // Responsif: FlowRow agar badge (Kategori/Pending/Off) tetap utuh di HP 320dp,
+                    // pada HP 360dp semua badge tetap dalam satu baris (tampilan tidak berubah).
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         CategoryBadge(
                             categoryName = categoryName,
                             hasValidCategory = hasValidCategory,
-                            onClick = onAssignCategory
+                            onClick = onAssignCategory,
+                            modifier = Modifier.align(Alignment.CenterVertically)
                         )
 
                         if (!produk.isSynced) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = Color(0xFFFEF3C7)
+                                color = Color(0xFFFEF3C7),
+                                modifier = Modifier.align(Alignment.CenterVertically)
                             ) {
                                 Text(
                                     text = "Pending",
@@ -983,7 +1002,8 @@ fun ProdukCardItem(
                         if (isNonAktif && hasValidCategory) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = Color(0xFFF1F5F9)
+                                color = Color(0xFFF1F5F9),
+                                modifier = Modifier.align(Alignment.CenterVertically)
                             ) {
                                 Text(
                                     text = if (!produk.isVisibleInCashier) "Off" else "Kategori Off",
@@ -1112,3 +1132,21 @@ fun ProdukCardItem(
         }
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun DaftarProdukScreenPreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     DaftarProdukScreen(
+//         navController = /* dummy NavController */,
+//         onBack = {},
+//         onTambah = {},
+//         initialCategoryId = null
+//     )
+// }

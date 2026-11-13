@@ -65,6 +65,8 @@ import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting
 import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
 import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectivePrice
+import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.KasirUiProvider
+import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.HiltKasirUiProvider
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.KasirViewModel
 import com.ptpws.ikikasir.screens.penjualan.component.PilihProdukTersediaDialog
 import com.ptpws.ikikasir.screens.penjualan.component.StokTidakCukupDialog
@@ -82,7 +84,7 @@ fun KasirScreen(
     navController: NavController,
     onScanProduk: () -> Unit = {},
     onBayar: () -> Unit = {},
-    viewModel: KasirViewModel = hiltViewModel()
+    viewModel: KasirUiProvider = HiltKasirUiProvider(hiltViewModel<KasirViewModel>())
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -146,6 +148,16 @@ fun DashedTambahProdukButton(
     )
     val borderColor = Color(0xFFC7D2FE)
 
+    // Responsif: ukuran tombol menyesuaikan lebar layar agar tetap rapi di HP sempit.
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp <= 340
+    val buttonHPadding = if (isSmallScreen) 10.dp else 14.dp
+    val buttonVPadding = if (isSmallScreen) 6.dp else 8.dp
+    val circleSize = if (isSmallScreen) 22.dp else 26.dp
+    val circleIconSize = if (isSmallScreen) 13.dp else 16.dp
+    val textSize = if (isSmallScreen) 12.sp else 13.sp
+    val innerSpacing = if (isSmallScreen) 6.dp else 8.dp
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(100.dp))
@@ -159,33 +171,35 @@ fun DashedTambahProdukButton(
                 )
             }
             .clickable { onClick() }
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = buttonHPadding, vertical = buttonVPadding),
         contentAlignment = Alignment.Center
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(innerSpacing)
         ) {
             Surface(
                 shape = CircleShape,
                 color = PrimaryRoyalBlue,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(circleSize)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(circleIconSize)
                     )
                 }
             }
             Text(
                 text = "Tambah Produk Lainnya",
                 fontFamily = interfamily,
-                fontSize = 13.sp,
+                fontSize = textSize,
                 fontWeight = FontWeight.Bold,
-                color = PrimaryRoyalBlue
+                color = PrimaryRoyalBlue,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -209,6 +223,23 @@ fun CartItemCard(
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
 
+    // Responsif: token ukuran menyesuaikan lebar layar (HP sempit 320dp) agar
+    // isi kartu tidak terpotong. Pada lebar standar (>= 360dp) nilai tetap sama.
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp <= 340
+    val cardPadding = if (isSmallScreen) 10.dp else 12.dp
+    val imageSize = if (isSmallScreen) 56.dp else 70.dp
+    val imageCorner = if (isSmallScreen) 10.dp else 14.dp
+    val imageIconSize = if (isSmallScreen) 22.dp else 28.dp
+    val itemGap = if (isSmallScreen) 8.dp else 12.dp
+    val nameFontSize = if (isSmallScreen) 13.sp else 14.sp
+    val priceFontSize = if (isSmallScreen) 13.sp else 15.sp
+    val counterBtnSize = if (isSmallScreen) 24.dp else 26.dp
+    val counterIconSize = if (isSmallScreen) 12.dp else 14.dp
+    val qtyFieldWidth = if (isSmallScreen) 40.dp else 48.dp
+    val qtyFieldHeight = if (isSmallScreen) 28.dp else 32.dp
+    val counterSpacing = if (isSmallScreen) 4.dp else 6.dp
+
     LaunchedEffect(item.quantity) {
         if (!wasQuantityFocused) {
             quantityText = item.quantity.toString()
@@ -225,14 +256,14 @@ fun CartItemCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(cardPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Product Image
             Surface(
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(imageCorner),
                 color = Color(0xFFF1F5F9),
-                modifier = Modifier.size(70.dp)
+                modifier = Modifier.size(imageSize)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     if (item.produk.imageUrl.isNotBlank()) {
@@ -247,13 +278,13 @@ fun CartItemCard(
                             painter = painterResource(id = R.drawable.ic_box_archive),
                             contentDescription = null,
                             tint = Color(0xFF94A3B8),
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(imageIconSize)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(itemGap))
 
             // Details Column
             Column(modifier = Modifier.weight(1f)) {
@@ -266,12 +297,12 @@ fun CartItemCard(
                     Text(
                         text = item.produk.name,
                         fontFamily = interfamily,
-                        fontSize = 14.sp,
+                        fontSize = nameFontSize,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF0F172A),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f, fill = false)
                     )
 
                     Spacer(modifier = Modifier.width(4.dp))
@@ -291,6 +322,7 @@ fun CartItemCard(
 
                 // Category Pill Badge + Stock status badge
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
@@ -323,6 +355,7 @@ fun CartItemCard(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (isLowStock) Color(0xFFE11D48) else Color(0xFF16A34A),
+                            maxLines = 1,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
@@ -334,7 +367,8 @@ fun CartItemCard(
                             fontSize = 11.sp,
                             color = Color(0xFF94A3B8),
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
                     }
                 }
@@ -350,9 +384,12 @@ fun CartItemCard(
                     Text(
                         text = "Rp ${formatRupiah(item.getEffectivePrice(taxSetting))}",
                         fontFamily = interfamily,
-                        fontSize = 15.sp,
+                        fontSize = priceFontSize,
                         fontWeight = FontWeight.Bold,
-                        color = PrimaryRoyalBlue
+                        color = PrimaryRoyalBlue,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
 
                     // Counter Pill
@@ -364,11 +401,11 @@ fun CartItemCard(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(3.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(counterSpacing)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(26.dp)
+                                    .size(counterBtnSize)
                                     .clip(CircleShape)
                                     .background(Color.White)
                                     .clickable { onDecrement() },
@@ -378,14 +415,14 @@ fun CartItemCard(
                                     imageVector = Icons.Default.Remove,
                                     contentDescription = "Kurangi",
                                     tint = Color(0xFF64748B),
-                                    modifier = Modifier.size(14.dp)
+                                    modifier = Modifier.size(counterIconSize)
                                 )
                             }
 
                             Surface(
                                 modifier = Modifier
-                                    .width(48.dp)
-                                    .height(32.dp),
+                                    .width(qtyFieldWidth)
+                                    .height(qtyFieldHeight),
                                 shape = RoundedCornerShape(8.dp),
                                 color = Color.White,
                                 border = BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -454,7 +491,7 @@ fun CartItemCard(
                             val canIncrement = item.quantity < item.produk.stock
                             Box(
                                 modifier = Modifier
-                                    .size(26.dp)
+                                    .size(counterBtnSize)
                                     .clip(CircleShape)
                                     .background(if (canIncrement) PrimaryRoyalBlue else Color(0xFFCBD5E1))
                                     .clickable {
@@ -466,7 +503,7 @@ fun CartItemCard(
                                     imageVector = Icons.Default.Add,
                                     contentDescription = "Tambah",
                                     tint = Color.White,
-                                    modifier = Modifier.size(14.dp)
+                                    modifier = Modifier.size(counterIconSize)
                                 )
                             }
                         }

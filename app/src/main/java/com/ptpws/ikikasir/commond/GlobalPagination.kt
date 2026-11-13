@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -83,7 +84,10 @@ fun ScrollPaginationLoadingItem(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = interfamily,
-                    color = Color(0xFF475569)
+                    color = Color(0xFF475569),
+                    // Responsif: teks memuat tidak ikut melebar, dipotong agar badge tidak keluar layar
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -120,7 +124,10 @@ fun ScrollPaginationEndOfListItem(
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Medium,
                 fontFamily = interfamily,
-                color = Color(0xFF94A3B8)
+                color = Color(0xFF94A3B8),
+                // Responsif: judul tetap satu baris pada layar sempit
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Box(
                 modifier = Modifier
@@ -242,7 +249,11 @@ fun GlobalPagination(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         fontFamily = interfamily,
-                        color = Color(0xFF64748B)
+                        color = Color(0xFF64748B),
+                        // Responsif: ringkasan boleh dipotong agar badge "Halaman X / Y" tetap terlihat
+                        modifier = Modifier.weight(1f, fill = false),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     Surface(

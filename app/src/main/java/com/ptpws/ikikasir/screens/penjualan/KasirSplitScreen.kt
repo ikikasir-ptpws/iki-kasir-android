@@ -9,12 +9,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveTwoPane
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.KasirState
+import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.KasirUiProvider
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.KasirViewModel
 import com.ptpws.ikikasir.screens.penjualan.component.KasirCartPane
 import com.ptpws.ikikasir.screens.penjualan.component.KasirCatalogPane
@@ -33,7 +35,7 @@ private val PrimaryRoyalBlue = Color(0xFF3B32D1)
 @Composable
 fun KasirSplitScreen(
     state: KasirState,
-    viewModel: KasirViewModel,
+    viewModel: KasirUiProvider,
     navController: NavController,
     onBayar: () -> Unit,
     onScanBarcode: () -> Unit,
@@ -42,6 +44,12 @@ fun KasirSplitScreen(
     BackHandler {
         navController.popBackStackSafely(expectedRoute = AppScreen.Kasir.route)
     }
+
+    // Responsif: judul & subjudul tetap utuh pada layar sempit.
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp <= 340
+    val titleFontSize = if (isSmallScreen) 16.sp else 18.sp
+    val subtitleFontSize = if (isSmallScreen) 11.sp else 12.sp
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -53,19 +61,23 @@ fun KasirSplitScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f, fill = false)) {
                             Text(
                                 text = "Kasir Pintar (Mode POS)",
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = interfamily,
                                 color = Color(0xFF0F172A),
-                                fontSize = 18.sp
+                                fontSize = titleFontSize,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = "Terminal Transaksi & Katalog Produk",
                                 fontFamily = interfamily,
                                 color = Color(0xFF64748B),
-                                fontSize = 12.sp
+                                fontSize = subtitleFontSize,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }

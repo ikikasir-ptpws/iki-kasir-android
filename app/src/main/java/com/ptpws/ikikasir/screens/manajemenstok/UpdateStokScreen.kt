@@ -31,6 +31,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +41,8 @@ import androidx.compose.ui.res.painterResource
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
+import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.UpdateStokUiProvider
+import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.HiltUpdateStokUiProvider
 import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.UpdateStokViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,7 +50,7 @@ import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.UpdateSto
 fun UpdateStokScreen(
     onBack: () -> Unit = {},
     onSuccessUpdate: (String) -> Unit = {},
-    viewModel: UpdateStokViewModel = hiltViewModel()
+    viewModel: UpdateStokUiProvider = HiltUpdateStokUiProvider(hiltViewModel<UpdateStokViewModel>())
 ) {
     var isBackProcessing by remember { mutableStateOf(false) }
     val handleBack = {
@@ -176,7 +179,10 @@ fun UpdateStokScreen(
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = Color(0xFF111827),
-                                    modifier = Modifier.weight(1f)
+                                    // Responsif: nama produk panjang dipotong agar ikon panah tetap terlihat
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Icon(
                                     imageVector = Icons.Default.ArrowDropDown,
@@ -388,7 +394,11 @@ fun UpdateStokScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Column(
+                            // Responsif: kolom kiri diberi bobot agar nilai stok panjang tidak menabrak kolom status
+                            modifier = Modifier.weight(1f, fill = false),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
                             Text(
                                 text = "Total Akhir Stok",
                                 fontFamily = interfamily,
@@ -400,7 +410,10 @@ fun UpdateStokScreen(
                                 fontFamily = interfamily,
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF3F3DDF)
+                                color = Color(0xFF3F3DDF),
+                                // Responsif: nilai dipotong 1 baris agar tidak keluar dari kartu
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -429,7 +442,10 @@ fun UpdateStokScreen(
                                     fontFamily = interfamily,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = statusColor
+                                    color = statusColor,
+                                    // Responsif: status dipotong agar tidak keluar dari kartu di 320dp
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -445,7 +461,8 @@ fun UpdateStokScreen(
                     enabled = !state.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        // Responsif: tinggi minimal 52.dp (identik di 360dp) agar teks tidak terpotong saat font diperbesar
+                        .heightIn(min = 52.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4F46E5)
@@ -487,3 +504,16 @@ fun UpdateStokScreenPreview() {
         UpdateStokScreen()
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun UpdateStokScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     UpdateStokScreen()
+// }

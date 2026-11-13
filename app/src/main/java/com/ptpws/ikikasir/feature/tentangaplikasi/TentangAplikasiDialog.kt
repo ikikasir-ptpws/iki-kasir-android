@@ -386,7 +386,7 @@ fun TentangAplikasiDialog(
                         onClick = onDismiss,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(if (isSmallScreen) 44.dp else 46.dp),
+                            .heightIn(min = if (isSmallScreen) 44.dp else 46.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
                         shape = RoundedCornerShape(12.dp)
                     ) {

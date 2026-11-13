@@ -39,13 +39,15 @@ import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import com.ptpws.ikikasir.feature.bluetooth.domain.model.BluetoothPrinterDevice
 import com.ptpws.ikikasir.feature.bluetooth.domain.model.BluetoothPrinterSetting
+import com.ptpws.ikikasir.feature.bluetooth.presentation.viewmodel.BluetoothPrinterUiProvider
+import com.ptpws.ikikasir.feature.bluetooth.presentation.viewmodel.HiltBluetoothPrinterUiProvider
 import com.ptpws.ikikasir.feature.bluetooth.presentation.viewmodel.BluetoothPrinterViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BluetoothPrinterScreen(
     navController: NavController,
-    viewModel: BluetoothPrinterViewModel = hiltViewModel()
+    viewModel: BluetoothPrinterUiProvider = HiltBluetoothPrinterUiProvider(hiltViewModel<BluetoothPrinterViewModel>())
 ) {
     val handleBack = {
         navController.popBackStackSafely(AppScreen.BluetoothPrinter.route)
@@ -195,7 +197,9 @@ fun BluetoothPrinterScreen(
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                // Responsif: blok teks diberi bobot agar chevron kanan tidak terdorong keluar layar 320dp
+                                modifier = Modifier.weight(1f)
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -211,19 +215,23 @@ fun BluetoothPrinterScreen(
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
-                                Column {
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = "Cari Perangkat",
                                         fontFamily = interfamily,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 14.sp,
-                                        color = Color(0xFF1F2937)
+                                        color = Color(0xFF1F2937),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
                                         text = "Tampilkan ulang daftar perangkat paired",
                                         fontFamily = interfamily,
                                         fontSize = 11.sp,
-                                        color = Color(0xFF9CA3AF)
+                                        color = Color(0xFF9CA3AF),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -325,20 +333,24 @@ fun BluetoothPrinterScreen(
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
-                                Column {
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = "Koneksi Otomatis",
                                         fontFamily = interfamily,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 14.sp,
-                                        color = Color(0xFF1F2937)
+                                        color = Color(0xFF1F2937),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
                                         text = if (isAutoConnect) "Otomatis terhubung saat aplikasi dibuka"
                                                else "Koneksi manual setiap kali ingin mencetak",
                                         fontFamily = interfamily,
                                         fontSize = 11.sp,
-                                        color = Color(0xFF9CA3AF)
+                                        color = Color(0xFF9CA3AF),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -380,7 +392,7 @@ fun BluetoothPrinterScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .heightIn(min = 52.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4F46E5)
@@ -455,7 +467,9 @@ private fun BluetoothStatusCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    // Responsif: blok ikon+teks diberi bobot agar tombol di kanan tidak terdorong keluar layar 320dp
+                    modifier = Modifier.weight(1f)
                 ) {
                     Box(
                         modifier = Modifier
@@ -472,19 +486,24 @@ private fun BluetoothStatusCard(
                             modifier = Modifier.size(26.dp)
                         )
                     }
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = if (isEnabled) "Bluetooth Aktif" else "Bluetooth Tidak Aktif",
                             fontFamily = interfamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
-                            color = Color.White
+                            color = Color.White,
+                            // Responsif: judul dipotong agar tombol tetap terlihat
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = if (isEnabled) "Siap mencari printer" else "Aktifkan untuk mencari printer",
                             fontFamily = interfamily,
                             fontSize = 12.sp,
-                            color = Color.White.copy(alpha = 0.8f)
+                            color = Color.White.copy(alpha = 0.8f),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -552,7 +571,7 @@ private fun SelectedPrinterCard(
                         modifier = Modifier.size(22.dp)
                     )
                 }
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Printer Dipilih",
                         fontFamily = interfamily,
@@ -577,7 +596,10 @@ private fun SelectedPrinterCard(
                         },
                         fontFamily = interfamily,
                         fontSize = 11.sp,
-                        color = Color(0xFF6B7280)
+                        color = Color(0xFF6B7280),
+                        // Responsif: alamat dipotong agar tombol hapus tetap terlihat
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -641,7 +663,7 @@ private fun BluetoothDeviceItem(
                         modifier = Modifier.size(20.dp)
                     )
                 }
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = device.name,
                         fontFamily = interfamily,
@@ -655,7 +677,9 @@ private fun BluetoothDeviceItem(
                         text = device.address,
                         fontFamily = interfamily,
                         fontSize = 11.sp,
-                        color = Color(0xFF9CA3AF)
+                        color = Color(0xFF9CA3AF),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -818,3 +842,17 @@ private fun SectionLabel(text: String) {
         color = Color(0xFF9CA3AF)
     )
 }
+
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun BluetoothPrinterScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase + NavController, perlu composable stateless
+//     BluetoothPrinterScreen(navController = androidx.navigation.compose.rememberNavController())
+// }

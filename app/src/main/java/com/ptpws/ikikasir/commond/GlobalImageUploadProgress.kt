@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -428,14 +429,19 @@ fun GlobalImageUploadDialog(
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
                         color = Color(0xFF0F172A),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        // Responsif: judul & pesan dipotong agar tombol tetap terlihat di HP 320dp / font besar
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = message,
                         fontSize = 12.5.sp,
                         fontFamily = interfamily,
                         color = Color(0xFF64748B),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -462,14 +468,18 @@ fun GlobalImageUploadDialog(
                                 text = "Proses upload",
                                 fontSize = 11.sp,
                                 fontFamily = interfamily,
-                                color = Color(0xFF94A3B8)
+                                color = Color(0xFF94A3B8),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = "${(progress.coerceIn(0f, 1f) * 100).toInt()}%",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 fontFamily = interfamily,
-                                color = Color(0xFF4F46E5)
+                                color = Color(0xFF4F46E5),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -488,6 +498,8 @@ fun GlobalImageUploadDialog(
                         fontFamily = interfamily,
                         color = Color(0xFF94A3B8),
                         textAlign = TextAlign.Center,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                     )
                 }
@@ -510,7 +522,9 @@ fun GlobalImageUploadDialog(
                             text = "Batalkan",
                             fontFamily = interfamily,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }

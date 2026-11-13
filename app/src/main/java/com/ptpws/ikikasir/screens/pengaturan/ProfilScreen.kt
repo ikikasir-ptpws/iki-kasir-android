@@ -71,7 +71,11 @@ import java.io.FileOutputStream
 import kotlinx.coroutines.launch
 
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel.ProfilUiProvider
+import com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel.HiltProfilUiProvider
+import com.ptpws.ikikasir.feature.auth.presentation.viewmodel.HiltSecurityUiProvider
 import com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel.ProfilViewModel
+import com.ptpws.ikikasir.feature.auth.presentation.viewmodel.SecurityUiProvider
 import com.ptpws.ikikasir.feature.auth.presentation.viewmodel.SecurityViewModel
 import com.ptpws.ikikasir.feature.tentangaplikasi.TentangAplikasiDialog
 import com.ptpws.ikikasir.screens.navigation.AppScreen
@@ -82,8 +86,8 @@ import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 @Composable
 fun ProfilScreen(
     navController: NavController,
-    viewModel: ProfilViewModel = hiltViewModel(),
-    securityViewModel: SecurityViewModel = hiltViewModel(),
+    viewModel: ProfilUiProvider = HiltProfilUiProvider(hiltViewModel<ProfilViewModel>()),
+    securityViewModel: SecurityUiProvider = HiltSecurityUiProvider(hiltViewModel<SecurityViewModel>()),
     onEditProfil: () -> Unit = {},
     onKeamanan: () -> Unit = {},
     onAuditLog: () -> Unit = {},
@@ -776,7 +780,7 @@ fun ProfilScreen(
                             enabled = !isSavingProfile,
                             modifier = Modifier
                                 .weight(1f)
-                                .height(46.dp),
+                                .heightIn(min = 46.dp),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text("Batal", fontFamily = interfamily, color = Color(0xFF475569))
@@ -793,7 +797,7 @@ fun ProfilScreen(
                             enabled = !isSavingProfile && editFullName.isNotBlank(),
                             modifier = Modifier
                                 .weight(1f)
-                                .height(46.dp),
+                                .heightIn(min = 46.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
                         ) {
@@ -1046,7 +1050,7 @@ private fun MetodePembayaranDialog(
                         onClick = onDismiss,
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
+                            .heightIn(min = 48.dp),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, Color(0xFFCBD5E1))
                     ) {
@@ -1070,7 +1074,7 @@ private fun MetodePembayaranDialog(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
+                            .heightIn(min = 48.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B32D1))
                     ) {
@@ -1114,7 +1118,9 @@ private fun TaxSettingDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
+                    .padding(24.dp)
+                    // Responsif: isi dialog bisa digulir agar tidak terpotong di layar pendek / font besar
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Row(
@@ -1686,7 +1692,10 @@ private fun TableSettingDialog(
                 .padding(horizontal = 4.dp)
         ) {
             Column(
-                modifier = Modifier.padding(22.dp),
+                modifier = Modifier
+                    .padding(22.dp)
+                    // Responsif: isi dialog bisa digulir agar tidak terpotong di layar pendek / font besar
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Header (Judul & Close Button)
@@ -1766,7 +1775,7 @@ private fun TableSettingDialog(
                         onClick = onDismiss,
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
+                            .heightIn(min = 48.dp),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, Color(0xFFCBD5E1))
                     ) {
@@ -1787,7 +1796,7 @@ private fun TableSettingDialog(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
+                            .heightIn(min = 48.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B32D1))
                     ) {
@@ -1827,7 +1836,9 @@ private fun ChangePasswordDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(22.dp),
+                    .padding(22.dp)
+                    // Responsif: isi dialog bisa digulir agar tidak terpotong di layar pendek / font besar
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Row(
@@ -1988,7 +1999,10 @@ fun MenuAkunItem(
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = Color(0xFF111827),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            // Responsif: label menu panjang dibungkus maksimal 2 baris agar badge & chevron tetap terlihat
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
         badgeLabel?.let { labelText ->
             if (labelText == "Pending") {

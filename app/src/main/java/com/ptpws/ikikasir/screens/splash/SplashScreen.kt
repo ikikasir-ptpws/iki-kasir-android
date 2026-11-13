@@ -22,19 +22,27 @@ fun SplashScreen(
     isLoading: Boolean = false,
     statusText: String? = null
 ) {
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(color = Color.White),
         contentAlignment = Alignment.Center
     ) {
+        // Responsif: logo mengikuti lebar layar. Rasio 270/360 = 0.75 menghasilkan ukuran
+        // yang PERSIS sama dengan ukuran asli (270 dp) pada layar 360 dp, menyusut di 320 dp,
+        // dan tidak melebar berlebihan di layar >= 360 dp (dibatasi maks 270 dp).
+        val logoWidth = minOf(maxWidth * 0.75f, 270.dp)
+        // Rasio aspek gambar asli 270 x 221 dp, dipakai agar logo tidak gepeng.
+        val logoHeight = logoWidth * (221f / 270f)
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Image(
                 painter = painterResource(R.drawable.logoikikasir),
-                contentDescription = "logo"
+                contentDescription = "logo",
+                modifier = Modifier.size(logoWidth, logoHeight)
             )
 
             if (isLoading) {

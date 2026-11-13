@@ -38,6 +38,8 @@ import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.antrean.domain.model.Antrean
 import com.ptpws.ikikasir.feature.antrean.presentation.state.AntreanUiState
+import com.ptpws.ikikasir.feature.antrean.presentation.viewmodel.AntreanUiProvider
+import com.ptpws.ikikasir.feature.antrean.presentation.viewmodel.HiltAntreanUiProvider
 import com.ptpws.ikikasir.feature.antrean.presentation.viewmodel.AntreanViewModel
 import androidx.activity.compose.BackHandler
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
@@ -50,7 +52,7 @@ import java.util.Locale
 @Composable
 fun WaitingListScreen(
     navController: NavController,
-    viewModel: AntreanViewModel = hiltViewModel()
+    viewModel: AntreanUiProvider = HiltAntreanUiProvider(hiltViewModel<AntreanViewModel>())
 ) {
     BackHandler {
         navController.popBackStackSafely(expectedRoute = AppScreen.WaitingList.route)
@@ -117,7 +119,10 @@ fun WaitingListScreen(
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
                         fontSize = 20.sp,
-                        color = Color(0xFF111827)
+                        color = Color(0xFF111827),
+                        // Responsif: judul top bar dipotong agar tidak menabrak ikon navigasi di HP 320dp
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
                 navigationIcon = {
@@ -187,7 +192,10 @@ fun WaitingListScreen(
                                         fontSize = 13.sp,
                                         color = Color(0xFF9CA3AF),
                                         fontFamily = interfamily,
-                                        modifier = Modifier.align(Alignment.CenterStart)
+                                        modifier = Modifier.align(Alignment.CenterStart),
+                                        // Responsif: placeholder dipotong agar tidak menabrak ikon di HP 320dp
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                                 innerTextField()
@@ -235,7 +243,9 @@ fun WaitingListScreen(
                                 text = if (isBulkProcessing) "Memproses..." else "$selectedCount dipilih",
                                 fontFamily = interfamily,
                                 fontSize = 12.sp,
-                                color = Color(0xFF6B7280)
+                                color = Color(0xFF6B7280),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                         if (selectedCount > 0) {
@@ -257,7 +267,13 @@ fun WaitingListScreen(
                                     shape = RoundedCornerShape(10.dp),
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp)
                                 ) {
-                                    Text("Selesaikan ($selectedCount)", fontSize = 12.sp, fontFamily = interfamily)
+                                    Text(
+                                        text = "Selesaikan ($selectedCount)",
+                                        fontSize = 12.sp,
+                                        fontFamily = interfamily,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 }
                                 Button(
                                     onClick = {
@@ -270,7 +286,13 @@ fun WaitingListScreen(
                                     shape = RoundedCornerShape(10.dp),
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp)
                                 ) {
-                                    Text("Batalkan ($selectedCount)", fontSize = 12.sp, fontFamily = interfamily)
+                                    Text(
+                                        text = "Batalkan ($selectedCount)",
+                                        fontSize = 12.sp,
+                                        fontFamily = interfamily,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 }
                             }
                         }
@@ -500,7 +522,10 @@ private fun AntreanCard(
                             text = subtitleText,
                             fontFamily = interfamily,
                             fontSize = 12.sp,
-                            color = Color(0xFF6B7280)
+                            color = Color(0xFF6B7280),
+                            // Responsif: batas 2 baris agar nama pelanggan panjang tidak mendorong kartu
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -616,13 +641,18 @@ private fun AntreanCard(
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = Color(0xFF0F172A),
-                                        fontFamily = interfamily
+                                        fontFamily = interfamily,
+                                        // Responsif: nama produk panjang dipotong agar harga tidak terdorong keluar card
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
                                         text = "${cartItem.quantity}x @ ${rupiahFormat.format(cartItem.produk.price)}",
                                         fontSize = 11.sp,
                                         color = Color(0xFF64748B),
-                                        fontFamily = interfamily
+                                        fontFamily = interfamily,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     if (cartItem.produk.discount > 0) {
                                         val discLabel = if (cartItem.produk.discountType == "PERCENT") "${cartItem.produk.discount.toInt()}%" else rupiahFormat.format(cartItem.produk.discount)
@@ -631,7 +661,9 @@ private fun AntreanCard(
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Medium,
                                             color = Color(0xFF16A34A),
-                                            fontFamily = interfamily
+                                            fontFamily = interfamily,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                     if (cartItem.note.isNotBlank()) {
@@ -639,7 +671,9 @@ private fun AntreanCard(
                                             text = "Catatan: ${cartItem.note}",
                                             fontSize = 11.sp,
                                             color = Color(0xFFE11D48),
-                                            fontFamily = interfamily
+                                            fontFamily = interfamily,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
@@ -648,7 +682,10 @@ private fun AntreanCard(
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF0F172A),
-                                    fontFamily = interfamily
+                                    fontFamily = interfamily,
+                                    // Responsif: harga dipotong bila layar sempit agar tidak keluar card
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -689,14 +726,19 @@ private fun AntreanCard(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF475569),
-                                    fontFamily = interfamily
+                                    fontFamily = interfamily,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = if (isPpnEksklusif) "+ ${rupiahFormat.format(effectivePpn)}" else rupiahFormat.format(effectivePpn),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF334155),
-                                    fontFamily = interfamily
+                                    fontFamily = interfamily,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -712,14 +754,19 @@ private fun AntreanCard(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF16A34A),
-                                    fontFamily = interfamily
+                                    fontFamily = interfamily,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = "- ${rupiahFormat.format(transaksi.discount)}",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF16A34A),
-                                    fontFamily = interfamily
+                                    fontFamily = interfamily,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -737,14 +784,19 @@ private fun AntreanCard(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF475569),
-                                fontFamily = interfamily
+                                fontFamily = interfamily,
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = rupiahFormat.format(totalTagihan),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF3D5AF1),
-                                fontFamily = interfamily
+                                fontFamily = interfamily,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     } else {
@@ -766,3 +818,21 @@ private fun AntreanCard(
         }
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+// import androidx.navigation.compose.rememberNavController
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun WaitingListScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     MaterialTheme {
+//         WaitingListScreen(
+//             navController = rememberNavController()
+//         )
+//     }
+// }

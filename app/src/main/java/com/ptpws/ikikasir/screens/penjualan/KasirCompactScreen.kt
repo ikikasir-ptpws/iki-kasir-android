@@ -28,12 +28,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.KasirState
+import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.KasirUiProvider
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.KasirViewModel
 import com.ptpws.ikikasir.screens.penjualan.component.PilihProdukTersediaDialog
 import androidx.activity.compose.BackHandler
@@ -52,7 +54,7 @@ private val PrimaryRoyalBlue = Color(0xFF3B32D1)
 @Composable
 fun KasirCompactScreen(
     state: KasirState,
-    viewModel: KasirViewModel,
+    viewModel: KasirUiProvider,
     navController: NavController,
     onBayar: () -> Unit,
     triggerBarcodeScanner: () -> Unit,
@@ -179,7 +181,9 @@ fun KasirCompactScreen(
                                 fontFamily = interfamily,
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F172A)
+                                color = Color(0xFF0F172A),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             if (state.promoDiscountAmount > 0) {
                                 Text(
@@ -187,7 +191,9 @@ fun KasirCompactScreen(
                                     fontFamily = interfamily,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF16A34A)
+                                    color = Color(0xFF16A34A),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -252,7 +258,7 @@ fun KasirCompactScreen(
                 Surface(
                     modifier = Modifier
                         .weight(1f)
-                        .height(48.dp),
+                        .heightIn(min = 48.dp),
                     shape = RoundedCornerShape(14.dp),
                     color = Color(0xFFF1F5F9)
                 ) {
@@ -429,7 +435,7 @@ fun KasirCompactScreen(
                             onClick = { triggerBarcodeScanner() },
                             modifier = Modifier
                                 .fillMaxWidth(0.85f)
-                                .height(44.dp),
+                                .heightIn(min = 44.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFFF1F5F9)
@@ -558,3 +564,22 @@ fun KasirCompactScreen(
         }
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun KasirCompactScreenPreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     KasirCompactScreen(
+//         state = KasirState(),
+//         viewModel = /* butuh KasirViewModel (Hilt) */,
+//         navController = /* butuh NavController */,
+//         onBayar = {},
+//         triggerBarcodeScanner = {}
+//     )
+// }

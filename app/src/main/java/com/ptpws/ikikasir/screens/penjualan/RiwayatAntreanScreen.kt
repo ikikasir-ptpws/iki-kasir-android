@@ -52,6 +52,8 @@ import com.ptpws.ikikasir.commond.getStartOfDayLocalSeconds
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.antrean.domain.model.QueueHistory
 import com.ptpws.ikikasir.feature.antrean.presentation.state.QueueHistoryUiState
+import com.ptpws.ikikasir.feature.antrean.presentation.viewmodel.QueueHistoryUiProvider
+import com.ptpws.ikikasir.feature.antrean.presentation.viewmodel.HiltQueueHistoryUiProvider
 import com.ptpws.ikikasir.feature.antrean.presentation.viewmodel.QueueHistoryViewModel
 import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
@@ -74,7 +76,7 @@ import androidx.compose.material.icons.filled.FileDownload
 @Composable
 fun RiwayatAntreanScreen(
     navController: NavController,
-    viewModel: QueueHistoryViewModel = hiltViewModel()
+    viewModel: QueueHistoryUiProvider = HiltQueueHistoryUiProvider(hiltViewModel<QueueHistoryViewModel>())
 ) {
     BackHandler {
         navController.popBackStackSafely(expectedRoute = AppScreen.RiwayatAntrean.route)
@@ -393,7 +395,10 @@ fun RiwayatAntreanScreen(
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
                         fontSize = 20.sp,
-                        color = Color(0xFF111827)
+                        color = Color(0xFF111827),
+                        // Responsif: judul top bar dipotong agar tombol Ekspor tidak terdesak di HP 320dp
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
                 navigationIcon = {
@@ -439,7 +444,9 @@ fun RiwayatAntreanScreen(
                                     text = "Ekspor",
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
+                                    fontSize = 13.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -507,7 +514,10 @@ fun RiwayatAntreanScreen(
                                             fontSize = 13.sp,
                                             color = Color(0xFF9CA3AF),
                                             fontFamily = interfamily,
-                                            modifier = Modifier.align(Alignment.CenterStart)
+                                            modifier = Modifier.align(Alignment.CenterStart),
+                                            // Responsif: placeholder dipotong agar tidak menabrak ikon di HP 320dp
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                     innerTextField()
@@ -820,7 +830,11 @@ private fun GroupHeaderRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            // Responsif: baris kiri mengisi ruang sisa agar badge jumlah tetap terlihat di HP 320dp
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(
                 modifier = Modifier
                     .width(4.dp)
@@ -834,7 +848,10 @@ private fun GroupHeaderRow(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1E293B),
-                fontFamily = interfamily
+                fontFamily = interfamily,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
 
@@ -964,7 +981,10 @@ private fun QueueHistoryCard(
                     text = subtitleText,
                     fontSize = 13.sp,
                     color = Color(0xFF64748B),
-                    fontFamily = interfamily
+                    fontFamily = interfamily,
+                    // Responsif: batas 2 baris agar nama pelanggan panjang tidak mendorong isi card
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -1034,13 +1054,18 @@ private fun QueueHistoryCard(
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = Color(0xFF0F172A),
-                                        fontFamily = interfamily
+                                        fontFamily = interfamily,
+                                        // Responsif: nama produk panjang dipotong agar harga tidak terdorong keluar card
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
                                         text = "${cartItem.quantity}x @ ${rupiahFormat.format(cartItem.produk.price)}",
                                         fontSize = 11.sp,
                                         color = Color(0xFF64748B),
-                                        fontFamily = interfamily
+                                        fontFamily = interfamily,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     if (cartItem.produk.discount > 0) {
                                         val discLabel = if (cartItem.produk.discountType == "PERCENT") "${cartItem.produk.discount.toInt()}%" else rupiahFormat.format(cartItem.produk.discount)
@@ -1049,7 +1074,9 @@ private fun QueueHistoryCard(
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Medium,
                                             color = Color(0xFF16A34A),
-                                            fontFamily = interfamily
+                                            fontFamily = interfamily,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                     if (cartItem.note.isNotBlank()) {
@@ -1057,7 +1084,9 @@ private fun QueueHistoryCard(
                                             text = "Catatan: ${cartItem.note}",
                                             fontSize = 11.sp,
                                             color = Color(0xFFE11D48),
-                                            fontFamily = interfamily
+                                            fontFamily = interfamily,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
@@ -1066,7 +1095,10 @@ private fun QueueHistoryCard(
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF0F172A),
-                                    fontFamily = interfamily
+                                    fontFamily = interfamily,
+                                    // Responsif: harga dipotong bila layar sempit agar tidak keluar card
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -1110,14 +1142,19 @@ private fun QueueHistoryCard(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF475569),
-                                    fontFamily = interfamily
+                                    fontFamily = interfamily,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = if (isPpnEksklusif) "+ ${rupiahFormat.format(effectivePpn)}" else rupiahFormat.format(effectivePpn),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF334155),
-                                    fontFamily = interfamily
+                                    fontFamily = interfamily,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -1133,14 +1170,19 @@ private fun QueueHistoryCard(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF16A34A),
-                                    fontFamily = interfamily
+                                    fontFamily = interfamily,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = "- ${rupiahFormat.format(discountAmount)}",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF16A34A),
-                                    fontFamily = interfamily
+                                    fontFamily = interfamily,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -1155,14 +1197,19 @@ private fun QueueHistoryCard(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF475569),
-                                fontFamily = interfamily
+                                fontFamily = interfamily,
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = rupiahFormat.format(grandTotal),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF0066FF),
-                                fontFamily = interfamily
+                                fontFamily = interfamily,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -1193,14 +1240,38 @@ private fun DetailRow(label: String, value: String) {
             text = label,
             fontSize = 12.sp,
             color = Color(0xFF64748B),
-            fontFamily = interfamily
+            fontFamily = interfamily,
+            // Responsif: label diberi ruang sisa & dipotong agar nilai tetap terlihat di HP 320dp
+            modifier = Modifier.weight(1f, fill = false),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
         Text(
             text = value,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
             color = Color(0xFF0F172A),
-            fontFamily = interfamily
+            fontFamily = interfamily,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+// import androidx.navigation.compose.rememberNavController
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun RiwayatAntreanScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     MaterialTheme {
+//         RiwayatAntreanScreen(
+//             navController = rememberNavController()
+//         )
+//     }
+// }

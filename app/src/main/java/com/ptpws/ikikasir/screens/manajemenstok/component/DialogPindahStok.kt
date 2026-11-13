@@ -4,7 +4,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -20,6 +22,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -53,7 +56,9 @@ fun DialogPindahStok(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
+                    .padding(20.dp)
+                    // Responsif: konten dialog bisa digulir agar tidak terpotong di layar pendek
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Header
@@ -104,13 +109,16 @@ fun DialogPindahStok(
                                 .background(Color(0xFFE5E7EB))
                         )
                         Spacer(modifier = Modifier.width(12.dp))
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = productName,
                                 fontSize = 12.sp,
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF111827)
+                                color = Color(0xFF111827),
+                                // Responsif: nama produk dibatasi 3 baris agar dialog tidak terlalu tinggi
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -145,7 +153,8 @@ fun DialogPindahStok(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp)
+                            // Responsif: tinggi minimal 48.dp (identik di 360dp) agar tombol +/- tidak terpotong
+                            .heightIn(min = 48.dp)
                             .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(8.dp)),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -189,7 +198,8 @@ fun DialogPindahStok(
                         onClick = { onConfirm(amount) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(44.dp),
+                            // Responsif: tinggi minimal 44.dp (identik di 360dp) agar teks tombol tidak terpotong saat font diperbesar
+                            .heightIn(min = 44.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
                     ) {

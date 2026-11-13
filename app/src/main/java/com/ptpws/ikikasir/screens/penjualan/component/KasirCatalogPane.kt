@@ -103,12 +103,29 @@ fun KasirCatalogPane(
     }
     val isShimmerActive = isInitialLoading || state.isLoading
 
+    // Responsif: token ukuran menyesuaikan lebar layar agar katalog rapi di HP
+    // sempit (320dp). Pada lebar standar (>= 360dp) nilai tetap sama.
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp <= 340
+    val panePadding = if (isSmallScreen) 12.dp else 16.dp
+    val paneSpacing = if (isSmallScreen) 10.dp else 12.dp
+    val searchHeight = if (isSmallScreen) 42.dp else 46.dp
+    val gridSpacing = if (isSmallScreen) 8.dp else 10.dp
+    val productImageHeight = if (isSmallScreen) 76.dp else 90.dp
+    val productCardPadding = if (isSmallScreen) 8.dp else 10.dp
+    val productNameSize = if (isSmallScreen) 11.sp else 12.sp
+    val productPriceSize = if (isSmallScreen) 11.sp else 12.sp
+    val qtyBtnSize = if (isSmallScreen) 22.dp else 24.dp
+    val qtyBtnIconSize = if (isSmallScreen) 11.dp else 12.dp
+    val addBtnSize = if (isSmallScreen) 24.dp else 26.dp
+    val addBtnIconSize = if (isSmallScreen) 13.dp else 14.dp
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFFF8FAFC))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(panePadding),
+        verticalArrangement = Arrangement.spacedBy(paneSpacing)
     ) {
         // ── 1. Search Bar + Barcode Scanner
         Row(
@@ -119,7 +136,7 @@ fun KasirCatalogPane(
             Surface(
                 modifier = Modifier
                     .weight(1f)
-                    .height(46.dp),
+                    .height(searchHeight),
                 shape = RoundedCornerShape(12.dp),
                 color = Color.White,
                 border = BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -153,7 +170,9 @@ fun KasirCatalogPane(
                                         text = "Cari nama atau barcode produk...",
                                         fontFamily = interfamily,
                                         fontSize = 13.sp,
-                                        color = Color(0xFF94A3B8)
+                                        color = Color(0xFF94A3B8),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                                 innerTextField()
@@ -166,7 +185,7 @@ fun KasirCatalogPane(
 
             Surface(
                 modifier = Modifier
-                    .size(46.dp)
+                    .size(searchHeight)
                     .clickable { onScanBarcode() },
                 shape = RoundedCornerShape(12.dp),
                 color = PrimaryRoyalBlue
@@ -244,8 +263,8 @@ fun KasirCatalogPane(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(gridSpacing),
+                horizontalArrangement = Arrangement.spacedBy(gridSpacing),
                 contentPadding = PaddingValues(bottom = 12.dp)
             ) {
                 items(8) {
@@ -281,8 +300,8 @@ fun KasirCatalogPane(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(gridSpacing),
+                horizontalArrangement = Arrangement.spacedBy(gridSpacing),
                 contentPadding = PaddingValues(bottom = 12.dp)
             ) {
                 items(displayedList, key = { it.id }) { produk ->
@@ -308,13 +327,13 @@ fun KasirCatalogPane(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(10.dp)
+                                .padding(productCardPadding)
                         ) {
                             // Gambar Produk & Badge Kuantitas
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(90.dp)
+                                    .height(productImageHeight)
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(Color(0xFFF1F5F9)),
                                 contentAlignment = Alignment.Center
@@ -363,7 +382,7 @@ fun KasirCatalogPane(
                             Text(
                                 text = produk.name,
                                 fontFamily = interfamily,
-                                fontSize = 12.sp,
+                                fontSize = productNameSize,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF0F172A),
                                 maxLines = 1,
@@ -376,7 +395,9 @@ fun KasirCatalogPane(
                                 text = "Stok: ${produk.stock}",
                                 fontFamily = interfamily,
                                 fontSize = 10.sp,
-                                color = if (isLow) Color(0xFFE11D48) else Color(0xFF64748B)
+                                color = if (isLow) Color(0xFFE11D48) else Color(0xFF64748B),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
 
                             Spacer(modifier = Modifier.height(6.dp))
@@ -390,9 +411,12 @@ fun KasirCatalogPane(
                                 Text(
                                     text = "Rp ${formatRupiah(effectivePrice)}",
                                     fontFamily = interfamily,
-                                    fontSize = 12.sp,
+                                    fontSize = productPriceSize,
                                     fontWeight = FontWeight.Bold,
-                                    color = PrimaryRoyalBlue
+                                    color = PrimaryRoyalBlue,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
 
                                 if (currentQty > 0) {
@@ -404,7 +428,7 @@ fun KasirCatalogPane(
                                             shape = CircleShape,
                                             color = Color(0xFFF1F5F9),
                                             modifier = Modifier
-                                                .size(24.dp)
+                                                .size(qtyBtnSize)
                                                 .clickable { onDecrement(produk) }
                                         ) {
                                             Box(contentAlignment = Alignment.Center) {
@@ -412,7 +436,7 @@ fun KasirCatalogPane(
                                                     imageVector = Icons.Default.Remove,
                                                     contentDescription = "Kurang",
                                                     tint = Color(0xFF64748B),
-                                                    modifier = Modifier.size(12.dp)
+                                                    modifier = Modifier.size(qtyBtnIconSize)
                                                 )
                                             }
                                         }
@@ -421,7 +445,7 @@ fun KasirCatalogPane(
                                             shape = CircleShape,
                                             color = PrimaryRoyalBlue,
                                             modifier = Modifier
-                                                .size(24.dp)
+                                                .size(qtyBtnSize)
                                                 .clickable {
                                                     if (currentQty < produk.stock) onIncrement(produk)
                                                 }
@@ -431,7 +455,7 @@ fun KasirCatalogPane(
                                                     imageVector = Icons.Default.Add,
                                                     contentDescription = "Tambah",
                                                     tint = Color.White,
-                                                    modifier = Modifier.size(12.dp)
+                                                    modifier = Modifier.size(qtyBtnIconSize)
                                                 )
                                             }
                                         }
@@ -441,7 +465,7 @@ fun KasirCatalogPane(
                                         shape = CircleShape,
                                         color = if (produk.stock > 0) PrimaryRoyalBlue else Color(0xFFCBD5E1),
                                         modifier = Modifier
-                                            .size(26.dp)
+                                            .size(addBtnSize)
                                             .clickable(enabled = produk.stock > 0) { onIncrement(produk) }
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
@@ -449,7 +473,7 @@ fun KasirCatalogPane(
                                                 imageVector = Icons.Default.Add,
                                                 contentDescription = "Tambah",
                                                 tint = Color.White,
-                                                modifier = Modifier.size(14.dp)
+                                                modifier = Modifier.size(addBtnIconSize)
                                             )
                                         }
                                     }

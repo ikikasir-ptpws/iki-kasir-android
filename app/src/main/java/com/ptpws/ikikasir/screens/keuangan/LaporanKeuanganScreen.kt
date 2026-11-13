@@ -70,6 +70,8 @@ import com.ptpws.ikikasir.feature.keuangan.presentation.state.LaporanKeuanganSta
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.MetodePembayaranReport
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.PeriodeFilter
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.TopProdukReport
+import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.LaporanKeuanganUiProvider
+import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.HiltLaporanKeuanganUiProvider
 import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.LaporanKeuanganViewModel
 import java.text.NumberFormat
 import java.util.Locale
@@ -80,7 +82,7 @@ fun LaporanKeuanganScreen(
     navController: NavController,
     onBack: () -> Unit = { navController.popBackStackSafely(AppScreen.LaporanKeuangan.route) },
     onLihatSemuaProduk: (() -> Unit)? = null,
-    viewModel: LaporanKeuanganViewModel = hiltViewModel()
+    viewModel: LaporanKeuanganUiProvider = HiltLaporanKeuanganUiProvider(hiltViewModel<LaporanKeuanganViewModel>())
 ) {
     val context = LocalContext.current
     val windowSizeInfo = LocalWindowSizeInfo.current
@@ -295,13 +297,17 @@ fun LaporanKeuanganScreen(
                             fontWeight = FontWeight.Bold,
                             fontFamily = interfamily,
                             color = Color(0xFF0F172A),
-                            fontSize = 19.sp
+                            fontSize = 19.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = "Ringkasan Performa & Arus Kas",
                             fontFamily = interfamily,
                             color = Color(0xFF64748B),
-                            fontSize = 12.sp
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 },
@@ -1263,7 +1269,9 @@ fun LaporanKeuanganScreen(
                                             fontSize = if (isCompact) 12.sp else 13.sp,
                                             color = Color(0xFF0F172A),
                                             softWrap = false,
-                                            maxLines = 1
+                                            maxLines = 1,
+                                            // Responsif: nominal dipotong agar tidak menabrak label di 320dp
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
@@ -1293,19 +1301,23 @@ fun LaporanKeuanganScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "Produk Terlaris",
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp,
-                                    color = Color(0xFF0F172A)
+                                    color = Color(0xFF0F172A),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = "Berdasarkan volume penjualan",
                                     fontFamily = interfamily,
                                     fontSize = 11.sp,
-                                    color = Color(0xFF94A3B8)
+                                    color = Color(0xFF94A3B8),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
 
@@ -1490,7 +1502,9 @@ private fun PnLRow(
                 highlightRed -> Color(0xFFDC2626)
                 isPositive -> Color(0xFF0F172A)
                 else -> Color(0xFF475569)
-            }
+            },
+            // Responsif: nilai dipotong agar tidak menabrak label di 320dp
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -1602,7 +1616,9 @@ private fun TopProductItemRow(produk: TopProdukReport) {
             fontSize = if (isCompact) 12.sp else 13.sp,
             color = Color(0xFF0F172A),
             maxLines = 1,
-            softWrap = false
+            softWrap = false,
+            // Responsif: omzet dipotong agar tidak keluar kartu di 320dp
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -1620,3 +1636,16 @@ private fun formatRupiah(nominal: Double): String {
 private fun LaporanKeuanganScreenPreview() {
     LaporanKeuanganScreen(navController = rememberNavController())
 }
+
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true,)
+// @Composable
+// private fun LaporanKeuanganScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase + NavController, perlu composable stateless
+// }

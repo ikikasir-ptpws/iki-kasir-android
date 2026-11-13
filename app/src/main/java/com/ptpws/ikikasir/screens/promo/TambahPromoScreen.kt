@@ -47,6 +47,8 @@ import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
 import kotlinx.coroutines.delay
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
+import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.TambahPromoUiProvider
+import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.HiltTambahPromoUiProvider
 import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.TambahPromoViewModel
 import android.app.Activity
 import android.content.Intent
@@ -73,7 +75,7 @@ fun TambahPromoScreen(
     promoId: String? = null,
     onBack: () -> Unit = {},
     onSimpanPromo: (String) -> Unit = {},
-    viewModel: TambahPromoViewModel = hiltViewModel()
+    viewModel: TambahPromoUiProvider = HiltTambahPromoUiProvider(hiltViewModel<TambahPromoViewModel>())
 ) {
     var isBackProcessing by remember { mutableStateOf(false) }
     val handleBack = {
@@ -207,7 +209,11 @@ fun TambahPromoScreen(
                     fontFamily = interfamily,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
+                    color = Color(0xFF0F172A),
+                    // Responsif: judul dipotong agar tidak menabrak tepi layar di HP 320dp
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -294,14 +300,19 @@ fun TambahPromoScreen(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF94A3B8),
-                                letterSpacing = 0.5.sp
+                                letterSpacing = 0.5.sp,
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = "${state.selectedProducts.size} Terpilih",
                                 fontFamily = interfamily,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = Color(0xFF64748B)
+                                color = Color(0xFF64748B),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -348,7 +359,9 @@ fun TambahPromoScreen(
                                                     text = formatRupiah(produk.sellingPrice),
                                                     fontFamily = interfamily,
                                                     fontSize = 13.sp,
-                                                    color = Color(0xFF64748B)
+                                                    color = Color(0xFF64748B),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                             }
                                             IconButton(
@@ -429,7 +442,10 @@ fun TambahPromoScreen(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF94A3B8),
-                                letterSpacing = 0.5.sp
+                                letterSpacing = 0.5.sp,
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
 
                             // Rp / % Toggle Pill
@@ -557,7 +573,10 @@ fun TambahPromoScreen(
                                             fontFamily = interfamily,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = if (state.tanggalMulai.isEmpty()) Color(0xFF94A3B8) else Color(0xFF0F172A)
+                                            color = if (state.tanggalMulai.isEmpty()) Color(0xFF94A3B8) else Color(0xFF0F172A),
+                                            // Responsif: tanggal dipotong bila kolom sempit di HP 320dp
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
@@ -594,7 +613,9 @@ fun TambahPromoScreen(
                                             fontFamily = interfamily,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = if (state.tanggalBerakhir.isEmpty()) Color(0xFF94A3B8) else Color(0xFF0F172A)
+                                            color = if (state.tanggalBerakhir.isEmpty()) Color(0xFF94A3B8) else Color(0xFF0F172A),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
@@ -641,7 +662,9 @@ fun TambahPromoScreen(
                                 fontFamily = interfamily,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -773,7 +796,9 @@ fun PilihProdukPromoDialog(
     ) {
         Card(
             modifier = Modifier
-                .widthIn(min = 320.dp, max = maxDialogWidth)
+                // Responsif: min 280dp (bukan 320dp) agar dialog tidak melebihi layar HP 320dp.
+                // Pada HP 360dp ke atas lebar dialog tetap sama seperti sebelumnya (95% lebar layar).
+                .widthIn(min = 280.dp, max = maxDialogWidth)
                 .fillMaxWidth(dialogWidthFraction)
                 .fillMaxHeight(dialogHeightFraction),
             shape = RoundedCornerShape(20.dp),
@@ -802,7 +827,10 @@ fun PilihProdukPromoDialog(
                                 fontFamily = interfamily,
                                 fontSize = if (isCompact) 16.sp else 18.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F172A)
+                                color = Color(0xFF0F172A),
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                         Spacer(modifier = Modifier.height(2.dp))
@@ -810,7 +838,9 @@ fun PilihProdukPromoDialog(
                             text = "Pilih produk yang akan dimasukkan ke promo",
                             fontFamily = interfamily,
                             fontSize = if (isCompact) 11.5.sp else 12.sp,
-                            color = Color(0xFF64748B)
+                            color = Color(0xFF64748B),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
@@ -980,7 +1010,10 @@ fun PilihProdukPromoDialog(
                                     fontFamily = interfamily,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = if (isAllSelected) Color(0xFF1D4ED8) else Color(0xFF0F172A)
+                                    color = if (isAllSelected) Color(0xFF1D4ED8) else Color(0xFF0F172A),
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
 
@@ -989,7 +1022,9 @@ fun PilihProdukPromoDialog(
                                 fontFamily = interfamily,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = if (isAllSelected) Color(0xFF2563EB) else Color(0xFF64748B)
+                                color = if (isAllSelected) Color(0xFF2563EB) else Color(0xFF64748B),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -1093,7 +1128,9 @@ fun PilihProdukPromoDialog(
                                             fontFamily = interfamily,
                                             fontSize = if (isCompact) 13.sp else 14.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF2563EB)
+                                            color = Color(0xFF2563EB),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
 
@@ -1151,7 +1188,9 @@ fun PilihProdukPromoDialog(
                             fontSize = if (isCompact) 14.sp else 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
-                            modifier = Modifier.align(Alignment.Center)
+                            modifier = Modifier.align(Alignment.Center),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
 
                         if (tempSelected.isNotEmpty()) {

@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -391,7 +392,13 @@ fun BarcodeScannerScreen(
                 fontFamily = interfamily,
                 fontSize = if (configuration.screenWidthDp >= 400) 19.sp else 17.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = Color.White,
+                // Responsif: judul tetap terpusat di ruang antara tombol kembali & tombol kanan,
+                // dipotong bila layar sempit (HP 320dp / font besar) agar tidak menabrak ikon
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -465,7 +472,10 @@ fun BarcodeScannerScreen(
                         fontFamily = interfamily,
                         fontSize = 12.5.sp,
                         color = Color(0xFFE2E8F0),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        // Responsif: teks petunjuk dibatasi 2 baris agar tidak menutupi area scan
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

@@ -53,6 +53,8 @@ import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.GenerateStrukPdfUseCase
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.PrintStrukUseCase
+import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.DetailTransaksiUiProvider
+import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.HiltDetailTransaksiUiProvider
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.DetailTransaksiViewModel
 import kotlinx.coroutines.launch
 import androidx.activity.compose.BackHandler
@@ -67,7 +69,7 @@ fun DetailTransaksiScreen(
     onBack: () -> Unit = {},
     onCetakStruk: () -> Unit = {},
     onRefund: () -> Unit = {},
-    viewModel: DetailTransaksiViewModel = hiltViewModel()
+    viewModel: DetailTransaksiUiProvider = HiltDetailTransaksiUiProvider(hiltViewModel<DetailTransaksiViewModel>())
 ) {
     var isBackProcessing by remember { mutableStateOf(false) }
     val handleBack = {
@@ -177,6 +179,21 @@ fun DetailTransaksiScreen(
         }
     }
 
+    // Responsif: token ukuran menyesuaikan lebar layar agar detail transaksi
+    // tetap utuh di HP sempit (320dp). Pada lebar standar (>= 360dp) nilai tetap sama.
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp <= 340
+    val pagePadding = if (isSmallScreen) 12.dp else 16.dp
+    val cardPadding = if (isSmallScreen) 12.dp else 16.dp
+    val cardVerticalPadding = if (isSmallScreen) 12.dp else 14.dp
+    val transactionNumberSize = if (isSmallScreen) 18.sp else 22.sp
+    val transactionNumberLineHeight = if (isSmallScreen) 24.sp else 28.sp
+    val totalFontSize = if (isSmallScreen) 17.sp else 20.sp
+    val proofImageHeight = if (isSmallScreen) 140.dp else 170.dp
+    val actionButtonHeight = if (isSmallScreen) 46.dp else 50.dp
+    val actionFontSize = if (isSmallScreen) 13.sp else 14.sp
+    val refundFontSize = if (isSmallScreen) 14.sp else 15.sp
+
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
         topBar = {
@@ -242,8 +259,8 @@ fun DetailTransaksiScreen(
                     .fillMaxSize()
                     .padding(paddingValues),
                 contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
+                    start = pagePadding,
+                    end = pagePadding,
                     top = 8.dp,
                     bottom = 48.dp
                 ),
@@ -261,7 +278,7 @@ fun DetailTransaksiScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                .padding(horizontal = cardPadding, vertical = cardVerticalPadding),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Row(
@@ -273,7 +290,10 @@ fun DetailTransaksiScreen(
                                     text = "Nomor Transaksi",
                                     fontFamily = interfamily,
                                     fontSize = 12.sp,
-                                    color = Color(0xFF94A3B8)
+                                    color = Color(0xFF94A3B8),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
 
                                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -331,9 +351,9 @@ fun DetailTransaksiScreen(
                                 text = tx.transactionNumber,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = interfamily,
-                                fontSize = 22.sp,
+                                fontSize = transactionNumberSize,
                                 color = Color(0xFF4F46E5),
-                                lineHeight = 28.sp
+                                lineHeight = transactionNumberLineHeight
                             )
 
                             HorizontalDivider(
@@ -347,7 +367,10 @@ fun DetailTransaksiScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.Top
                             ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                                    modifier = Modifier.weight(1f, fill = false)
+                                ) {
                                     Text(
                                         text = "Tanggal dan Waktu",
                                         fontFamily = interfamily,
@@ -359,12 +382,15 @@ fun DetailTransaksiScreen(
                                         fontFamily = interfamily,
                                         fontWeight = FontWeight.Medium,
                                         fontSize = 13.sp,
-                                        color = Color(0xFF0F172A)
+                                        color = Color(0xFF0F172A),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                                 Column(
                                     horizontalAlignment = Alignment.End,
-                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                                    modifier = Modifier.weight(1f, fill = false)
                                 ) {
                                     Text(
                                         text = "Kasir",
@@ -377,7 +403,9 @@ fun DetailTransaksiScreen(
                                         fontFamily = interfamily,
                                         fontWeight = FontWeight.Medium,
                                         fontSize = 13.sp,
-                                        color = Color(0xFF0F172A)
+                                        color = Color(0xFF0F172A),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -397,14 +425,19 @@ fun DetailTransaksiScreen(
                                         text = "Pelanggan",
                                         fontFamily = interfamily,
                                         fontSize = 11.sp,
-                                        color = Color(0xFF94A3B8)
+                                        color = Color(0xFF94A3B8),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false)
                                     )
                                     Text(
                                         text = tx.customerName,
                                         fontFamily = interfamily,
                                         fontWeight = FontWeight.Medium,
                                         fontSize = 13.sp,
-                                        color = Color(0xFF0F172A)
+                                        color = Color(0xFF0F172A),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -424,14 +457,19 @@ fun DetailTransaksiScreen(
                                         text = "Nomor Meja",
                                         fontFamily = interfamily,
                                         fontSize = 11.sp,
-                                        color = Color(0xFF94A3B8)
+                                        color = Color(0xFF94A3B8),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false)
                                     )
                                     Text(
                                         text = tx.tableNumber,
                                         fontFamily = interfamily,
                                         fontWeight = FontWeight.Medium,
                                         fontSize = 13.sp,
-                                        color = Color(0xFF0F172A)
+                                        color = Color(0xFF0F172A),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -480,7 +518,7 @@ fun DetailTransaksiScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 14.dp)
+                                .padding(horizontal = cardPadding, vertical = cardVerticalPadding)
                         ) {
                             Text(
                                 text = "Daftar Produk",
@@ -526,7 +564,7 @@ fun DetailTransaksiScreen(
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                    .padding(horizontal = cardPadding, vertical = cardVerticalPadding),
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 Row(
@@ -558,7 +596,7 @@ fun DetailTransaksiScreen(
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(14.dp),
+                                            .padding(cardPadding),
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Text(
@@ -606,7 +644,7 @@ fun DetailTransaksiScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                .padding(horizontal = cardPadding, vertical = cardVerticalPadding),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             RingkasanBaris(
@@ -643,14 +681,19 @@ fun DetailTransaksiScreen(
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp,
-                                    color = Color(0xFF0F172A)
+                                    color = Color(0xFF0F172A),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
                                 Text(
                                     text = "Rp ${formatRupiah(totalPembayaran)}",
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
-                                    color = Color(0xFF4F46E5)
+                                    fontSize = totalFontSize,
+                                    color = Color(0xFF4F46E5),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
 
@@ -678,11 +721,15 @@ fun DetailTransaksiScreen(
                                     text = "Metode Pembayaran",
                                     fontFamily = interfamily,
                                     fontSize = 13.sp,
-                                    color = Color(0xFF64748B)
+                                    color = Color(0xFF64748B),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.weight(1f, fill = false)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Wallet,
@@ -695,7 +742,9 @@ fun DetailTransaksiScreen(
                                         fontFamily = interfamily,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 13.sp,
-                                        color = Color(0xFF334155)
+                                        color = Color(0xFF334155),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -737,7 +786,7 @@ fun DetailTransaksiScreen(
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(170.dp)
+                                            .height(proofImageHeight)
                                             .clip(RoundedCornerShape(12.dp))
                                             .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                             .clickable { showProofImageDialog = true }
@@ -778,7 +827,7 @@ fun DetailTransaksiScreen(
                             onClick = onSavePdf,
                             modifier = Modifier
                                 .weight(1f)
-                                .height(50.dp),
+                                .height(actionButtonHeight),
                             shape = RoundedCornerShape(14.dp),
                             border = BorderStroke(1.5.dp, Color(0xFF4F46E5)),
                             colors = ButtonDefaults.outlinedButtonColors(
@@ -796,8 +845,10 @@ fun DetailTransaksiScreen(
                                 text = "Simpan PDF",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp,
-                                color = Color(0xFF4F46E5)
+                                fontSize = actionFontSize,
+                                color = Color(0xFF4F46E5),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -806,7 +857,7 @@ fun DetailTransaksiScreen(
                             onClick = onPrintReceipt,
                             modifier = Modifier
                                 .weight(1f)
-                                .height(50.dp),
+                                .height(actionButtonHeight),
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF4F46E5)
@@ -824,8 +875,10 @@ fun DetailTransaksiScreen(
                                 text = "Cetak Struk",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp,
-                                color = Color.White
+                                fontSize = actionFontSize,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -843,7 +896,7 @@ fun DetailTransaksiScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
+                            .height(actionButtonHeight),
                         shape = RoundedCornerShape(14.dp),
                         enabled = !isRefunded && !state.isRefunding,
                         border = BorderStroke(
@@ -866,8 +919,10 @@ fun DetailTransaksiScreen(
                                 text = "Memproses Refund...",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 15.sp,
-                                color = Color(0xFFEF4444)
+                                fontSize = refundFontSize,
+                                color = Color(0xFFEF4444),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         } else {
                             Icon(
@@ -881,8 +936,10 @@ fun DetailTransaksiScreen(
                                 text = if (isRefunded) "Transaksi Telah Di-refund" else "Refund",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 15.sp,
-                                color = if (isRefunded) Color(0xFF94A3B8) else Color(0xFFEF4444)
+                                fontSize = refundFontSize,
+                                color = if (isRefunded) Color(0xFF94A3B8) else Color(0xFFEF4444),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -1154,14 +1211,22 @@ fun ProdukCardRow(
     totalHarga: String,
     imageUrl: String = ""
 ) {
+    // Responsif: ukuran baris produk menyesuaikan lebar layar.
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp <= 340
+    val imageSize = if (isSmallScreen) 46.dp else 52.dp
+    val rowSpacing = if (isSmallScreen) 8.dp else 12.dp
+    val nameSize = if (isSmallScreen) 12.sp else 13.sp
+    val priceSize = if (isSmallScreen) 13.sp else 14.sp
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(rowSpacing)
     ) {
         Box(
             modifier = Modifier
-                .size(52.dp)
+                .size(imageSize)
                 .clip(RoundedCornerShape(10.dp))
                 .background(Color(0xFFF1F5F9)),
             contentAlignment = Alignment.Center
@@ -1191,7 +1256,7 @@ fun ProdukCardRow(
                 text = namaProduk,
                 fontFamily = interfamily,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 13.sp,
+                fontSize = nameSize,
                 color = Color(0xFF0F172A),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -1201,7 +1266,9 @@ fun ProdukCardRow(
                 text = "x$qty @ $hargaSatuan",
                 fontFamily = interfamily,
                 fontSize = 12.sp,
-                color = Color(0xFF64748B)
+                color = Color(0xFF64748B),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
 
@@ -1209,8 +1276,10 @@ fun ProdukCardRow(
             text = totalHarga,
             fontFamily = interfamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 14.sp,
-            color = Color(0xFF0F172A)
+            fontSize = priceSize,
+            color = Color(0xFF0F172A),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -1230,13 +1299,18 @@ fun RingkasanBaris(
             text = label,
             fontFamily = interfamily,
             fontSize = 13.sp,
-            color = Color(0xFF64748B)
+            color = Color(0xFF64748B),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false)
         )
         Text(
             text = nilai,
             fontFamily = interfamily,
             fontSize = 13.sp,
-            color = nilaiColor
+            color = nilaiColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

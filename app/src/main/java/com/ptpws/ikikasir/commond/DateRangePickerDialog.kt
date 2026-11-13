@@ -74,6 +74,8 @@ fun CustomDateRangePickerDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(
+                        // Responsif: ambil ruang sisa agar judul panjang tidak menabrak tombol tutup di HP 320dp
+                        modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(if (isCompact) 8.dp else 10.dp)
                     ) {
@@ -91,19 +93,23 @@ fun CustomDateRangePickerDialog(
                                 )
                             }
                         }
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "Filter Rentang Tanggal",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = if (isCompact) 14.sp else 16.sp,
-                                color = Color(0xFF0F172A)
+                                color = Color(0xFF0F172A),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = "Pilih tanggal mulai & akhir",
                                 fontFamily = interfamily,
                                 fontSize = if (isCompact) 10.5.sp else 12.sp,
-                                color = Color(0xFF64748B)
+                                color = Color(0xFF64748B),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -296,7 +302,9 @@ fun CustomDateRangePickerDialog(
                             fontFamily = interfamily,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF475569),
-                            fontSize = if (isCompact) 12.5.sp else 14.sp
+                            fontSize = if (isCompact) 12.5.sp else 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
@@ -323,7 +331,9 @@ fun CustomDateRangePickerDialog(
                             fontFamily = interfamily,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
-                            fontSize = if (isCompact) 12.5.sp else 14.sp
+                            fontSize = if (isCompact) 12.5.sp else 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -354,7 +364,9 @@ private fun QuickPresetChip(
                 fontSize = if (isCompact) 9.5.sp else 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF334155),
-                fontFamily = interfamily
+                fontFamily = interfamily,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

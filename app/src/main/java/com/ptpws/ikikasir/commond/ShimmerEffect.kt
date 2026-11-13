@@ -645,7 +645,11 @@ fun DashboardFilterRowShimmer(
                 else -> 92.dp
             }
             ShimmerBox(
-                modifier = Modifier.size(width = chipWidth, height = 34.dp),
+                // Responsif: pada layar sempit chip diperkecil agar seluruh baris tetap muat
+                modifier = Modifier.size(
+                    width = if (isSmallScreen) chipWidth * 0.72f else chipWidth,
+                    height = 34.dp
+                ),
                 shape = RoundedCornerShape(20.dp)
             )
         }

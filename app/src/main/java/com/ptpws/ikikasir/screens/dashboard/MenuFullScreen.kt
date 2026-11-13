@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,6 +28,7 @@ import androidx.activity.compose.BackHandler
 import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.commond.rememberPreviewSessionProvider
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 
@@ -38,7 +40,7 @@ import androidx.compose.ui.text.PlatformTextStyle
 @Composable
 fun MenuFullScreen(
     navController: NavController,
-    viewModel: DashboardViewModel = hiltViewModel()
+    viewModel: DashboardSessionProvider = HiltDashboardSessionProvider(hiltViewModel<DashboardViewModel>())
 ) {
     BackHandler {
         navController.popBackStackSafely(AppScreen.Semuamenu.route)
@@ -283,7 +285,12 @@ fun TopBar(title: String, navController: NavController) {
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold,
             fontFamily = interfamily,
-            modifier = Modifier.padding(start = 4.dp)
+            // Responsif: judul panjang dipotong, tidak menabrak tombol kembali
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .padding(start = 4.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -296,7 +303,10 @@ fun SectionTitle(title: String) {
         fontFamily = interfamily,
         fontWeight = FontWeight.SemiBold ,
         color = Color(0xFF1A1D2E),
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+        // Responsif: judul bagian panjang dipotong agar tidak keluar dari layar
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
     )
 }
 
@@ -305,7 +315,6 @@ fun SearchField(query: String, onQueryChange: (String) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp)
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -315,7 +324,9 @@ fun SearchField(query: String, onQueryChange: (String) -> Unit) {
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                // Responsif: tinggi minimal 48.dp (identik di 360dp) dan boleh bertambah saat font diperbesar
+                .heightIn(min = 48.dp)
                 .padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -386,10 +397,17 @@ private fun matchSearch(query: String, vararg keywords: String): Boolean {
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+// ---- PREVIEW (ViewModel + NavController asli, bukan data dummy) ----
+@Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+@Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+@Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+@Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
 @Composable
-fun MenuFullScreenPreview() {
+private fun MenuFullScreenPreviewResponsif() {
     MaterialTheme {
-        MenuFullScreen(navController = rememberNavController())
+        MenuFullScreen(
+            navController = rememberNavController(),
+            viewModel = rememberPreviewSessionProvider()
+        )
     }
 }

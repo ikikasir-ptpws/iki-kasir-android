@@ -47,6 +47,8 @@ import com.ptpws.ikikasir.commond.BarcodeMismatchDialog
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.GroupedTransaksi
+import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.RiwayatTransaksiUiProvider
+import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.HiltRiwayatTransaksiUiProvider
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.RiwayatTransaksiViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -62,7 +64,7 @@ import androidx.compose.material.icons.filled.ErrorOutline
 @Composable
 fun RiwayatTransaksiScreen(
     navController: NavController,
-    viewModel: RiwayatTransaksiViewModel = hiltViewModel(),
+    viewModel: RiwayatTransaksiUiProvider = HiltRiwayatTransaksiUiProvider(hiltViewModel<RiwayatTransaksiViewModel>()),
     initialFilter: String? = null,
     startDate: Long? = null,
     endDate: Long? = null,
@@ -336,7 +338,10 @@ fun RiwayatTransaksiScreen(
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
                         color = Color(0xFF0F172A),
-                        fontSize = 20.sp
+                        fontSize = 20.sp,
+                        // Responsif: judul top bar dipotong agar tombol Ekspor tidak terdesak di HP 320dp
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
                 navigationIcon = {
@@ -383,7 +388,9 @@ fun RiwayatTransaksiScreen(
                                     text = "Ekspor",
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
+                                    fontSize = 13.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -452,7 +459,10 @@ fun RiwayatTransaksiScreen(
                                             text = "Cari kode transaksi...",
                                             fontFamily = interfamily,
                                             fontSize = 13.sp,
-                                            color = Color(0xFF94A3B8)
+                                            color = Color(0xFF94A3B8),
+                                            // Responsif: placeholder dipotong agar tidak menabrak ikon di HP 320dp
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                     innerTextField()
@@ -792,9 +802,13 @@ fun RiwayatTransaksiScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = interfamily,
                                 fontSize = 14.sp,
-                                color = Color(0xFF0F172A)
+                                color = Color(0xFF0F172A),
+                                // Responsif: judul tanggal mengisi ruang sisa (menggantikan Spacer) &
+                                // dipotong agar badge jumlah transaksi tetap terlihat di HP 320dp
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
-                            Spacer(modifier = Modifier.weight(1f))
 
                             // Total Transactions Badge Pill
                             Box(
@@ -807,7 +821,9 @@ fun RiwayatTransaksiScreen(
                                     fontSize = 11.sp,
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF475569)
+                                    color = Color(0xFF475569),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -947,7 +963,9 @@ fun TransaksiCardItem(
                             fontSize = 10.sp,
                             fontFamily = interfamily,
                             fontWeight = FontWeight.Bold,
-                            color = badgeTextColor
+                            color = badgeTextColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -957,7 +975,10 @@ fun TransaksiCardItem(
                     text = "$jam WIB • $metodePembayaran",
                     fontFamily = interfamily,
                     fontSize = 12.sp,
-                    color = Color(0xFF64748B)
+                    color = Color(0xFF64748B),
+                    // Responsif: metode pembayaran panjang dipotong agar tidak menabrak harga
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -971,7 +992,10 @@ fun TransaksiCardItem(
                     fontWeight = FontWeight.Bold,
                     fontFamily = interfamily,
                     fontSize = 16.sp,
-                    color = Color(0xFF0F172A)
+                    color = Color(0xFF0F172A),
+                    // Responsif: nominal panjang dipotong agar tidak keluar card di HP 320dp
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Icon(
                     imageVector = Icons.Default.ArrowForwardIos,
@@ -991,3 +1015,18 @@ fun RiwayatTransaksiScreenPreview() {
         RiwayatTransaksiScreen(navController = rememberNavController())
     }
 }
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+// import androidx.navigation.compose.rememberNavController
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun RiwayatTransaksiScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     MaterialTheme {
+//         RiwayatTransaksiScreen(navController = rememberNavController())
+//     }
+// }

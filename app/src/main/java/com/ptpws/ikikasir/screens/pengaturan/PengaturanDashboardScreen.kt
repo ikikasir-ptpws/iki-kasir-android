@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -265,7 +266,8 @@ fun PengaturanDashboardScreen(
                     onClick = onSimpanPengaturan,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        // Responsif: tinggi minimal 52.dp (identik di 360dp) dan boleh bertambah saat font diperbesar
+                        .heightIn(min = 52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4F46E5)
@@ -329,7 +331,10 @@ fun PengaturanToggleItem(
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = Color(0xFF111827),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            // Responsif: label toggle panjang dibungkus maksimal 2 baris agar switch tidak terdorong
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
         Switch(
             checked = checked,
@@ -402,7 +407,10 @@ fun AksesCepatCard(
                 fontFamily = interfamily,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color(0xFF111827)
+                color = Color(0xFF111827),
+                // Responsif: label akses cepat dibungkus maksimal 2 baris di layar sempit
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

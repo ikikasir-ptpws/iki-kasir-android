@@ -28,6 +28,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
+import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.TambahKategoriUiProvider
+import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.HiltTambahKategoriUiProvider
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.TambahKategoriViewModel
 
 data class IconItem(val name: String, val icon: ImageVector)
@@ -37,7 +39,7 @@ data class IconItem(val name: String, val icon: ImageVector)
 fun TambahKategoriScreen(
     onBack: () -> Unit = {},
     onSimpanKategori: () -> Unit = {},
-    viewModel: TambahKategoriViewModel = hiltViewModel()
+    viewModel: TambahKategoriUiProvider = HiltTambahKategoriUiProvider(hiltViewModel<TambahKategoriViewModel>())
 ) {
     var isBackProcessing by remember { mutableStateOf(false) }
     val handleBack = {
@@ -114,7 +116,9 @@ fun TambahKategoriScreen(
         AdaptiveFormList(
             modifier = Modifier
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp)
+                // Responsif: form tetap bisa di-scroll & tombol tetap terlihat saat keyboard muncul
+                .imePadding(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 56.dp)
         ) {
@@ -597,3 +601,19 @@ fun TambahKategoriScreen(
         }
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun TambahKategoriScreenPreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     TambahKategoriScreen(
+//         onBack = {},
+//         onSimpanKategori = {}
+//     )
+// }

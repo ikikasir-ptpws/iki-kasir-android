@@ -142,7 +142,11 @@ fun StokEtalaseScreen(
                                     fontSize = 30.sp,
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White
+                                    color = Color.White,
+                                    // Responsif: angka dipotong agar ikon tidak terdorong keluar di 320dp
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Icon(
                                     painter = painterResource(R.drawable.stokk),
@@ -239,7 +243,10 @@ fun StokEtalaseScreen(
                             text = "FILTER KATEGORI",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF4F46E5)
+                            color = Color(0xFF4F46E5),
+                            // Responsif: label filter dipotong agar tidak menabrak judul di layar 320dp
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -433,7 +440,7 @@ fun EtalaseCardItem(
                 ) {
                     Button(
                         onClick = onRestock,
-                        modifier = Modifier.weight(1f).height(40.dp),
+                        modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
                         contentPadding = PaddingValues(horizontal = 8.dp)
@@ -449,7 +456,7 @@ fun EtalaseCardItem(
 
                     OutlinedButton(
                         onClick = onPindahKeGudang,
-                        modifier = Modifier.weight(1.4f).height(40.dp),
+                        modifier = Modifier.weight(1.4f).heightIn(min = 40.dp),
                         shape = RoundedCornerShape(10.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
                         contentPadding = PaddingValues(horizontal = 8.dp)
@@ -492,3 +499,16 @@ fun StokEtalaseScreenPreview() {
         StokEtalaseScreen()
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun StokEtalaseScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     StokEtalaseScreen()
+// }

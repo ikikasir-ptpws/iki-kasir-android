@@ -26,6 +26,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -99,7 +100,10 @@ fun GlobalTextField(
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = interfamily,
                     letterSpacing = 0.8.sp,
-                    color = Color(0xFF6B7280)
+                    color = Color(0xFF6B7280),
+                    // Responsif: label dipotong agar tidak_wrap dan dorong ikon/border di HP 320dp
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 if (isRequired) {
                     Text(
@@ -167,6 +171,8 @@ fun GlobalTextField(
                             text = placeholder,
                             style = effectiveTextStyle.copy(color = Color(0x80474747)),
                             maxLines = maxLines,
+                            // Responsif: placeholder panjang dipotong, tidak menimpa input di layar sempit
+                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.align(if (singleLine) Alignment.CenterStart else Alignment.TopStart)
                         )
                     }
@@ -227,6 +233,9 @@ fun GlobalTextField(
                 fontSize = 11.sp,
                 fontFamily = interfamily,
                 color = Color(0xFFEF4444),
+                // Responsif: pesan error dibatasi 2 baris agar form tetap muat di layar pendek
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 4.dp, start = 4.dp)
             )
         }

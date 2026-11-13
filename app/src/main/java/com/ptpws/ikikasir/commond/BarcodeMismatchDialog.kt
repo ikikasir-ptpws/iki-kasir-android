@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -36,7 +37,9 @@ fun BarcodeMismatchDialog(
                 text = "Kode Tidak Cocok",
                 fontFamily = interfamily,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A)
+                color = Color(0xFF0F172A),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         },
         text = {
@@ -54,7 +57,13 @@ fun BarcodeMismatchDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Mengerti", fontFamily = interfamily, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = "Mengerti",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         },
         containerColor = Color.White,

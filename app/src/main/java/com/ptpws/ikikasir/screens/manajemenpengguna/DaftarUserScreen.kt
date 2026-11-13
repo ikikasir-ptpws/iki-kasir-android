@@ -66,7 +66,11 @@ import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.SyncStatusBadge
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.HiltUserListUiProvider
+import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserListUiProvider
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserViewModel
+import com.ptpws.ikikasir.feature.role.presentation.viewmodel.HiltRoleListUiProvider
+import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleListUiProvider
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
 
 // Opsi filter yang tersedia untuk halaman Daftar Pengguna
@@ -80,8 +84,8 @@ data class UserFilterItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DaftarUserScreen(
-    viewModel: UserViewModel = hiltViewModel(),
-    roleViewModel: RoleViewModel = hiltViewModel(),
+    viewModel: UserListUiProvider = HiltUserListUiProvider(hiltViewModel<UserViewModel>()),
+    roleViewModel: RoleListUiProvider = HiltRoleListUiProvider(hiltViewModel<RoleViewModel>()),
     onEditUser: (String) -> Unit = {}
 ) {
     val state by viewModel.listState.collectAsState()
@@ -314,19 +318,22 @@ fun DaftarUserScreen(
                     // Chip filter aktif (jika ada filter yang dipilih)
                     if (isFilterActive) {
                         Row(
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             if (state.filterRole.isNotBlank()) {
                                 ActiveFilterChip(
                                     label = "Role: ${state.filterRole.replaceFirstChar { it.uppercase() }}",
-                                    onRemove = { viewModel.onFilterRoleChange("") }
+                                    onRemove = { viewModel.onFilterRoleChange("") },
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
                             }
                             if (state.filterStatus.isNotBlank()) {
                                 ActiveFilterChip(
                                     label = "Status: ${state.filterStatus.replaceFirstChar { it.uppercase() }}",
-                                    onRemove = { viewModel.onFilterStatusChange("") }
+                                    onRemove = { viewModel.onFilterStatusChange("") },
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
                             }
                             TextButton(
@@ -624,9 +631,13 @@ fun DaftarUserScreen(
 }
 
 @Composable
-private fun ActiveFilterChip(label: String, onRemove: () -> Unit) {
+private fun ActiveFilterChip(
+    label: String,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .background(Color(0xFFEEF2FF), RoundedCornerShape(20.dp))
             .padding(start = 10.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)
     ) {
@@ -636,7 +647,11 @@ private fun ActiveFilterChip(label: String, onRemove: () -> Unit) {
                 fontSize = 11.sp,
                 fontFamily = interfamily,
                 color = Color(0xFF4F46E5),
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                // Responsif: label filter panjang dipotong agar tombol hapus tetap terlihat
+                modifier = Modifier.weight(1f, fill = false),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(Modifier.width(4.dp))
             Box(
@@ -657,3 +672,16 @@ private fun ActiveFilterChip(label: String, onRemove: () -> Unit) {
         }
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun DaftarUserScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     DaftarUserScreen()
+// }

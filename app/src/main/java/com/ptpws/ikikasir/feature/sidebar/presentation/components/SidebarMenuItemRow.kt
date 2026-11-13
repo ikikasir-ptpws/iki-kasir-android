@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ptpws.ikikasir.commond.interfamily
@@ -108,7 +109,10 @@ fun SidebarMenuItemRow(
                     fontFamily = interfamily,
                     fontSize = 13.5.sp,
                     fontWeight = if (isSelected || isChildActive) FontWeight.Bold else FontWeight.Medium,
-                    color = contentColor
+                    color = contentColor,
+                    // Responsif: judul menu panjang dipotong agar chevron tidak terdorong keluar
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 

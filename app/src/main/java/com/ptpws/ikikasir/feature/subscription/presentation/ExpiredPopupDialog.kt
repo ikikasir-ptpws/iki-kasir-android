@@ -5,8 +5,10 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.Refresh
@@ -19,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -69,6 +72,8 @@ fun ExpiredPopupDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    // Responsif: konten dialog bisa digulir agar tombol tidak terpotong di layar pendek
+                    .verticalScroll(rememberScrollState())
                     .padding(28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -140,7 +145,11 @@ fun ExpiredPopupDialog(
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp,
-                                color = Color(0xFF111827)
+                                color = Color(0xFF111827),
+                                // Responsif: nama toko dipotong agar label "Toko:" tetap terlihat
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -159,7 +168,11 @@ fun ExpiredPopupDialog(
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 12.sp,
-                                color = Color(0xFF4F46E5)
+                                color = Color(0xFF4F46E5),
+                                // Responsif: nama paket dipotong agar label "Paket:" tetap terlihat
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 

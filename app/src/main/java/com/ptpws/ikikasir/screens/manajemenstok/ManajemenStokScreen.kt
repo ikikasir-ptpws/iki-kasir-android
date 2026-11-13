@@ -52,6 +52,8 @@ import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.ManajemenStokUiProvider
+import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.HiltManajemenStokUiProvider
 import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.ManajemenStokViewModel
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
 import com.ptpws.ikikasir.screens.navigation.AppScreen
@@ -66,7 +68,7 @@ import java.util.Locale
 fun ManajemenStokScreen(
     navController: NavController,
     onBack: () -> Unit = {},
-    viewModel: ManajemenStokViewModel = hiltViewModel()
+    viewModel: ManajemenStokUiProvider = HiltManajemenStokUiProvider(hiltViewModel<ManajemenStokViewModel>())
 ) {
     BackHandler {
         if (!navController.popBackStackSafely(expectedRoute = AppScreen.ManajemenStok.route)) {
@@ -269,7 +271,9 @@ fun ManajemenStokScreen(
                                     fontSize = 32.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     fontFamily = interfamily,
-                                    color = Color.White
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
 
@@ -714,4 +718,4 @@ fun StokProdukCardItem(
         }
     }
 }
-
+

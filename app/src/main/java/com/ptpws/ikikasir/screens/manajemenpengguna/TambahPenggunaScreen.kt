@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -92,6 +93,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -101,7 +103,11 @@ import com.ptpws.ikikasir.commond.interfamily
 import androidx.activity.compose.BackHandler
 import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
 import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
+import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.HiltUserFormUiProvider
+import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserFormUiProvider
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserViewModel
+import com.ptpws.ikikasir.feature.role.presentation.viewmodel.HiltRoleListUiProvider
+import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleListUiProvider
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -110,8 +116,8 @@ fun TambahPenggunaScreen(
     userId: String? = null,
     onBack: () -> Unit = {},
     onSimpanPengguna: () -> Unit = {},
-    viewModel: UserViewModel = hiltViewModel(),
-    roleViewModel: RoleViewModel = hiltViewModel()
+    viewModel: UserFormUiProvider = HiltUserFormUiProvider(hiltViewModel<UserViewModel>()),
+    roleViewModel: RoleListUiProvider = HiltRoleListUiProvider(hiltViewModel<RoleViewModel>())
 ) {
     var isBackProcessing by remember { mutableStateOf(false) }
     val handleBack = {
@@ -400,7 +406,11 @@ fun TambahPenggunaScreen(
                                             fontSize = if (isCompact) 12.sp else 14.sp,
                                             fontFamily = interfamily,
                                             color = if (selectedRoleName.isBlank()) Color(0xFF94A3B8) else Color(0xFF0F172A),
-                                            fontWeight = if (selectedRoleName.isBlank()) FontWeight.Normal else FontWeight.Medium
+                                            fontWeight = if (selectedRoleName.isBlank()) FontWeight.Normal else FontWeight.Medium,
+                                            // Responsif: nama role dipotong agar ikon panah tetap terlihat di layar 320dp
+                                            modifier = Modifier.weight(1f, fill = false),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                         Icon(
                                             imageVector = Icons.Default.KeyboardArrowDown,
@@ -472,7 +482,11 @@ fun TambahPenggunaScreen(
                                         fontFamily = interfamily,
                                         fontSize = if (isCompact) 12.sp else 13.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = Color(0xFF334155)
+                                        color = Color(0xFF334155),
+                                        // Responsif: judul dipotong agar link "Lupa kata sandi?" tidak tertimpa
+                                        modifier = Modifier.weight(1f, fill = false),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     if (formState.email.isNotBlank()) {
                                         Text(
@@ -492,7 +506,9 @@ fun TambahPenggunaScreen(
                                                         localError = msg
                                                     }
                                                 }
-                                            }
+                                            },
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
@@ -740,7 +756,7 @@ fun TambahPenggunaScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = if (isCompact) 12.dp else 16.dp)
-                        .height(if (isCompact) 46.dp else 52.dp),
+                        .heightIn(min = if (isCompact) 46.dp else 52.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isEdit) Color(0xFF16A34A) else Color(0xFF2563EB)
@@ -810,3 +826,16 @@ private fun saveUserImageToInternalStorage(context: Context, uri: Uri): String {
         uri.toString()
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun TambahPenggunaScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     TambahPenggunaScreen()
+// }

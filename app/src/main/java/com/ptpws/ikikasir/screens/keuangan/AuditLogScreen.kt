@@ -38,6 +38,8 @@ import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.auditlog.domain.model.AuditLog
+import com.ptpws.ikikasir.feature.auditlog.presentation.viewmodel.AuditLogUiProvider
+import com.ptpws.ikikasir.feature.auditlog.presentation.viewmodel.HiltAuditLogUiProvider
 import com.ptpws.ikikasir.feature.auditlog.presentation.viewmodel.AuditLogViewModel
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
@@ -51,7 +53,7 @@ import java.util.Locale
 fun AuditLogScreen(
     navController: NavController,
     onBack: () -> Unit = {},
-    viewModel: AuditLogViewModel = hiltViewModel()
+    viewModel: AuditLogUiProvider = HiltAuditLogUiProvider(hiltViewModel<AuditLogViewModel>())
 ) {
     val handleBack = {
         if (!navController.popBackStackSafely(AppScreen.AuditLog.route)) {
@@ -668,3 +670,15 @@ fun AuditlogItem(
         }
     }
 }
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun AuditLogScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     AuditLogScreen()
+// }

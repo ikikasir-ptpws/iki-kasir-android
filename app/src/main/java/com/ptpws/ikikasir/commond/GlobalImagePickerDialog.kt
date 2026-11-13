@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -215,7 +216,10 @@ fun GlobalImagePickerDialog(
                     fontWeight = FontWeight.Bold,
                     fontFamily = interfamily,
                     color = Color(0xFF0F172A),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    // Responsif: judul dipotong maksimal 2 baris agar kartu pilihan tetap muat di HP 320dp
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 if (description != null) {
@@ -225,7 +229,9 @@ fun GlobalImagePickerDialog(
                         fontSize = 12.sp,
                         fontFamily = interfamily,
                         color = Color(0xFF64748B),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -272,7 +278,9 @@ fun GlobalImagePickerDialog(
                     fontFamily = interfamily,
                     color = Color(0xFF94A3B8),
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -287,7 +295,9 @@ fun GlobalImagePickerDialog(
                         fontFamily = interfamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
-                        color = Color(0xFF475569)
+                        color = Color(0xFF475569),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -306,7 +316,8 @@ private fun VerticalImageOptionCard(
 ) {
     Card(
         modifier = modifier
-            .height(148.dp)
+            // Responsif: tinggi minimum 148dp (sama seperti sebelumnya) tapi boleh bertambah saat font diperbesar
+            .heightIn(min = 148.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
@@ -343,7 +354,9 @@ private fun VerticalImageOptionCard(
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = Color.White,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -353,7 +366,9 @@ private fun VerticalImageOptionCard(
                 fontFamily = interfamily,
                 fontSize = 11.5.sp,
                 color = Color.White.copy(alpha = 0.88f),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

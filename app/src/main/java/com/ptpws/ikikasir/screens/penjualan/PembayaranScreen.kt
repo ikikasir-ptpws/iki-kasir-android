@@ -75,6 +75,8 @@ import com.ptpws.ikikasir.feature.penjualan.domain.model.CartItem
 import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectivePrice
 import com.ptpws.ikikasir.feature.penjualan.domain.model.getEffectiveSubtotal
 import com.ptpws.ikikasir.feature.penjualan.domain.usecase.PrintStrukUseCase
+import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.PembayaranUiProvider
+import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.HiltPembayaranUiProvider
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.PembayaranViewModel
 import com.ptpws.ikikasir.feature.penjualan.presentation.state.PrinterStatus
 import com.ptpws.ikikasir.screens.penjualan.component.PembayaranFailedDialog
@@ -96,7 +98,7 @@ fun PembayaranScreen(
     onTransaksiSelesai: () -> Unit = {
         navController.popBackStackSafely(expectedRoute = AppScreen.Pembayaran.route)
     },
-    viewModel: PembayaranViewModel = hiltViewModel()
+    viewModel: PembayaranUiProvider = HiltPembayaranUiProvider(hiltViewModel<PembayaranViewModel>())
 ) {
     BackHandler {
         navController.popBackStackSafely(expectedRoute = AppScreen.Pembayaran.route)
@@ -199,6 +201,24 @@ fun PembayaranScreen(
         )
     }
 
+    // Responsif: token ukuran menyesuaikan lebar layar agar seluruh isi
+    // pembayaran tetap utuh di HP sempit (320dp). Pada lebar standar (>= 360dp)
+    // nilai ukuran tidak berubah.
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp <= 340
+    val pagePadding = if (isSmallScreen) 12.dp else 14.dp
+    val itemSpacing = if (isSmallScreen) 12.dp else 14.dp
+    val cardPadding = if (isSmallScreen) 14.dp else 16.dp
+    val totalCardPadding = if (isSmallScreen) 14.dp else 18.dp
+    val totalFontSize = if (isSmallScreen) 20.sp else 23.sp
+    val totalDecorSize = if (isSmallScreen) 46.dp else 56.dp
+    val totalDecorIconSize = if (isSmallScreen) 22.dp else 28.dp
+    val cashInputMinHeight = if (isSmallScreen) 46.dp else 50.dp
+    val cashFontSize = if (isSmallScreen) 16.sp else 18.sp
+    val changeFontSize = if (isSmallScreen) 16.sp else 18.sp
+    val confirmButtonHeight = if (isSmallScreen) 48.dp else 52.dp
+    val confirmFontSize = if (isSmallScreen) 14.sp else 15.sp
+
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
         topBar = {
@@ -261,8 +281,8 @@ fun PembayaranScreen(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                    .padding(horizontal = pagePadding),
+                verticalArrangement = Arrangement.spacedBy(itemSpacing),
                 contentPadding = PaddingValues(top = 10.dp, bottom = 24.dp)
             ) {
             // ── 1. Total Tagihan Card (Gambar)
@@ -276,7 +296,7 @@ fun PembayaranScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(18.dp),
+                            .padding(totalCardPadding),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -286,13 +306,15 @@ fun PembayaranScreen(
                                 fontFamily = interfamily,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xCCFFFFFF)
+                                color = Color(0xCCFFFFFF),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "Rp ${formatRupiah(state.grandTotal)}",
                                 fontFamily = interfamily,
-                                fontSize = 23.sp,
+                                fontSize = totalFontSize,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,
                                 maxLines = 1,
@@ -305,7 +327,9 @@ fun PembayaranScreen(
                                     fontFamily = interfamily,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = Color(0xEEFFFFFF)
+                                    color = Color(0xEEFFFFFF),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -314,14 +338,14 @@ fun PembayaranScreen(
                         Surface(
                             shape = RoundedCornerShape(14.dp),
                             color = Color(0x26FFFFFF),
-                            modifier = Modifier.size(56.dp)
+                            modifier = Modifier.size(totalDecorSize)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Default.Assignment,
                                     contentDescription = null,
                                     tint = Color(0x88FFFFFF),
-                                    modifier = Modifier.size(28.dp)
+                                    modifier = Modifier.size(totalDecorIconSize)
                                 )
                             }
                         }
@@ -343,7 +367,7 @@ fun PembayaranScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { viewModel.toggleRincianExpanded() }
-                                .padding(16.dp),
+                                .padding(cardPadding),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -391,7 +415,7 @@ fun PembayaranScreen(
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    .padding(horizontal = cardPadding, vertical = 8.dp),
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 HorizontalDivider(color = Color(0xFFF1F5F9))
@@ -475,7 +499,7 @@ fun PembayaranScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(cardPadding),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row(
@@ -632,7 +656,7 @@ fun PembayaranScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(cardPadding),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Row(
@@ -780,7 +804,7 @@ fun PembayaranScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(cardPadding),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Row(
@@ -912,7 +936,7 @@ fun PembayaranScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(cardPadding),
                             verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             Text(
@@ -927,7 +951,7 @@ fun PembayaranScreen(
                             Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .heightIn(min = 50.dp),
+                                    .heightIn(min = cashInputMinHeight),
                                 shape = RoundedCornerShape(12.dp),
                                 color = Color(0xFFF8FAFC),
                                 border = BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -953,7 +977,7 @@ fun PembayaranScreen(
                                         singleLine = true,
                                         textStyle = TextStyle(
                                             color = Color(0xFF0F172A),
-                                            fontSize = 18.sp,
+                                            fontSize = cashFontSize,
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = interfamily,
                                             platformStyle = PlatformTextStyle(
@@ -969,7 +993,7 @@ fun PembayaranScreen(
                                                     Text(
                                                         text = "0",
                                                         fontFamily = interfamily,
-                                                        fontSize = 18.sp,
+                                                        fontSize = cashFontSize,
                                                         fontWeight = FontWeight.Bold,
                                                         color = Color(0xFFCBD5E1),
                                                         modifier = Modifier.align(Alignment.CenterStart)
@@ -1000,7 +1024,8 @@ fun PembayaranScreen(
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        modifier = Modifier.weight(1f, fill = false)
                                     ) {
                                         Surface(
                                             shape = CircleShape,
@@ -1022,16 +1047,20 @@ fun PembayaranScreen(
                                             fontFamily = interfamily,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF047857)
+                                            color = Color(0xFF047857),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
 
                                     Text(
                                         text = "Rp ${formatRupiah(state.kembalian)}",
                                         fontFamily = interfamily,
-                                        fontSize = 18.sp,
+                                        fontSize = changeFontSize,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF047857)
+                                        color = Color(0xFF047857),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -1135,7 +1164,7 @@ fun PembayaranScreen(
                     enabled = !state.isLoading && state.subtotal > 0,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .height(confirmButtonHeight),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = PrimaryRoyalBlue,
@@ -1156,14 +1185,16 @@ fun PembayaranScreen(
                             Text(
                                 text = "Konfirmasi Bayar",
                                 fontFamily = interfamily,
-                                fontSize = 15.sp,
+                                fontSize = confirmFontSize,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = "  |  Rp ${formatRupiah(state.grandTotal)}",
                                 fontFamily = interfamily,
-                                fontSize = 15.sp,
+                                fontSize = confirmFontSize,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,
                                 maxLines = 1,
@@ -1207,9 +1238,19 @@ fun PaymentMethodCard(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Responsif: ukuran kartu metode pembayaran menyesuaikan lebar layar.
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp <= 340
+    val cardMinHeight = if (isSmallScreen) 66.dp else 74.dp
+    val cardPadding = if (isSmallScreen) 8.dp else 10.dp
+    val iconSurfaceSize = if (isSmallScreen) 34.dp else 38.dp
+    val iconSize = if (isSmallScreen) 18.dp else 20.dp
+    val iconGap = if (isSmallScreen) 6.dp else 8.dp
+    val titleSize = if (isSmallScreen) 12.sp else 12.5.sp
+
     Card(
         modifier = modifier
-            .defaultMinSize(minHeight = 74.dp)
+            .defaultMinSize(minHeight = cardMinHeight)
             .clickable { onSelect() },
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -1223,31 +1264,31 @@ fun PaymentMethodCard(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(10.dp),
+                    .padding(cardPadding),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = iconBgColor,
-                    modifier = Modifier.size(38.dp)
+                    modifier = Modifier.size(iconSurfaceSize)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = icon,
                             contentDescription = title,
                             tint = iconTint,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(iconSize)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(iconGap))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
                         fontFamily = interfamily,
-                        fontSize = 12.5.sp,
+                        fontSize = titleSize,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF0F172A),
                         maxLines = 1,
@@ -1300,6 +1341,14 @@ private fun BuktiPembayaranCard(
     onCaptureCamera: () -> Unit,
     onRemoveBukti: () -> Unit
 ) {
+    // Responsif: ukuran kartu bukti pembayaran menyesuaikan lebar layar.
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp <= 340
+    val cardPadding = if (isSmallScreen) 14.dp else 16.dp
+    val imageHeight = if (isSmallScreen) 150.dp else 180.dp
+    val actionButtonHeight = if (isSmallScreen) 40.dp else 42.dp
+    val headerTitleSize = if (isSmallScreen) 12.5.sp else 13.5.sp
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -1310,7 +1359,7 @@ private fun BuktiPembayaranCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(cardPadding),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // Header Row
@@ -1341,15 +1390,19 @@ private fun BuktiPembayaranCard(
                         Text(
                             text = "Bukti Pembayaran ($metodePembayaran)",
                             fontFamily = interfamily,
-                            fontSize = 13.5.sp,
+                            fontSize = headerTitleSize,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1E293B)
+                            color = Color(0xFF1E293B),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = "Maks. 2MB • Kompresi Otomatis",
                             fontFamily = interfamily,
                             fontSize = 11.5.sp,
-                            color = Color(0xFF64748B)
+                            color = Color(0xFF64748B),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -1384,7 +1437,7 @@ private fun BuktiPembayaranCard(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(180.dp)
+                                .height(imageHeight)
                                 .clip(RoundedCornerShape(14.dp))
                                 .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(14.dp))
                         ) {
@@ -1432,7 +1485,7 @@ private fun BuktiPembayaranCard(
                                 onClick = onPickGallery,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(42.dp),
+                                    .height(actionButtonHeight),
                                 shape = RoundedCornerShape(10.dp),
                                 border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
                                 contentPadding = PaddingValues(horizontal = 8.dp)
@@ -1457,7 +1510,7 @@ private fun BuktiPembayaranCard(
                                 onClick = onCaptureCamera,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(42.dp),
+                                    .height(actionButtonHeight),
                                 shape = RoundedCornerShape(10.dp),
                                 border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
                                 contentPadding = PaddingValues(horizontal = 8.dp)
@@ -1481,7 +1534,7 @@ private fun BuktiPembayaranCard(
                             IconButton(
                                 onClick = onRemoveBukti,
                                 modifier = Modifier
-                                    .size(42.dp)
+                                    .size(actionButtonHeight)
                                     .background(Color(0xFFFEE2E2), RoundedCornerShape(10.dp))
                             ) {
                                 Icon(

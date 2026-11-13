@@ -53,6 +53,8 @@ import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.SyncStatusBadge
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.keuangan.domain.model.CatatanKeuangan
+import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.CatatanKeuanganUiProvider
+import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.HiltCatatanKeuanganUiProvider
 import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.CatatanKeuanganViewModel
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
@@ -65,7 +67,7 @@ import java.util.Locale
 @Composable
 fun CatatanKeuanganScreen(
     navController: NavController,
-    viewModel: CatatanKeuanganViewModel = hiltViewModel()
+    viewModel: CatatanKeuanganUiProvider = HiltCatatanKeuanganUiProvider(hiltViewModel<CatatanKeuanganViewModel>())
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -444,7 +446,9 @@ fun CatatanKeuanganScreen(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            // Responsif: blok kiri diberi bobot agar badge transaksi tidak tertimpa di 320dp
+                            modifier = Modifier.weight(1f)
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
@@ -461,7 +465,10 @@ fun CatatanKeuanganScreen(
                                 }
                             }
 
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
                                 Text(
                                     text = "SALDO BERSIH",
                                     fontSize = 11.sp,
@@ -475,7 +482,11 @@ fun CatatanKeuanganScreen(
                                     fontSize = 18.sp,
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White
+                                    color = Color.White,
+                                    // Responsif: saldo dipotong agar badge transaksi tetap terlihat di 320dp
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -871,3 +882,16 @@ private fun formatNominalRupiah(amount: Double): String {
     val formatter = NumberFormat.getNumberInstance(Locale("id", "ID"))
     return "Rp " + formatter.format(amount.toLong())
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun CatatanKeuanganScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase + NavController, perlu composable stateless
+//     CatatanKeuanganScreen(navController = androidx.navigation.compose.rememberNavController())
+// }

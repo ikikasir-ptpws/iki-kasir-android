@@ -187,14 +187,19 @@ fun PilihProdukTersediaDialog(
                             fontFamily = interfamily,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
+                            color = Color(0xFF0F172A),
+                            // Responsif: judul dipotong agar tombol tutup tidak tertimpa di HP 320dp
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Pilih item untuk ditambahkan ke pesanan",
                             fontFamily = interfamily,
                             fontSize = 12.sp,
-                            color = Color(0xFF64748B)
+                            color = Color(0xFF64748B),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
@@ -252,7 +257,9 @@ fun PilihProdukTersediaDialog(
                                             text = "Cari nama produk atau SKU...",
                                             fontFamily = interfamily,
                                             fontSize = 13.sp,
-                                            color = Color(0xFF94A3B8)
+                                            color = Color(0xFF94A3B8),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                     innerTextField()
@@ -500,7 +507,9 @@ fun PilihProdukTersediaDialog(
                                                     fontFamily = interfamily,
                                                     fontSize = if (isCompactWidth) 13.5.sp else 14.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color(0xFFDC2626)
+                                                    color = Color(0xFFDC2626),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                                 Surface(
                                                     shape = RoundedCornerShape(4.dp),
@@ -512,6 +521,8 @@ fun PilihProdukTersediaDialog(
                                                         fontSize = 10.sp,
                                                         fontWeight = FontWeight.SemiBold,
                                                         color = Color(0xFFDC2626),
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
                                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                                     )
                                                 }
@@ -522,7 +533,9 @@ fun PilihProdukTersediaDialog(
                                                 fontFamily = interfamily,
                                                 fontSize = if (isCompactWidth) 13.5.sp else 14.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF3B32D1)
+                                                color = Color(0xFF3B32D1),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         }
                                     }
@@ -707,7 +720,9 @@ fun PilihProdukTersediaDialog(
                             fontSize = if (isCompactWidth) 14.sp else 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
-                            modifier = Modifier.align(Alignment.Center)
+                            modifier = Modifier.align(Alignment.Center),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
 
                         Surface(
@@ -721,7 +736,9 @@ fun PilihProdukTersediaDialog(
                                 fontSize = if (isCompactWidth) 11.sp else 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.5.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.5.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -748,3 +765,26 @@ fun PilihProdukTersediaDialog(
     }
 }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+// import com.ptpws.ikikasir.ui.theme.IKIKASIRTheme
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun PilihProdukTersediaDialogResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     IKIKASIRTheme {
+//         PilihProdukTersediaDialog(
+//             state = KasirState(),
+//             onDismiss = {},
+//             onSearchQueryChange = {},
+//             onCategoryFilterChange = {},
+//             onSetQuantity = { _, _ -> },
+//             onSelesai = {}
+//         )
+//     }
+// }

@@ -68,7 +68,9 @@ fun TabletSidebarDrawer(
 
     Surface(
         modifier = modifier
-            .width(260.dp)
+            // Responsif: lebar drawer mengikuti lebar layar, dibatasi maks 260.dp
+            // (pada lebar >= 360.dp hasilnya tetap persis 260.dp seperti sebelumnya)
+            .widthIn(max = 260.dp)
             .fillMaxHeight(),
         color = Color.White,
         tonalElevation = 2.dp,
@@ -183,7 +185,10 @@ fun TabletSidebarDrawer(
                                     fontSize = 9.5.sp,
                                     fontWeight = FontWeight.Medium,
                                     fontFamily = interfamily,
-                                    color = PrimaryRoyalBlue
+                                    color = PrimaryRoyalBlue,
+                                    // Responsif: nama peran panjang dipotong satu baris
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }

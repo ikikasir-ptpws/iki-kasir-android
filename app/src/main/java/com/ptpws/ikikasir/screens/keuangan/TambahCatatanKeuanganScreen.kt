@@ -53,6 +53,8 @@ import com.ptpws.ikikasir.commond.ImageUploadType
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.commond.rememberGlobalImagePicker
 import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
+import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.TambahCatatanKeuanganUiProvider
+import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.HiltTambahCatatanKeuanganUiProvider
 import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.TambahCatatanKeuanganViewModel
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
@@ -65,7 +67,7 @@ import java.util.Locale
 @Composable
 fun TambahCatatanKeuanganScreen(
     navController: NavController,
-    viewModel: TambahCatatanKeuanganViewModel = hiltViewModel()
+    viewModel: TambahCatatanKeuanganUiProvider = HiltTambahCatatanKeuanganUiProvider(hiltViewModel<TambahCatatanKeuanganViewModel>())
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -123,7 +125,9 @@ fun TambahCatatanKeuanganScreen(
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
                         fontSize = 18.sp,
-                        color = Color(0xFF0F172A)
+                        color = Color(0xFF0F172A),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
                 navigationIcon = {
@@ -309,7 +313,11 @@ fun TambahCatatanKeuanganScreen(
                                     fontFamily = interfamily,
                                     fontSize = 13.5.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF0F172A)
+                                    color = Color(0xFF0F172A),
+                                    // Responsif: tanggal dipotong agar ikon kalender tetap terlihat di 320dp
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Icon(
                                     imageVector = Icons.Default.CalendarMonth,
@@ -459,19 +467,23 @@ fun TambahCatatanKeuanganScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "Bukti Pembayaran (${state.metodePembayaran})",
                                     fontFamily = interfamily,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF0F172A)
+                                    color = Color(0xFF0F172A),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = "Maks. 2MB • Kompresi Otomatis",
                                     fontFamily = interfamily,
                                     fontSize = 11.5.sp,
-                                    color = Color(0xFF64748B)
+                                    color = Color(0xFF64748B),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
 
@@ -538,7 +550,7 @@ fun TambahCatatanKeuanganScreen(
                                         onClick = { imagePickerState.openPicker() },
                                         modifier = Modifier
                                             .weight(1f)
-                                            .height(44.dp),
+                                            .heightIn(min = 44.dp),
                                         shape = RoundedCornerShape(12.dp),
                                         colors = ButtonDefaults.outlinedButtonColors(
                                             containerColor = Color.White,
@@ -558,7 +570,7 @@ fun TambahCatatanKeuanganScreen(
                                         onClick = { viewModel.onBuktiUriChange(null) },
                                         modifier = Modifier
                                             .width(52.dp)
-                                            .height(44.dp),
+                                            .heightIn(min = 44.dp),
                                         shape = RoundedCornerShape(12.dp),
                                         colors = ButtonDefaults.outlinedButtonColors(
                                             containerColor = Color.White,
@@ -651,7 +663,7 @@ fun TambahCatatanKeuanganScreen(
                     enabled = !state.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .heightIn(min = 52.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF2563EB),
@@ -749,19 +761,23 @@ private fun JenisOptionCard(
                 }
             }
 
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     fontFamily = interfamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    color = if (isSelected && isPositive) Color(0xFF047857) else if (isSelected) Color(0xFFB91C1C) else Color(0xFF0F172A)
+                    color = if (isSelected && isPositive) Color(0xFF047857) else if (isSelected) Color(0xFFB91C1C) else Color(0xFF0F172A),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = subtitle,
                     fontFamily = interfamily,
                     fontSize = 11.sp,
-                    color = Color(0xFF64748B)
+                    color = Color(0xFF64748B),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -862,3 +878,16 @@ private fun MetodeCardItem(
         }
     }
 }
+
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun TambahCatatanKeuanganScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase + NavController, perlu composable stateless
+// }

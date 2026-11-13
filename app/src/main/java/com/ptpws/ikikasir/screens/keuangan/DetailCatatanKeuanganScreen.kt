@@ -34,6 +34,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -43,6 +44,8 @@ import coil.compose.AsyncImage
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.keuangan.domain.model.CatatanKeuangan
+import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.DetailCatatanKeuanganUiProvider
+import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.HiltDetailCatatanKeuanganUiProvider
 import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.DetailCatatanKeuanganViewModel
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
@@ -55,7 +58,7 @@ import java.util.Locale
 @Composable
 fun DetailCatatanKeuanganScreen(
     navController: NavController,
-    viewModel: DetailCatatanKeuanganViewModel = hiltViewModel()
+    viewModel: DetailCatatanKeuanganUiProvider = HiltDetailCatatanKeuanganUiProvider(hiltViewModel<DetailCatatanKeuanganViewModel>())
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -203,7 +206,11 @@ fun DetailCatatanKeuanganScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 28.sp,
                                 color = amountColor,
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                // Responsif: nominal dipotong agar tidak keluar kartu di layar 320dp
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
                             )
 
                             // Title
@@ -213,7 +220,10 @@ fun DetailCatatanKeuanganScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp,
                                 color = Color(0xFF1E293B),
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                // Responsif: judul panjang dibatasi 2 baris
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -364,7 +374,7 @@ fun DetailCatatanKeuanganScreen(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(50.dp),
+                                .heightIn(min = 50.dp),
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
                         ) {
@@ -394,7 +404,7 @@ fun DetailCatatanKeuanganScreen(
                             onClick = { showDeleteConfirmDialog = true },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(50.dp),
+                                .heightIn(min = 50.dp),
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 containerColor = Color.White,
@@ -495,7 +505,7 @@ fun DetailCatatanKeuanganScreen(
                         onClick = { showFullImageDialog = false },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(46.dp),
+                            .heightIn(min = 46.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
                     ) {
@@ -596,7 +606,10 @@ private fun RincianInfoRow(
                 fontFamily = interfamily,
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = valueColor
+                color = valueColor,
+                // Responsif: nilai panjang dipotong agar tidak keluar kartu di 320dp
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -606,3 +619,16 @@ private fun formatNominalRupiahDetail(nominal: Double): String {
     val formatter = NumberFormat.getNumberInstance(Locale("id", "ID"))
     return "Rp ${formatter.format(nominal.toLong())}"
 }
+
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun DetailCatatanKeuanganScreenResponsivePreview() {
+//     // Preview butuh ViewModel/Firebase + NavController, perlu composable stateless
+// }

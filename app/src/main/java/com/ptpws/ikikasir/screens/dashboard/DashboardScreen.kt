@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,7 +36,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.screens.navigation.AppScreen
@@ -54,6 +54,11 @@ import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.TextUnit
 import com.ptpws.ikikasir.commond.DashboardHeaderShimmer
 import com.ptpws.ikikasir.commond.DashboardFilterRowShimmer
 import com.ptpws.ikikasir.commond.DashboardStatCardsShimmer
@@ -67,7 +72,7 @@ import java.util.Locale
 @Composable
 fun DashboardScreen(
     navController: NavController,
-    viewModel: DashboardViewModel = hiltViewModel()
+    viewModel: DashboardUiProvider = HiltDashboardUiProvider(hiltViewModel<DashboardViewModel>())
 ) {
     val sessionState by viewModel.sessionState.collectAsState()
     val analyticsState by viewModel.analyticsState.collectAsState()
@@ -287,25 +292,34 @@ fun HeaderSection(userName: String = "Pengguna") {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
+        Column(
+            // Responsif: batasi lebar kolom teks agar nama panjang tidak menabrak ikon notifikasi
+            modifier = Modifier.weight(1f, fill = false)
+        ) {
             Text(
                 text = "Selamat datang,",
                 fontSize = if (isSmallScreen) 13.sp else 14.sp,
                 fontFamily = interfamily,
                 fontWeight = FontWeight.Normal,
-                color = Color.Black
+                color = Color.Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = userName,
                 fontSize = if (isSmallScreen) 18.sp else 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1A1D2E)
+                color = Color(0xFF1A1D2E),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = "Kelola bisnis Anda dengan mudah",
                 fontSize = if (isSmallScreen) 12.sp else 13.sp,
                 fontFamily = interfamily,
-                color = Color(0xFF8A8FA8)
+                color = Color(0xFF8A8FA8),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
         Box(
@@ -360,7 +374,8 @@ fun DashboardFilterRow(
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box {
+        // Responsif: batasi lebar chip agar label tanggal panjang tidak keluar dari layar
+        Box(modifier = Modifier.weight(1f, fill = false)) {
             Surface(
                 onClick = { expanded = true },
                 shape = RoundedCornerShape(20.dp),
@@ -384,7 +399,9 @@ fun DashboardFilterRow(
                         fontSize = if (isSmallScreen) 11.5.sp else 12.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = interfamily,
-                        color = Color(0xFF1E293B)
+                        color = Color(0xFF1E293B),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Icon(
                         imageVector = Icons.Default.ArrowDropDown,
@@ -400,7 +417,7 @@ fun DashboardFilterRow(
                 onDismissRequest = { expanded = false },
                 modifier = Modifier
                     .background(Color.White)
-                    .widthIn(min = 160.dp)
+                    .widthIn(min = 160.dp, max = 280.dp)
             ) {
                 filterOptions.forEach { filter ->
                     val isSelected = filter == selectedFilter
@@ -460,10 +477,23 @@ fun StatCardsSection(
     val isSmallScreen = configuration.screenWidthDp.dp <= 340.dp
     val sectionHorizontalPadding = if (isSmallScreen) 12.dp else 20.dp
     val cardPadding = if (isSmallScreen) 12.dp else 16.dp
+    val cardSpacing = if (isSmallScreen) 10.dp else 12.dp
     val cardCornerRadius = if (isSmallScreen) 16.dp else 20.dp
     val iconBoxSize = if (isSmallScreen) 32.dp else 36.dp
 
     val formattedPenjualan = formatDashboardNominal(analytics.penjualanHariIni)
+    val nominalDigits = formattedPenjualan.removePrefix("Rp ")
+
+    // Lebar area teks nominal diukur setelah layout (Box.onSizeChanged).
+    // BoxWithConstraints tidak bisa dipakai di dalam Row ber-IntrinsicSize.Min
+    // (SubcomposeLayout tidak mendukung pengukuran intrinsik).
+    var nominalWidthPx by remember { mutableStateOf(0f) }
+    val fallbackNominalWidthPx = with(LocalDensity.current) {
+        val cardWidthDp = configuration.screenWidthDp -
+            sectionHorizontalPadding.value * 2 - cardSpacing.value
+        val innerWidthDp = cardWidthDp / 2f - cardPadding.value * 2
+        if (innerWidthDp > 0f) innerWidthDp.dp.toPx() else 0f
+    }
     val salesGrowthPercent = formatDashboardPercent(analytics.pertumbuhanPenjualanPersen)
     val salesGrowthText = if (analytics.pertumbuhanPenjualanPersen == 0.0) {
         "0%"
@@ -505,7 +535,7 @@ fun StatCardsSection(
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
             .padding(horizontal = sectionHorizontalPadding),
-        horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 10.dp else 12.dp)
+        horizontalArrangement = Arrangement.spacedBy(cardSpacing)
     ) {
         // Card Penjualan Hari Ini — gradient biru
         Card(
@@ -582,8 +612,8 @@ fun StatCardsSection(
                             fontSize = if (isSmallScreen) 9.5.sp else 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White.copy(alpha = 0.85f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            // Responsif: judul boleh wrap, tidak boleh terpotong
+                            modifier = Modifier.weight(1f, fill = false)
                         )
                         Text(
                             text = "ⓘ",
@@ -595,39 +625,38 @@ fun StatCardsSection(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     if (isBalanceVisible) {
-                        Text(
-                            text = "Rp",
-                            fontSize = if (isSmallScreen) 12.sp else 14.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Medium
-                        )
-
-                        Text(
-                            text = formattedPenjualan,
-                            fontSize = if (isSmallScreen) {
-                                if (formattedPenjualan.length > 8) 16.sp else 20.sp
-                            } else {
-                                if (formattedPenjualan.length > 10) 19.sp else 24.sp
-                            },
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onSizeChanged { nominalWidthPx = it.width.toFloat() }
+                        ) {
+                            FittedNominalText(
+                                value = nominalDigits,
+                                availableWidthPx = if (nominalWidthPx > 0) nominalWidthPx else fallbackNominalWidthPx,
+                                prefixFontSize = if (isSmallScreen) 12.sp else 14.sp,
+                                valueFontSize = if (isSmallScreen) {
+                                    if (nominalDigits.length > 8) 16.sp else 20.sp
+                                } else {
+                                    if (nominalDigits.length > 10) 19.sp else 24.sp
+                                },
+                                color = Color.White
+                            )
+                        }
                     } else {
-                        Text(
-                            text = "Rp",
-                            fontSize = if (isSmallScreen) 12.sp else 14.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = "••••••",
-                            fontSize = if (isSmallScreen) 20.sp else 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            letterSpacing = 4.sp
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onSizeChanged { nominalWidthPx = it.width.toFloat() }
+                        ) {
+                            FittedNominalText(
+                                value = "••••••",
+                                availableWidthPx = if (nominalWidthPx > 0) nominalWidthPx else fallbackNominalWidthPx,
+                                prefixFontSize = if (isSmallScreen) 12.sp else 14.sp,
+                                valueFontSize = if (isSmallScreen) 20.sp else 24.sp,
+                                color = Color.White,
+                                valueLetterSpacing = 4.sp
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(if (isSmallScreen) 6.dp else 8.dp))
@@ -648,7 +677,11 @@ fun StatCardsSection(
                                 text = salesGrowthText,
                                 fontSize = if (isSmallScreen) 9.5.sp else 11.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.White
+                                color = Color.White,
+                                // Responsif: badge tidak boleh terpotong/berbaris dua
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -709,8 +742,8 @@ fun StatCardsSection(
                         fontSize = if (isSmallScreen) 9.5.sp else 10.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF8A8FA8),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        // Responsif: judul boleh wrap, tidak boleh terpotong
+                        modifier = Modifier.weight(1f, fill = false)
                     )
                     Text(
                         text = "ⓘ",
@@ -725,9 +758,7 @@ fun StatCardsSection(
                     text = "${analytics.totalTransaksiHariIni} trx",
                     fontSize = if (isSmallScreen) 18.sp else 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1A1D2E),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    color = Color(0xFF1A1D2E)
                 )
 
                 Spacer(modifier = Modifier.height(if (isSmallScreen) 6.dp else 8.dp))
@@ -749,7 +780,11 @@ fun StatCardsSection(
                             text = txGrowthText,
                             fontSize = if (isSmallScreen) 9.5.sp else 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = badgeColor
+                            color = badgeColor,
+                            // Responsif: badge tidak boleh terpotong/berbaris dua
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
@@ -786,13 +821,20 @@ fun SectionHeader(title: String, onLihatSemua: (() -> Unit)? = null) {
             fontSize = if (isSmallScreen) 16.sp else 18.sp,
             fontFamily = interfamily,
             fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF1A1D2E)
+            color = Color(0xFF1A1D2E),
+            // Responsif: judul panjang dipotong agar tidak menabrak "Lihat Semua"
+            modifier = Modifier.weight(1f, fill = false),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
         if (onLihatSemua != null) {
             Text(
                 text = "Lihat Semua",
                 fontSize = if (isSmallScreen) 12.sp else 13.sp,
                 color = Color(0xFF3D5AF1),
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.clickable { onLihatSemua() }
             )
         }
@@ -1002,7 +1044,10 @@ fun MenuIconItem(
             fontWeight = FontWeight.Medium,
             color = Color.Black,
             textAlign = TextAlign.Center,
-            lineHeight = if (isSmallScreen) 14.sp else 16.sp
+            lineHeight = if (isSmallScreen) 14.sp else 16.sp,
+            // Responsif: label menu maksimal 2 baris, sisa dipotong dengan ellipsis
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -1062,7 +1107,10 @@ fun MenuIconItem(
             fontWeight = FontWeight.Medium,
             color = Color.Black,
             textAlign = TextAlign.Center,
-            lineHeight = if (isSmallScreen) 14.sp else 16.sp
+            lineHeight = if (isSmallScreen) 14.sp else 16.sp,
+            // Responsif: label menu maksimal 2 baris, sisa dipotong dengan ellipsis
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -1106,11 +1154,14 @@ fun RingkasanSection(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Min)
             .padding(horizontal = sectionHorizontalPadding),
         horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 10.dp else 12.dp)
     ) {
         RingkasanCard(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
             value = formattedCust,
             title = "Pelanggan",
             growth = custGrowthText,
@@ -1122,7 +1173,9 @@ fun RingkasanSection(
         )
 
         RingkasanCard(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
             value = formattedSold,
             title = "Terjual",
             growth = soldGrowthText,
@@ -1153,6 +1206,68 @@ private fun formatDashboardPercent(value: Double): String {
     return formatter.format(value)
 }
 
+/**
+ * Menampilkan nominal ("Rp 1.250.000") sebagai satu Text satu baris.
+ * "Rp" digabung dengan angkanya lewat span agar hierarki tipografi desain tetap terjaga,
+ * dan font diperkecil otomatis bila lebar card tidak cukup (tidak pernah dipotong).
+ */
+@Composable
+private fun FittedNominalText(
+    value: String,
+    availableWidthPx: Float,
+    prefixFontSize: TextUnit,
+    valueFontSize: TextUnit,
+    color: Color,
+    valueLetterSpacing: TextUnit? = null
+) {
+    val density = LocalDensity.current
+    val scale = remember(value, availableWidthPx, prefixFontSize, valueFontSize, valueLetterSpacing, density.fontScale) {
+        if (availableWidthPx <= 0f) {
+            1f
+        } else {
+            val prefixPx = with(density) { prefixFontSize.toPx() }
+            val valuePx = with(density) { valueFontSize.toPx() }
+            val letterSpacingPx = valueLetterSpacing?.let { with(density) { it.toPx() } } ?: 0f
+            val prefixWidthPx = "Rp ".fold(0f) { acc, c -> acc + estimateCharWidthEm(c) } * prefixPx
+            val valueWidthPx = value.fold(0f) { acc, c -> acc + estimateCharWidthEm(c) } * valuePx +
+                letterSpacingPx * value.length
+            val estimatedPx = prefixWidthPx + valueWidthPx
+            // margin 2% supaya teks tidak pernah menyentuh tepi card
+            val usablePx = availableWidthPx * 0.98f
+            if (estimatedPx <= 0f) 1f else (usablePx / estimatedPx).coerceIn(0.45f, 1f)
+        }
+    }
+
+    Text(
+        text = buildAnnotatedString {
+            withStyle(SpanStyle(fontSize = prefixFontSize * scale, fontWeight = FontWeight.Medium)) {
+                append("Rp ")
+            }
+            withStyle(
+                SpanStyle(
+                    fontSize = valueFontSize * scale,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = valueLetterSpacing ?: TextUnit.Unspecified
+                )
+            ) {
+                append(value)
+            }
+        },
+        color = color,
+        maxLines = 1,
+        softWrap = false
+    )
+}
+
+/** Perkiraan lebar karakter dalam satuan em, dipakai untuk menghitung skala font nominal. */
+private fun estimateCharWidthEm(char: Char): Float = when {
+    char.isDigit() -> 0.62f
+    char == '.' || char == ',' -> 0.30f
+    char == ' ' -> 0.26f
+    char == '•' -> 0.45f
+    else -> 0.60f
+}
+
 @Composable
 fun RingkasanCard(
     modifier: Modifier = Modifier,
@@ -1166,7 +1281,7 @@ fun RingkasanCard(
     isSmallScreen: Boolean = false
 ) {
     Card(
-        modifier = modifier.heightIn(min = if (isSmallScreen) 100.dp else 112.dp),
+        modifier = modifier,
         shape = RoundedCornerShape(if (isSmallScreen) 16.dp else 20.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -1175,9 +1290,13 @@ fun RingkasanCard(
             defaultElevation = if (isSmallScreen) 3.dp else 5.dp
         )
     ) {
+
+
+
+
         Row(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(horizontal = if (isSmallScreen) 10.dp else 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1210,9 +1329,7 @@ fun RingkasanCard(
                     fontFamily = interfamily,
                     lineHeight = if (isSmallScreen) 20.sp else 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1A1D2E),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    color = Color(0xFF1A1D2E)
                 )
 
                 Spacer(modifier = Modifier.height(2.dp))
@@ -1270,10 +1387,54 @@ fun RingkasanCard(
 }
 
 
-@Preview(showBackground = true, showSystemUi = true)
+// ---- PREVIEW (untuk tes responsif) ----
+// Preview ini memakai section stateless (HeaderSection, DashboardFilterRow, StatCardsSection,
+// SectionHeader, RingkasanSection) BUKAN DashboardScreen(), karena DashboardScreen() memanggil
+// hiltViewModel() yang tidak tersedia di Compose Preview (menyVMs causing "Show Exception").
+@Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+@Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+@Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+@Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
 @Composable
-fun DashboardScreenPreview() {
+private fun DashboardScreenPreviewResponsif() {
+    val dummyAnalytics = DashboardAnalytics(
+        penjualanHariIni = 1250000.0,
+        pertumbuhanPenjualanPersen = 12.5,
+        isPertumbuhanPenjualanPositif = true,
+        totalTransaksiHariIni = 24,
+        pertumbuhanTransaksiPersen = 8.0,
+        isPertumbuhanTransaksiPositif = true,
+        totalPelangganHariIni = 17,
+        pertumbuhanPelangganPersen = 3.5,
+        isPertumbuhanPelangganPositif = true,
+        totalProdukTerjualHariIni = 40,
+        pertumbuhanProdukTerjualPersen = 5.0,
+        isPertumbuhanProdukTerjualPositif = true,
+        isLoading = false
+    )
     MaterialTheme {
-        DashboardScreen(navController = rememberNavController())
+        Surface(color = Color(0xFFF0F4FF)) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                HeaderSection(userName = "Budi Santoso")
+                DashboardFilterRow(
+                    selectedFilter = PeriodeLaporanPenjualan.HARI_INI,
+                    customDateLabel = "",
+                    onFilterSelected = {},
+                    onOpenDatePicker = {}
+                )
+                StatCardsSection(
+                    analytics = dummyAnalytics,
+                    selectedFilter = PeriodeLaporanPenjualan.HARI_INI,
+                    customDateLabel = "",
+                    isBalanceVisible = true
+                )
+                SectionHeader(title = "Produk")
+                SectionHeader(title = "Total Penjualan")
+                RingkasanSection(
+                    analytics = dummyAnalytics,
+                    selectedFilter = PeriodeLaporanPenjualan.HARI_INI
+                )
+            }
+        }
     }
 }

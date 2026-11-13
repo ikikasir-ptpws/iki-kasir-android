@@ -67,6 +67,10 @@ import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
+import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriUiProvider
+import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.TambahProdukUiProvider
+import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.HiltTambahProdukUiProvider
+import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.HiltKategoriUiProvider
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
 import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.TambahProdukViewModel
 import androidx.activity.compose.BackHandler
@@ -79,8 +83,8 @@ import java.util.Locale
 @Composable
 fun TambahProdukScreen(
     onBack: () -> Unit = {},
-    viewModel: TambahProdukViewModel = hiltViewModel(),
-    kategoriViewModel: KategoriViewModel = hiltViewModel()
+    viewModel: TambahProdukUiProvider = HiltTambahProdukUiProvider(hiltViewModel<TambahProdukViewModel>()),
+    kategoriViewModel: KategoriUiProvider = HiltKategoriUiProvider(hiltViewModel<KategoriViewModel>())
 ) {
     var isBackProcessing by remember { mutableStateOf(false) }
     val handleBack = {
@@ -96,6 +100,9 @@ fun TambahProdukScreen(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
+    // TODO responsif: ambang 420.dp sengaja tidak diubah ke 340.dp karena akan mengubah
+    // varian font/padding di HP 360dp & 411dp (harus tetap sama). Semua lebar 320-411dp
+    // memakai varian "small" yang sama, hanya ruang lebarnya yang menyesuaikan.
     val isSmallScreen = screenWidth <= 420.dp
     val horizontalScreenPadding = if (isSmallScreen) 12.dp else 16.dp
     var imageUri by remember { mutableStateOf<Uri?>(null) }
@@ -158,7 +165,9 @@ fun TambahProdukScreen(
 
         AdaptiveFormList(
             modifier = Modifier
-                .padding(paddingValues),
+                .padding(paddingValues)
+                // Responsif: form tetap bisa di-scroll & tombol tetap terlihat saat keyboard muncul
+                .imePadding(),
             contentPadding = PaddingValues(
                 start = horizontalScreenPadding,
                 top = if (isSmallScreen) 12.dp else 16.dp,
@@ -458,8 +467,9 @@ fun TambahProdukScreen(
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = interfamily,
                                         color = Color(0xFF111827),
+                                        // Responsif: nominal panjang dipotong (ellipsis) di HP kecil
                                         maxLines = 1,
-                                        softWrap = false
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
 
@@ -504,8 +514,9 @@ fun TambahProdukScreen(
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = interfamily,
                                         color = if (isProfitable) Color(0xFF16A34A) else Color(0xFFDC2626),
+                                        // Responsif: nominal panjang dipotong (ellipsis) di HP kecil
                                         maxLines = 1,
-                                        softWrap = false
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -1195,3 +1206,18 @@ fun CetakBarcodeDialog(
         }
     }
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun TambahProdukScreenPreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     TambahProdukScreen(
+//         onBack = {}
+//     )
+// }

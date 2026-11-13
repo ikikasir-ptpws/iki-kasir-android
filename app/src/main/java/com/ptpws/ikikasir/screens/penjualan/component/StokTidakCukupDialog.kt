@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ptpws.ikikasir.commond.interfamily
@@ -73,7 +74,10 @@ fun StokTidakCukupDialog(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF334155),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    // Responsif: nama produk panjang dibatasi 2 baris agar tombol tidak terdorong
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Surface(
@@ -90,14 +94,18 @@ fun StokTidakCukupDialog(
                             text = "Stok tersedia",
                             fontFamily = interfamily,
                             fontSize = 13.sp,
-                            color = Color(0xFF7C2D12)
+                            color = Color(0xFF7C2D12),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = "$stokTersedia unit",
                             fontFamily = interfamily,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFEA580C)
+                            color = Color(0xFFEA580C),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -121,7 +129,9 @@ fun StokTidakCukupDialog(
                 Text(
                     text = "Gunakan Stok",
                     fontFamily = interfamily,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         },
@@ -139,3 +149,23 @@ fun StokTidakCukupDialog(
         shape = RoundedCornerShape(22.dp)
     )
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+// import com.ptpws.ikikasir.ui.theme.IKIKASIRTheme
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun StokTidakCukupDialogResponsivePreview() {
+//     IKIKASIRTheme {
+//         StokTidakCukupDialog(
+//             namaProduk = "Indomie Goreng Spesial",
+//             stokTersedia = 5,
+//             onGunakanStok = {},
+//             onUbahJumlah = {}
+//         )
+//     }
+// }

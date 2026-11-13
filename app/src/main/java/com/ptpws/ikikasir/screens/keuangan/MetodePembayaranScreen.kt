@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.activity.compose.BackHandler
@@ -58,7 +59,9 @@ fun MetodePembayaranScreen(
                         fontWeight = FontWeight.Bold,
                         fontFamily = interfamily,
                         color = Color.Black,
-                        fontSize = 20.sp
+                        fontSize = 20.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
                 navigationIcon = {
@@ -261,6 +264,8 @@ fun MetodePembayaranScreen(
                         Box(
                             modifier = Modifier
                                 .width(4.dp)
+                                // TODO responsif: tinggi garis aksen tetap 100.dp agar tampilan tidak berubah;
+                                // bila teks pemberitahuan menjadi 2 baris lebih pada layar 320dp, sesuaikan manual.
                                 .height(100.dp)
                                 .background(
                                     color = Color(0xFF4F46E5),
@@ -353,7 +358,9 @@ fun MetodeToggleCard(
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = interfamily,
                     fontSize = 16.sp,
-                    color = Color(0xFF111827)
+                    color = Color(0xFF111827),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = subLabel,
@@ -361,7 +368,9 @@ fun MetodeToggleCard(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color(0xFF9CA3AF),
-                    letterSpacing = 0.3.sp
+                    letterSpacing = 0.3.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -390,3 +399,16 @@ fun MetodePembayaranScreenPreview() {
         MetodePembayaranScreen()
     }
 }
+
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun MetodePembayaranScreenResponsivePreview() {
+//     MetodePembayaranScreen()
+// }

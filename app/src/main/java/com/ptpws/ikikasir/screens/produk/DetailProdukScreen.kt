@@ -39,6 +39,8 @@ import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
+import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.DetailProdukUiProvider
+import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.HiltDetailProdukUiProvider
 import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.DetailProdukViewModel
 import java.text.NumberFormat
 import java.util.Locale
@@ -49,7 +51,7 @@ fun DetailProdukScreen(
     onBack: () -> Unit = {},
     produkId: String? = null,
     onEditProduk: ((Produk) -> Unit)? = null,
-    viewModel: DetailProdukViewModel = hiltViewModel()
+    viewModel: DetailProdukUiProvider = HiltDetailProdukUiProvider(hiltViewModel<DetailProdukViewModel>())
 ) {
     var isBackProcessing by remember { mutableStateOf(false) }
     val handleBack = {
@@ -65,6 +67,9 @@ fun DetailProdukScreen(
 
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
+    // TODO responsif: ambang 420.dp sengaja tidak diubah ke 340.dp karena akan mengubah
+    // varian font/padding di HP 360dp & 411dp (harus tetap sama). Semua lebar 320-411dp
+    // memakai varian "small" yang sama, hanya ruang lebarnya yang menyesuaikan.
     val isSmallScreen = screenWidth <= 420.dp
     val screenHorizontalPadding = if (isSmallScreen) 12.dp else 16.dp
 
@@ -257,6 +262,8 @@ fun DetailProdukScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                // TODO responsif: tinggi banner tetap fixed (bukan aspectRatio)
+                                // agar tampilan di HP 360dp tidak berubah.
                                 .height(if (isSmallScreen) 175.dp else 210.dp),
                             shape = RoundedCornerShape(20.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9))
@@ -380,8 +387,9 @@ fun DetailProdukScreen(
                                                 fontFamily = interfamily,
                                                 fontWeight = if (hasBarcode) FontWeight.Medium else FontWeight.SemiBold,
                                                 color = if (hasBarcode) Color(0xFF475569) else Color(0xFFB45309),
+                                                // Responsif: kode panjang dipotong (ellipsis) agar pil tidak menabrak pil kategori di HP 320dp
                                                 maxLines = 1,
-                                                softWrap = false
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                             )
                                         }
                                     }
@@ -396,8 +404,9 @@ fun DetailProdukScreen(
                                             fontFamily = interfamily,
                                             fontWeight = FontWeight.SemiBold,
                                             color = Color(0xFF4F46E5),
+                                            // Responsif: nama kategori panjang dipotong (ellipsis) agar pil tidak meluber di HP 320dp
                                             maxLines = 1,
-                                            softWrap = false,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                         )
                                     }
@@ -582,7 +591,11 @@ fun DetailProdukScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        // Responsif: judul boleh menyusut (ellipsis) agar tidak menabrak "Sesuaikan" di HP 320dp
+                                        modifier = Modifier.weight(1f)
+                                    ) {
                                         Icon(
                                             painter = painterResource(id = R.drawable.ic_cube_3d),
                                             contentDescription = null,
@@ -595,7 +608,9 @@ fun DetailProdukScreen(
                                             fontSize = if (isSmallScreen) 14.sp else 15.sp,
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = interfamily,
-                                            color = Color(0xFF0F172A)
+                                            color = Color(0xFF0F172A),
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                         )
                                     }
 
@@ -816,7 +831,11 @@ fun DetailProdukScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        // Responsif: judul boleh menyusut (ellipsis) agar tidak menabrak badge diskon di HP 320dp
+                                        modifier = Modifier.weight(1f)
+                                    ) {
                                         Icon(
                                             imageVector = Icons.Default.LocalOffer,
                                             contentDescription = null,
@@ -829,7 +848,9 @@ fun DetailProdukScreen(
                                             fontSize = if (isSmallScreen) 14.sp else 15.sp,
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = interfamily,
-                                            color = Color(0xFF0F172A)
+                                            color = Color(0xFF0F172A),
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                         )
                                     }
 
@@ -1094,7 +1115,11 @@ fun DetailProdukScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        // Responsif: judul boleh menyusut (ellipsis) agar tidak menabrak "Bulan Ini" di HP 320dp
+                                        modifier = Modifier.weight(1f)
+                                    ) {
                                         Icon(
                                             imageVector = Icons.Outlined.BarChart,
                                             contentDescription = null,
@@ -1107,7 +1132,9 @@ fun DetailProdukScreen(
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = interfamily,
-                                            color = Color(0xFF0F172A)
+                                            color = Color(0xFF0F172A),
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                         )
                                     }
 
@@ -1282,3 +1309,20 @@ private fun navigateToEditProduk(context: Context, produk: Produk) {
     }
     context.startActivity(intent)
 }
+
+// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
+// import androidx.compose.ui.tooling.preview.Preview
+//
+// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
+// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
+// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
+// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
+// @Composable
+// private fun DetailProdukScreenPreview() {
+//     // Preview butuh ViewModel/Firebase, perlu composable stateless
+//     DetailProdukScreen(
+//         onBack = {},
+//         produkId = /* dummy id produk */,
+//         onEditProduk = null
+//     )
+// }
