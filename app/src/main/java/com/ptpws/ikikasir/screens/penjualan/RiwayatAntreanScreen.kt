@@ -1,7 +1,9 @@
 package com.ptpws.ikikasir.screens.penjualan
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -62,6 +64,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 import androidx.activity.compose.BackHandler
@@ -71,6 +76,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.navigation.compose.rememberNavController
+import com.ptpws.ikikasir.commond.previewTransaksiList
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1276,13 +1284,63 @@ private fun DetailRow(label: String, value: String) {
 //     }
 // }
 
-@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
-@androidx.compose.runtime.Composable
+private class OfflinePreviewQueueHistoryProvider : QueueHistoryUiProvider {
+    private val sampleHistory = listOf(
+        QueueHistory(
+            transactionId = "#INV-2026-0891",
+            status = "DONE",
+            customerName = "Budi Santoso",
+            tableNumber = "3",
+            queueSequence = 1,
+            isSynced = false
+        ),
+        QueueHistory(
+            transactionId = "#INV-2026-0892",
+            status = "DONE",
+            customerName = "Siti Aminah",
+            tableNumber = "1",
+            queueSequence = 2,
+            isSynced = true
+        )
+    )
+
+    override val uiState = MutableStateFlow<QueueHistoryUiState>(
+        QueueHistoryUiState.Success(data = sampleHistory)
+    ).asStateFlow()
+
+    override val searchQuery = MutableStateFlow("").asStateFlow()
+    override val selectedFilter = MutableStateFlow("SEMUA").asStateFlow()
+    override val startDateMillis = MutableStateFlow<Long?>(null).asStateFlow()
+    override val endDateMillis = MutableStateFlow<Long?>(null).asStateFlow()
+    override val customDateLabel = MutableStateFlow<String?>(null).asStateFlow()
+    override val transaksiMap = MutableStateFlow(
+        previewTransaksiList.associateBy { it.transactionId }
+    ).asStateFlow()
+    override val isExporting = MutableStateFlow(false).asStateFlow()
+    override val exportedFileUri = MutableStateFlow<Uri?>(null).asStateFlow()
+    override val exportError = MutableStateFlow<String?>(null).asStateFlow()
+
+    override fun onSearchQueryChanged(query: String) {}
+    override fun setFilter(filter: String) {}
+    override fun setCustomDateRange(startMillis: Long, endMillis: Long) {}
+    override fun exportToExcel(context: Context, filteredItems: List<QueueHistory>) {}
+    override fun clearExportState() {}
+    override fun resetToDefault() {}
+    override fun groupHistoryByDate(items: List<QueueHistory>): Map<String, List<QueueHistory>> {
+        val todayCal = Calendar.getInstance()
+        val sdfFull = SimpleDateFormat("dd MMMM yyyy", Locale("id", "ID"))
+        return items.groupBy { "Hari Ini, ${sdfFull.format(todayCal.time)}" }
+    }
+}
+
+@Preview(showBackground = true)
+@PhoneDevicePreviews
+@Composable
 private fun RiwayatAntreanScreenPreview() {
-    androidx.compose.material3.MaterialTheme {
+    MaterialTheme {
         RiwayatAntreanScreen(
-            navController = androidx.navigation.compose.rememberNavController(),
-            viewModel = com.ptpws.ikikasir.commond.PreviewQueueHistoryProvider()
+            navController = rememberNavController(),
+            viewModel = OfflinePreviewQueueHistoryProvider()
         )
     }
 }

@@ -185,7 +185,7 @@ private val previewProdukList = listOf(
     )
 )
 
-private val previewTransaksiList = listOf(
+val previewTransaksiList = listOf(
     PenjualanTransaksi(
         transactionId = "#INV-2026-0891",
         transactionNumber = "#INV-2026-0891",

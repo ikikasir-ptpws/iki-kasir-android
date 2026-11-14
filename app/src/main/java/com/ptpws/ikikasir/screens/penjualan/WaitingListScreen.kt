@@ -43,10 +43,14 @@ import com.ptpws.ikikasir.feature.antrean.presentation.viewmodel.HiltAntreanUiPr
 import com.ptpws.ikikasir.feature.antrean.presentation.viewmodel.AntreanViewModel
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.tooling.preview.Preview
+import com.ptpws.ikikasir.commond.previewTransaksiList
 import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+import com.ptpws.ikikasir.feature.antrean.domain.model.AntreanStatus
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -493,6 +497,11 @@ private fun AntreanCard(
 
                 // Invoice ID & Customer Name
                 Column(modifier = Modifier.weight(1f)) {
+                    if (!antrean.isSynced || transaksi?.isSynced == false) {
+                        PendingSyncBadge()
+                        Spacer(modifier = Modifier.height(2.dp))
+                    }
+
                     Text(
                         text = antrean.transactionId,
                         fontWeight = FontWeight.Bold,
@@ -511,25 +520,15 @@ private fun AntreanCard(
                         }
                     }
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.padding(top = 2.dp)
-                    ) {
-                        if (!antrean.isSynced || transaksi?.isSynced == false) {
-                            PendingSyncBadge()
-                        }
-                        if (subtitleText.isNotBlank()) {
-                            Text(
-                                text = subtitleText,
-                                fontFamily = interfamily,
-                                fontSize = 12.sp,
-                                color = Color(0xFF6B7280),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false)
-                            )
-                        }
+                    if (subtitleText.isNotBlank()) {
+                        Text(
+                            text = subtitleText,
+                            fontFamily = interfamily,
+                            fontSize = 12.sp,
+                            color = Color(0xFF6B7280),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
 
@@ -842,6 +841,45 @@ private fun AntreanCard(
 //     }
 // }
 
+private class OfflinePreviewAntreanProvider : AntreanUiProvider {
+    private val sampleAntrean = listOf(
+        Antrean(
+            id = "ant-1",
+            transactionId = "#INV-2026-0891",
+            queueSequence = 1,
+            status = AntreanStatus.WAITING,
+            customerName = "Budi Santoso",
+            tableNumber = "3",
+            isSynced = false
+        ),
+        Antrean(
+            id = "ant-2",
+            transactionId = "#INV-2026-0892",
+            queueSequence = 2,
+            status = AntreanStatus.WAITING,
+            customerName = "Siti Aminah",
+            tableNumber = "1",
+            isSynced = true
+        )
+    )
+
+    override val uiState = MutableStateFlow<AntreanUiState>(
+        AntreanUiState.Success(data = sampleAntrean)
+    ).asStateFlow()
+
+    override val searchQuery = MutableStateFlow("").asStateFlow()
+    override val transaksiMap = MutableStateFlow(
+        previewTransaksiList.associateBy { it.transactionId }
+    ).asStateFlow()
+    override val isBulkProcessing = MutableStateFlow(false).asStateFlow()
+
+    override fun onSearchQueryChanged(query: String) {}
+    override fun selesaikan(id: String) {}
+    override fun batalkan(id: String) {}
+    override fun selesaikanBanyak(ids: List<String>) {}
+    override fun batalkanBanyak(ids: List<String>) {}
+}
+
 @Preview(showBackground = true)
 @PhoneDevicePreviews
 @Composable
@@ -849,7 +887,7 @@ private fun WaitingListScreenPreview() {
     MaterialTheme {
         WaitingListScreen(
             navController = androidx.navigation.compose.rememberNavController(),
-            viewModel = com.ptpws.ikikasir.commond.PreviewAntreanProvider()
+            viewModel = OfflinePreviewAntreanProvider()
         )
     }
 }
