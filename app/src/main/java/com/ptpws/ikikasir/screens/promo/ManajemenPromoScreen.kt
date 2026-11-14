@@ -37,19 +37,26 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.rememberNavController
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.PromoCardShimmer
 import com.ptpws.ikikasir.commond.ShimmerBox
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import com.ptpws.ikikasir.feature.promo.domain.model.Promo
+import com.ptpws.ikikasir.feature.promo.domain.model.PromoProductItem
 import com.ptpws.ikikasir.feature.promo.domain.model.isAvailableOn
 import com.ptpws.ikikasir.feature.promo.domain.model.isEndingWithinDays
 import com.ptpws.ikikasir.feature.promo.domain.model.isExpiredOn
 import com.ptpws.ikikasir.feature.promo.domain.model.isUpcomingOn
 import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.PromoUiProvider
 import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.HiltPromoUiProvider
+import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.PromoListState
 import com.ptpws.ikikasir.feature.promo.presentation.viewmodel.PromoViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -825,8 +832,61 @@ fun DetailPromoDialog(
     )
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+private class OfflinePreviewPromoProvider : PromoUiProvider {
+    private val samplePromos = listOf(
+        Promo(
+            id = "promo-1",
+            name = "DISKONKASIR10",
+            promoType = "Diskon Persentase",
+            discountType = "%",
+            discountValue = 10.0,
+            startDate = "01 Jan 2026",
+            endDate = "31 Des 2026",
+            isActive = true,
+            isSynced = false,
+            items = listOf(
+                PromoProductItem(productId = "produk-1", productName = "Kopi Susu 250ml", price = 15000.0),
+                PromoProductItem(productId = "produk-2", productName = "Teh Manis 350ml", price = 6000.0)
+            )
+        ),
+        Promo(
+            id = "promo-2",
+            name = "HEMAT20RB",
+            promoType = "Diskon Nominal",
+            discountType = "Rp",
+            discountValue = 20000.0,
+            startDate = "01 Jan 2026",
+            endDate = "31 Des 2026",
+            isActive = true,
+            isSynced = true,
+            items = listOf(
+                PromoProductItem(productId = "produk-3", productName = "Nasi Goreng Spesial", price = 25000.0)
+            )
+        )
+    )
+
+    private val _state = MutableStateFlow(
+        com.ptpws.ikikasir.feature.promo.presentation.viewmodel.PromoListState(
+            promoList = samplePromos,
+            filteredList = samplePromos
+        )
+    )
+    override val state: StateFlow<PromoListState> = _state.asStateFlow()
+
+    override fun refreshPromoList() {}
+    override fun onSearchQueryChange(query: String) {}
+    override fun onFilterTabSelected(tab: String) {}
+    override fun toggleStatus(promoId: String, currentStatus: Boolean) {}
+    override fun deletePromo(promoId: String) {}
+}
+
+@Preview(showBackground = true)
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 @Composable
 private fun ManajemenPromoScreenPreview() {
-    ManajemenPromoScreen()
+    MaterialTheme {
+        ManajemenPromoScreen(
+            viewModel = OfflinePreviewPromoProvider()
+        )
+    }
 }

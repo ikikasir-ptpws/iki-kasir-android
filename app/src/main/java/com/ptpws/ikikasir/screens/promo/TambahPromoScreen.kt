@@ -61,6 +61,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import java.util.Date
 import java.util.Locale
 
@@ -1217,9 +1218,10 @@ fun PilihProdukPromoDialog(
 }
 
 // ── Preview
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
+@PhoneDevicePreviews
 @Composable
-fun TambahPromoScreenPreview() {
+private fun TambahPromoScreenPreview() {
     MaterialTheme {
         TambahPromoScreen(
             viewModel = com.ptpws.ikikasir.commond.PreviewTambahPromoProvider()
