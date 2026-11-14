@@ -13,7 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.HourglassEmpty
@@ -42,6 +42,8 @@ import com.ptpws.ikikasir.feature.antrean.presentation.viewmodel.AntreanUiProvid
 import com.ptpws.ikikasir.feature.antrean.presentation.viewmodel.HiltAntreanUiProvider
 import com.ptpws.ikikasir.feature.antrean.presentation.viewmodel.AntreanViewModel
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.tooling.preview.Preview
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import com.ptpws.ikikasir.feature.penjualan.domain.model.PenjualanTransaksi
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
@@ -130,7 +132,7 @@ fun WaitingListScreen(
                         navController.popBackStackSafely(expectedRoute = AppScreen.WaitingList.route)
                     }) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
                             tint = Color(0xFF111827)
                         )
@@ -487,28 +489,20 @@ private fun AntreanCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // Invoice ID & Customer Name
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = antrean.transactionId,
-                            modifier = Modifier.weight(1f, fill = false),
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = interfamily,
-                            fontSize = 15.sp,
-                            color = Color(0xFF111827),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (!antrean.isSynced || transaksi?.isSynced == false) {
-                            PendingSyncBadge()
-                        }
-                    }
+                    Text(
+                        text = antrean.transactionId,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = interfamily,
+                        fontSize = 14.sp,
+                        color = Color(0xFF111827),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
                     val subtitleText = buildString {
                         if (antrean.customerName.isNotBlank()) append(antrean.customerName)
                         if (antrean.tableNumber.isNotBlank()) {
@@ -517,28 +511,39 @@ private fun AntreanCard(
                         }
                     }
 
-                    if (subtitleText.isNotBlank()) {
-                        Text(
-                            text = subtitleText,
-                            fontFamily = interfamily,
-                            fontSize = 12.sp,
-                            color = Color(0xFF6B7280),
-                            // Responsif: batas 2 baris agar nama pelanggan panjang tidak mendorong kartu
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(top = 2.dp)
+                    ) {
+                        if (!antrean.isSynced || transaksi?.isSynced == false) {
+                            PendingSyncBadge()
+                        }
+                        if (subtitleText.isNotBlank()) {
+                            Text(
+                                text = subtitleText,
+                                fontFamily = interfamily,
+                                fontSize = 12.sp,
+                                color = Color(0xFF6B7280),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+                        }
                     }
                 }
 
+                Spacer(modifier = Modifier.width(6.dp))
+
                 // Action Buttons: Selesai (✓) & Batal (✗) neatly styled side-by-side
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Tombol Centang (✓) - Selesai
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(32.dp)
                             .clip(CircleShape)
                             .background(Color(0xFFDCFCE7))
                             .border(1.dp, Color(0xFF86EFAC), CircleShape)
@@ -549,14 +554,14 @@ private fun AntreanCard(
                             imageVector = Icons.Default.Check,
                             contentDescription = "Selesai",
                             tint = Color(0xFF166534),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
 
                     // Tombol Silang (✗) - Batal
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(32.dp)
                             .clip(CircleShape)
                             .background(Color(0xFFFEE2E2))
                             .border(1.dp, Color(0xFFFCA5A5), CircleShape)
@@ -567,7 +572,7 @@ private fun AntreanCard(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Batal",
                             tint = Color(0xFF991B1B),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
@@ -836,3 +841,15 @@ private fun AntreanCard(
 //         )
 //     }
 // }
+
+@Preview(showBackground = true)
+@PhoneDevicePreviews
+@Composable
+private fun WaitingListScreenPreview() {
+    MaterialTheme {
+        WaitingListScreen(
+            navController = androidx.navigation.compose.rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewAntreanProvider()
+        )
+    }
+}

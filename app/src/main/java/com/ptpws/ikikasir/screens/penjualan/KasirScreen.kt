@@ -538,6 +538,9 @@ fun CartItemCard(
 @Composable
 fun KasirScreenPreview() {
     MaterialTheme {
-        KasirScreen(navController = rememberNavController())
+        KasirScreen(
+            navController = rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewKasirProvider()
+        )
     }
 }

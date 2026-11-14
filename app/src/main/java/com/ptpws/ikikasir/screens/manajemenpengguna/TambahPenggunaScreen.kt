@@ -102,6 +102,7 @@ import coil.compose.AsyncImage
 import com.ptpws.ikikasir.commond.interfamily
 import androidx.activity.compose.BackHandler
 import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.HiltUserFormUiProvider
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserFormUiProvider
@@ -798,11 +799,15 @@ fun TambahPenggunaScreen(
 
 // ── Preview
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
+@PhoneDevicePreviews
 @Composable
-fun TambahPenggunaScreenPreview() {
+private fun TambahPenggunaScreenPreview() {
     MaterialTheme {
-        TambahPenggunaScreen()
+        TambahPenggunaScreen(
+            viewModel = com.ptpws.ikikasir.commond.PreviewUserFormProvider(),
+            roleViewModel = com.ptpws.ikikasir.commond.PreviewRoleListProvider()
+        )
     }
 }
 

@@ -2036,6 +2036,10 @@ fun MenuAkunItem(
 @Composable
 fun ProfilScreenPreview() {
     MaterialTheme {
-        ProfilScreen(navController = rememberNavController())
+        ProfilScreen(
+            navController = rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewProfilProvider(),
+            securityViewModel = com.ptpws.ikikasir.commond.PreviewSecurityProvider()
+        )
     }
 }

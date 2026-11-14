@@ -856,3 +856,14 @@ private fun SectionLabel(text: String) {
 //     // Preview butuh ViewModel/Firebase + NavController, perlu composable stateless
 //     BluetoothPrinterScreen(navController = androidx.navigation.compose.rememberNavController())
 // }
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun BluetoothPrinterScreenLocalPreview() {
+    androidx.compose.material3.MaterialTheme {
+        BluetoothPrinterScreen(
+            navController = androidx.navigation.compose.rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewBluetoothPrinterProvider()
+        )
+    }
+}

@@ -1436,5 +1436,17 @@ private fun DashboardScreenPreviewResponsif() {
                 )
             }
         }
+
+    }
+}
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@Composable
+private fun DashboardFullScreenPreview() {
+    MaterialTheme {
+        DashboardScreen(
+            navController = androidx.navigation.compose.rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewDashboardProvider()
+        )
     }
 }

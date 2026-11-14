@@ -54,6 +54,8 @@ import com.ptpws.ikikasir.commond.GlobalCrudResultDialogHost
 import com.ptpws.ikikasir.commond.GlobalUploadProgressHost
 import com.example.app.ui.screen.DashboardScreen
 import com.example.app.ui.screen.DashboardViewModel
+import com.example.app.ui.screen.HiltDashboardSessionProvider
+import com.example.app.ui.screen.HiltDashboardUiProvider
 import com.example.app.ui.screen.MenuFullScreen
 import com.ptpws.ikikasir.core.responsive.presentation.components.IkiKasirNavigationRail
 import com.ptpws.ikikasir.feature.sidebar.presentation.components.TabletSidebarDrawer
@@ -98,6 +100,8 @@ import com.ptpws.ikikasir.feature.role.presentation.screen.TambahRoleScreen
 fun AppNavHost() {
     val navController = rememberNavController()
     val dashboardViewModel: DashboardViewModel = hiltViewModel()
+    val dashboardUiProvider = HiltDashboardUiProvider(dashboardViewModel)
+    val dashboardSessionProvider = HiltDashboardSessionProvider(dashboardViewModel)
     val bluetoothPrinterViewModel: BluetoothPrinterViewModel = hiltViewModel()
     val context = LocalContext.current
     val sessionState by dashboardViewModel.sessionState.collectAsState()
@@ -203,11 +207,11 @@ fun AppNavHost() {
             modifier = Modifier.fillMaxSize()
         ) {
                 composable(AppScreen.Dashboard.route) {
-                    DashboardScreen(navController, dashboardViewModel)
+                    DashboardScreen(navController, dashboardUiProvider)
                 }
 
             composable(AppScreen.Semuamenu.route) {
-                MenuFullScreen(navController, dashboardViewModel)
+                MenuFullScreen(navController, dashboardSessionProvider)
             }
             composable(AppScreen.Kasir.route) {
                 KasirScreen(

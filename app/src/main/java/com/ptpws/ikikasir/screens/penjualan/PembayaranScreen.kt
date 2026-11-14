@@ -83,6 +83,7 @@ import com.ptpws.ikikasir.screens.penjualan.component.PembayaranFailedDialog
 import com.ptpws.ikikasir.screens.penjualan.component.PembayaranSuccessDialog
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.text.PlatformTextStyle
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import java.text.NumberFormat
@@ -1676,10 +1677,14 @@ private fun BuktiPembayaranCard(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
+@PhoneDevicePreviews
 @Composable
-fun PembayaranScreenPreview() {
+private fun PembayaranScreenPreview() {
     MaterialTheme {
-        PembayaranScreen(navController = rememberNavController())
+        PembayaranScreen(
+            navController = rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewPembayaranProvider()
+        )
     }
 }

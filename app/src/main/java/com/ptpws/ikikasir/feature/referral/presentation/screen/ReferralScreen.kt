@@ -129,109 +129,119 @@ fun ReferralScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 48.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(paddingValues)
         ) {
-            // ── 1. KODE REFERAL SAYA
-            item {
-                KodeReferralCard(
-                    referralCode = referralInfo.referralCode,
-                    onCopy = { viewModel.copyReferralCode(context) },
-                    onShare = { viewModel.shareReferral(context) }
-                )
-            }
-
-            // ── 2. AKU TERIKAT KE SIAPA ? (MUhib)
-            item {
-                AkuTerikatKeSiapaCard(
-                    referralInfo = referralInfo,
-                    onClickDetail = { showUplineDialog = true }
-                )
-            }
-
-            // ── 3. JUMLAH PENGHASILAN & TARIK SALDO
-            item {
-                JumlahPenghasilanCard(
-                    referralInfo = referralInfo,
-                    onTarikSaldo = { showWithdrawDialog = true }
-                )
-            }
-
-            // ── 4. TAB NAVIGATION
-            item {
-                ReferralTabRow(
-                    selectedTab = selectedTab,
-                    onTabSelected = { selectedTab = it },
-                    userReferralCount = allUserReferrals.size,
-                    withdrawalCount = withdrawals.size
-                )
-            }
-
-            // ── 5. TAB CONTENT
-            when (selectedTab) {
-                0 -> {
-                    // TAB: User Referal & List data User Referal
-                    item {
-                        UserReferralHeader(
-                            searchQuery = searchQuery,
-                            onSearchChange = { viewModel.setSearchQuery(it) },
-                            selectedFilter = selectedFilter,
-                            onFilterSelect = { viewModel.setSelectedFilter(it) },
-                            totalActive = allUserReferrals.count { it.isActive },
-                            onAjukanClient = { showAjukanClientDialog = true }
-                        )
-                    }
-
-                    if (userReferrals.isEmpty()) {
-                        item {
-                            EmptyUserReferralCard()
-                        }
-                    } else {
-                        items(userReferrals, key = { it.id }) { item ->
-                            UserReferralListItem(item = item)
-                        }
-                    }
+            val isCompactPhone = maxWidth <= 340.dp
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = if (isCompactPhone) 12.dp else 16.dp,
+                    end = if (isCompactPhone) 12.dp else 16.dp,
+                    top = if (isCompactPhone) 6.dp else 8.dp,
+                    bottom = if (isCompactPhone) 32.dp else 48.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(if (isCompactPhone) 12.dp else 16.dp)
+            ) {
+                // ── 1. KODE REFERAL SAYA
+                item {
+                    KodeReferralCard(
+                        referralCode = referralInfo.referralCode,
+                        onCopy = { viewModel.copyReferralCode(context) },
+                        onShare = { viewModel.shareReferral(context) }
+                    )
                 }
-                1 -> {
-                    // TAB: Riwayat Penarikan Saldo (Menunggu Verifikasi finance -> Selesai)
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "RIWAYAT PENARIKAN SALDO",
-                                fontFamily = interfamily,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF6B7280)
+
+                // ── 2. AKU TERIKAT KE SIAPA ? (MUhib)
+                item {
+                    AkuTerikatKeSiapaCard(
+                        referralInfo = referralInfo,
+                        onClickDetail = { showUplineDialog = true }
+                    )
+                }
+
+                // ── 3. JUMLAH PENGHASILAN & TARIK SALDO
+                item {
+                    JumlahPenghasilanCard(
+                        referralInfo = referralInfo,
+                        onTarikSaldo = { showWithdrawDialog = true }
+                    )
+                }
+
+                // ── 4. TAB NAVIGATION
+                item {
+                    ReferralTabRow(
+                        selectedTab = selectedTab,
+                        onTabSelected = { selectedTab = it },
+                        userReferralCount = allUserReferrals.size,
+                        withdrawalCount = withdrawals.size
+                    )
+                }
+
+                // ── 5. TAB CONTENT
+                when (selectedTab) {
+                    0 -> {
+                        // TAB: User Referal & List data User Referal
+                        item {
+                            UserReferralHeader(
+                                searchQuery = searchQuery,
+                                onSearchChange = { viewModel.setSearchQuery(it) },
+                                selectedFilter = selectedFilter,
+                                onFilterSelect = { viewModel.setSelectedFilter(it) },
+                                totalActive = allUserReferrals.count { it.isActive },
+                                onAjukanClient = { showAjukanClientDialog = true }
                             )
-                            Text(
-                                text = "Klik item untuk lacak alur",
-                                fontFamily = interfamily,
-                                fontSize = 11.sp,
-                                color = Color(0xFF4F46E5)
-                            )
+                        }
+
+                        if (userReferrals.isEmpty()) {
+                            item {
+                                EmptyUserReferralCard()
+                            }
+                        } else {
+                            items(userReferrals, key = { it.id }) { item ->
+                                UserReferralListItem(item = item)
+                            }
                         }
                     }
-
-                    if (withdrawals.isEmpty()) {
+                    1 -> {
+                        // TAB: Riwayat Penarikan Saldo (Menunggu Verifikasi finance -> Selesai)
                         item {
-                            EmptyWithdrawalCard(onTarikSekarang = { showWithdrawDialog = true })
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "RIWAYAT PENARIKAN SALDO",
+                                    fontFamily = interfamily,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF6B7280)
+                                )
+                                Text(
+                                    text = "Klik item untuk lacak alur",
+                                    fontFamily = interfamily,
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF4F46E5)
+                                )
+                            }
                         }
-                    } else {
-                        items(withdrawals, key = { it.id }) { tx ->
-                            WithdrawalListItem(
-                                transaction = tx,
-                                onClick = { selectedWithdrawalDetail = tx }
-                            )
+
+                        if (withdrawals.isEmpty()) {
+                            item {
+                                EmptyWithdrawalCard(onTarikSekarang = { showWithdrawDialog = true })
+                            }
+                        } else {
+                            items(withdrawals, key = { it.id }) { tx ->
+                                WithdrawalListItem(
+                                    transaction = tx,
+                                    onClick = { selectedWithdrawalDetail = tx }
+                                )
+                            }
                         }
                     }
                 }
@@ -345,7 +355,7 @@ fun KodeReferralCard(
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
@@ -354,57 +364,37 @@ fun KodeReferralCard(
                     ),
                     shape = RoundedCornerShape(20.dp)
                 )
-                .padding(20.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            val isCompactPhone = maxWidth <= 340.dp
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(if (isCompactPhone) 14.dp else 20.dp),
+                verticalArrangement = Arrangement.spacedBy(if (isCompactPhone) 10.dp else 14.dp)
+            ) {
+                if (isCompactPhone) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        // Responsif: blok kiri diberi bobot agar badge reward tidak terdorong keluar layar 320dp
-                        modifier = Modifier.weight(1f)
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color.White.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.CardGiftcard,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Text(
-                            text = "Kode Referal Anda",
-                            fontFamily = interfamily,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                        ReferralCardHeading(
+                            modifier = Modifier.weight(1f),
+                            compact = true
+                        )
+                        RewardBadge(
+                            modifier = Modifier,
+                            compact = true
                         )
                     }
-
-                    Surface(
-                        color = Color.White.copy(alpha = 0.25f),
-                        shape = RoundedCornerShape(20.dp)
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Reward Rp 15.000",
-                            fontFamily = interfamily,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                        )
+                        ReferralCardHeading(modifier = Modifier.weight(1f))
+                        RewardBadge()
                     }
                 }
 
@@ -413,7 +403,7 @@ fun KodeReferralCard(
                     fontFamily = interfamily,
                     fontSize = 12.sp,
                     color = Color.White.copy(alpha = 0.9f),
-                    lineHeight = 16.sp
+                    lineHeight = if (isCompactPhone) 15.sp else 16.sp
                 )
 
                 // Kotak Kode Referal
@@ -422,93 +412,181 @@ fun KodeReferralCard(
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "KODE REFERAL",
-                                fontFamily = interfamily,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF6B7280),
-                                letterSpacing = 1.sp
-                            )
-                            Text(
-                                text = referralCode,
-                                fontFamily = interfamily,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFF3730A3),
-                                letterSpacing = 1.5.sp,
-                                // Responsif: kode dipotong agar tombol Salin/Bagikan tetap terlihat di layar 320dp
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            // Tombol Salin
-                            OutlinedButton(
-                                onClick = onCopy,
-                                shape = RoundedCornerShape(10.dp),
-                                border = BorderStroke(1.dp, Color(0xFFE0E7FF)),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    containerColor = Color(0xFFEEF2FF)
-                                ),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                                modifier = Modifier.height(38.dp)
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        if (isCompactPhone || maxWidth < 420.dp) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.ContentCopy,
-                                    contentDescription = "Salin",
-                                    tint = Color(0xFF4F46E5),
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Salin",
-                                    fontFamily = interfamily,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF4F46E5)
+                                ReferralCodeLabel(referralCode = referralCode)
+                                ReferralCodeActions(
+                                    onCopy = onCopy,
+                                    onShare = onShare,
+                                    modifier = Modifier.align(Alignment.End)
                                 )
                             }
-
-                            // Tombol Bagikan
-                            Button(
-                                onClick = onShare,
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF4F46E5)
-                                ),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                                modifier = Modifier.height(38.dp)
+                        } else {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Share,
-                                    contentDescription = "Bagikan",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(14.dp)
+                                ReferralCodeLabel(
+                                    referralCode = referralCode,
+                                    modifier = Modifier.weight(1f)
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Bagikan",
-                                    fontFamily = interfamily,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color.White
-                                )
+                                Spacer(Modifier.width(8.dp))
+                                ReferralCodeActions(onCopy = onCopy, onShare = onShare)
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ReferralCardHeading(
+    modifier: Modifier = Modifier,
+    compact: Boolean = false
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
+    ) {
+        Box(
+            modifier = Modifier
+                .size(if (compact) 32.dp else 34.dp)
+                .clip(RoundedCornerShape(if (compact) 9.dp else 10.dp))
+                .background(Color.White.copy(alpha = 0.2f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.CardGiftcard,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(if (compact) 18.dp else 20.dp)
+            )
+        }
+        Text(
+            text = "Kode Referal Anda",
+            fontFamily = interfamily,
+            fontSize = if (compact) 14.sp else 15.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            maxLines = if (compact) 1 else 2,
+            modifier = if (compact) Modifier.weight(1f) else Modifier,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun RewardBadge(modifier: Modifier = Modifier, compact: Boolean = false) {
+    Surface(
+        color = Color.White.copy(alpha = 0.25f),
+        shape = RoundedCornerShape(20.dp),
+        modifier = modifier
+    ) {
+        Text(
+            text = "Reward Rp 15.000",
+            fontFamily = interfamily,
+            fontSize = if (compact) 10.sp else 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White,
+            modifier = Modifier.padding(
+                horizontal = if (compact) 8.dp else 10.dp,
+                vertical = 4.dp
+            )
+        )
+    }
+}
+
+@Composable
+private fun ReferralCodeLabel(referralCode: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(
+            text = "KODE REFERAL",
+            fontFamily = interfamily,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF6B7280),
+            letterSpacing = 1.sp
+        )
+        Text(
+            text = referralCode,
+            fontFamily = interfamily,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = Color(0xFF3730A3),
+            letterSpacing = 1.5.sp,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun ReferralCodeActions(
+    onCopy: () -> Unit,
+    onShare: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        OutlinedButton(
+            onClick = onCopy,
+            shape = RoundedCornerShape(10.dp),
+            border = BorderStroke(1.dp, Color(0xFFE0E7FF)),
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFFEEF2FF)),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.height(38.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.ContentCopy,
+                contentDescription = "Salin",
+                tint = Color(0xFF4F46E5),
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "Salin",
+                fontFamily = interfamily,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF4F46E5)
+            )
+        }
+        Button(
+            onClick = onShare,
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+            modifier = Modifier.height(38.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Share,
+                contentDescription = "Bagikan",
+                tint = Color.White,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "Bagikan",
+                fontFamily = interfamily,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White
+            )
         }
     }
 }
@@ -938,44 +1016,27 @@ fun UserReferralHeader(
     onAjukanClient: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "LIST DATA USER REFERAL",
-                fontFamily = interfamily,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF6B7280),
-                // Responsif: judul dipotong agar tombol "Ajukan Calon Client" tetap terlihat di layar 320dp
-                modifier = Modifier.weight(1f, fill = false),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            FilledTonalButton(
-                onClick = onAjukanClient,
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = Color(0xFF4F46E5),
-                    contentColor = Color.White
-                ),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.PersonAdd,
-                    contentDescription = null,
-                    modifier = Modifier.size(15.dp),
-                    tint = Color.White
-                )
-                Spacer(modifier = Modifier.width(5.dp))
-                Text(
-                    text = "Ajukan Calon Client",
-                    fontFamily = interfamily,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            if (maxWidth < 340.dp) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    UserReferralSectionTitle()
+                    AjukanClientButton(
+                        onClick = onAjukanClient,
+                        modifier = Modifier.align(Alignment.End)
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    UserReferralSectionTitle(modifier = Modifier.weight(1f, fill = false))
+                    AjukanClientButton(onClick = onAjukanClient)
+                }
             }
         }
 
@@ -1025,52 +1086,129 @@ fun UserReferralHeader(
         )
 
         // Filter Chips & Counter
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("Semua", "Aktif", "Menunggu").forEach { filter ->
-                    val isSelected = selectedFilter == filter
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { onFilterSelect(filter) },
-                        label = {
-                            Text(
-                                text = filter,
-                                fontFamily = interfamily,
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFFEEF2FF),
-                            selectedLabelColor = Color(0xFF4F46E5),
-                            containerColor = Color.White,
-                            labelColor = Color(0xFF64748B)
-                        ),
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = if (isSelected) Color(0xFF4F46E5) else Color(0xFFE2E8F0)
-                        ),
-                        shape = RoundedCornerShape(8.dp)
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            if (maxWidth < 340.dp) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    UserReferralFilterChips(
+                        selectedFilter = selectedFilter,
+                        onFilterSelect = onFilterSelect
+                    )
+                    ActiveStoreCounter(
+                        totalActive = totalActive,
+                        modifier = Modifier.align(Alignment.End)
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    UserReferralFilterChips(
+                        selectedFilter = selectedFilter,
+                        onFilterSelect = onFilterSelect
+                    )
+                    ActiveStoreCounter(
+                        totalActive = totalActive,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
+        }
+    }
+}
 
-            Text(
-                text = "$totalActive Toko Aktif",
-                fontFamily = interfamily,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF059669),
-                // Responsif: counter diberi bobot agar tetap terlihat dan tidak menabrak chip filter di 320dp
-                modifier = Modifier.weight(1f),
-                textAlign = TextAlign.End
+@Composable
+private fun UserReferralSectionTitle(modifier: Modifier = Modifier) {
+    Text(
+        text = "LIST DATA USER REFERAL",
+        fontFamily = interfamily,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = Color(0xFF6B7280),
+        modifier = modifier,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+    )
+}
+
+@Composable
+private fun AjukanClientButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    FilledTonalButton(
+        onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = Color(0xFF4F46E5),
+            contentColor = Color.White
+        ),
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+        modifier = modifier
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.PersonAdd,
+            contentDescription = null,
+            modifier = Modifier.size(15.dp),
+            tint = Color.White
+        )
+        Spacer(modifier = Modifier.width(5.dp))
+        Text(
+            text = "Ajukan Calon Client",
+            fontFamily = interfamily,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
+private fun UserReferralFilterChips(
+    selectedFilter: String,
+    onFilterSelect: (String) -> Unit
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf("Semua", "Aktif", "Menunggu").forEach { filter ->
+            val isSelected = selectedFilter == filter
+            FilterChip(
+                selected = isSelected,
+                onClick = { onFilterSelect(filter) },
+                label = {
+                    Text(
+                        text = filter,
+                        fontFamily = interfamily,
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                    )
+                },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(0xFFEEF2FF),
+                    selectedLabelColor = Color(0xFF4F46E5),
+                    containerColor = Color.White,
+                    labelColor = Color(0xFF64748B)
+                ),
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = if (isSelected) Color(0xFF4F46E5) else Color(0xFFE2E8F0)
+                ),
+                shape = RoundedCornerShape(8.dp)
             )
         }
     }
+}
+
+@Composable
+private fun ActiveStoreCounter(totalActive: Int, modifier: Modifier = Modifier) {
+    Text(
+        text = "$totalActive Toko Aktif",
+        fontFamily = interfamily,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = Color(0xFF059669),
+        modifier = modifier,
+        textAlign = TextAlign.End
+    )
 }
 
 @Composable
@@ -2407,3 +2545,14 @@ fun AkuTerikatDialog(
 //     // Preview butuh ViewModel/Firebase + NavController, perlu composable stateless
 //     ReferralScreen(navController = androidx.navigation.compose.rememberNavController())
 // }
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun ReferralScreenLocalPreview() {
+    androidx.compose.material3.MaterialTheme {
+        ReferralScreen(
+            navController = androidx.navigation.compose.rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewReferralProvider()
+        )
+    }
+}

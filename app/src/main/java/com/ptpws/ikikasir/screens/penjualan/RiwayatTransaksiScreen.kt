@@ -59,6 +59,7 @@ import kotlinx.coroutines.launch
 import androidx.activity.compose.BackHandler
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import androidx.compose.material.icons.filled.ErrorOutline
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1008,11 +1009,15 @@ fun TransaksiCardItem(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
+@PhoneDevicePreviews
 @Composable
-fun RiwayatTransaksiScreenPreview() {
+private fun RiwayatTransaksiScreenPreview() {
     MaterialTheme {
-        RiwayatTransaksiScreen(navController = rememberNavController())
+        RiwayatTransaksiScreen(
+            navController = rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewRiwayatTransaksiProvider()
+        )
     }
 }
 // ---- PREVIEW (aktifkan satu per satu untuk tes) ----

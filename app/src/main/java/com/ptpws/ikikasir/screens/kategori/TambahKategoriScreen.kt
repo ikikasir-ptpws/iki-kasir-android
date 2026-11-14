@@ -617,3 +617,13 @@ fun TambahKategoriScreen(
 //         onSimpanKategori = {}
 //     )
 // }
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun TambahKategoriScreenPreview() {
+    androidx.compose.material3.MaterialTheme {
+        TambahKategoriScreen(
+            viewModel = com.ptpws.ikikasir.commond.PreviewTambahKategoriProvider()
+        )
+    }
+}

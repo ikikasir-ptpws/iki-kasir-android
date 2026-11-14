@@ -145,15 +145,19 @@ fun TambahCatatanKeuanganScreen(
             )
         }
     ) { paddingValues ->
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .imePadding()
         ) {
+            val compact = maxWidth <= 360.dp
             AdaptiveFormList(
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                contentPadding = PaddingValues(
+                    horizontal = if (compact) 12.dp else 16.dp,
+                    vertical = if (compact) 8.dp else 12.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(if (compact) 12.dp else 16.dp)
             ) {
 
             // ── Error Banner
@@ -187,8 +191,8 @@ fun TambahCatatanKeuanganScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(if (compact) 12.dp else 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 12.dp)
                     ) {
                         Text(
                             text = "Jenis Transaksi",
@@ -200,7 +204,7 @@ fun TambahCatatanKeuanganScreen(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp)
                         ) {
                             val isPemasukan = state.jenis.equals("PEMASUKAN", ignoreCase = true)
 
@@ -211,6 +215,7 @@ fun TambahCatatanKeuanganScreen(
                                 subtitle = "Uang Masuk",
                                 isPositive = true,
                                 isSelected = isPemasukan,
+                                compact = compact,
                                 onClick = { viewModel.onJenisChange("PEMASUKAN") }
                             )
 
@@ -221,6 +226,7 @@ fun TambahCatatanKeuanganScreen(
                                 subtitle = "Uang Keluar",
                                 isPositive = false,
                                 isSelected = !isPemasukan,
+                                compact = compact,
                                 onClick = { viewModel.onJenisChange("PENGELUARAN") }
                             )
                         }
@@ -240,8 +246,8 @@ fun TambahCatatanKeuanganScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                            .padding(if (compact) 12.dp else 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(if (compact) 12.dp else 14.dp)
                     ) {
                         // Judul
                         GlobalTextField(
@@ -279,7 +285,7 @@ fun TambahCatatanKeuanganScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(if (compact) 12.dp else 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
@@ -343,8 +349,8 @@ fun TambahCatatanKeuanganScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(if (compact) 12.dp else 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 12.dp)
                     ) {
                         Text(
                             text = "METODE PEMBAYARAN",
@@ -362,38 +368,42 @@ fun TambahCatatanKeuanganScreen(
                             MetodeOption("Transfer", "BCA / Mandiri", Icons.Outlined.AccountBalance, Color(0xFFE0F2FE), Color(0xFF0284C7))
                         )
 
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 10.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                horizontalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 10.dp)
                             ) {
                                 MetodeCardItem(
                                     modifier = Modifier.weight(1f),
                                     option = methods[0],
                                     isSelected = state.metodePembayaran.equals(methods[0].title, ignoreCase = true),
+                                    compact = compact,
                                     onSelect = { viewModel.onMetodePembayaranChange(methods[0].title) }
                                 )
                                 MetodeCardItem(
                                     modifier = Modifier.weight(1f),
                                     option = methods[1],
                                     isSelected = state.metodePembayaran.equals(methods[1].title, ignoreCase = true),
+                                    compact = compact,
                                     onSelect = { viewModel.onMetodePembayaranChange(methods[1].title) }
                                 )
                             }
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                horizontalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 10.dp)
                             ) {
                                 MetodeCardItem(
                                     modifier = Modifier.weight(1f),
                                     option = methods[2],
                                     isSelected = state.metodePembayaran.equals(methods[2].title, ignoreCase = true),
+                                    compact = compact,
                                     onSelect = { viewModel.onMetodePembayaranChange(methods[2].title) }
                                 )
                                 MetodeCardItem(
                                     modifier = Modifier.weight(1f),
                                     option = methods[3],
                                     isSelected = state.metodePembayaran.equals(methods[3].title, ignoreCase = true),
+                                    compact = compact,
                                     onSelect = { viewModel.onMetodePembayaranChange(methods[3].title) }
                                 )
                             }
@@ -414,7 +424,7 @@ fun TambahCatatanKeuanganScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(if (compact) 12.dp else 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
@@ -722,6 +732,7 @@ private fun JenisOptionCard(
     subtitle: String,
     isPositive: Boolean,
     isSelected: Boolean,
+    compact: Boolean,
     onClick: () -> Unit
 ) {
     val activeBorderColor = if (isPositive) Color(0xFF10B981) else Color(0xFFEF4444)
@@ -742,21 +753,21 @@ private fun JenisOptionCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(if (compact) 8.dp else 14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)
         ) {
             Surface(
                 shape = CircleShape,
                 color = iconBg,
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(if (compact) 30.dp else 38.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
                         contentDescription = title,
                         tint = iconTint,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(if (compact) 16.dp else 18.dp)
                     )
                 }
             }
@@ -766,7 +777,7 @@ private fun JenisOptionCard(
                     text = title,
                     fontFamily = interfamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
+                    fontSize = if (compact) 12.sp else 14.sp,
                     color = if (isSelected && isPositive) Color(0xFF047857) else if (isSelected) Color(0xFFB91C1C) else Color(0xFF0F172A),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -774,7 +785,7 @@ private fun JenisOptionCard(
                 Text(
                     text = subtitle,
                     fontFamily = interfamily,
-                    fontSize = 11.sp,
+                    fontSize = if (compact) 9.sp else 11.sp,
                     color = Color(0xFF64748B),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -797,6 +808,7 @@ private fun MetodeCardItem(
     modifier: Modifier = Modifier,
     option: MetodeOption,
     isSelected: Boolean,
+    compact: Boolean,
     onSelect: () -> Unit
 ) {
     Card(
@@ -815,31 +827,31 @@ private fun MetodeCardItem(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(10.dp),
+                    .padding(if (compact) 8.dp else 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = option.iconBg,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(if (compact) 28.dp else 36.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = option.icon,
                             contentDescription = option.title,
                             tint = option.iconTint,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(if (compact) 16.dp else 18.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(if (compact) 6.dp else 8.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = option.title,
                         fontFamily = interfamily,
-                        fontSize = 12.5.sp,
+                        fontSize = if (compact) 11.sp else 12.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF0F172A),
                         maxLines = 1,
@@ -848,7 +860,7 @@ private fun MetodeCardItem(
                     Text(
                         text = option.subtitle,
                         fontFamily = interfamily,
-                        fontSize = 10.sp,
+                        fontSize = if (compact) 9.sp else 10.sp,
                         color = Color(0xFF94A3B8),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -891,3 +903,14 @@ private fun MetodeCardItem(
 // private fun TambahCatatanKeuanganScreenResponsivePreview() {
 //     // Preview butuh ViewModel/Firebase + NavController, perlu composable stateless
 // }
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun TambahCatatanKeuanganScreenLocalPreview() {
+    androidx.compose.material3.MaterialTheme {
+        TambahCatatanKeuanganScreen(
+            navController = androidx.navigation.compose.rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewTambahCatatanKeuanganProvider()
+        )
+    }
+}

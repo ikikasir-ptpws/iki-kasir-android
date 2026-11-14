@@ -58,6 +58,7 @@ import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.HiltDetailTra
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.DetailTransaksiViewModel
 import kotlinx.coroutines.launch
 import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -1315,10 +1316,13 @@ fun RingkasanBaris(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
+@PhoneDevicePreviews
 @Composable
-fun DetailTransaksiScreenPreview() {
+private fun DetailTransaksiScreenPreview() {
     MaterialTheme {
-        DetailTransaksiScreen()
+        DetailTransaksiScreen(
+            viewModel = com.ptpws.ikikasir.commond.PreviewDetailTransaksiProvider()
+        )
     }
 }

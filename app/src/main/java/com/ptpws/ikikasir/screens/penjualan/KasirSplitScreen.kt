@@ -22,6 +22,9 @@ import com.ptpws.ikikasir.screens.penjualan.component.KasirCartPane
 import com.ptpws.ikikasir.screens.penjualan.component.KasirCatalogPane
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.tooling.preview.Preview
+import com.ptpws.ikikasir.core.responsive.presentation.components.PosWideScreenPreviews
+import com.ptpws.ikikasir.core.responsive.presentation.components.TabletDevicePreviews
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 
@@ -81,6 +84,7 @@ fun KasirSplitScreen(
                             )
                         }
                     }
+
                 },
                 navigationIcon = {
                     IconButton(onClick = {
@@ -127,6 +131,22 @@ fun KasirSplitScreen(
                     onBayar = onBayar
                 )
             }
+        )
+    }
+}
+
+@Preview(name = "POS Layar Lebar (1280x800)", device = "spec:width=1280dp,height=800dp,dpi=240", showBackground = true)
+@PosWideScreenPreviews
+@TabletDevicePreviews
+@Composable
+private fun KasirSplitScreenPreview() {
+    MaterialTheme {
+        KasirSplitScreen(
+            state = com.ptpws.ikikasir.commond.previewKasirState,
+            viewModel = com.ptpws.ikikasir.commond.PreviewKasirProvider(),
+            navController = androidx.navigation.compose.rememberNavController(),
+            onBayar = {},
+            onScanBarcode = {}
         )
     }
 }

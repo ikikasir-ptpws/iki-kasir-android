@@ -632,3 +632,14 @@ private fun formatNominalRupiahDetail(nominal: Double): String {
 // private fun DetailCatatanKeuanganScreenResponsivePreview() {
 //     // Preview butuh ViewModel/Firebase + NavController, perlu composable stateless
 // }
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun DetailCatatanKeuanganScreenLocalPreview() {
+    androidx.compose.material3.MaterialTheme {
+        DetailCatatanKeuanganScreen(
+            navController = androidx.navigation.compose.rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewDetailCatatanKeuanganProvider()
+        )
+    }
+}

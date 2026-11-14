@@ -30,5 +30,5 @@ class HiltTambahCatatanKeuanganUiProvider(private val viewModel: TambahCatatanKe
     override fun onMetodePembayaranChange(metode: String) = viewModel.onMetodePembayaranChange(metode)
     override fun onNominalChange(text: String) = viewModel.onNominalChange(text)
     override fun onBuktiUriChange(uri: String?) = viewModel.onBuktiUriChange(uri)
-    override fun simpanCatatan(onSuccess: (isEditMode: Boolean) -> Unit, onFailure: (errorMessage: String) -> Unit) = viewModel.simpanCatatan(onSuccess)
+    override fun simpanCatatan(onSuccess: (isEditMode: Boolean) -> Unit, onFailure: (errorMessage: String) -> Unit) = viewModel.simpanCatatan(onSuccess, onFailure)
 }

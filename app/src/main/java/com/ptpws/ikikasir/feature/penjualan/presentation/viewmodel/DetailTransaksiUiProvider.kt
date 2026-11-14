@@ -19,5 +19,5 @@ interface DetailTransaksiUiProvider {
 class HiltDetailTransaksiUiProvider(private val viewModel: DetailTransaksiViewModel) : DetailTransaksiUiProvider {
     override val state: StateFlow<DetailTransaksiState> get() = viewModel.state
     override fun loadTransaksi(transactionId: String) = viewModel.loadTransaksi(transactionId)
-    override fun refundTransaksi(reason: String, onSuccess: () -> Unit) = viewModel.refundTransaksi(reason, onSuccess)
+    override fun refundTransaksi(reason: String, onSuccess: () -> Unit, onError: (String) -> Unit) = viewModel.refundTransaksi(reason, onSuccess, onError)
 }

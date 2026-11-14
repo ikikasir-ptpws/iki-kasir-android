@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.screens.navigation.AppScreen
@@ -30,6 +31,12 @@ import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.feature.role.presentation.screen.RoleIzinScreen
 import com.ptpws.ikikasir.feature.role.presentation.screen.TambahRoleActivity
+import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.HiltUserListUiProvider
+import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserListUiProvider
+import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserViewModel
+import com.ptpws.ikikasir.feature.role.presentation.viewmodel.HiltRoleListUiProvider
+import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleListUiProvider
+import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
@@ -37,7 +44,9 @@ import kotlinx.coroutines.launch
 fun ManajemenPenggunaScreen(
     navController: NavController,
     onBack: () -> Unit = {},
-    onTambahUser: () -> Unit = {}
+    onTambahUser: () -> Unit = {},
+    userViewModel: UserListUiProvider = HiltUserListUiProvider(hiltViewModel<UserViewModel>()),
+    roleViewModel: RoleListUiProvider = HiltRoleListUiProvider(hiltViewModel<RoleViewModel>())
 ) {
     val handleBack = {
         if (!navController.popBackStackSafely(AppScreen.Pengguna.route)) {
@@ -192,6 +201,8 @@ fun ManajemenPenggunaScreen(
             ) { page ->
                 when (page) {
                     0 -> DaftarUserScreen(
+                        viewModel = userViewModel,
+                        roleViewModel = roleViewModel,
                         onEditUser = { userId ->
                             if (isTabletLandscape) {
                                 navController.navigate(AppScreen.TambahPengguna.routeWith(userId))
@@ -204,6 +215,7 @@ fun ManajemenPenggunaScreen(
                         }
                     )
                     1 -> RoleIzinScreen(
+                        viewModel = roleViewModel,
                         onAddRoleClick = {
                             if (isTabletLandscape) {
                                 navController.navigate(AppScreen.TambahRole.route)
@@ -251,3 +263,15 @@ fun ManajemenPenggunaScreen(
 //     // Preview butuh ViewModel/Firebase, perlu composable stateless
 //     ManajemenPenggunaScreen()
 // }
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun ManajemenPenggunaScreenLocalPreview() {
+    androidx.compose.material3.MaterialTheme {
+        ManajemenPenggunaScreen(
+            navController = androidx.navigation.compose.rememberNavController(),
+            userViewModel = com.ptpws.ikikasir.commond.PreviewUserListProvider(),
+            roleViewModel = com.ptpws.ikikasir.commond.PreviewRoleListProvider()
+        )
+    }
+}

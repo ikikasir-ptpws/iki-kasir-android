@@ -43,17 +43,18 @@ import com.ptpws.ikikasir.screens.produk.DetailProdukScreen
 import com.ptpws.ikikasir.screens.produk.TambahProdukScreen
 import com.ptpws.ikikasir.screens.promo.ManajemenPromoScreen
 import com.ptpws.ikikasir.screens.promo.TambahPromoScreen
+import com.ptpws.ikikasir.screens.scanner.BarcodeScannerScreen
 import com.ptpws.ikikasir.screens.splash.SplashScreen
 
 /*
  * PREVIEW GLOBAL
  * ------------------------------------------------------------------
- * Semua preview aplikasi berada di satu file ini supaya mudah dicari & dipakai.
+ * Katalog preview aplikasi; preview utama juga tersedia langsung di file tiap screen.
  *
  * Cara pakai:
- * - Buka file ini, di panel Preview pilih @Preview yang mau dicek.
- * - Untuk menambah screen baru: panggil composable screen-nya di sini
- *   dengan stub provider (PreviewXxxProvider) + rememberNavController().
+ * - Buka file screen yang ingin dicek untuk melihat preview lokalnya.
+ * - Katalog ini menyediakan daftar gabungan preview semua fitur.
+ * - Untuk menambah screen: tambahkan preview lokal dan gunakan stub provider.
  *
  * CATATAN: @Preview tidak punya Application, jadi Hilt/Firebase/Room tidak
  * bisa dipakai. Karena itu setiap screen menerima kontrak state sempit
@@ -422,7 +423,11 @@ private fun MetodePembayaranScreenPreview() {
 @Composable
 private fun ManajemenPenggunaScreenPreview() {
     MaterialTheme {
-        ManajemenPenggunaScreen(navController = rememberNavController())
+        ManajemenPenggunaScreen(
+            navController = rememberNavController(),
+            userViewModel = PreviewUserListProvider(),
+            roleViewModel = PreviewRoleListProvider()
+        )
     }
 }
 
@@ -466,6 +471,17 @@ private fun BluetoothPrinterScreenPreview() {
 private fun LoginScreenPreview() {
     MaterialTheme {
         LoginScreen()
+    }
+}
+
+@PhoneDevicePreviews
+@Composable
+private fun BarcodeScannerScreenPreview() {
+    MaterialTheme {
+        BarcodeScannerScreen(
+            onBarcodeScanned = {},
+            onClose = {}
+        )
     }
 }
 

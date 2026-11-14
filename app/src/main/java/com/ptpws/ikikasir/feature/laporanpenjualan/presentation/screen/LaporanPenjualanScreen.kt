@@ -852,3 +852,14 @@ private fun formatNumber(value: Int): String {
 //     // Preview butuh ViewModel/Firebase + NavController, perlu composable stateless
 //     LaporanPenjualanScreen(navController = androidx.navigation.compose.rememberNavController())
 // }
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun LaporanPenjualanScreenLocalPreview() {
+    androidx.compose.material3.MaterialTheme {
+        LaporanPenjualanScreen(
+            navController = androidx.navigation.compose.rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewLaporanPenjualanProvider()
+        )
+    }
+}

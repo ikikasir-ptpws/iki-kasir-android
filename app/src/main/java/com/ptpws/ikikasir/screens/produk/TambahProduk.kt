@@ -1221,3 +1221,14 @@ fun CetakBarcodeDialog(
 //         onBack = {}
 //     )
 // }
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun TambahProdukScreenLocalPreview() {
+    androidx.compose.material3.MaterialTheme {
+        TambahProdukScreen(
+            viewModel = com.ptpws.ikikasir.commond.PreviewTambahProdukProvider(),
+            kategoriViewModel = com.ptpws.ikikasir.commond.PreviewKategoriProvider()
+        )
+    }
+}

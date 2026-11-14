@@ -258,13 +258,14 @@ fun KasirCompactScreen(
                 Surface(
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 48.dp),
+                        .height(48.dp),
                     shape = RoundedCornerShape(14.dp),
                     color = Color(0xFFF1F5F9)
                 ) {
                     Row(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .fillMaxWidth()
+                            .fillMaxHeight()
                             .padding(horizontal = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -583,3 +584,17 @@ fun KasirCompactScreen(
 //         triggerBarcodeScanner = {}
 //     )
 // }
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@Composable
+private fun KasirCompactScreenPreview() {
+    MaterialTheme {
+        KasirCompactScreen(
+            state = com.ptpws.ikikasir.commond.previewKasirState,
+            viewModel = com.ptpws.ikikasir.commond.PreviewKasirProvider(),
+            navController = androidx.navigation.compose.rememberNavController(),
+            onBayar = {},
+            triggerBarcodeScanner = {}
+        )
+    }
+}

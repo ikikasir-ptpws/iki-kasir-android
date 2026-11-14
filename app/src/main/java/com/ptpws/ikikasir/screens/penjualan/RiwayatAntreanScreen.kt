@@ -1275,3 +1275,14 @@ private fun DetailRow(label: String, value: String) {
 //         )
 //     }
 // }
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun RiwayatAntreanScreenPreview() {
+    androidx.compose.material3.MaterialTheme {
+        RiwayatAntreanScreen(
+            navController = androidx.navigation.compose.rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewQueueHistoryProvider()
+        )
+    }
+}

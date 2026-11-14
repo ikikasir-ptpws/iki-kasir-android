@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -65,8 +66,13 @@ import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.HiltProdukUiProv
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.HiltKategoriUiProvider
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
+import com.ptpws.ikikasir.feature.produk.presentation.state.ProdukListState
 import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.ProdukViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import java.text.NumberFormat
@@ -484,7 +490,7 @@ fun DaftarProdukScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "DAFTAR PRODUK TERDAFTAR (${sortedList.size})",
+                        text = "DAFTAR PRODUK (${sortedList.size})",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF64748B),
@@ -1150,3 +1156,39 @@ fun ProdukCardItem(
 //         initialCategoryId = null
 //     )
 // }
+
+private class OfflinePreviewProdukProvider : ProdukUiProvider {
+    private val sampleList = listOf(
+        Produk(id = "prd-001", name = "Kopi Susu 250ml", categoryId = "kat-minuman", barcode = "8992753210123", costPrice = 12000.0, sellingPrice = 18000.0, stock = 48, lowStockThreshold = 5, isSynced = false),
+        Produk(id = "prd-002", name = "Teh Manis 350ml", categoryId = "kat-minuman", barcode = "8992753210124", costPrice = 5000.0, sellingPrice = 8000.0, stock = 3, lowStockThreshold = 5, isSynced = true),
+        Produk(id = "prd-003", name = "Nasi Goreng Spesial", categoryId = "kat-makanan", barcode = "8992753210131", costPrice = 15000.0, sellingPrice = 25000.0, stock = 24, lowStockThreshold = 5, isSynced = true),
+        Produk(id = "prd-004", name = "Keripik Kentang Chitato", categoryId = "kat-snack", barcode = "8992753210148", costPrice = 9000.0, sellingPrice = 12000.0, stock = 0, lowStockThreshold = 5, isSynced = true)
+    )
+    private val _state = MutableStateFlow(
+        ProdukListState(
+            produkList = sampleList,
+            filteredList = sampleList
+        )
+    )
+    override val state: StateFlow<ProdukListState> = _state.asStateFlow()
+
+    override fun onSearchQueryChange(query: String) {}
+    override fun onCategoryFilterChange(categoryId: String?) {}
+    override fun requestDeleteProduk(produk: Produk) {}
+    override fun dismissDeleteDialog() {}
+    override fun deleteProduk(id: String) {}
+    override fun updateProdukCategory(produk: Produk, newCategoryId: String) {}
+}
+
+@Preview(showBackground = true)
+@PhoneDevicePreviews
+@Composable
+private fun DaftarProdukScreenLocalPreview() {
+    MaterialTheme {
+        DaftarProdukScreen(
+            navController = androidx.navigation.compose.rememberNavController(),
+            viewModel = OfflinePreviewProdukProvider(),
+            kategoriViewModel = com.ptpws.ikikasir.commond.PreviewKategoriProvider()
+        )
+    }
+}

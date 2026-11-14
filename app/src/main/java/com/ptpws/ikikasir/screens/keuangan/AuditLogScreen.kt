@@ -682,3 +682,14 @@ fun AuditlogItem(
 //     // Preview butuh ViewModel/Firebase, perlu composable stateless
 //     AuditLogScreen()
 // }
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun AuditLogScreenLocalPreview() {
+    androidx.compose.material3.MaterialTheme {
+        AuditLogScreen(
+            navController = androidx.navigation.compose.rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewAuditLogProvider()
+        )
+    }
+}

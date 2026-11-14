@@ -33,6 +33,7 @@ import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.interfamily
 
 import androidx.compose.material.icons.outlined.Lock
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 
 private enum class ForgotStep { INPUT, SUCCESS }
 
@@ -405,8 +406,9 @@ private fun ForgotInfoRow(emoji: String, text: String) {
 }
 
 @Preview(showBackground = true)
+@PhoneDevicePreviews
 @Composable
-fun LoginScreenPreview() {
+private fun LoginScreenPreview() {
     MaterialTheme {
         LoginScreen()
     }

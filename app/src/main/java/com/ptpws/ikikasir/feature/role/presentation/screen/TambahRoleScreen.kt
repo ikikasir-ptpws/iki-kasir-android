@@ -434,7 +434,9 @@ fun TambahRoleScreen(
 @Composable
 fun TambahRoleScreenPreview() {
     MaterialTheme {
-        TambahRoleScreen()
+        TambahRoleScreen(
+            viewModel = com.ptpws.ikikasir.commond.PreviewRoleFormProvider()
+        )
     }
 }
 

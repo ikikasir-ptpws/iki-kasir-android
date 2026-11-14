@@ -1326,3 +1326,13 @@ private fun navigateToEditProduk(context: Context, produk: Produk) {
 //         onEditProduk = null
 //     )
 // }
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun DetailProdukScreenLocalPreview() {
+    androidx.compose.material3.MaterialTheme {
+        DetailProdukScreen(
+            viewModel = com.ptpws.ikikasir.commond.PreviewDetailProdukProvider()
+        )
+    }
+}

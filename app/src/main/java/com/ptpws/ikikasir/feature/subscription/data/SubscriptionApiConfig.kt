@@ -50,7 +50,7 @@ object SubscriptionApiConfig {
      * URL API Backend Manajemen IKIKASIR
      * Mendukung otomatis Emulator (10.0.2.2) dan HP Fisik via Wi-Fi
      */
-    var BASE_URL = "192.168.18.15:5000/api"
+    var BASE_URL = "https://api.ikikasir.com/api"
 
     val CANDIDATE_URLS = listOf(
         "http://10.0.2.2:5000/api",         // Android Emulator

@@ -292,6 +292,7 @@ fun ManajemenStokScreen(
                                 }
                             }
                         }
+
                     }
                 }
             }
@@ -719,3 +720,13 @@ fun StokProdukCardItem(
     }
 }
 
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun ManajemenStokScreenPreview() {
+    androidx.compose.material3.MaterialTheme {
+        ManajemenStokScreen(
+            navController = androidx.navigation.compose.rememberNavController(),
+            viewModel = com.ptpws.ikikasir.commond.PreviewManajemenStokProvider()
+        )
+    }
+}

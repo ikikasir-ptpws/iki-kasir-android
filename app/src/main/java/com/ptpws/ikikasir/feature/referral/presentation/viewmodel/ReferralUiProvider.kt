@@ -45,8 +45,8 @@ class HiltReferralUiProvider(private val viewModel: ReferralViewModel) : Referra
     override fun setSelectedFilter(filter: String) = viewModel.setSelectedFilter(filter)
     override fun copyReferralCode(ctx: Context) = viewModel.copyReferralCode(ctx)
     override fun shareReferral(ctx: Context) = viewModel.shareReferral(ctx)
-    override fun submitClient(name: String, businessName: String, phone: String, email: String, notes: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) = viewModel.submitClient(name, businessName, phone, email, notes, onSuccess)
-    override fun submitWithdrawal(amount: Double, bankOrWallet: String, accountNumber: String, accountHolder: String, notes: String, onSuccess: () -> Unit, onError: (String) -> Unit) = viewModel.submitWithdrawal(amount, bankOrWallet, accountNumber, accountHolder, notes, onSuccess)
+    override fun submitClient(name: String, businessName: String, phone: String, email: String, notes: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) = viewModel.submitClient(name, businessName, phone, email, notes, onSuccess, onError)
+    override fun submitWithdrawal(amount: Double, bankOrWallet: String, accountNumber: String, accountHolder: String, notes: String, onSuccess: () -> Unit, onError: (String) -> Unit) = viewModel.submitWithdrawal(amount, bankOrWallet, accountNumber, accountHolder, notes, onSuccess, onError)
     override fun simulateApproveWithdrawal(transactionId: String, onDone: () -> Unit) = viewModel.simulateApproveWithdrawal(transactionId, onDone)
     override fun updateUpline(uplineName: String, uplineCode: String) = viewModel.updateUpline(uplineName, uplineCode)
 }

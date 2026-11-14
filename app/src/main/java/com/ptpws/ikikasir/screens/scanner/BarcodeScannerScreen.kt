@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -79,6 +80,7 @@ fun BarcodeScannerScreen(
     onBarcodeScanned: (String) -> Unit,
     onClose: () -> Unit
 ) {
+    val isPreview = LocalInspectionMode.current
     var isClosing by remember { mutableStateOf(false) }
     val handleClose = {
         if (!isClosing) {
@@ -95,7 +97,8 @@ fun BarcodeScannerScreen(
     // Cek izin kamera
     var hasCameraPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+            isPreview ||
+                ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
         )
     }
 
@@ -106,7 +109,7 @@ fun BarcodeScannerScreen(
     }
 
     LaunchedEffect(Unit) {
-        if (!hasCameraPermission) {
+        if (!isPreview && !hasCameraPermission) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
@@ -153,9 +156,12 @@ fun BarcodeScannerScreen(
             .background(Color.Black)
     ) {
         // ── 1. CameraX PreviewView ──────────────────────────────────────────
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
+        if (isPreview) {
+            BarcodeScannerPreviewCamera(Modifier.fillMaxSize())
+        } else {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { ctx ->
                 var cameraInstance: Camera? = null
                 val scaleGestureDetector = android.view.ScaleGestureDetector(
                     ctx,
@@ -245,11 +251,12 @@ fun BarcodeScannerScreen(
                 }, ContextCompat.getMainExecutor(ctx))
 
                 previewView
-            },
-            update = {
-                cameraControl?.enableTorch(isTorchOn)
-            }
-        )
+                },
+                update = {
+                    cameraControl?.enableTorch(isTorchOn)
+                }
+            )
+        }
 
         // ── 2. Viewfinder Dim Overlay & Cutout Box ──────────────────────────
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -521,6 +528,77 @@ fun BarcodeScannerScreen(
     }
 }
 
+@Composable
+private fun BarcodeScannerPreviewCamera(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.background(
+            Brush.verticalGradient(
+                colors = listOf(Color(0xFF475569), Color(0xFF334155), Color(0xFF1E293B))
+            )
+        ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(0.72f),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                listOf(Color(0xFF64748B), Color(0xFF78716C), Color(0xFF475569)).forEach { color ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(112.dp)
+                            .background(color, RoundedCornerShape(12.dp))
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(44.dp))
+            Surface(
+                color = Color.White,
+                shape = RoundedCornerShape(8.dp),
+                shadowElevation = 8.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Text(
+                        text = "IKIKASIR - PRODUK",
+                        fontFamily = interfamily,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF334155)
+                    )
+                    Row(
+                        modifier = Modifier.height(34.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        listOf(2, 1, 3, 1, 2, 2, 1, 3, 1, 2, 1, 2, 3, 1, 2, 1, 3, 2).forEachIndexed { index, width ->
+                            Box(
+                                modifier = Modifier
+                                    .width(width.dp)
+                                    .fillMaxHeight(if (index % 4 == 0) 0.75f else 1f)
+                                    .background(Color(0xFF111827))
+                            )
+                        }
+                    }
+                    Text(
+                        text = "8992753210123",
+                        fontSize = 9.sp,
+                        color = Color(0xFF334155)
+                    )
+                }
+            }
+        }
+    }
+}
+
 /**
  * Dialog untuk mengetik kode barcode secara manual jika barcode fisik rusak atau pudar.
  */
@@ -592,11 +670,12 @@ private fun ManualBarcodeDialog(
  */
 @Composable
 private fun CameraPermissionDeniedContent(
+    modifier: Modifier = Modifier,
     onRequestPermission: () -> Unit,
     onClose: () -> Unit
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF0F172A))
             .padding(24.dp),
@@ -691,5 +770,16 @@ private fun playFeedback(context: Context) {
         }
     } catch (e: Exception) {
         e.printStackTrace()
+    }
+}
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun BarcodeScannerScreenLocalPreview() {
+    androidx.compose.material3.MaterialTheme {
+        BarcodeScannerScreen(
+            onBarcodeScanned = {},
+            onClose = {}
+        )
     }
 }

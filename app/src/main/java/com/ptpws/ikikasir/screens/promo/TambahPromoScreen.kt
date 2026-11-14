@@ -1221,6 +1221,8 @@ fun PilihProdukPromoDialog(
 @Composable
 fun TambahPromoScreenPreview() {
     MaterialTheme {
-        TambahPromoScreen()
+        TambahPromoScreen(
+            viewModel = com.ptpws.ikikasir.commond.PreviewTambahPromoProvider()
+        )
     }
 }

@@ -12,8 +12,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Remove
@@ -41,6 +41,7 @@ import androidx.compose.ui.res.painterResource
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.UpdateStokUiProvider
 import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.HiltUpdateStokUiProvider
 import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.UpdateStokViewModel
@@ -115,7 +116,7 @@ fun UpdateStokScreen(
                     navigationIcon = {
                         IconButton(onClick = handleBack) {
                             Icon(
-                                imageVector = Icons.Default.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Kembali",
                                 tint = Color(0xFF4F46E5)
                             )
@@ -497,11 +498,14 @@ fun UpdateStokScreen(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
+@PhoneDevicePreviews
 @Composable
-fun UpdateStokScreenPreview() {
+private fun UpdateStokScreenPreview() {
     MaterialTheme {
-        UpdateStokScreen()
+        UpdateStokScreen(
+            viewModel = com.ptpws.ikikasir.commond.PreviewUpdateStokProvider()
+        )
     }
 }
 

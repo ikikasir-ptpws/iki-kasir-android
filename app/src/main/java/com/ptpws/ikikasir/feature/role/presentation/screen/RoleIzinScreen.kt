@@ -3,6 +3,7 @@ package com.ptpws.ikikasir.feature.role.presentation.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -154,38 +155,41 @@ fun RoleIzinScreen(
                 )
             }
         } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 12.dp,
-                    bottom = 100.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Role items (Scroll pagination: 10 data awal + 10 data saat scroll)
-                items(displayedRoles.size) { index ->
-                    val role = displayedRoles[index]
-                    RoleCard(
-                        role = role,
-                        onEdit = { onEditRoleClick(role) },
-                        onShowPermissions = { onEditPermissionsClick(role) },
-                        onDelete = { roleToDelete = role }
-                    )
-                }
-
-                // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
-                if (roles.isNotEmpty()) {
-                    item(key = "scroll_pagination_footer") {
-                        GlobalScrollPaginationFooter(
-                            displayedCount = displayedCount,
-                            totalItems = roles.size,
-                            onLoadMore = {
-                                displayedCount = minOf(displayedCount + pageSize, roles.size)
-                            },
-                            itemName = "role"
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                val isCompactPhone = maxWidth <= 340.dp
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        start = if (isCompactPhone) 12.dp else 16.dp,
+                        end = if (isCompactPhone) 12.dp else 16.dp,
+                        top = if (isCompactPhone) 8.dp else 12.dp,
+                        bottom = 100.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(if (isCompactPhone) 8.dp else 10.dp)
+                ) {
+                    // Role items (Scroll pagination: 10 data awal + 10 data saat scroll)
+                    items(displayedRoles.size) { index ->
+                        val role = displayedRoles[index]
+                        RoleCard(
+                            role = role,
+                            onEdit = { onEditRoleClick(role) },
+                            onShowPermissions = { onEditPermissionsClick(role) },
+                            onDelete = { roleToDelete = role }
                         )
+                    }
+
+                    // Scroll Pagination Footer (CircularProgressIndicator saat discroll)
+                    if (roles.isNotEmpty()) {
+                        item(key = "scroll_pagination_footer") {
+                            GlobalScrollPaginationFooter(
+                                displayedCount = displayedCount,
+                                totalItems = roles.size,
+                                onLoadMore = {
+                                    displayedCount = minOf(displayedCount + pageSize, roles.size)
+                                },
+                                itemName = "role"
+                            )
+                        }
                     }
                 }
             }
@@ -206,129 +210,165 @@ fun RoleCard(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Icon role
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(Color(0xFF4F46E5).copy(alpha = 0.08f), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.AdminPanelSettings,
-                    contentDescription = null,
-                    tint = Color(0xFF4F46E5),
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            Spacer(Modifier.width(10.dp))
-
-            // Nama dan jumlah pengguna
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+        BoxWithConstraints {
+            if (maxWidth < 330.dp) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
-                        text = role.name,
-                        fontFamily = interfamily,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
-                        color = Color(0xFF111827),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                    if (!role.isSynced) SyncStatusBadge()
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RoleIdentity(role = role, modifier = Modifier.weight(1f))
+                        RoleStatusBadge(role = role)
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        RoleActions(
+                            onEdit = onEdit,
+                            onShowPermissions = onShowPermissions,
+                            onDelete = onDelete
+                        )
+                    }
                 }
-                Spacer(Modifier.height(2.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Outlined.ManageAccounts,
-                        contentDescription = null,
-                        tint = Color(0xFF9CA3AF),
-                        modifier = Modifier.size(13.dp)
-                    )
-                    Spacer(Modifier.width(3.dp))
-                    Text(
-                        text = "${role.userCount} Pengguna",
-                        fontFamily = interfamily,
-                        fontSize = 12.sp,
-                        color = Color(0xFF9CA3AF)
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RoleIdentity(role = role, modifier = Modifier.weight(1f))
+                    Spacer(Modifier.width(6.dp))
+                    RoleStatusBadge(role = role)
+                    Spacer(Modifier.width(4.dp))
+                    RoleActions(
+                        onEdit = onEdit,
+                        onShowPermissions = onShowPermissions,
+                        onDelete = onDelete
                     )
                 }
             }
+        }
+    }
+}
 
-            Spacer(Modifier.width(6.dp))
+@Composable
+private fun RoleIdentity(role: Role, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .background(Color(0xFF4F46E5).copy(alpha = 0.08f), RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.AdminPanelSettings,
+                contentDescription = null,
+                tint = Color(0xFF4F46E5),
+                modifier = Modifier.size(22.dp)
+            )
+        }
 
-            // Status badge
-            Box(
-                modifier = Modifier
-                    .background(
-                        if (role.isActive) Color(0xFFDDF7E5) else Color(0xFFF3F4F6),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = if (role.isActive) "AKTIF" else "NONAKTIF",
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = interfamily,
-                    color = if (role.isActive) Color(0xFF16A34A) else Color(0xFF6B7280)
-                )
-            }
+        Spacer(Modifier.width(10.dp))
 
-            Spacer(Modifier.width(4.dp))
-
-            // Action icons (Edit, Izin/Key, Hapus)
+        Column(modifier = Modifier.weight(1f)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                // Edit
-                IconButton(
-                    onClick = onEdit,
-                    modifier = Modifier.size(38.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Edit,
-                        contentDescription = "Edit Role",
-                        tint = Color(0xFF4338CA),
-                        modifier = Modifier.size(25.dp)
-                    )
-                }
-                // Izin/Permissions
-                IconButton(
-                    onClick = onShowPermissions,
-                    modifier = Modifier.size(38.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Key,
-                        contentDescription = "Izin Role",
-                        tint = Color(0xFFF59E0B),
-                        modifier = Modifier.size(25.dp)
-                    )
-                }
-                // Hapus
-                IconButton(
-                    onClick = onDelete,
-                    modifier = Modifier.size(38.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
-                        contentDescription = "Hapus Role",
-                        tint = Color(0xFFEF4444),
-                        modifier = Modifier.size(25.dp)
-                    )
-                }
+                Text(
+                    text = role.name,
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    color = Color(0xFF111827),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                if (!role.isSynced) SyncStatusBadge()
             }
+            Spacer(Modifier.height(2.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.ManageAccounts,
+                    contentDescription = null,
+                    tint = Color(0xFF9CA3AF),
+                    modifier = Modifier.size(13.dp)
+                )
+                Spacer(Modifier.width(3.dp))
+                Text(
+                    text = "${role.userCount} Pengguna",
+                    fontFamily = interfamily,
+                    fontSize = 12.sp,
+                    color = Color(0xFF9CA3AF),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RoleStatusBadge(role: Role) {
+    Box(
+        modifier = Modifier
+            .background(
+                if (role.isActive) Color(0xFFDDF7E5) else Color(0xFFF3F4F6),
+                RoundedCornerShape(8.dp)
+            )
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Text(
+            text = if (role.isActive) "AKTIF" else "NONAKTIF",
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = interfamily,
+            color = if (role.isActive) Color(0xFF16A34A) else Color(0xFF6B7280)
+        )
+    }
+}
+
+@Composable
+private fun RoleActions(
+    onEdit: () -> Unit,
+    onShowPermissions: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        IconButton(onClick = onEdit, modifier = Modifier.size(38.dp)) {
+            Icon(
+                imageVector = Icons.Outlined.Edit,
+                contentDescription = "Edit Role",
+                tint = Color(0xFF4338CA),
+                modifier = Modifier.size(25.dp)
+            )
+        }
+        IconButton(onClick = onShowPermissions, modifier = Modifier.size(38.dp)) {
+            Icon(
+                imageVector = Icons.Outlined.Key,
+                contentDescription = "Izin Role",
+                tint = Color(0xFFF59E0B),
+                modifier = Modifier.size(25.dp)
+            )
+        }
+        IconButton(onClick = onDelete, modifier = Modifier.size(38.dp)) {
+            Icon(
+                imageVector = Icons.Outlined.Delete,
+                contentDescription = "Hapus Role",
+                tint = Color(0xFFEF4444),
+                modifier = Modifier.size(25.dp)
+            )
         }
     }
 }
@@ -345,3 +385,13 @@ fun RoleCard(
 //     // Preview butuh ViewModel/Firebase, perlu composable stateless
 //     RoleIzinScreen()
 // }
+
+@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+@androidx.compose.runtime.Composable
+private fun RoleIzinScreenLocalPreview() {
+    androidx.compose.material3.MaterialTheme {
+        RoleIzinScreen(
+            viewModel = com.ptpws.ikikasir.commond.PreviewRoleListProvider()
+        )
+    }
+}

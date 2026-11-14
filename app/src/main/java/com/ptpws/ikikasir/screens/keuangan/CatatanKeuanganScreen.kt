@@ -43,19 +43,27 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import kotlinx.coroutines.flow.StateFlow
+import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import com.ptpws.ikikasir.commond.CustomDateRangePickerDialog
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.commond.GlobalTextField
 import com.ptpws.ikikasir.commond.SyncStatusBadge
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import com.ptpws.ikikasir.feature.keuangan.domain.model.CatatanKeuangan
 import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.CatatanKeuanganUiProvider
+import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.CatatanKeuanganUiState
 import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.HiltCatatanKeuanganUiProvider
 import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.CatatanKeuanganViewModel
+import com.ptpws.ikikasir.feature.keuangan.presentation.viewmodel.GroupedCatatanKeuangan
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import java.text.NumberFormat
@@ -306,76 +314,89 @@ fun CatatanKeuanganScreen(
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Catatan Keuangan",
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = interfamily,
-                            fontSize = 18.sp,
-                            color = Color(0xFF0F172A)
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Pemasukan & Pengeluaran Usaha",
-                            fontFamily = interfamily,
-                            fontSize = 12.sp,
-                            color = Color(0xFF64748B)
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = { handleBack() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
-                            tint = Color(0xFF0F172A)
-                        )
-                    }
-                },
-                actions = {
-                    // Tombol Ekspor Excel
-                    Surface(
-                        onClick = { viewModel.exportToExcel(context) },
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFEEF2FF),
-                        border = BorderStroke(1.dp, Color(0xFFE0E7FF)),
-                        modifier = Modifier.padding(end = 12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            if (state.isExporting) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    color = Color(0xFF4F46E5),
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Download,
-                                    contentDescription = "Ekspor",
-                                    tint = Color(0xFF4F46E5),
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
+            BoxWithConstraints {
+                val compact = maxWidth <= 360.dp
+                TopAppBar(
+                    title = {
+                        Column {
                             Text(
-                                text = "Ekspor",
+                                text = "Catatan Keuangan",
+                                fontWeight = FontWeight.Bold,
                                 fontFamily = interfamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 13.sp,
-                                color = Color(0xFF4F46E5)
+                                fontSize = if (compact) 16.sp else 18.sp,
+                                color = Color(0xFF0F172A),
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Pemasukan & Pengeluaran Usaha",
+                                fontFamily = interfamily,
+                                fontSize = if (compact) 10.sp else 12.sp,
+                                color = Color(0xFF64748B),
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFF8FAFC)
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { handleBack() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Kembali",
+                                tint = Color(0xFF0F172A)
+                            )
+                        }
+                    },
+                    actions = {
+                        Surface(
+                            onClick = { viewModel.exportToExcel(context) },
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFFEEF2FF),
+                            border = BorderStroke(1.dp, Color(0xFFE0E7FF)),
+                            modifier = Modifier.padding(end = if (compact) 8.dp else 12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(
+                                    horizontal = if (compact) 9.dp else 12.dp,
+                                    vertical = 7.dp
+                                ),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                if (state.isExporting) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        color = Color(0xFF4F46E5),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Download,
+                                        contentDescription = "Ekspor",
+                                        tint = Color(0xFF4F46E5),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                if (!compact) {
+                                    Text(
+                                        text = "Ekspor",
+                                        fontFamily = interfamily,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF4F46E5)
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color(0xFFF8FAFC)
+                    )
                 )
-            )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -397,35 +418,46 @@ fun CatatanKeuanganScreen(
         }
     ) { paddingValues ->
 
-        LazyColumn(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 90.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(paddingValues)
         ) {
+            val compact = maxWidth <= 360.dp
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = if (compact) 12.dp else 16.dp,
+                    end = if (compact) 12.dp else 16.dp,
+                    top = 8.dp,
+                    bottom = 90.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 14.dp)
+            ) {
 
             // ── 1. TOP SUMMARY CARDS (Pemasukan & Pengeluaran)
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Card Pemasukan
-                    SummaryKpiCard(
-                        modifier = Modifier.weight(1f),
-                        title = "PEMASUKAN",
-                        value = formatNominalRupiah(state.totalPemasukan),
-                        isPositive = true
-                    )
-
-                    // Card Pengeluaran
-                    SummaryKpiCard(
-                        modifier = Modifier.weight(1f),
-                        title = "PENGELUARAN",
-                        value = formatNominalRupiah(state.totalPengeluaran),
-                        isPositive = false
-                    )
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val compactCards = maxWidth <= 360.dp
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(if (compactCards) 8.dp else 12.dp)
+                    ) {
+                        SummaryKpiCard(
+                            modifier = Modifier.weight(1f),
+                            title = "PEMASUKAN",
+                            value = formatNominalRupiah(state.totalPemasukan),
+                            isPositive = true,
+                            compact = compactCards
+                        )
+                        SummaryKpiCard(
+                            modifier = Modifier.weight(1f),
+                            title = "PENGELUARAN",
+                            value = formatNominalRupiah(state.totalPengeluaran),
+                            isPositive = false,
+                            compact = compactCards
+                        )
+                    }
                 }
             }
 
@@ -437,30 +469,33 @@ fun CatatanKeuanganScreen(
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF2563EB)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Row(
+                    BoxWithConstraints(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 18.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .padding(horizontal = 14.dp, vertical = 14.dp)
                     ) {
+                        val compactBalance = maxWidth <= 300.dp
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            // Responsif: blok kiri diberi bobot agar badge transaksi tidak tertimpa di 320dp
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.weight(1f)
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
                                 color = Color.White.copy(alpha = 0.2f),
-                                modifier = Modifier.size(42.dp)
+                                modifier = Modifier.size(if (compactBalance) 36.dp else 42.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Outlined.CreditCard,
                                         contentDescription = null,
                                         tint = Color.White,
-                                        modifier = Modifier.size(22.dp)
+                                        modifier = Modifier.size(if (compactBalance) 20.dp else 22.dp)
                                     )
                                 }
                             }
@@ -479,11 +514,10 @@ fun CatatanKeuanganScreen(
                                 )
                                 Text(
                                     text = formatNominalRupiah(state.saldoBersih),
-                                    fontSize = 18.sp,
+                                    fontSize = if (compactBalance) 16.sp else 18.sp,
                                     fontFamily = interfamily,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
-                                    // Responsif: saldo dipotong agar badge transaksi tetap terlihat di 320dp
                                     maxLines = 1,
                                     softWrap = false,
                                     overflow = TextOverflow.Ellipsis
@@ -496,16 +530,20 @@ fun CatatanKeuanganScreen(
                             color = Color.White.copy(alpha = 0.2f)
                         ) {
                             Text(
-                                text = "${state.totalTransaksiCount} Transaksi",
-                                fontSize = 12.sp,
+                                text = if (compactBalance) "${state.totalTransaksiCount} trx" else "${state.totalTransaksiCount} Transaksi",
+                                fontSize = if (compactBalance) 10.sp else 12.sp,
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                modifier = Modifier.padding(
+                                    horizontal = if (compactBalance) 8.dp else 12.dp,
+                                    vertical = 6.dp
+                                )
                             )
                         }
                     }
                 }
+            }
             }
 
             // ── 3. SEARCH FIELD
@@ -686,6 +724,7 @@ fun CatatanKeuanganScreen(
                     )
                 }
             }
+            }
         }
     }
 }
@@ -695,14 +734,15 @@ private fun SummaryKpiCard(
     modifier: Modifier = Modifier,
     title: String,
     value: String,
-    isPositive: Boolean
+    isPositive: Boolean,
+    compact: Boolean = false
 ) {
     val bgColor = if (isPositive) Color(0xFFECFDF5) else Color(0xFFFEF2F2)
     val borderCol = if (isPositive) Color(0xFFA7F3D0) else Color(0xFFFCA5A5)
     val textCol = if (isPositive) Color(0xFF047857) else Color(0xFFB91C1C)
 
     Card(
-        modifier = modifier.heightIn(min = 96.dp),
+        modifier = modifier.heightIn(min = if (compact) 88.dp else 96.dp),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = bgColor),
         border = BorderStroke(1.dp, borderCol),
@@ -711,22 +751,22 @@ private fun SummaryKpiCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(14.dp),
+                .padding(if (compact) 10.dp else 14.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                horizontalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 5.dp)
             ) {
                 Icon(
                     imageVector = if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
                     contentDescription = null,
                     tint = textCol,
-                    modifier = Modifier.size(15.dp)
+                    modifier = Modifier.size(if (compact) 12.dp else 15.dp)
                 )
                 Text(
                     text = title,
-                    fontSize = 11.sp,
+                    fontSize = if (compact) 9.sp else 11.sp,
                     fontFamily = interfamily,
                     fontWeight = FontWeight.Bold,
                     color = textCol,
@@ -736,7 +776,7 @@ private fun SummaryKpiCard(
 
             Text(
                 text = value,
-                fontSize = 18.sp,
+                fontSize = if (compact) 14.sp else 18.sp,
                 fontFamily = interfamily,
                 fontWeight = FontWeight.Bold,
                 color = textCol,
@@ -803,22 +843,20 @@ private fun CatatanCardItem(
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = item.judul,
-                            fontFamily = interfamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.5.sp,
-                            color = Color(0xFF0F172A),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                        if (!item.isSynced) SyncStatusBadge()
+                    if (!item.isSynced) {
+                        Row(modifier = Modifier.padding(bottom = 1.dp)) {
+                            SyncStatusBadge()
+                        }
                     }
+                    Text(
+                        text = item.judul,
+                        fontFamily = interfamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.5.sp,
+                        color = Color(0xFF0F172A),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     Text(
                         text = "$amountPrefix${formatNominalRupiah(item.nominal)}",
                         fontFamily = interfamily,
@@ -895,3 +933,70 @@ private fun formatNominalRupiah(amount: Double): String {
 //     // Preview butuh ViewModel/Firebase + NavController, perlu composable stateless
 //     CatatanKeuanganScreen(navController = androidx.navigation.compose.rememberNavController())
 // }
+
+private class OfflinePreviewCatatanKeuanganProvider : CatatanKeuanganUiProvider {
+    private val sampleCatatan = listOf(
+        CatatanKeuangan(
+            id = "cat-001",
+            jenis = "PEMASUKAN",
+            judul = "Penjualan harian",
+            keterangan = "Setoran kasir drawer",
+            metodePembayaran = "Tunai",
+            nominal = 1500000.0,
+            isSynced = true
+        ),
+        CatatanKeuangan(
+            id = "cat-002",
+            jenis = "PENGELUARAN",
+            judul = "Beli stok bahan baku",
+            keterangan = "Restock minuman & makanan",
+            metodePembayaran = "Transfer",
+            nominal = 850000.0,
+            isSynced = false
+        ),
+        CatatanKeuangan(
+            id = "cat-003",
+            jenis = "PEMASUKAN",
+            judul = "Sewa kios bulan ini",
+            keterangan = "Sewa kedai November 2026",
+            metodePembayaran = "Transfer",
+            nominal = 2000000.0,
+            isSynced = true
+        )
+    )
+
+    private val _state = MutableStateFlow(
+        CatatanKeuanganUiState(
+            rawList = sampleCatatan,
+            filteredList = sampleCatatan,
+            groupedList = listOf(
+                GroupedCatatanKeuangan("12 Nov 2026", sampleCatatan)
+            ),
+            totalPemasukan = 3500000.0,
+            totalPengeluaran = 850000.0,
+            saldoBersih = 2650000.0,
+            totalTransaksiCount = sampleCatatan.size,
+            isLoading = false
+        )
+    )
+    override val state: StateFlow<CatatanKeuanganUiState> = _state.asStateFlow()
+
+    override fun onSearchQueryChanged(query: String) {}
+    override fun onFilterSelected(filter: String) {}
+    override fun onCustomDateRangeSelected(startMillis: Long, endMillis: Long) {}
+    override fun deleteCatatan(id: String) {}
+    override fun exportToExcel(context: android.content.Context) {}
+    override fun clearExportState() {}
+}
+
+@Preview(showBackground = true)
+@PhoneDevicePreviews
+@Composable
+private fun CatatanKeuanganScreenLocalPreview() {
+    MaterialTheme {
+        CatatanKeuanganScreen(
+            navController = rememberNavController(),
+            viewModel = OfflinePreviewCatatanKeuanganProvider()
+        )
+    }
+}

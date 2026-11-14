@@ -28,7 +28,7 @@ interface QueueHistoryUiProvider {
     fun resetToDefault()
     fun exportToExcel(context: Context, filteredItems: List<QueueHistory>)
     fun clearExportState()
-    fun groupHistoryByDate(items: List<QueueHistory>)
+    fun groupHistoryByDate(items: List<QueueHistory>): Map<String, List<QueueHistory>>
 }
 
 /**

@@ -48,11 +48,16 @@ import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriUiProv
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.HiltKategoriUiProvider
 import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.HiltProdukUiProvider
 import com.ptpws.ikikasir.feature.kategori.presentation.viewmodel.KategoriViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import com.ptpws.ikikasir.feature.produk.presentation.viewmodel.ProdukViewModel
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
+import com.ptpws.ikikasir.feature.kategori.presentation.state.KategoriListState
 
 enum class KategoriFilterOption(val title: String) {
     SEMUA("Semua Kategori"),
@@ -634,220 +639,293 @@ fun KategoriCardItem(
         colors = CardDefaults.cardColors(containerColor = if (isNonAktif) Color(0xFFF8FAFC) else Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        BoxWithConstraints {
+            val compactCard = maxWidth <= 340.dp
 
-            // ── Section 1: Icon + Nama + Badge + Deskripsi + Stok ────────────
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                // Icon box
-                Box(
+            Column(modifier = Modifier.fillMaxWidth()) {
+
+                // ── Section 1: Icon + Nama + Badge + Deskripsi + Stok ────────────
+                Row(
                     modifier = Modifier
-                        .size(54.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(iconBgColor),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(
+                            start = if (compactCard) 12.dp else 16.dp,
+                            end = if (compactCard) 10.dp else 12.dp,
+                            top = if (compactCard) 12.dp else 16.dp,
+                            bottom = if (compactCard) 10.dp else 12.dp
+                        ),
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Icon(imageVector = icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(28.dp))
-                }
+                    // Icon box
+                    Box(
+                        modifier = Modifier
+                            .size(if (compactCard) 46.dp else 54.dp)
+                            .clip(RoundedCornerShape(if (compactCard) 12.dp else 14.dp))
+                            .background(iconBgColor),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = iconTint,
+                            modifier = Modifier.size(if (compactCard) 24.dp else 28.dp)
+                        )
+                    }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(if (compactCard) 10.dp else 12.dp))
 
-                Column(modifier = Modifier.weight(1f)) {
-                    // Name + badge row
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        // Name + badge row
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = kategori.nama,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = interfamily,
+                                fontSize = if (compactCard) 14.5.sp else 16.sp,
+                                color = if (isHabis || isNonAktif) Color(0xFF94A3B8) else Color(0xFF0F172A),
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            if (!kategori.isSynced) {
+                                BadgePill(label = "Pending", color = Color(0xFFD97706), withIcon = false)
+                            }
+                            when {
+                                isNonAktif -> BadgePill(label = "KASIR OFF", color = Color(0xFF6B7280), withIcon = false)
+                                isHabis -> BadgePill(label = "HABIS TERJUAL", color = Color(0xFFEF4444), withIcon = true)
+                                isTerlaris -> BadgePill(label = "TERLARIS", color = Color(0xFF6B7280), withIcon = false)
+                                isStokKurang -> BadgePill(label = "${lowStockCount + outOfStockCount} Stok Menipis", color = Color(0xFFEA580C), withIcon = false)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(3.dp))
+
+                        // Description
                         Text(
-                            text = kategori.nama,
-                            fontWeight = FontWeight.Bold,
+                            text = if (kategori.deskripsi.isNotBlank()) kategori.deskripsi else "Tidak ada deskripsi",
+                            fontSize = if (compactCard) 11.sp else 12.sp,
                             fontFamily = interfamily,
-                            fontSize = 16.sp,
-                            color = if (isHabis || isNonAktif) Color(0xFF94A3B8) else Color(0xFF0F172A),
-                            modifier = Modifier.weight(1f, fill = false),
+                            color = if (isHabis || isNonAktif) Color(0xFFCBD5E1) else Color(0xFF64748B),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        when {
-                            isNonAktif -> BadgePill(label = "KASIR OFF", color = Color(0xFF6B7280), withIcon = false)
-                            isHabis -> BadgePill(label = "HABIS TERJUAL", color = Color(0xFFEF4444), withIcon = true)
-                            isTerlaris -> BadgePill(label = "TERLARIS", color = Color(0xFF6B7280), withIcon = false)
-                            isStokKurang -> BadgePill(label = "${lowStockCount + outOfStockCount} Stok Menipis", color = Color(0xFFEA580C), withIcon = false)
-                        }
-                        if (!kategori.isSynced) {
-                            BadgePill(label = "Pending", color = Color(0xFFD97706), withIcon = false)
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Stats chips row
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Menu count chip
+                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF1F5F9)) {
+                                Text(
+                                    text = "$productCount Menu",
+                                    fontFamily = interfamily,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF374151),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                            // Stock status chip
+                            if (isHabis || isStokKurang) {
+                                Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF1F2)) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(Color(0xFFEF4444)))
+                                        Text(
+                                            text = if (isHabis) "Habis / Stok Kosong" else "${outOfStockCount + lowStockCount} Stok Kurang",
+                                            fontSize = 11.sp,
+                                            fontFamily = interfamily,
+                                            color = Color(0xFFEF4444),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
+                                        )
+                                    }
+                                }
+                            } else {
+                                Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF0FDF4)) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(Color(0xFF16A34A)))
+                                        Text(
+                                            text = "Semua Tersedia",
+                                            fontSize = 11.sp,
+                                            fontFamily = interfamily,
+                                            color = Color(0xFF16A34A),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(3.dp))
-
-                    // Description
-                    Text(
-                        text = if (kategori.deskripsi.isNotBlank()) kategori.deskripsi else "Tidak ada deskripsi",
-                        fontSize = 12.sp,
-                        fontFamily = interfamily,
-                        color = if (isHabis || isNonAktif) Color(0xFFCBD5E1) else Color(0xFF64748B),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                    // Drag handle dots (top right)
+                    Icon(
+                        imageVector = Icons.Default.DragIndicator,
+                        contentDescription = null,
+                        tint = Color(0xFFCBD5E1),
+                        modifier = Modifier.size(18.dp)
                     )
+                }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                // ── Divider ──────────────────────────────────────────────────────
+                HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
 
-                    // Stats chips row
+                // ── Section 2: Status stok + Kelola Menu ─────────────────────────
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = if (compactCard) 10.dp else 14.dp,
+                            vertical = if (compactCard) 8.dp else 10.dp
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.weight(1f)
                     ) {
-                        // Menu count chip
-                        Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF1F5F9)) {
+                        Icon(
+                            imageVector = Icons.Default.Layers,
+                            contentDescription = null,
+                            tint = Color(0xFF94A3B8),
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = "Status stok & visibilitas item",
+                            fontSize = if (compactCard) 10.5.sp else 11.sp,
+                            fontFamily = interfamily,
+                            color = Color(0xFF94A3B8),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    // Kelola Menu button
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFFF8FAFF),
+                        border = BorderStroke(1.dp, Color(0xFFEEF2FF)),
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .clickable { onKelolaMenu() }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(
+                                horizontal = if (compactCard) 8.dp else 12.dp,
+                                vertical = if (compactCard) 7.dp else 10.dp
+                            ),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
                             Text(
-                                text = "$productCount Menu",
+                                text = if (compactCard) "Kelola ($productCount)" else "Kelola Menu ($productCount Produk)",
                                 fontFamily = interfamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 11.sp,
-                                color = Color(0xFF374151),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                fontWeight = FontWeight.Bold,
+                                fontSize = if (compactCard) 11.sp else 12.sp,
+                                color = Color(0xFF4F46E5),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(15.dp)
                             )
                         }
-                        // Stock status chip
-                        if (isHabis || isStokKurang) {
-                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF1F2)) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFFEF4444)))
-                                    Text(
-                                        text = if (isHabis) "Habis Terjual / Stok Kosong" else "${outOfStockCount + lowStockCount} Stok Kurang",
-                                        fontSize = 11.sp,
-                                        fontFamily = interfamily,
-                                        color = Color(0xFFEF4444),
-                                        // Responsif: teks chip panjang dipotong (ellipsis) di HP 320dp
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        } else {
-                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF0FDF4)) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF16A34A)))
-                                    Text("Semua Tersedia", fontSize = 11.sp, fontFamily = interfamily, color = Color(0xFF16A34A))
-                                }
-                            }
+                    }
+                }
+
+                // ── Divider ──────────────────────────────────────────────────────
+                HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+
+                // ── Section 3: Toggle + Kasir label + Edit + Delete ──────────────
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            start = if (compactCard) 10.dp else 14.dp,
+                            end = if (compactCard) 8.dp else 10.dp,
+                            top = 6.dp,
+                            bottom = 6.dp
+                        ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Switch(
+                        checked = kategori.isVisibleInCashier,
+                        onCheckedChange = { onToggleCashier() },
+                        modifier = Modifier.scale(if (compactCard) 0.65f else 0.7f),
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Color(0xFF059669),
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color(0xFFCBD5E1)
+                        )
+                    )
+                    Spacer(modifier = Modifier.width(if (compactCard) 4.dp else 8.dp))
+                    Text(
+                        text = "Kasir: ",
+                        fontFamily = interfamily,
+                        fontSize = if (compactCard) 12.sp else 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF374151)
+                    )
+                    Text(
+                        text = if (kategori.isVisibleInCashier) "Aktif" else "Nonaktif",
+                        fontFamily = interfamily,
+                        fontSize = if (compactCard) 12.sp else 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (kategori.isVisibleInCashier) Color(0xFF059669) else Color(0xFF94A3B8),
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Edit button
+                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEEF2FF)) {
+                        IconButton(
+                            onClick = onEdit,
+                            modifier = Modifier.size(if (compactCard) 34.dp else 38.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = "Edit",
+                                tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(if (compactCard) 15.dp else 17.dp)
+                            )
                         }
                     }
-                }
-
-                // Drag handle dots (top right)
-                Icon(Icons.Default.DragIndicator, contentDescription = null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(20.dp))
-            }
-
-            // ── Divider ──────────────────────────────────────────────────────
-            HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
-
-            // ── Section 2: Status stok + Kelola Menu ─────────────────────────
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Layers, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(16.dp))
-                    Text(
-                        text = "Status stok & visibilitas\nitem",
-                        fontSize = 11.sp,
-                        fontFamily = interfamily,
-                        color = Color(0xFF94A3B8)
-                    )
-                }
-                // Kelola Menu button
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFF8FAFF),
-                    border = BorderStroke(1.dp, Color(0xFFEEF2FF)),
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .clickable { onKelolaMenu() }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = "Kelola Menu ($productCount\nProduk)",
-                            fontFamily = interfamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            color = Color(0xFF4F46E5)
-                        )
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF4F46E5), modifier = Modifier.size(16.dp))
-                    }
-                }
-            }
-
-            // ── Divider ──────────────────────────────────────────────────────
-            HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
-
-            // ── Section 3: Toggle + Kasir label + Edit + Delete ──────────────
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 14.dp, end = 10.dp, top = 8.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Switch(
-                    checked = kategori.isVisibleInCashier,
-                    onCheckedChange = { onToggleCashier() },
-                    modifier = Modifier.scale(0.7f),
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = Color(0xFF059669),
-                        uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = Color(0xFFCBD5E1)
-                    )
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Kasir: ",
-                    fontFamily = interfamily,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF374151)
-                )
-                Text(
-                    text = if (kategori.isVisibleInCashier) "Aktif" else "Nonaktif",
-                    fontFamily = interfamily,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (kategori.isVisibleInCashier) Color(0xFF059669) else Color(0xFF94A3B8),
-                    modifier = Modifier.weight(1f)
-                )
-
-                // Edit button
-                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEEF2FF)) {
-                    IconButton(onClick = onEdit, modifier = Modifier.size(38.dp)) {
-                        Icon(Icons.Outlined.Edit, contentDescription = "Edit", tint = Color(0xFF4F46E5), modifier = Modifier.size(17.dp))
-                    }
-                }
-                Spacer(modifier = Modifier.width(6.dp))
-                // Delete button
-                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
-                    IconButton(onClick = onDelete, modifier = Modifier.size(38.dp)) {
-                        Icon(Icons.Outlined.Delete, contentDescription = "Hapus", tint = Color(0xFFEF4444), modifier = Modifier.size(17.dp))
+                    Spacer(modifier = Modifier.width(if (compactCard) 4.dp else 6.dp))
+                    // Delete button
+                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
+                        IconButton(
+                            onClick = onDelete,
+                            modifier = Modifier.size(if (compactCard) 34.dp else 38.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = "Hapus",
+                                tint = Color(0xFFEF4444),
+                                modifier = Modifier.size(if (compactCard) 15.dp else 17.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -878,11 +956,37 @@ fun BadgePill(label: String, color: Color, withIcon: Boolean) {
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+private class OfflinePreviewKategoriProvider : KategoriUiProvider {
+    private val sampleList = listOf(
+        Kategori(id = "kat-minuman", name = "Minuman", description = "Minuman segar untuk menemani hari.", iconUrl = "LocalCafe|#4F46E5", isSynced = false),
+        Kategori(id = "kat-makanan", name = "Makanan", description = "Menu makanan utama toko.", iconUrl = "Restaurant|#F59E0B", isSynced = true),
+        Kategori(id = "kat-snack", name = "Snack", description = "Camilan ringan.", iconUrl = "Category|#10B981", isSynced = true)
+    )
+    private val _state = MutableStateFlow(
+        KategoriListState(
+            kategoriList = sampleList,
+            filteredList = sampleList
+        )
+    )
+    override val state: StateFlow<KategoriListState> = _state.asStateFlow()
+
+    override fun onSearchQueryChange(query: String) {}
+    override fun requestDeleteKategori(kategori: Kategori) {}
+    override fun dismissDeleteDialog() {}
+    override fun deleteKategori(id: String) {}
+    override fun toggleCashierVisibility(kategori: Kategori) {}
+}
+
+@Preview(showBackground = true)
+@PhoneDevicePreviews
 @Composable
-fun DaftarKategoriScreenPreview() {
+private fun DaftarKategoriScreenPreview() {
     MaterialTheme {
-        DaftarKategoriScreen(navController = rememberNavController())
+        DaftarKategoriScreen(
+            navController = rememberNavController(),
+            viewModel = OfflinePreviewKategoriProvider(),
+            produkViewModel = com.ptpws.ikikasir.commond.PreviewProdukProvider()
+        )
     }
 }
 

@@ -1271,6 +1271,18 @@ class PreviewPembayaranProvider : PembayaranUiProvider {
         )
     }
 
+    override fun onCustomerNameChange(name: String) {
+        _state.value = _state.value.copy(customerName = name)
+    }
+
+    override fun onTableNumberChange(tableNumber: String) {
+        _state.value = _state.value.copy(tableNumber = tableNumber)
+    }
+
+    override fun onNotesChange(notes: String) {
+        _state.value = _state.value.copy(notes = notes)
+    }
+
     override fun onBuktiPembayaranChange(uri: String?) {
         _state.value = _state.value.copy(buktiPembayaranUri = uri)
     }
@@ -1507,7 +1519,7 @@ class PreviewQueueHistoryProvider : QueueHistoryUiProvider {
         _exportError.value = null
     }
 
-    override fun groupHistoryByDate(items: List<QueueHistory>) = Unit
+    override fun groupHistoryByDate(items: List<QueueHistory>): Map<String, List<QueueHistory>> = emptyMap()
 }
 
 // ── Role ──
@@ -2088,7 +2100,8 @@ class PreviewUserListProvider : UserListUiProvider {
             fullName = "Siti Aminah",
             email = "siti@ikikasir.com",
             roleId = "Kasir",
-            isActive = true
+            isActive = true,
+            isSynced = false
         ),
         User(
             id = "usr-3",

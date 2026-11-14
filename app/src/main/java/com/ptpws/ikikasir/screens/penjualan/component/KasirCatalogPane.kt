@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -96,10 +97,13 @@ fun KasirCatalogPane(
     }
 
     // Initial Loading Shimmer State (850ms agar animasi skeleton shimmer terlihat jelas dan smooth)
-    var isInitialLoading by remember { mutableStateOf(true) }
+    val isPreview = LocalInspectionMode.current
+    var isInitialLoading by remember { mutableStateOf(!isPreview) }
     LaunchedEffect(Unit) {
-        delay(850L)
-        isInitialLoading = false
+        if (!isPreview) {
+            delay(850L)
+            isInitialLoading = false
+        }
     }
     val isShimmerActive = isInitialLoading || state.isLoading
 

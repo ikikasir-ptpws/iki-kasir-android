@@ -64,6 +64,8 @@ import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.DailySalesEntry
 import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.commond.PreviewLaporanKeuanganProvider
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import com.ptpws.ikikasir.core.responsive.presentation.util.LocalWindowSizeInfo
 import com.ptpws.ikikasir.feature.keuangan.presentation.state.LaporanKeuanganState
@@ -1631,10 +1633,16 @@ private fun formatRupiah(nominal: Double): String {
     return formatter.format(nominal)
 }
 
-@Preview(showSystemUi = true, showBackground = true)
+@Preview(showBackground = true)
+@PhoneDevicePreviews
 @Composable
 private fun LaporanKeuanganScreenPreview() {
-    LaporanKeuanganScreen(navController = rememberNavController())
+    MaterialTheme {
+        LaporanKeuanganScreen(
+            navController = rememberNavController(),
+            viewModel = PreviewLaporanKeuanganProvider()
+        )
+    }
 }
 
 

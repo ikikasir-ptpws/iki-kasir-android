@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -38,6 +39,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -57,6 +59,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -64,14 +67,21 @@ import coil.compose.AsyncImage
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.GlobalTextField
+import com.ptpws.ikikasir.commond.PreviewRoleListProvider
 import com.ptpws.ikikasir.commond.SyncStatusBadge
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+import com.ptpws.ikikasir.feature.manajemenpengguna.domain.model.User
+import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.state.UserListState
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.HiltUserListUiProvider
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserListUiProvider
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserViewModel
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.HiltRoleListUiProvider
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleListUiProvider
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 // Opsi filter yang tersedia untuk halaman Daftar Pengguna
 data class UserFilterItem(
@@ -183,13 +193,18 @@ fun DaftarUserScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
-        ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val compactLayout = maxWidth <= 360.dp
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = if (compactLayout) 12.dp else 16.dp),
+                verticalArrangement = Arrangement.spacedBy(if (compactLayout) 8.dp else 10.dp),
+                contentPadding = PaddingValues(
+                    top = if (compactLayout) 10.dp else 16.dp,
+                    bottom = 100.dp
+                )
+            ) {
             // Search bar and filter
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -390,146 +405,146 @@ fun DaftarUserScreen(
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            var imageLoadFailed by remember(user.photoUrl) { mutableStateOf(false) }
-
-                            // Avatar circular
-                            Box(
+                        BoxWithConstraints {
+                            val compactCard = maxWidth <= 340.dp
+                            Row(
                                 modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        when (inisial.firstOrNull()?.toString()?.uppercase()) {
-                                            "A" -> Color(0xFFE7E3FF)
-                                            "B" -> Color(0xFFE7E3FF)
-                                            "R" -> Color(0xFFFFE6DC)
-                                            else -> Color(0xFFE5E7EB)
-                                        }
+                                    .fillMaxWidth()
+                                    .padding(
+                                        horizontal = if (compactCard) 10.dp else 14.dp,
+                                        vertical = if (compactCard) 10.dp else 14.dp
                                     ),
-                                contentAlignment = Alignment.Center
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                if (user.photoUrl.isNotBlank() && !imageLoadFailed) {
-                                    AsyncImage(
-                                        model = user.photoUrl,
-                                        contentDescription = user.fullName,
-                                        contentScale = ContentScale.Crop,
-                                        onError = { imageLoadFailed = true },
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                } else {
-                                    Text(
-                                        text = inisial,
-                                        fontFamily = interfamily,
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = when (inisial.firstOrNull()?.toString()?.uppercase()) {
-                                            "R" -> Color(0xFF92400E)
-                                            else -> Color(0xFF4F46E5)
-                                        }
-                                    )
+                                var imageLoadFailed by remember(user.photoUrl) { mutableStateOf(false) }
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(if (compactCard) 40.dp else 48.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            when (inisial.firstOrNull()?.toString()?.uppercase()) {
+                                                "A" -> Color(0xFFE7E3FF)
+                                                "B" -> Color(0xFFE7E3FF)
+                                                "R" -> Color(0xFFFFE6DC)
+                                                else -> Color(0xFFE5E7EB)
+                                            }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (user.photoUrl.isNotBlank() && !imageLoadFailed) {
+                                        AsyncImage(
+                                            model = user.photoUrl,
+                                            contentDescription = user.fullName,
+                                            contentScale = ContentScale.Crop,
+                                            onError = { imageLoadFailed = true },
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    } else {
+                                        Text(
+                                            text = inisial,
+                                            fontFamily = interfamily,
+                                            fontSize = if (compactCard) 17.sp else 20.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = when (inisial.firstOrNull()?.toString()?.uppercase()) {
+                                                "R" -> Color(0xFF92400E)
+                                                else -> Color(0xFF4F46E5)
+                                            }
+                                        )
+                                    }
                                 }
-                            }
 
-                            Spacer(modifier = Modifier.width(14.dp))
+                                Spacer(modifier = Modifier.width(if (compactCard) 10.dp else 14.dp))
 
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     Text(
                                         text = user.fullName,
                                         fontFamily = interfamily,
                                         fontWeight = FontWeight.SemiBold,
-                                        fontSize = 15.sp,
+                                        fontSize = if (compactCard) 13.sp else 15.sp,
                                         color = Color(0xFF111827),
-                                        modifier = Modifier.weight(1f, fill = false),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
+                                    Text(
+                                        text = user.email,
+                                        fontFamily = interfamily,
+                                        fontSize = if (compactCard) 10.sp else 12.sp,
+                                        color = Color(0xFF6B7280),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(if (compactCard) 4.dp else 6.dp),
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    ) {
+                                        UserRoleBadge(role = role)
+                                        if (!user.isSynced) SyncStatusBadge()
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(if (compactCard) 6.dp else 8.dp))
+
+                                Column(
+                                    horizontalAlignment = Alignment.End,
+                                    verticalArrangement = Arrangement.spacedBy(if (compactCard) 5.dp else 8.dp)
+                                ) {
                                     Box(
                                         modifier = Modifier
-                                            .background(Color(0xFFE5E7EB), RoundedCornerShape(6.dp))
-                                            .padding(horizontal = 7.dp, vertical = 2.dp)
+                                            .background(
+                                                if (aktif) Color(0xFFDDF7E5) else Color(0xFFF3F4F6),
+                                                RoundedCornerShape(8.dp)
+                                            )
+                                            .padding(
+                                                horizontal = if (compactCard) 7.dp else 10.dp,
+                                                vertical = 3.dp
+                                            )
                                     ) {
                                         Text(
-                                            text = role,
+                                            text = if (aktif) "AKTIF" else "NONAKTIF",
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF4B5563),
-                                            maxLines = 1
+                                            fontFamily = interfamily,
+                                            color = if (aktif) Color(0xFF16A34A) else Color(0xFF6B7280)
                                         )
                                     }
-                                    if (!user.isSynced) {
-                                        SyncStatusBadge()
-                                    }
-                                }
 
-                                Spacer(modifier = Modifier.height(2.dp))
-
-                                Text(
-                                    text = user.email,
-                                    fontFamily = interfamily,
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF6B7280),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Column(
-                                horizontalAlignment = Alignment.End,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .background(
-                                            if (aktif) Color(0xFFDDF7E5) else Color(0xFFF3F4F6),
-                                            RoundedCornerShape(8.dp)
-                                        )
-                                        .padding(horizontal = 10.dp, vertical = 3.dp)
-                                ) {
-                                    Text(
-                                        text = if (aktif) "AKTIF" else "NONAKTIF",
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        fontFamily = interfamily,
-                                        color = if (aktif) Color(0xFF16A34A) else Color(0xFF6B7280)
-                                    )
-                                }
-
-                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEEF2FF)) {
-                                        IconButton(
-                                            onClick = { onEditUser(user.id) },
-                                            modifier = Modifier.size(36.dp)
+                                    Row(horizontalArrangement = Arrangement.spacedBy(if (compactCard) 4.dp else 6.dp)) {
+                                        Surface(
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = Color(0xFFEEF2FF)
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Edit,
-                                                contentDescription = "Edit User",
-                                                tint = Color(0xFF4F46E5),
-                                                modifier = Modifier.size(18.dp)
-                                            )
+                                            IconButton(
+                                                onClick = { onEditUser(user.id) },
+                                                modifier = Modifier.size(if (compactCard) 30.dp else 34.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Edit,
+                                                    contentDescription = "Edit User",
+                                                    tint = Color(0xFF4F46E5),
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
                                         }
-                                    }
-                                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
-                                        IconButton(
-                                            onClick = { userToDelete = user },
-                                            modifier = Modifier.size(36.dp)
+                                        Surface(
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = Color(0xFFFFF1F2)
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Delete,
-                                                contentDescription = "Hapus User",
-                                                tint = Color(0xFFEF4444),
-                                                modifier = Modifier.size(18.dp)
-                                            )
+                                            IconButton(
+                                                onClick = { userToDelete = user },
+                                                modifier = Modifier.size(if (compactCard) 30.dp else 34.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Delete,
+                                                    contentDescription = "Hapus User",
+                                                    tint = Color(0xFFEF4444),
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -614,7 +629,8 @@ fun DaftarUserScreen(
                                 Text(
                                     text = label, fontFamily = interfamily,
                                     color = Color(0xFF6B7280), fontSize = 10.sp,
-                                    fontWeight = FontWeight.Medium, letterSpacing = 0.3.sp
+                                    fontWeight = FontWeight.Medium, letterSpacing = 0.3.sp,
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 Text(
@@ -627,6 +643,25 @@ fun DaftarUserScreen(
                 }
             }
         }
+    }
+}
+}
+
+@Composable
+private fun UserRoleBadge(role: String) {
+    Box(
+        modifier = Modifier
+            .background(Color(0xFFE5E7EB), RoundedCornerShape(6.dp))
+            .padding(horizontal = 7.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = role,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF4B5563),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -673,15 +708,57 @@ private fun ActiveFilterChip(
     }
 }
 
-// ---- PREVIEW (aktifkan satu per satu untuk tes) ----
-// import androidx.compose.ui.tooling.preview.Preview
-//
-// @Preview(name = "HP kecil 320x568", device = "spec:width=320dp,height=568dp", showBackground = true)
-// @Preview(name = "HP standar 360x800", device = "spec:width=360dp,height=800dp", showBackground = true)
-// @Preview(name = "HP besar 411x891", device = "spec:width=411dp,height=891dp", showBackground = true)
-// @Preview(name = "Font besar", device = "spec:width=360dp,height=800dp", fontScale = 1.3f, showBackground = true)
-// @Composable
-// private fun DaftarUserScreenResponsivePreview() {
-//     // Preview butuh ViewModel/Firebase, perlu composable stateless
-//     DaftarUserScreen()
-// }
+private class OfflinePreviewUserListProvider : UserListUiProvider {
+    private val sampleUsers = listOf(
+        User(
+            id = "usr-1",
+            fullName = "Budi Santoso",
+            email = "budi@ikikasir.com",
+            roleId = "Admin",
+            isActive = true,
+            isSynced = true
+        ),
+        User(
+            id = "usr-2",
+            fullName = "Siti Aminah",
+            email = "siti@ikikasir.com",
+            roleId = "Kasir",
+            isActive = true,
+            isSynced = false
+        ),
+        User(
+            id = "usr-3",
+            fullName = "Andi Wijaya",
+            email = "andi@ikikasir.com",
+            roleId = "Kasir",
+            isActive = false,
+            isSynced = true
+        )
+    )
+    private val _listState = MutableStateFlow(
+        UserListState(
+            users = sampleUsers,
+            filteredUsers = sampleUsers
+        )
+    )
+    override val listState: StateFlow<UserListState> = _listState.asStateFlow()
+
+    override fun onSearchQueryChange(query: String) {}
+    override fun onFilterRoleChange(role: String) {}
+    override fun onFilterStatusChange(status: String) {}
+    override fun clearFilters() {}
+    override fun deleteUser(id: String) {}
+    override fun syncData() {}
+}
+
+@Preview(showBackground = true)
+@PhoneDevicePreviews
+@Composable
+private fun DaftarUserScreenLocalPreview() {
+    MaterialTheme {
+        DaftarUserScreen(
+            viewModel = OfflinePreviewUserListProvider(),
+            roleViewModel = PreviewRoleListProvider()
+        )
+    }
+}
