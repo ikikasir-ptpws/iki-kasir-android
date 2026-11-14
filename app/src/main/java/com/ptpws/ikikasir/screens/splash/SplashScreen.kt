@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 
 @Composable
 fun SplashScreen(
@@ -68,7 +69,18 @@ fun SplashScreen(
 }
 
 @Preview(showBackground = true)
+@PhoneDevicePreviews
 @Composable
 private fun SplashScreenPreview() {
     SplashScreen()
+}
+
+@Preview(showBackground = true)
+@PhoneDevicePreviews
+@Composable
+private fun SplashScreenLoadingPreview() {
+    SplashScreen(
+        isLoading = true,
+        statusText = "Menyiapkan data aplikasi..."
+    )
 }
