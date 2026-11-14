@@ -40,6 +40,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -52,14 +53,20 @@ import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.feature.manajemenstok.presentation.state.ManajemenStokState
 import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.ManajemenStokUiProvider
 import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.HiltManajemenStokUiProvider
 import com.ptpws.ikikasir.feature.manajemenstok.presentation.viewmodel.ManajemenStokViewModel
 import com.ptpws.ikikasir.feature.produk.domain.model.Produk
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.produk.DetailProdukActivity
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 import androidx.activity.compose.BackHandler
+import androidx.navigation.compose.rememberNavController
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -514,6 +521,7 @@ fun ManajemenStokScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun StokProdukCardItem(
     produk: Produk,
@@ -528,191 +536,202 @@ fun StokProdukCardItem(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, if (isKritis) Color(0xFFFCA5A5) else Color(0xFFF1F5F9))
     ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Upper Row: Image, Name & SKU, Stock Total
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+        BoxWithConstraints {
+            val compactCard = maxWidth <= 340.dp
+            val cardPadding = if (compactCard) 10.dp else 14.dp
+            val imageSize = if (compactCard) 56.dp else 68.dp
+            val itemGap = if (compactCard) 8.dp else 12.dp
+
+            Column(
+                modifier = Modifier.padding(cardPadding),
+                verticalArrangement = Arrangement.spacedBy(if (compactCard) 10.dp else 12.dp)
             ) {
-                // Product Image
-                if (produk.imageUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = produk.imageUrl,
-                        contentDescription = produk.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(68.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color(0xFFF1F5F9))
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .size(68.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color(0xFFF1F5F9)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Inventory2,
-                            contentDescription = null,
-                            tint = Color(0xFF94A3B8),
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // Middle Info Column
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                // Upper Row: Image, Name & SKU, Stock Total
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        if (isKritis) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = Color(0xFFFFE4E6)
-                            ) {
-                                Text(
-                                    text = "⚠️ KRITIS",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = interfamily,
-                                    color = Color(0xFFE11D48),
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                        if (!produk.isSynced) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = Color(0xFFFEF3C7)
-                            ) {
-                                Text(
-                                    text = "Pending",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = interfamily,
-                                    color = Color(0xFFD97706),
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Text(
-                        text = produk.name,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = interfamily,
-                        color = Color(0xFF0F172A),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    if (produk.barcode.isNotBlank()) {
-                        Text(
-                            text = "SKU: ${produk.barcode}",
-                            fontSize = 11.sp,
-                            fontFamily = interfamily,
-                            color = Color(0xFF64748B)
+                    // Product Image
+                    if (produk.imageUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = produk.imageUrl,
+                            contentDescription = produk.name,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(imageSize)
+                                .clip(RoundedCornerShape(if (compactCard) 12.dp else 14.dp))
+                                .background(Color(0xFFF1F5F9))
                         )
                     } else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(imageSize)
+                                .clip(RoundedCornerShape(if (compactCard) 12.dp else 14.dp))
+                                .background(Color(0xFFF1F5F9)),
+                            contentAlignment = Alignment.Center
                         ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Inventory2,
+                                contentDescription = null,
+                                tint = Color(0xFF94A3B8),
+                                modifier = Modifier.size(if (compactCard) 24.dp else 28.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(itemGap))
+
+                    // Middle Info Column
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            if (isKritis) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = Color(0xFFFFE4E6)
+                                ) {
+                                    Text(
+                                        text = "⚠️ KRITIS",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = interfamily,
+                                        color = Color(0xFFE11D48),
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            if (!produk.isSynced) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = Color(0xFFFEF3C7)
+                                ) {
+                                    Text(
+                                        text = "Pending",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = interfamily,
+                                        color = Color(0xFFD97706),
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Text(
+                            text = produk.name,
+                            fontSize = if (compactCard) 13.5.sp else 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = interfamily,
+                            color = Color(0xFF0F172A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        if (produk.barcode.isNotBlank()) {
                             Text(
-                                text = "Kode:",
+                                text = "SKU: ${produk.barcode}",
                                 fontSize = 11.sp,
                                 fontFamily = interfamily,
-                                color = Color(0xFF94A3B8)
+                                color = Color(0xFF64748B),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = Color(0xFFFEF3C7)
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Text(
-                                    text = "Belum diisi",
-                                    fontSize = 10.sp,
+                                    text = "Kode:",
+                                    fontSize = 11.sp,
                                     fontFamily = interfamily,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFFD97706),
-                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                    color = Color(0xFF94A3B8)
                                 )
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = Color(0xFFFEF3C7)
+                                ) {
+                                    Text(
+                                        text = "Belum diisi",
+                                        fontSize = 10.sp,
+                                        fontFamily = interfamily,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFFD97706),
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                // Right Column: Total Stock Value
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "TOTAL STOK",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = interfamily,
-                        color = if (isKritis) Color(0xFFE11D48) else Color(0xFF64748B)
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "${produk.stock}",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = interfamily,
-                        color = if (isKritis) Color(0xFFE11D48) else Color(0xFF0F172A)
-                    )
-                }
-            }
+                    Spacer(modifier = Modifier.width(6.dp))
 
-            // Lower Row: Action Buttons (RESTOCK & Eye/Detail Icon)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(
-                    onClick = onRestock,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isKritis) Color(0xFFE11D48) else Color(0xFF4F46E5)
-                    )
-                ) {
-                    Text(
-                        text = "RESTOCK",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = interfamily,
-                        color = Color.White
-                    )
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFF8FAFC),
-                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clickable { onDetail() }
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Outlined.Visibility,
-                            contentDescription = "Detail Produk",
-                            tint = Color(0xFF64748B),
-                            modifier = Modifier.size(20.dp)
+                    // Right Column: Total Stock Value
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "TOTAL STOK",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = interfamily,
+                            color = if (isKritis) Color(0xFFE11D48) else Color(0xFF64748B)
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "${produk.stock}",
+                            fontSize = if (compactCard) 19.sp else 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = interfamily,
+                            color = if (isKritis) Color(0xFFE11D48) else Color(0xFF0F172A)
+                        )
+                    }
+                }
+
+                // Lower Row: Action Buttons (RESTOCK & Eye/Detail Icon)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(if (compactCard) 8.dp else 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = onRestock,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(if (compactCard) 40.dp else 44.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isKritis) Color(0xFFE11D48) else Color(0xFF4F46E5)
+                        )
+                    ) {
+                        Text(
+                            text = "RESTOCK",
+                            fontSize = if (compactCard) 12.sp else 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = interfamily,
+                            color = Color.White
+                        )
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFF8FAFC),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier
+                            .size(if (compactCard) 40.dp else 44.dp)
+                            .clickable { onDetail() }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Outlined.Visibility,
+                                contentDescription = "Detail Produk",
+                                tint = Color(0xFF64748B),
+                                modifier = Modifier.size(if (compactCard) 18.dp else 20.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -720,13 +739,80 @@ fun StokProdukCardItem(
     }
 }
 
-@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
-@androidx.compose.runtime.Composable
+private class OfflinePreviewManajemenStokProvider : ManajemenStokUiProvider {
+    private val sampleProdukList = listOf(
+        Produk(
+            id = "prd-001",
+            name = "Kopi Susu 250ml",
+            categoryId = "kat-minuman",
+            barcode = "8992753210123",
+            costPrice = 12000.0,
+            sellingPrice = 18000.0,
+            stock = 48,
+            lowStockThreshold = 5,
+            isSynced = false
+        ),
+        Produk(
+            id = "prd-002",
+            name = "Teh Manis 350ml",
+            categoryId = "kat-minuman",
+            barcode = "8992753210124",
+            costPrice = 5000.0,
+            sellingPrice = 8000.0,
+            stock = 3,
+            lowStockThreshold = 5,
+            isSynced = false
+        ),
+        Produk(
+            id = "prd-003",
+            name = "Nasi Goreng Spesial",
+            categoryId = "kat-makanan",
+            barcode = "8992753210131",
+            costPrice = 15000.0,
+            sellingPrice = 25000.0,
+            stock = 24,
+            lowStockThreshold = 5,
+            isSynced = true
+        ),
+        Produk(
+            id = "prd-004",
+            name = "Keripik Kentang Chitato",
+            categoryId = "kat-snack",
+            barcode = "8992753210148",
+            costPrice = 9000.0,
+            sellingPrice = 12000.0,
+            stock = 0,
+            lowStockThreshold = 5,
+            isSynced = true
+        )
+    )
+
+    private val _state = MutableStateFlow(
+        ManajemenStokState(
+            produkList = sampleProdukList,
+            totalUnitKeseluruhan = 75,
+            jumlahRestockDibutuhkan = 2
+        )
+    )
+    override val state: StateFlow<ManajemenStokState> = _state.asStateFlow()
+
+    override fun onSearchQueryChange(query: String) {}
+    override fun toggleFilterKritisOnly() {}
+    override fun closeRestockDialog() {}
+    override fun onRestockJumlahChange(jumlah: String) {}
+    override fun simpanRestock() {}
+    override fun clearError() {}
+    override fun clearSuccessRestock() {}
+}
+
+@Preview(showBackground = true)
+@PhoneDevicePreviews
+@Composable
 private fun ManajemenStokScreenPreview() {
-    androidx.compose.material3.MaterialTheme {
+    MaterialTheme {
         ManajemenStokScreen(
-            navController = androidx.navigation.compose.rememberNavController(),
-            viewModel = com.ptpws.ikikasir.commond.PreviewManajemenStokProvider()
+            navController = rememberNavController(),
+            viewModel = OfflinePreviewManajemenStokProvider()
         )
     }
 }
