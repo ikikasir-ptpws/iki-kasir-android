@@ -71,6 +71,7 @@ import androidx.activity.compose.BackHandler
 import com.ptpws.ikikasir.core.responsive.presentation.components.AdaptiveFormList
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleFormUiProvider
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.HiltRoleFormUiProvider
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
@@ -430,9 +431,10 @@ fun TambahRoleScreen(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
+@PhoneDevicePreviews
 @Composable
-fun TambahRoleScreenPreview() {
+private fun TambahRoleScreenPreview() {
     MaterialTheme {
         TambahRoleScreen(
             viewModel = com.ptpws.ikikasir.commond.PreviewRoleFormProvider()

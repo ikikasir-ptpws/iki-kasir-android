@@ -31,6 +31,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,13 +46,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import com.ptpws.ikikasir.commond.GlobalScrollPaginationFooter
 import com.ptpws.ikikasir.commond.SyncStatusBadge
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import com.ptpws.ikikasir.feature.role.domain.model.Role
+import com.ptpws.ikikasir.feature.role.presentation.state.RoleListState
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleListUiProvider
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.HiltRoleListUiProvider
 import com.ptpws.ikikasir.feature.role.presentation.viewmodel.RoleViewModel
@@ -386,12 +393,43 @@ private fun RoleActions(
 //     RoleIzinScreen()
 // }
 
-@com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
-@androidx.compose.runtime.Composable
+private class OfflinePreviewRoleListProvider : RoleListUiProvider {
+    private val sampleRoles = listOf(
+        Role(
+            id = "role-1",
+            name = "Admin",
+            description = "Akses penuh seluruh menu",
+            userCount = 2,
+            createdAt = 1_700_000_000_000L,
+            isSynced = true
+        ),
+        Role(
+            id = "role-2",
+            name = "Kasir",
+            description = "Operasional kasir & transaksi",
+            userCount = 5,
+            createdAt = 1_700_000_100_000L,
+            isSynced = false
+        )
+    )
+
+    private val _listState = MutableStateFlow(
+        RoleListState(
+            roles = sampleRoles
+        )
+    )
+    override val listState: StateFlow<RoleListState> = _listState.asStateFlow()
+
+    override fun deleteRole(id: String) {}
+}
+
+@Preview(showBackground = true)
+@PhoneDevicePreviews
+@Composable
 private fun RoleIzinScreenLocalPreview() {
-    androidx.compose.material3.MaterialTheme {
+    MaterialTheme {
         RoleIzinScreen(
-            viewModel = com.ptpws.ikikasir.commond.PreviewRoleListProvider()
+            viewModel = OfflinePreviewRoleListProvider()
         )
     }
 }
