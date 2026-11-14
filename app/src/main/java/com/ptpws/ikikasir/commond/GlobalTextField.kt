@@ -58,8 +58,8 @@ fun GlobalTextField(
     enabled: Boolean = true,
     isError: Boolean = false,
     errorMessage: String? = null,
-    height: Dp? = if (singleLine) 44.dp else null,
-    minHeight: Dp = 44.dp,
+    height: Dp? = if (singleLine) 50.dp else null,
+    minHeight: Dp = 50.dp,
     shape: Shape = RoundedCornerShape(15.dp),
     containerColor: Color = Color.White,
     cardElevation: Dp = 8.dp,
@@ -67,7 +67,7 @@ fun GlobalTextField(
     cursorColor: Color = Color(0xFF4F46E5),
     textStyle: TextStyle = TextStyle(
         color = Color(0xFF111827),
-        fontSize = 12.sp,
+        fontSize = 14.sp,
         fontFamily = interfamily
     )
 ) {
@@ -96,7 +96,7 @@ fun GlobalTextField(
             ) {
                 Text(
                     text = label,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = interfamily,
                     letterSpacing = 0.8.sp,
@@ -108,7 +108,7 @@ fun GlobalTextField(
                 if (isRequired) {
                     Text(
                         text = " *",
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFEF4444)
                     )
@@ -214,13 +214,13 @@ fun GlobalTextField(
                 } else if (isPassword) {
                     IconButton(
                         onClick = { passwordVisible = !passwordVisible },
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                             contentDescription = if (passwordVisible) "Sembunyikan Kata Sandi" else "Tampilkan Kata Sandi",
                             tint = Color(0xFF6B7280),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -230,7 +230,7 @@ fun GlobalTextField(
         AnimatedVisibility(visible = isError && !errorMessage.isNullOrBlank()) {
             Text(
                 text = errorMessage.orEmpty(),
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 fontFamily = interfamily,
                 color = Color(0xFFEF4444),
                 // Responsif: pesan error dibatasi 2 baris agar form tetap muat di layar pendek
