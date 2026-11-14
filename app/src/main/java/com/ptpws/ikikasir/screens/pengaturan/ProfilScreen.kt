@@ -50,6 +50,9 @@ import com.ptpws.ikikasir.commond.SyncStatusBadge
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.commond.rememberGlobalImagePicker
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import com.ptpws.ikikasir.feature.pengaturan.data.preferences.NotaSettingPreferences
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting
 import com.ptpws.ikikasir.feature.pengaturan.data.preferences.PaymentMethodSettingPreferences
@@ -80,6 +83,9 @@ import com.ptpws.ikikasir.feature.auth.presentation.viewmodel.SecurityViewModel
 import com.ptpws.ikikasir.feature.tentangaplikasi.TentangAplikasiDialog
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+import com.ptpws.ikikasir.feature.manajemenpengguna.domain.model.User
+import com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel.UserProfileState
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -2032,13 +2038,87 @@ fun MenuAkunItem(
 
 // ── Preview
 
-@Preview(showBackground = true, showSystemUi = true)
+private class OfflinePreviewProfilProvider : ProfilUiProvider {
+    private val sampleUser = User(
+        id = "user-1",
+        fullName = "Budi Santoso",
+        email = "budi.santoso@ikikasir.com",
+        roleId = "Admin",
+        isActive = true,
+        photoUrl = "",
+        isSynced = false
+    )
+
+    private val _userProfileState = MutableStateFlow(
+        UserProfileState(
+            user = sampleUser,
+            roleName = "System Administrator",
+            isLoading = false
+        )
+    )
+    override val userProfileState: StateFlow<UserProfileState> = _userProfileState.asStateFlow()
+
+    private val _isOnline = MutableStateFlow(false)
+    override val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
+
+    private val _notaSetting = MutableStateFlow(
+        NotaSetting(
+            storeName = "Toko Kopi Nusantara",
+            storeAddress = "Jl. Merdeka No. 12, Bandung",
+            storePhone = "0812-3456-7890",
+            wifiName = "Kopi Nusantara",
+            wifiPassword = "kopinusantara123",
+            paperWidth = "58mm",
+            isSynced = false
+        )
+    )
+    override val notaSetting: StateFlow<NotaSetting> = _notaSetting.asStateFlow()
+
+    private val _taxSetting = MutableStateFlow(
+        TaxSetting(
+            id = "default",
+            isActive = true,
+            percentage = 11.0,
+            type = TaxSetting.TAX_TYPE_EXCLUSIVE,
+            isSynced = false
+        )
+    )
+    override val taxSetting: StateFlow<TaxSetting> = _taxSetting.asStateFlow()
+
+    private val _paymentMethodSetting = MutableStateFlow(
+        PaymentMethodSetting(
+            id = "default",
+            isTunaiEnabled = true,
+            isQrisEnabled = true,
+            isSynced = false
+        )
+    )
+    override val paymentMethodSetting: StateFlow<PaymentMethodSetting> = _paymentMethodSetting.asStateFlow()
+
+    private val _tableSetting = MutableStateFlow(
+        TableSetting(
+            id = "default",
+            isTableEnabled = true,
+            isSynced = false
+        )
+    )
+    override val tableSetting: StateFlow<TableSetting> = _tableSetting.asStateFlow()
+
+    override fun updateUserProfile(newFullName: String, newPhotoUrl: String, onComplete: (Boolean) -> Unit) { onComplete(true) }
+    override fun saveNotaSetting(setting: NotaSetting, onComplete: (Boolean) -> Unit) { onComplete(true) }
+    override fun saveTaxSetting(setting: TaxSetting, onComplete: (Boolean) -> Unit) { onComplete(true) }
+    override fun savePaymentMethodSetting(setting: PaymentMethodSetting, onComplete: (Boolean) -> Unit) { onComplete(true) }
+    override fun saveTableSetting(setting: TableSetting, onComplete: (Boolean) -> Unit) { onComplete(true) }
+}
+
+@Preview(showBackground = true)
+@PhoneDevicePreviews
 @Composable
-fun ProfilScreenPreview() {
+private fun ProfilScreenLocalPreview() {
     MaterialTheme {
         ProfilScreen(
             navController = rememberNavController(),
-            viewModel = com.ptpws.ikikasir.commond.PreviewProfilProvider(),
+            viewModel = OfflinePreviewProfilProvider(),
             securityViewModel = com.ptpws.ikikasir.commond.PreviewSecurityProvider()
         )
     }
