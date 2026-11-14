@@ -916,222 +916,242 @@ fun ProdukCardItem(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(top = if (isStokRendah) 10.dp else 0.dp)
             .graphicsLayer { alpha = cardAlpha }
     ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = if (isStokRendah || isNonAktif) 6.dp else 0.dp)
                 .clickable { onClick() },
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = if (isNonAktif) Color(0xFFF8FAFC) else Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             border = when {
-                isStokRendah -> BorderStroke(1.dp, Color(0xFFFECDD3))
+                isStokRendah -> BorderStroke(1.dp, Color(0xFFFFC0CB))
                 !hasValidCategory -> BorderStroke(1.dp, Color(0xFFFDE68A))
                 isNonAktif -> BorderStroke(1.dp, Color(0xFFE2E8F0))
                 else -> BorderStroke(1.dp, Color(0xFFF1F5F9))
             }
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Product Image
-                if (produk.imageUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = produk.imageUrl,
-                        contentDescription = produk.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFF1F5F9))
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFF1F5F9)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LocalOffer,
-                            contentDescription = null,
-                            tint = Color(0xFF94A3B8),
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                }
+            BoxWithConstraints {
+                val compactCard = maxWidth <= 360.dp
+                val topPadding = if (isStokRendah) (if (compactCard) 14.dp else 16.dp) else (if (compactCard) 10.dp else 12.dp)
+                val horizontalPadding = if (compactCard) 10.dp else 12.dp
+                val bottomPadding = if (compactCard) 10.dp else 12.dp
+                val imageSize = if (compactCard) 60.dp else 72.dp
+                val itemGap = if (compactCard) 8.dp else 12.dp
 
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // Product Details
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            start = horizontalPadding,
+                            end = horizontalPadding,
+                            top = topPadding,
+                            bottom = bottomPadding
+                        ),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Responsif: FlowRow agar badge (Kategori/Pending/Off) tetap utuh di HP 320dp,
-                    // pada HP 360dp semua badge tetap dalam satu baris (tampilan tidak berubah).
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        CategoryBadge(
-                            categoryName = categoryName,
-                            hasValidCategory = hasValidCategory,
-                            onClick = onAssignCategory,
-                            modifier = Modifier.align(Alignment.CenterVertically)
+                    // Product Image
+                    if (produk.imageUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = produk.imageUrl,
+                            contentDescription = produk.name,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(imageSize)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color(0xFFF1F5F9))
                         )
-
-                        if (!produk.isSynced) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = Color(0xFFFEF3C7),
-                                modifier = Modifier.align(Alignment.CenterVertically)
-                            ) {
-                                Text(
-                                    text = "Pending",
-                                    fontSize = 10.sp,
-                                    fontFamily = interfamily,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFD97706),
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-
-                        if (isNonAktif && hasValidCategory) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = Color(0xFFF1F5F9),
-                                modifier = Modifier.align(Alignment.CenterVertically)
-                            ) {
-                                Text(
-                                    text = if (!produk.isVisibleInCashier) "Off" else "Kategori Off",
-                                    fontSize = 10.sp,
-                                    fontFamily = interfamily,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF64748B),
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(imageSize)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color(0xFFF1F5F9)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocalOffer,
+                                contentDescription = null,
+                                tint = Color(0xFF94A3B8),
+                                modifier = Modifier.size(if (compactCard) 26.dp else 28.dp)
+                            )
                         }
                     }
 
-                    Text(
-                        text = produk.name,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = interfamily,
-                        fontSize = 14.sp,
-                        color = if (isNonAktif) Color(0xFF64748B) else Color(0xFF0F172A),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Spacer(modifier = Modifier.width(itemGap))
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "Stok: ",
-                            fontSize = 12.sp,
-                            fontFamily = interfamily,
-                            color = Color(0xFF64748B)
-                        )
-                        if (isStokRendah) {
-                            Text(
-                                text = "${produk.stock} Unit (Kritis)",
-                                fontSize = 12.sp,
-                                fontFamily = interfamily,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFEF4444)
+                    // Product Details
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            CategoryBadge(
+                                categoryName = categoryName,
+                                hasValidCategory = hasValidCategory,
+                                onClick = onAssignCategory,
+                                modifier = Modifier.align(Alignment.CenterVertically)
                             )
-                        } else {
+
+                            if (!produk.isSynced) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = Color(0xFFFEF3C7),
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                ) {
+                                    Text(
+                                        text = "Pending",
+                                        fontSize = 10.sp,
+                                        fontFamily = interfamily,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFD97706),
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+
+                            if (isNonAktif && hasValidCategory) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = Color(0xFFF1F5F9),
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                ) {
+                                    Text(
+                                        text = if (!produk.isVisibleInCashier) "Off" else "Kategori Off",
+                                        fontSize = 10.sp,
+                                        fontFamily = interfamily,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF64748B),
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Text(
+                            text = produk.name,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = interfamily,
+                            fontSize = if (compactCard) 14.sp else 15.sp,
+                            color = if (isNonAktif) Color(0xFF64748B) else Color(0xFF0F172A),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "${produk.stock} Unit",
+                                text = "Stok: ",
                                 fontSize = 12.sp,
                                 fontFamily = interfamily,
-                                fontWeight = FontWeight.Normal,
                                 color = Color(0xFF64748B)
                             )
+                            if (isStokRendah) {
+                                Text(
+                                    text = "${produk.stock} Unit (Kritis)",
+                                    fontSize = 12.sp,
+                                    fontFamily = interfamily,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFEF4444)
+                                )
+                            } else {
+                                Text(
+                                    text = "${produk.stock} Unit",
+                                    fontSize = 12.sp,
+                                    fontFamily = interfamily,
+                                    fontWeight = FontWeight.Normal,
+                                    color = Color(0xFF64748B)
+                                )
+                            }
                         }
+
+                        Text(
+                            text = formattedHarga,
+                            fontSize = 14.5.sp,
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF3D5AF1)
+                        )
                     }
 
-                    Text(
-                        text = formattedHarga,
-                        fontSize = 14.sp,
-                        fontFamily = interfamily,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF4F46E5)
-                    )
-                }
+                    Spacer(modifier = Modifier.width(6.dp))
 
-                Spacer(modifier = Modifier.width(8.dp))
+                    // Action Buttons Column with vertical divider (Exact match to reference image!)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .height(52.dp)
+                                .background(Color(0xFFF1F5F9))
+                        )
 
-                // Action Buttons Column
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEEF2FF)) {
-                        IconButton(
-                            onClick = onEdit,
-                            modifier = Modifier.size(36.dp)
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Edit,
-                                contentDescription = "Edit",
-                                tint = Color(0xFF4F46E5),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
-                        IconButton(
-                            onClick = onDelete,
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Delete,
-                                contentDescription = "Hapus",
-                                tint = Color(0xFFEF4444),
-                                modifier = Modifier.size(18.dp)
-                            )
+                            IconButton(
+                                onClick = onEdit,
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Edit,
+                                    contentDescription = "Edit",
+                                    tint = Color(0xFF475569),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            IconButton(
+                                onClick = onDelete,
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Delete,
+                                    contentDescription = "Hapus",
+                                    tint = Color(0xFFF87171),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                     }
                 }
             }
         }
 
-        // Overlay Stok Rendah Badge
+        // Overlay Badge "STOK RENDAH" at Top-Right Border (Exact match to reference image!)
         if (isStokRendah) {
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(end = 12.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = Color(0xFFEF4444)
+                    .offset(x = (-16).dp, y = (-10).dp),
+                shape = RoundedCornerShape(100.dp),
+                color = Color(0xFFFF3B5C)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Default.Warning,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(11.dp)
+                        modifier = Modifier.size(12.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "STOK RENDAH",
                         color = Color.White,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold,
                         fontFamily = interfamily,
-                        letterSpacing = 0.3.sp
+                        letterSpacing = 0.4.sp
                     )
                 }
             }
@@ -1160,9 +1180,9 @@ fun ProdukCardItem(
 private class OfflinePreviewProdukProvider : ProdukUiProvider {
     private val sampleList = listOf(
         Produk(id = "prd-001", name = "Kopi Susu 250ml", categoryId = "kat-minuman", barcode = "8992753210123", costPrice = 12000.0, sellingPrice = 18000.0, stock = 48, lowStockThreshold = 5, isSynced = false),
-        Produk(id = "prd-002", name = "Teh Manis 350ml", categoryId = "kat-minuman", barcode = "8992753210124", costPrice = 5000.0, sellingPrice = 8000.0, stock = 3, lowStockThreshold = 5, isSynced = true),
+        Produk(id = "prd-002", name = "Teh Manis 350ml", categoryId = "kat-minuman", barcode = "8992753210124", costPrice = 5000.0, sellingPrice = 8000.0, stock = 3, lowStockThreshold = 5, isSynced = false),
         Produk(id = "prd-003", name = "Nasi Goreng Spesial", categoryId = "kat-makanan", barcode = "8992753210131", costPrice = 15000.0, sellingPrice = 25000.0, stock = 24, lowStockThreshold = 5, isSynced = true),
-        Produk(id = "prd-004", name = "Keripik Kentang Chitato", categoryId = "kat-snack", barcode = "8992753210148", costPrice = 9000.0, sellingPrice = 12000.0, stock = 0, lowStockThreshold = 5, isSynced = true)
+        Produk(id = "prd-004", name = "Keripik Kentang Chitato", categoryId = "kat-snack", barcode = "8992753210148", costPrice = 9000.0, sellingPrice = 12000.0, stock = 0, lowStockThreshold = 5, isSynced = false)
     )
     private val _state = MutableStateFlow(
         ProdukListState(
