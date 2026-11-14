@@ -18,12 +18,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ptpws.ikikasir.R
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 
 // ── Model Data Dummy (Tergabung dalam Satu File) ──
 
@@ -122,8 +124,8 @@ private val dummyTentangAplikasiInfo = TentangAplikasiInfo(
 // ── Komponen Pop-up Dialog ──
 
 @Composable
-fun TentangAplikasiDialog(
-    onDismiss: () -> Unit
+fun TentangAplikasiContent(
+    onDismiss: () -> Unit = {}
 ) {
     val info = dummyTentangAplikasiInfo
     val scrollState = rememberScrollState()
@@ -133,16 +135,12 @@ fun TentangAplikasiDialog(
     val isSmallScreen = screenWidth <= 340.dp
     val contentHorizontalPadding = if (isSmallScreen) 14.dp else 20.dp
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(if (isSmallScreen) 0.96f else 0.92f)
-                .fillMaxHeight(if (isSmallScreen) 0.92f else 0.88f),
-            shape = RoundedCornerShape(24.dp),
-            color = Color.White,
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth(if (isSmallScreen) 0.96f else 0.92f)
+            .fillMaxHeight(if (isSmallScreen) 0.92f else 0.88f),
+        shape = RoundedCornerShape(24.dp),
+        color = Color.White,
             tonalElevation = 6.dp
         ) {
             Column(
@@ -402,7 +400,6 @@ fun TentangAplikasiDialog(
             }
         }
     }
-}
 
 @Composable
 private fun FiturItemCard(
@@ -497,5 +494,26 @@ private fun FiturItemCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun TentangAplikasiDialog(
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        TentangAplikasiContent(onDismiss = onDismiss)
+    }
+}
+
+@Preview(showBackground = true)
+@PhoneDevicePreviews
+@Composable
+private fun TentangAplikasiDialogPreview() {
+    MaterialTheme {
+        TentangAplikasiContent()
     }
 }

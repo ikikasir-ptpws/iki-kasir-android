@@ -22,20 +22,22 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import com.ptpws.ikikasir.feature.subscription.data.SubscriptionApiConfig
 import com.ptpws.ikikasir.feature.subscription.data.SubscriptionCheckResult
 
 @Composable
-fun ExpiredPopupDialog(
+fun ExpiredPopupContent(
     subscriptionData: SubscriptionCheckResult?,
     isLoadingRefresh: Boolean = false,
-    onRefresh: () -> Unit,
-    onExit: () -> Unit
+    onRefresh: () -> Unit = {},
+    onExit: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -54,222 +56,234 @@ fun ExpiredPopupDialog(
         "Masa aktif langganan aplikasi IKIKASIR untuk toko Anda telah berakhir. Silakan hubungi admin untuk melakukan perpanjangan paket."
     }
 
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Ikon Warning / Jam Pasir
+            Box(
+                modifier = Modifier
+                    .size(76.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFFEE2E2)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.HourglassBottom,
+                    contentDescription = "Expired",
+                    tint = Color(0xFFDC2626),
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Judul
+            Text(
+                text = "Masa Langganan Habis",
+                fontFamily = interfamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                color = Color(0xFF111827),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = "Aplikasi IKIKASIR Terkunci",
+                fontFamily = interfamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                color = Color(0xFFDC2626),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Kartu Informasi Toko & Pesan
+            Card(
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Toko:",
+                            fontFamily = interfamily,
+                            fontSize = 12.sp,
+                            color = Color(0xFF6B7280)
+                        )
+                        Text(
+                            text = businessName,
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = Color(0xFF111827),
+                            modifier = Modifier.weight(1f, fill = false),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Paket:",
+                            fontFamily = interfamily,
+                            fontSize = 12.sp,
+                            color = Color(0xFF6B7280)
+                        )
+                        Text(
+                            text = packageName,
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.sp,
+                            color = Color(0xFF4F46E5),
+                            modifier = Modifier.weight(1f, fill = false),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        color = Color(0xFFE5E7EB)
+                    )
+
+                    Text(
+                        text = message,
+                        fontFamily = interfamily,
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp,
+                        color = Color(0xFF4B5563),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Tombol 1: Hubungi Admin via WhatsApp
+            Button(
+                onClick = {
+                    openWhatsApp(context, businessName, email, packageName)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                shape = RoundedCornerShape(14.dp),
+                contentPadding = PaddingValues(vertical = 12.dp)
+            ) {
+                Text(
+                    text = "💬 Hubungi Admin via WhatsApp",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Tombol 2: Cek Status Lagi (Refresh)
+            OutlinedButton(
+                onClick = onRefresh,
+                enabled = !isLoadingRefresh,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                contentPadding = PaddingValues(vertical = 12.dp)
+            ) {
+                if (isLoadingRefresh) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = Color(0xFF4F46E5)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Memeriksa Status...",
+                        fontFamily = interfamily,
+                        fontSize = 13.sp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Refresh",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Cek Status Lagi",
+                        fontFamily = interfamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp,
+                        color = Color(0xFF374151)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Tombol 3: Keluar Aplikasi
+            TextButton(
+                onClick = onExit,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Keluar Aplikasi",
+                    fontFamily = interfamily,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 13.sp,
+                    color = Color(0xFF9CA3AF)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ExpiredPopupDialog(
+    subscriptionData: SubscriptionCheckResult?,
+    isLoadingRefresh: Boolean = false,
+    onRefresh: () -> Unit,
+    onExit: () -> Unit
+) {
     Dialog(
-        onDismissRequest = { /* Non-dismissible: Pengguna tidak bisa menutup popup tanpa perpanjangan */ },
+        onDismissRequest = { /* Non-dismissible */ },
         properties = DialogProperties(
             dismissOnBackPress = false,
             dismissOnClickOutside = false
         )
     ) {
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    // Responsif: konten dialog bisa digulir agar tombol tidak terpotong di layar pendek
-                    .verticalScroll(rememberScrollState())
-                    .padding(28.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Ikon Warning / Jam Pasir
-                Box(
-                    modifier = Modifier
-                        .size(76.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFFEE2E2)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.HourglassBottom,
-                        contentDescription = "Expired",
-                        tint = Color(0xFFDC2626),
-                        modifier = Modifier.size(40.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Judul
-                Text(
-                    text = "Masa Langganan Habis",
-                    fontFamily = interfamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color(0xFF111827),
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = "Aplikasi IKIKASIR Terkunci",
-                    fontFamily = interfamily,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 13.sp,
-                    color = Color(0xFFDC2626),
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Kartu Informasi Toko & Pesan
-                Card(
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Toko:",
-                                fontFamily = interfamily,
-                                fontSize = 12.sp,
-                                color = Color(0xFF6B7280)
-                            )
-                            Text(
-                                text = businessName,
-                                fontFamily = interfamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                                color = Color(0xFF111827),
-                                // Responsif: nama toko dipotong agar label "Toko:" tetap terlihat
-                                modifier = Modifier.weight(1f, fill = false),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Paket:",
-                                fontFamily = interfamily,
-                                fontSize = 12.sp,
-                                color = Color(0xFF6B7280)
-                            )
-                            Text(
-                                text = packageName,
-                                fontFamily = interfamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 12.sp,
-                                color = Color(0xFF4F46E5),
-                                // Responsif: nama paket dipotong agar label "Paket:" tetap terlihat
-                                modifier = Modifier.weight(1f, fill = false),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 4.dp),
-                            color = Color(0xFFE5E7EB)
-                        )
-
-                        Text(
-                            text = message,
-                            fontFamily = interfamily,
-                            fontSize = 12.sp,
-                            lineHeight = 17.sp,
-                            color = Color(0xFF4B5563),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Tombol 1: Hubungi Admin via WhatsApp
-                Button(
-                    onClick = {
-                        openWhatsApp(context, businessName, email, packageName)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
-                    shape = RoundedCornerShape(14.dp),
-                    contentPadding = PaddingValues(vertical = 12.dp)
-                ) {
-                    Text(
-                        text = "💬 Hubungi Admin via WhatsApp",
-                        fontFamily = interfamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = Color.White
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Tombol 2: Cek Status Lagi (Refresh)
-                OutlinedButton(
-                    onClick = onRefresh,
-                    enabled = !isLoadingRefresh,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    contentPadding = PaddingValues(vertical = 12.dp)
-                ) {
-                    if (isLoadingRefresh) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = Color(0xFF4F46E5)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Memeriksa Status...",
-                            fontFamily = interfamily,
-                            fontSize = 13.sp
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Refresh",
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Cek Status Lagi",
-                            fontFamily = interfamily,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp,
-                            color = Color(0xFF374151)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Tombol 3: Keluar Aplikasi
-                TextButton(
-                    onClick = onExit,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Keluar Aplikasi",
-                        fontFamily = interfamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 13.sp,
-                        color = Color(0xFF9CA3AF)
-                    )
-                }
-            }
-        }
+        ExpiredPopupContent(
+            subscriptionData = subscriptionData,
+            isLoadingRefresh = isLoadingRefresh,
+            onRefresh = onRefresh,
+            onExit = onExit
+        )
     }
 }
 
@@ -289,7 +303,32 @@ private fun openWhatsApp(
         }
         context.startActivity(intent)
     } catch (e: Exception) {
-        // Fallback jika WhatsApp tidak terpasang
         android.util.Log.e("ExpiredPopup", "Gagal membuka WhatsApp: ${e.message}")
+    }
+}
+
+@Preview(showBackground = true)
+@PhoneDevicePreviews
+@Composable
+private fun ExpiredPopupDialogPreview() {
+    val sampleResult = SubscriptionCheckResult(
+        isActive = false,
+        canAccess = false,
+        status = "EXPIRED",
+        isExpired = true,
+        customerName = "Budi Santoso",
+        businessName = "Toko Kopi Nusantara",
+        email = "budi@ikikasir.com",
+        packageName = "Paket Kasir Pro",
+        expiresAt = "31 Des 2025",
+        message = "Masa aktif langganan aplikasi IKIKASIR untuk Toko Kopi Nusantara telah berakhir. Silakan hubungi admin untuk melakukan perpanjangan paket."
+    )
+    MaterialTheme {
+        ExpiredPopupContent(
+            subscriptionData = sampleResult,
+            isLoadingRefresh = false,
+            onRefresh = {},
+            onExit = {}
+        )
     }
 }
