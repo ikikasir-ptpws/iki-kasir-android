@@ -75,10 +75,13 @@ import kotlin.math.min
  * Pemindai Kamera AR (Augmented Reality) Pokémon GO Style & Visualisasi Detail Produk Hologram.
  *
  * Fitur:
- * 1. Foto Produk Hologram Statis dengan fitur Putar (Rotasi 3D) dan Zoom aktif.
- * 2. Kartu Informasi Detail Produk Hologram Spasial Lengkap (Produk & Kategori, Kode Barcode,
- *    Harga Jual, Stok & Min. Stok, Modal & Laba, Diskon/Promo) - Semua info detail kecuali visibilitas.
- * 3. Tanpa lingkaran/kotak biru pedestal & tanpa tombol kamera shutter bawah kanan.
+ * 1. Foto Produk Hologram Statis dengan fitur Putar dan Zoom aktif.
+ * 2. Kartu Informasi Detail Produk tanpa garis penghubung dengan jarak rapat ke foto produk:
+ *    - Atas: Kode Barcode
+ *    - Bawah Barcode: Nama Produk & Kategori
+ *    - Tengah: Foto Produk Hologram
+ *    - Bawah: Harga Jual & Stok Tersedia
+ * 3. Tanpa lingkaran/kotak biru pedestal & tanpa tombol kamera shutter.
  */
 @OptIn(ExperimentalGetImage::class)
 @Composable
@@ -442,9 +445,7 @@ fun ArCameraScannerScreen(
 
 /**
  * Visualizer Hologram Foto Produk & Detail Informasi Lengkap Style AR Pokémon GO
- * (Sesuai Referensi Gambar AR: Kartu Glassmorphic Spasial di sekeliling produk,
- * Tombol Kontrol Putar/Zoom, & Lihat Produk Lainnya tanpa lingkaran/kotak biru pedestal).
- * Menampilkan SEMUA informasi detail produk KECUALI visibilitas, dengan tata letak sangat rapi.
+ * (Tanpa garis penghubung, jarak kartu informasi rapat / dekat dengan foto produk).
  */
 @Composable
 fun PokemonGoStyleArHologramShowcase(
@@ -454,7 +455,6 @@ fun PokemonGoStyleArHologramShowcase(
     onScanLainnya: (() -> Unit)? = null
 ) {
     val p = produk
-    val context = LocalContext.current
     val formatRupiah = remember {
         { amount: Double ->
             NumberFormat.getNumberInstance(Locale("id", "ID")).format(amount)
@@ -465,66 +465,36 @@ fun PokemonGoStyleArHologramShowcase(
     var rotationAngle by remember { mutableStateOf(0f) }
 
     val effectivePrice = p?.sellingPrice ?: 0.0
-    val cost = p?.costPrice ?: 0.0
-    val profit = effectivePrice - cost
 
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        // ── Konten Hologram AR & Kartu Informasi Spasial Melayang ──
+        // ── Kartu Informasi Spasial Melayang & Foto Produk (Rapat & Terpusat) ──
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center
         ) {
-            // B. KARTU INFORMASI GLASSMORPHIC MELAYANG
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(vertical = 12.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Top Row Cards (Produk & Kategori / Barcode)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                // 1. TOP SECTION: Kode Barcode & (Nama Produk & Kategori)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Top-Left: Produk & Kategori
-                    ArGlassCard(
-                        title = "Produk & Kategori",
-                        icon = Icons.Default.LocalOffer,
-                        iconTint = Color(0xFF10B981),
-                        modifier = Modifier.weight(1f).padding(end = 6.dp)
-                    ) {
-                        Text(
-                            text = p?.name ?: "Produk",
-                            fontFamily = interfamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = Color.White,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Kat: ${categoryName.ifBlank { "Umum" }}",
-                            fontFamily = interfamily,
-                            fontSize = 11.sp,
-                            color = Color(0xFF60A5FA),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    // Top-Right: Kode Barcode
+                    // Kode Barcode
                     ArGlassCard(
                         title = "Kode Barcode",
                         icon = Icons.Default.QrCode,
                         iconTint = Color(0xFFFBBF24),
-                        modifier = Modifier.weight(1f).padding(start = 6.dp)
+                        modifier = Modifier.width(220.dp)
                     ) {
                         Text(
                             text = p?.barcode?.ifBlank { "Belum ada barcode" } ?: "Belum ada barcode",
@@ -533,131 +503,61 @@ fun PokemonGoStyleArHologramShowcase(
                             fontSize = 11.5.sp,
                             color = Color.White,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
-                }
 
-                Spacer(modifier = Modifier.height(170.dp)) // Ruang untuk foto produk di tengah
-
-                // Middle/Bottom Row Cards (Harga Jual, Stok, Modal & Laba, Diskon)
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                    // Nama Produk (Kiri) & Kategori (Kanan)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // Harga Jual
                         ArGlassCard(
-                            title = "Harga Jual",
+                            title = "Nama Produk",
                             icon = Icons.Default.LocalOffer,
-                            iconTint = Color(0xFF34D399),
+                            iconTint = Color(0xFF10B981),
                             modifier = Modifier.weight(1f).padding(end = 6.dp)
                         ) {
                             Text(
-                                text = "Rp ${formatRupiah(effectivePrice)}",
+                                text = p?.name ?: "Produk",
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp,
-                                color = Color(0xFF34D399),
-                                maxLines = 1
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
-                        // Stok & Minimum Stok
-                        val isLowStock = (p?.stock ?: 0) <= (p?.lowStockThreshold ?: 5)
                         ArGlassCard(
-                            title = "Stok & Min. Stok",
-                            icon = Icons.Default.Inventory,
-                            iconTint = if (isLowStock) Color(0xFFF87171) else Color(0xFF60A5FA),
+                            title = "Kategori Produk",
+                            icon = Icons.Default.Category,
+                            iconTint = Color(0xFF60A5FA),
                             modifier = Modifier.weight(1f).padding(start = 6.dp)
                         ) {
                             Text(
-                                text = "Stok: ${p?.stock ?: 0} item",
+                                text = categoryName.ifBlank { "Umum" },
                                 fontFamily = interfamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 11.5.sp,
-                                color = if (isLowStock) Color(0xFFF87171) else Color.White,
-                                maxLines = 1
-                            )
-                            Text(
-                                text = "Min: ${p?.lowStockThreshold ?: 5} item",
-                                fontFamily = interfamily,
-                                fontSize = 10.5.sp,
-                                color = Color(0xFF94A3B8),
-                                maxLines = 1
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        // Modal (HPP) & Estimasi Laba
-                        ArGlassCard(
-                            title = "Modal & Laba",
-                            icon = Icons.Default.Assessment,
-                            iconTint = Color(0xFF60A5FA),
-                            modifier = Modifier.weight(1f).padding(end = 6.dp)
-                        ) {
-                            Text(
-                                text = "Modal: Rp ${formatRupiah(cost)}",
-                                fontFamily = interfamily,
-                                fontSize = 10.5.sp,
-                                color = Color(0xFF94A3B8),
-                                maxLines = 1
-                            )
-                            Text(
-                                text = "Laba: ${if (profit >= 0.0) "+Rp ${formatRupiah(profit)}" else "-Rp ${formatRupiah(-profit)}"}",
-                                fontFamily = interfamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 11.sp,
-                                color = if (profit >= 0.0) Color(0xFF34D399) else Color(0xFFF87171),
-                                maxLines = 1
-                            )
-                        }
-
-                        // Diskon / Promo
-                        ArGlassCard(
-                            title = "Diskon / Promo",
-                            icon = Icons.Default.LocalOffer,
-                            iconTint = Color(0xFFFBBF24),
-                            modifier = Modifier.weight(1f).padding(start = 6.dp)
-                        ) {
-                            val diskonText = if (p != null && p.discount > 0) {
-                                if (p.discountType == "%" || p.discountType.equals("PERCENT", true)) "${p.discount.toInt()}%" else "Rp ${formatRupiah(p.discount)}"
-                            } else {
-                                "Tidak Ada Diskon"
-                            }
-                            Text(
-                                text = diskonText,
-                                fontFamily = interfamily,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 11.sp,
-                                color = if (p != null && p.discount > 0) Color(0xFFFBBF24) else Color(0xFF94A3B8),
+                                fontSize = 13.sp,
+                                color = Color(0xFF60A5FA),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
                 }
-            }
 
-            // A. FOTO PRODUK HOLOGRAM DI TENGAH (Diatas kartu) DENGAN EFEK PUTAR (ROTASI) & ZOOM
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
+                // 2. MIDDLE SECTION: FOTO PRODUK HOLOGRAM DI TENGAH
                 Card(
                     shape = RoundedCornerShape(28.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 20.dp),
                     border = BorderStroke(2.5.dp, Color(0xFF10B981)),
                     modifier = Modifier
-                        .size(width = (170 * scaleFactor).dp, height = (170 * scaleFactor).dp)
+                        .size(width = (145 * scaleFactor).dp, height = (145 * scaleFactor).dp)
                         .graphicsLayer(rotationZ = rotationAngle)
                 ) {
                     Box(
@@ -725,85 +625,123 @@ fun PokemonGoStyleArHologramShowcase(
                         }
                     }
                 }
-            }
 
-            // C. BOTTOM ACTION CONTROLS (Putar, Perbesar, Perkecil) & TOMBOL LIHAT PRODUK LAINNYA
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Floating Control Bar (Putar, Perbesar, Perkecil)
-                Surface(
-                    shape = RoundedCornerShape(30.dp),
-                    color = Color.Black.copy(alpha = 0.75f),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
-                    shadowElevation = 8.dp
+                // 3. BOTTOM SECTION: Harga Jual (Kiri) & Stok Tersedia (Kanan)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(20.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    ArGlassCard(
+                        title = "Harga Jual",
+                        icon = Icons.Default.LocalOffer,
+                        iconTint = Color(0xFF34D399),
+                        modifier = Modifier.weight(1f).padding(end = 6.dp)
                     ) {
-                        // Putar
-                        ArControlButton(
-                            icon = Icons.Default.Refresh,
-                            label = "Putar",
-                            onClick = {
-                                rotationAngle = (rotationAngle + 90f) % 360f
-                                Toast.makeText(context, "Memutar objek AR 3D (${rotationAngle.toInt()}°)", Toast.LENGTH_SHORT).show()
-                            }
+                        Text(
+                            text = "Rp ${formatRupiah(effectivePrice)}",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFF34D399),
+                            maxLines = 1
                         )
-                        // Perbesar
-                        ArControlButton(
-                            icon = Icons.Default.ZoomIn,
-                            label = "Perbesar",
-                            onClick = {
-                                if (scaleFactor < 1.4f) scaleFactor += 0.15f
-                            }
-                        )
-                        // Perkecil
-                        ArControlButton(
-                            icon = Icons.Default.ZoomOut,
-                            label = "Perkecil",
-                            onClick = {
-                                if (scaleFactor > 0.7f) scaleFactor -= 0.15f
-                            }
+                    }
+
+                    val isLowStock = (p?.stock ?: 0) <= (p?.lowStockThreshold ?: 5)
+                    ArGlassCard(
+                        title = "Stok Tersedia",
+                        icon = Icons.Default.Inventory,
+                        iconTint = if (isLowStock) Color(0xFFF87171) else Color(0xFF60A5FA),
+                        modifier = Modifier.weight(1f).padding(start = 6.dp)
+                    ) {
+                        Text(
+                            text = "${p?.stock ?: 0} item",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = if (isLowStock) Color(0xFFF87171) else Color.White,
+                            maxLines = 1
                         )
                     }
                 }
+            }
+        }
 
-                // Bottom Button: Lihat Produk Lainnya (Terpusat di bawah tanpa tombol kamera)
-                if (onScanLainnya != null) {
-                    Surface(
-                        shape = RoundedCornerShape(22.dp),
-                        color = Color.Black.copy(alpha = 0.75f),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.3f)),
-                        modifier = Modifier
-                            .clickable(onClick = onScanLainnya)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 11.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.ViewInAr,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(
-                                text = "Lihat Produk Lainnya",
-                                fontFamily = interfamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
-                                color = Color.White
-                            )
+        // C. BOTTOM ACTION CONTROLS (Putar, Perbesar, Perkecil) & TOMBOL LIHAT PRODUK LAINNYA
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Floating Control Bar (Putar, Perbesar, Perkecil)
+            Surface(
+                shape = RoundedCornerShape(30.dp),
+                color = Color.Black.copy(alpha = 0.75f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                shadowElevation = 8.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Putar
+                    ArControlButton(
+                        icon = Icons.Default.Refresh,
+                        label = "Putar",
+                        onClick = {
+                            rotationAngle = (rotationAngle + 90f) % 360f
                         }
+                    )
+                    // Perbesar
+                    ArControlButton(
+                        icon = Icons.Default.ZoomIn,
+                        label = "Perbesar",
+                        onClick = {
+                            if (scaleFactor < 1.4f) scaleFactor += 0.15f
+                        }
+                    )
+                    // Perkecil
+                    ArControlButton(
+                        icon = Icons.Default.ZoomOut,
+                        label = "Perkecil",
+                        onClick = {
+                            if (scaleFactor > 0.7f) scaleFactor -= 0.15f
+                        }
+                    )
+                }
+            }
+
+            // Bottom Button: Lihat Produk Lainnya
+            if (onScanLainnya != null) {
+                Surface(
+                    shape = RoundedCornerShape(22.dp),
+                    color = Color.Black.copy(alpha = 0.75f),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.3f)),
+                    modifier = Modifier
+                        .clickable(onClick = onScanLainnya)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 11.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ViewInAr,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "Lihat Produk Lainnya",
+                            fontFamily = interfamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color.White
+                        )
                     }
                 }
             }
