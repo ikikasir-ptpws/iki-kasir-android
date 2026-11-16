@@ -64,6 +64,7 @@ import com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Base64
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -1388,316 +1389,325 @@ private fun NotaSettingDialog(
     )
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp)
+                .imePadding()
+                .systemBarsPadding(),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(strukScrollState)
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                    .heightIn(max = 680.dp)
+                    .padding(horizontal = 4.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(strukScrollState)
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Setting Nota / Struk",
+                                fontFamily = interfamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                color = Color(0xFF111827)
+                            )
+                            if (!initialSetting.isSynced) SyncStatusBadge()
+                        }
+                        IconButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Close,
+                                contentDescription = "Tutup",
+                                tint = Color(0xFF9CA3AF)
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = Color(0xFFF3F4F6))
+
+                    // Upload Logo Nota / Struk
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Setting Nota / Struk",
+                            text = "Logo Nota / Struk",
                             fontFamily = interfamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = Color(0xFF111827)
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp,
+                            color = Color(0xFF374151)
                         )
-                        if (!initialSetting.isSynced) SyncStatusBadge()
-                    }
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Close,
-                            contentDescription = "Tutup",
-                            tint = Color(0xFF9CA3AF)
-                        )
-                    }
-                }
 
-                HorizontalDivider(color = Color(0xFFF3F4F6))
-
-                // Upload Logo Nota / Struk
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Logo Nota / Struk",
-                        fontFamily = interfamily,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp,
-                        color = Color(0xFF374151)
-                    )
-
-                    if (logoUrl.isNotBlank() || logoLocalPath.isNotBlank()) {
-                        val displayLogo = if (
-                            logoUrl.startsWith("http", ignoreCase = true) ||
-                            logoUrl.startsWith("gs://", ignoreCase = true)
-                        ) logoUrl else logoLocalPath.ifBlank { logoUrl }
-                        val logoModel = remember(displayLogo) {
-                            if (displayLogo.startsWith("data:image")) {
-                                try {
-                                    android.util.Base64.decode(displayLogo.substringAfter("base64,"), android.util.Base64.DEFAULT)
-                                } catch (_: Exception) {
+                        if (logoUrl.isNotBlank() || logoLocalPath.isNotBlank()) {
+                            val displayLogo = if (
+                                logoUrl.startsWith("http", ignoreCase = true) ||
+                                logoUrl.startsWith("gs://", ignoreCase = true)
+                            ) logoUrl else logoLocalPath.ifBlank { logoUrl }
+                            val logoModel = remember(displayLogo) {
+                                if (displayLogo.startsWith("data:image")) {
+                                    try {
+                                        Base64.decode(displayLogo.substringAfter("base64,"), Base64.DEFAULT)
+                                    } catch (_: Exception) {
+                                        displayLogo
+                                    }
+                                } else {
                                     displayLogo
                                 }
-                            } else {
-                                displayLogo
                             }
-                        }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color(0xFFF9FAFB), RoundedCornerShape(12.dp))
-                                .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(12.dp))
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            AsyncImage(
-                                model = logoModel,
-                                contentDescription = "Logo Nota",
-                                modifier = Modifier
-                                    .size(60.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Fit
-                            )
-
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(2.dp)
-                            ) {
-                                Text(
-                                    text = "Logo Toko Terpasang",
-                                    fontFamily = interfamily,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 13.sp,
-                                    color = Color(0xFF111827)
-                                )
-                                Text(
-                                    text = "Akan tampil di bagian atas nota saat dicetak",
-                                    fontFamily = interfamily,
-                                    fontSize = 11.sp,
-                                    color = Color(0xFF6B7280)
-                                )
-                            }
-
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEEF2FF)) {
-                                    IconButton(
-                                        onClick = { logoPickerState.openPicker() },
-                                        modifier = Modifier.size(36.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Edit,
-                                            contentDescription = "Ganti Logo",
-                                            tint = Color(0xFF4F46E5),
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                }
-                                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
-                                    IconButton(
-                                        onClick = {
-                                            logoUrl = ""
-                                            logoLocalPath = ""
-                                        },
-                                        modifier = Modifier.size(36.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Delete,
-                                            contentDescription = "Hapus Logo",
-                                            tint = Color(0xFFEF4444),
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable { logoPickerState.openPicker() },
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFFF9FAFB),
-                            border = BorderStroke(1.dp, Color(0xFFD1D5DB))
-                        ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 14.dp, horizontal = 16.dp),
+                                    .background(Color(0xFFF9FAFB), RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(12.dp))
+                                    .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = Color(0xFFEEF2FF),
-                                    modifier = Modifier.size(40.dp)
+                                AsyncImage(
+                                    model = logoModel,
+                                    contentDescription = "Logo Nota",
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Fit
+                                )
+
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Image,
-                                            contentDescription = null,
-                                            tint = Color(0xFF4F46E5),
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                }
-                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Upload Logo Struk",
+                                        text = "Logo Toko Terpasang",
                                         fontFamily = interfamily,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 13.sp,
-                                        color = Color(0xFF1F2937)
+                                        color = Color(0xFF111827)
                                     )
                                     Text(
-                                        text = "Ketuk untuk memilih gambar logo toko",
+                                        text = "Akan tampil di bagian atas nota saat dicetak",
                                         fontFamily = interfamily,
                                         fontSize = 11.sp,
                                         color = Color(0xFF6B7280)
                                     )
                                 }
-                                Icon(
-                                    imageVector = Icons.Outlined.Upload,
-                                    contentDescription = "Pilih Gambar",
-                                    tint = Color(0xFF4F46E5),
-                                    modifier = Modifier.size(20.dp)
-                                )
+
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEEF2FF)) {
+                                        IconButton(
+                                            onClick = { logoPickerState.openPicker() },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Edit,
+                                                contentDescription = "Ganti Logo",
+                                                tint = Color(0xFF4F46E5),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    }
+                                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFF1F2)) {
+                                        IconButton(
+                                            onClick = {
+                                                logoUrl = ""
+                                                logoLocalPath = ""
+                                            },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Delete,
+                                                contentDescription = "Hapus Logo",
+                                                tint = Color(0xFFEF4444),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { logoPickerState.openPicker() },
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFF9FAFB),
+                                border = BorderStroke(1.dp, Color(0xFFD1D5DB))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 14.dp, horizontal = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFFEEF2FF),
+                                        modifier = Modifier.size(40.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Image,
+                                                contentDescription = null,
+                                                tint = Color(0xFF4F46E5),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Upload Logo Struk",
+                                            fontFamily = interfamily,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF1F2937)
+                                        )
+                                        Text(
+                                            text = "Ketuk untuk memilih gambar logo toko",
+                                            fontFamily = interfamily,
+                                            fontSize = 11.sp,
+                                            color = Color(0xFF6B7280)
+                                        )
+                                    }
+                                    Icon(
+                                        imageVector = Icons.Outlined.Upload,
+                                        contentDescription = "Pilih Gambar",
+                                        tint = Color(0xFF4F46E5),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                GlobalTextField(
-                    value = namaToko,
-                    onValueChange = { namaToko = it },
-                    label = "Nama Toko / Header",
-                    placeholder = "Masukkan nama toko"
-                )
-
-                GlobalTextField(
-                    value = alamatToko,
-                    onValueChange = { alamatToko = it },
-                    label = "Alamat Toko",
-                    placeholder = "Masukkan alamat toko"
-                )
-
-                GlobalTextField(
-                    value = nomorHpToko,
-                    onValueChange = { nomorHpToko = it },
-                    label = "Nomor HP Toko",
-                    placeholder = "Masukkan nomor HP toko",
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-                )
-
-                GlobalTextField(
-                    value = namaWifi,
-                    onValueChange = { namaWifi = it },
-                    label = "Nama WiFi",
-                    placeholder = "Masukkan nama WiFi"
-                )
-
-                GlobalTextField(
-                    value = kataSandiWifi,
-                    onValueChange = { kataSandiWifi = it },
-                    label = "Kata Sandi WiFi",
-                    placeholder = "Masukkan kata sandi WiFi"
-                )
-
-                // Lebar Kertas Struk
-                Text(
-                    text = "Lebar Kertas Thermal",
-                    fontFamily = interfamily,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 13.sp,
-                    color = Color(0xFF111827)
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = ukuranKertas == "58mm",
-                        onClick = { ukuranKertas = "58mm" },
-                        label = { Text("58 mm", fontFamily = interfamily, fontSize = 12.sp) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFFEEF2FF),
-                            selectedLabelColor = Color(0xFF4F46E5)
-                        )
+                    GlobalTextField(
+                        value = namaToko,
+                        onValueChange = { namaToko = it },
+                        label = "Nama Toko / Header",
+                        placeholder = "Masukkan nama toko"
                     )
-                    FilterChip(
-                        selected = ukuranKertas == "80mm",
-                        onClick = { ukuranKertas = "80mm" },
-                        label = { Text("80 mm", fontFamily = interfamily, fontSize = 12.sp) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFFEEF2FF),
-                            selectedLabelColor = Color(0xFF4F46E5)
-                        )
+
+                    GlobalTextField(
+                        value = alamatToko,
+                        onValueChange = { alamatToko = it },
+                        label = "Alamat Toko",
+                        placeholder = "Masukkan alamat toko"
                     )
-                }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    GlobalTextField(
+                        value = nomorHpToko,
+                        onValueChange = { nomorHpToko = it },
+                        label = "Nomor HP Toko",
+                        placeholder = "Masukkan nomor HP toko",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                    )
 
-                // Action buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
+                    GlobalTextField(
+                        value = namaWifi,
+                        onValueChange = { namaWifi = it },
+                        label = "Nama WiFi",
+                        placeholder = "Masukkan nama WiFi"
+                    )
+
+                    GlobalTextField(
+                        value = kataSandiWifi,
+                        onValueChange = { kataSandiWifi = it },
+                        label = "Kata Sandi WiFi",
+                        placeholder = "Masukkan kata sandi WiFi"
+                    )
+
+                    // Lebar Kertas Struk
+                    Text(
+                        text = "Lebar Kertas Thermal",
+                        fontFamily = interfamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp,
+                        color = Color(0xFF111827)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("Batal", fontFamily = interfamily, color = Color(0xFF4B5563))
-                    }
-                    Button(
-                        onClick = {
-                            val updatedSetting = initialSetting.copy(
-                                storeName    = namaToko,
-                                storeAddress = alamatToko,
-                                storePhone   = nomorHpToko,
-                                wifiName     = namaWifi,
-                                wifiPassword = kataSandiWifi,
-                                paperWidth   = ukuranKertas,
-                                logoUrl      = logoUrl,
-                                logoLocalPath = logoLocalPath
+                        FilterChip(
+                            selected = ukuranKertas == "58mm",
+                            onClick = { ukuranKertas = "58mm" },
+                            label = { Text("58 mm", fontFamily = interfamily, fontSize = 12.sp) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFFEEF2FF),
+                                selectedLabelColor = Color(0xFF4F46E5)
                             )
-                            onSave(updatedSetting)
-                        },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                        )
+                        FilterChip(
+                            selected = ukuranKertas == "80mm",
+                            onClick = { ukuranKertas = "80mm" },
+                            label = { Text("80 mm", fontFamily = interfamily, fontSize = 12.sp) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFFEEF2FF),
+                                selectedLabelColor = Color(0xFF4F46E5)
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Action buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("Simpan", fontFamily = interfamily, color = Color.White)
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, Color(0xFFE5E7EB))
+                        ) {
+                            Text("Batal", fontFamily = interfamily, color = Color(0xFF4B5563))
+                        }
+                        Button(
+                            onClick = {
+                                val updatedSetting = initialSetting.copy(
+                                    storeName    = namaToko,
+                                    storeAddress = alamatToko,
+                                    storePhone   = nomorHpToko,
+                                    wifiName     = namaWifi,
+                                    wifiPassword = kataSandiWifi,
+                                    paperWidth   = ukuranKertas,
+                                    logoUrl      = logoUrl,
+                                    logoLocalPath = logoLocalPath
+                                )
+                                onSave(updatedSetting)
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                        ) {
+                            Text("Simpan", fontFamily = interfamily, color = Color.White)
+                        }
                     }
                 }
             }
