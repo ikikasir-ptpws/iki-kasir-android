@@ -1,7 +1,7 @@
 package com.ptpws.ikikasir.feature.referral.presentation.screen
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -264,14 +264,10 @@ fun ReferralScreen(
                     onSuccess = {
                         showWithdrawDialog = false
                         selectedTab = 1 // Pindah ke tab Riwayat Penarikan
-                        Toast.makeText(
-                            context,
-                            "Penarikan Rp ${formatRupiah(amount)} berhasil diajukan! Menunggu verifikasi tim finance.",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        GlobalCrudResultDialog.success("Penarikan Rp ${formatRupiah(amount)} berhasil diajukan! Menunggu verifikasi tim finance.")
                     },
                     onError = { err ->
-                        Toast.makeText(context, err, Toast.LENGTH_SHORT).show()
+                        GlobalCrudResultDialog.failure(err)
                     }
                 )
             }
@@ -286,11 +282,7 @@ fun ReferralScreen(
             onSimulateApproval = {
                 viewModel.simulateApproveWithdrawal(tx.id) {
                     selectedWithdrawalDetail = null
-                    Toast.makeText(
-                        context,
-                        "Status penarikan ${tx.id} berhasil disetujui (Selesai)!",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    GlobalCrudResultDialog.success("Status penarikan ${tx.id} berhasil disetujui (Selesai)!")
                 }
             }
         )
@@ -304,7 +296,7 @@ fun ReferralScreen(
             onUpdateUpline = { newName, newCode ->
                 viewModel.updateUpline(newName, newCode)
                 showUplineDialog = false
-                Toast.makeText(context, "Data upline berhasil diperbarui!", Toast.LENGTH_SHORT).show()
+                GlobalCrudResultDialog.success("Data upline berhasil diperbarui!")
             }
         )
     }
@@ -324,14 +316,12 @@ fun ReferralScreen(
                     onSuccess = { message ->
                         showAjukanClientDialog = false
                         selectedTab = 0
-                        Toast.makeText(
-                            context,
-                            message.ifBlank { "Calon client '$name' berhasil diajukan! Menunggu verifikasi admin." },
-                            Toast.LENGTH_LONG
-                        ).show()
+                        GlobalCrudResultDialog.success(
+                            message.ifBlank { "Calon client '$name' berhasil diajukan! Menunggu verifikasi admin." }
+                        )
                     },
                     onError = { err ->
-                        Toast.makeText(context, err, Toast.LENGTH_SHORT).show()
+                        GlobalCrudResultDialog.failure(err)
                     }
                 )
             }

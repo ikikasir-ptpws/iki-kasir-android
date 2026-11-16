@@ -5,9 +5,9 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ptpws.ikikasir.commond.GlobalCrudResultDialog
 import com.ptpws.ikikasir.feature.referral.data.ReferralApiService
 import com.ptpws.ikikasir.feature.referral.data.preferences.ReferralPreferences
 import com.ptpws.ikikasir.feature.referral.data.preferences.ReferralSessionManager
@@ -180,7 +180,7 @@ class ReferralViewModel @Inject constructor(
         val code = _referralInfo.value.referralCode.ifBlank { SubscriptionApiConfig.REFERRAL_CODE }
         val clip = ClipData.newPlainText("Kode Referral IKIKASIR", code)
         clipboard.setPrimaryClip(clip)
-        Toast.makeText(ctx, "Kode referral $code berhasil disalin!", Toast.LENGTH_SHORT).show()
+        GlobalCrudResultDialog.success("Kode referral $code berhasil disalin!")
     }
 
     fun shareReferral(ctx: Context) {
