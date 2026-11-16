@@ -72,9 +72,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.commond.Ar3DProductViewerDialog
+import com.ptpws.ikikasir.commond.PilihModeScanDialog
 import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
+import com.ptpws.ikikasir.feature.pengaturan.data.preferences.ArSettingPreferences
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
+import com.ptpws.ikikasir.screens.scanner.ArCameraScannerScreen
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -93,6 +97,9 @@ fun DaftarProdukScreen(
     val context = LocalContext.current
     val isTabletLandscape = LocalWindowSizeInfo.current.shouldUsePermanentDrawer
     var showInvalidScanDialog by remember { mutableStateOf(false) }
+    var showPilihModeScanDialog by remember { mutableStateOf(false) }
+    var showArCameraScannerScreen by remember { mutableStateOf(false) }
+    val arPrefs = remember { ArSettingPreferences(context) }
 
     BackHandler {
         if (!navController.popBackStackSafely()) {
@@ -222,10 +229,41 @@ fun DaftarProdukScreen(
         handleScannedBarcode(code)
     }
 
+    val handleScanClick = {
+        if (arPrefs.isArEnabled()) {
+            showPilihModeScanDialog = true
+        } else {
+            triggerScanner()
+        }
+    }
+
     if (showInvalidScanDialog) {
         BarcodeMismatchDialog(
             message = "Kode yang dipindai bukan barcode atau QR produk yang terdaftar.",
             onDismiss = { showInvalidScanDialog = false }
+        )
+    }
+
+    if (showPilihModeScanDialog) {
+        PilihModeScanDialog(
+            show = showPilihModeScanDialog,
+            onDismissRequest = { showPilihModeScanDialog = false },
+            onScanBarcodeSelected = {
+                triggerScanner()
+            },
+            onArSelected = {
+                showPilihModeScanDialog = false
+                showArCameraScannerScreen = true
+            }
+        )
+    }
+
+    if (showArCameraScannerScreen) {
+        ArCameraScannerScreen(
+            show = showArCameraScannerScreen,
+            produkList = state.produkList,
+            kategoriList = kategoriState.kategoriList,
+            onClose = { showArCameraScannerScreen = false }
         )
     }
 
@@ -325,7 +363,7 @@ fun DaftarProdukScreen(
                     },
                     trailingIcon = {
                         IconButton(
-                            onClick = { triggerScanner() },
+                            onClick = { handleScanClick() },
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(

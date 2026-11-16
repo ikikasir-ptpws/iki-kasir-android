@@ -83,8 +83,11 @@ import com.ptpws.ikikasir.feature.auth.presentation.viewmodel.SecurityViewModel
 import com.ptpws.ikikasir.feature.tentangaplikasi.TentangAplikasiDialog
 import com.ptpws.ikikasir.screens.navigation.AppScreen
 import androidx.activity.compose.BackHandler
+import com.ptpws.ikikasir.commond.ArSettingDialog
 import com.ptpws.ikikasir.core.responsive.presentation.components.PhoneDevicePreviews
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.model.User
+import com.ptpws.ikikasir.feature.pengaturan.data.preferences.ArSettingPreferences
+import com.ptpws.ikikasir.feature.pengaturan.domain.model.ArSetting
 import com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel.UserProfileState
 import com.ptpws.ikikasir.screens.navigation.popBackStackSafely
 
@@ -116,6 +119,7 @@ fun ProfilScreen(
     val liveTaxSetting by viewModel.taxSetting.collectAsState()
     val livePaymentMethodSetting by viewModel.paymentMethodSetting.collectAsState()
     val liveTableSetting by viewModel.tableSetting.collectAsState()
+    val liveArSetting by viewModel.arSetting.collectAsState()
     val isOnline by viewModel.isOnline.collectAsState()
 
     var showEditProfilDialog by remember { mutableStateOf(false) }
@@ -126,6 +130,7 @@ fun ProfilScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showSecurityDialog by remember { mutableStateOf(false) }
     var showTentangAplikasiDialog by remember { mutableStateOf(false) }
+    var showArSettingDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(securityState.isSuccess) {
         if (securityState.isSuccess) {
@@ -138,6 +143,8 @@ fun ProfilScreen(
     val taxPrefs = remember { TaxSettingPreferences(context) }
     val paymentMethodPrefs = remember { PaymentMethodSettingPreferences(context) }
     val notaPrefs = remember { NotaSettingPreferences(context) }
+    val arPrefs = remember { ArSettingPreferences(context) }
+    var isArEnabled by remember { mutableStateOf(arPrefs.isArEnabled()) }
 
     Scaffold(
         containerColor = Color(0xFFF3F4F6),
@@ -396,6 +403,16 @@ fun ProfilScreen(
                                     navController.navigate(AppScreen.Referral.route)
                                 }
                             )
+                            HorizontalDivider(color = Color(0xFFF3F4F6))
+                            MenuAkunItem(
+                                icon = Icons.Outlined.ViewInAr,
+                                iconBackground = Color(0xFFF0FDF4),
+                                iconTint = Color(0xFF16A34A),
+                                label = "Setting AR",
+                                onClick = {
+                                    showArSettingDialog = true
+                                }
+                            )
                         }
                     }
                 }
@@ -563,6 +580,24 @@ fun ProfilScreen(
                 tablePrefs.setTableEnabled(updatedSetting.isTableEnabled)
                 viewModel.saveTableSetting(updatedSetting)
                 showMejaDialog = false
+            }
+        )
+    }
+
+    // ── Dialog Setting AR
+    if (showArSettingDialog) {
+        val currentArEnabled = if (liveArSetting != ArSetting()) {
+            liveArSetting.isArEnabled
+        } else {
+            arPrefs.isArEnabled()
+        }
+        ArSettingDialog(
+            initialIsArEnabled = currentArEnabled,
+            onDismissRequest = { showArSettingDialog = false },
+            onSaveSetting = { updated ->
+                arPrefs.setArEnabled(updated)
+                viewModel.saveArSetting(ArSetting(isArEnabled = updated))
+                showArSettingDialog = false
             }
         )
     }
@@ -2104,11 +2139,21 @@ private class OfflinePreviewProfilProvider : ProfilUiProvider {
     )
     override val tableSetting: StateFlow<TableSetting> = _tableSetting.asStateFlow()
 
+    private val _arSetting = MutableStateFlow(
+        ArSetting(
+            id = "default",
+            isArEnabled = false,
+            isSynced = false
+        )
+    )
+    override val arSetting: StateFlow<ArSetting> = _arSetting.asStateFlow()
+
     override fun updateUserProfile(newFullName: String, newPhotoUrl: String, onComplete: (Boolean) -> Unit) { onComplete(true) }
     override fun saveNotaSetting(setting: NotaSetting, onComplete: (Boolean) -> Unit) { onComplete(true) }
     override fun saveTaxSetting(setting: TaxSetting, onComplete: (Boolean) -> Unit) { onComplete(true) }
     override fun savePaymentMethodSetting(setting: PaymentMethodSetting, onComplete: (Boolean) -> Unit) { onComplete(true) }
     override fun saveTableSetting(setting: TableSetting, onComplete: (Boolean) -> Unit) { onComplete(true) }
+    override fun saveArSetting(setting: com.ptpws.ikikasir.feature.pengaturan.domain.model.ArSetting, onComplete: (Boolean) -> Unit) { onComplete(true) }
 }
 
 @Preview(showBackground = true)

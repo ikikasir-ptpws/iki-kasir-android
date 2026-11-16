@@ -36,6 +36,9 @@ import com.ptpws.ikikasir.feature.auditlog.data.local.entity.AuditLogEntity
 import com.ptpws.ikikasir.feature.keuangan.data.local.dao.CatatanKeuanganDao
 import com.ptpws.ikikasir.feature.keuangan.data.local.entity.CatatanKeuanganEntity
 
+import com.ptpws.ikikasir.feature.pengaturan.data.local.dao.ArSettingDao
+import com.ptpws.ikikasir.feature.pengaturan.data.local.entity.ArSettingEntity
+
 @Database(
     entities = [
         KategoriEntity::class,
@@ -50,11 +53,12 @@ import com.ptpws.ikikasir.feature.keuangan.data.local.entity.CatatanKeuanganEnti
         TaxSettingEntity::class,
         PaymentMethodSettingEntity::class,
         TableSettingEntity::class,
+        ArSettingEntity::class,
         PromoEntity::class,
         AuditLogEntity::class,
         CatatanKeuanganEntity::class
     ],
-    version = 42,
+    version = 43,
     exportSchema = false
 )
 @TypeConverters(TimestampConverter::class, MapConverter::class)
@@ -71,6 +75,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val taxSettingDao: TaxSettingDao
     abstract val paymentMethodSettingDao: PaymentMethodSettingDao
     abstract val tableSettingDao: TableSettingDao
+    abstract val arSettingDao: ArSettingDao
     abstract val promoDao: PromoDao
     abstract val auditLogDao: AuditLogDao
     abstract val catatanKeuanganDao: CatatanKeuanganDao

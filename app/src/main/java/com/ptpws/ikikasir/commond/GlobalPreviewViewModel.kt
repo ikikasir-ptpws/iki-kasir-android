@@ -103,6 +103,7 @@ import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.state.UserFormS
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.state.UserListState
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserFormUiProvider
 import com.ptpws.ikikasir.feature.manajemenpengguna.presentation.viewmodel.UserListUiProvider
+import com.ptpws.ikikasir.feature.pengaturan.domain.model.ArSetting
 
 /**
  * ViewModel global khusus testing Compose Preview.
@@ -929,6 +930,11 @@ class PreviewProfilProvider : ProfilUiProvider {
     )
     override val tableSetting: StateFlow<TableSetting> = _tableSetting.asStateFlow()
 
+    private val _arSetting = MutableStateFlow(
+        ArSetting(id = "default", isArEnabled = false)
+    )
+    override val arSetting: StateFlow<ArSetting> = _arSetting.asStateFlow()
+
     override fun updateUserProfile(newFullName: String, newPhotoUrl: String, onComplete: (Boolean) -> Unit) {
         _userProfileState.value = _userProfileState.value.copy(
             user = sampleUser.copy(
@@ -956,6 +962,11 @@ class PreviewProfilProvider : ProfilUiProvider {
 
     override fun saveTableSetting(setting: TableSetting, onComplete: (Boolean) -> Unit) {
         _tableSetting.value = setting
+        onComplete(true)
+    }
+
+    override fun saveArSetting(setting: ArSetting, onComplete: (Boolean) -> Unit) {
+        _arSetting.value = setting
         onComplete(true)
     }
 }

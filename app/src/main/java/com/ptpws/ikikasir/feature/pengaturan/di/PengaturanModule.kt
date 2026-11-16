@@ -4,11 +4,17 @@ import android.content.Context
 import com.google.firebase.firestore.FirebaseFirestore
 import com.ptpws.ikikasir.core.database.AppDatabase
 import com.ptpws.ikikasir.core.network.NetworkMonitor
+import com.ptpws.ikikasir.feature.pengaturan.data.local.dao.ArSettingDao
 import com.ptpws.ikikasir.feature.pengaturan.data.local.dao.NotaSettingDao
+import com.ptpws.ikikasir.feature.pengaturan.data.preferences.ArSettingPreferences
 import com.ptpws.ikikasir.feature.pengaturan.data.preferences.TableSettingPreferences
+import com.ptpws.ikikasir.feature.pengaturan.data.remote.datasource.ArSettingRemoteDataSource
+import com.ptpws.ikikasir.feature.pengaturan.data.remote.datasource.ArSettingRemoteDataSourceImpl
 import com.ptpws.ikikasir.feature.pengaturan.data.remote.datasource.NotaSettingRemoteDataSource
 import com.ptpws.ikikasir.feature.pengaturan.data.remote.datasource.NotaSettingRemoteDataSourceImpl
+import com.ptpws.ikikasir.feature.pengaturan.data.repository.ArSettingRepositoryImpl
 import com.ptpws.ikikasir.feature.pengaturan.data.repository.NotaSettingRepositoryImpl
+import com.ptpws.ikikasir.feature.pengaturan.domain.repository.ArSettingRepository
 import com.ptpws.ikikasir.feature.pengaturan.domain.repository.NotaSettingRepository
 import dagger.Module
 import dagger.Provides
@@ -96,6 +102,30 @@ object PengaturanModule {
     @Provides
     @Singleton
     fun provideTableSettingRepository(repositoryImpl: com.ptpws.ikikasir.feature.pengaturan.data.repository.TableSettingRepositoryImpl): com.ptpws.ikikasir.feature.pengaturan.domain.repository.TableSettingRepository {
+        return repositoryImpl
+    }
+
+    @Provides
+    @Singleton
+    fun provideArSettingDao(database: AppDatabase): ArSettingDao {
+        return database.arSettingDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideArSettingPreferences(@ApplicationContext context: Context): ArSettingPreferences {
+        return ArSettingPreferences(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideArSettingRemoteDataSource(firestore: FirebaseFirestore): ArSettingRemoteDataSource {
+        return ArSettingRemoteDataSourceImpl(firestore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideArSettingRepository(repositoryImpl: ArSettingRepositoryImpl): ArSettingRepository {
         return repositoryImpl
     }
 }

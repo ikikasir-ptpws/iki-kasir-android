@@ -1,5 +1,6 @@
 package com.ptpws.ikikasir.feature.pengaturan.presentation.viewmodel
 
+import com.ptpws.ikikasir.feature.pengaturan.domain.model.ArSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.PaymentMethodSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.TableSetting
@@ -17,11 +18,13 @@ interface ProfilUiProvider {
     val taxSetting: StateFlow<TaxSetting>
     val paymentMethodSetting: StateFlow<PaymentMethodSetting>
     val tableSetting: StateFlow<TableSetting>
+    val arSetting: StateFlow<ArSetting>
     fun updateUserProfile(newFullName: String, newPhotoUrl: String, onComplete: (Boolean) -> Unit = {})
     fun saveNotaSetting(setting: NotaSetting, onComplete: (Boolean) -> Unit = {})
     fun saveTaxSetting(setting: TaxSetting, onComplete: (Boolean) -> Unit = {})
     fun savePaymentMethodSetting(setting: PaymentMethodSetting, onComplete: (Boolean) -> Unit = {})
     fun saveTableSetting(setting: TableSetting, onComplete: (Boolean) -> Unit = {})
+    fun saveArSetting(setting: ArSetting, onComplete: (Boolean) -> Unit = {})
 }
 
 /**
@@ -34,9 +37,11 @@ class HiltProfilUiProvider(private val viewModel: ProfilViewModel) : ProfilUiPro
     override val taxSetting: StateFlow<TaxSetting> get() = viewModel.taxSetting
     override val paymentMethodSetting: StateFlow<PaymentMethodSetting> get() = viewModel.paymentMethodSetting
     override val tableSetting: StateFlow<TableSetting> get() = viewModel.tableSetting
+    override val arSetting: StateFlow<ArSetting> get() = viewModel.arSetting
     override fun updateUserProfile(newFullName: String, newPhotoUrl: String, onComplete: (Boolean) -> Unit) = viewModel.updateUserProfile(newFullName, newPhotoUrl, onComplete)
     override fun saveNotaSetting(setting: NotaSetting, onComplete: (Boolean) -> Unit) = viewModel.saveNotaSetting(setting, onComplete)
     override fun saveTaxSetting(setting: TaxSetting, onComplete: (Boolean) -> Unit) = viewModel.saveTaxSetting(setting, onComplete)
     override fun savePaymentMethodSetting(setting: PaymentMethodSetting, onComplete: (Boolean) -> Unit) = viewModel.savePaymentMethodSetting(setting, onComplete)
     override fun saveTableSetting(setting: TableSetting, onComplete: (Boolean) -> Unit) = viewModel.saveTableSetting(setting, onComplete)
+    override fun saveArSetting(setting: ArSetting, onComplete: (Boolean) -> Unit) = viewModel.saveArSetting(setting, onComplete)
 }

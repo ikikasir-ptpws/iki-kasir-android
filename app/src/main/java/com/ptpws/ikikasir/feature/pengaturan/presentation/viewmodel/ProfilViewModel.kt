@@ -10,14 +10,17 @@ import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.dao.UserDao
 import com.ptpws.ikikasir.feature.manajemenpengguna.data.local.entity.toEntity
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.model.User
 import com.ptpws.ikikasir.feature.manajemenpengguna.domain.repository.UserRepository
+import com.ptpws.ikikasir.feature.pengaturan.domain.model.ArSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.NotaSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.PaymentMethodSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.TableSetting
 import com.ptpws.ikikasir.feature.pengaturan.domain.model.TaxSetting
+import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetArSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetNotaSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetPaymentMethodSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetTableSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.GetTaxSettingUseCase
+import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.SaveArSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.SaveNotaSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.SavePaymentMethodSettingUseCase
 import com.ptpws.ikikasir.feature.pengaturan.domain.usecase.SaveTableSettingUseCase
@@ -50,6 +53,8 @@ class ProfilViewModel @Inject constructor(
     private val savePaymentMethodSettingUseCase: SavePaymentMethodSettingUseCase,
     private val getTableSettingUseCase: GetTableSettingUseCase,
     private val saveTableSettingUseCase: SaveTableSettingUseCase,
+    private val getArSettingUseCase: GetArSettingUseCase,
+    private val saveArSettingUseCase: SaveArSettingUseCase,
     private val logActivityUseCase: LogActivityUseCase,
     private val firebaseAuth: FirebaseAuth,
     private val userDao: UserDao,
@@ -76,6 +81,9 @@ class ProfilViewModel @Inject constructor(
     private val _tableSetting = MutableStateFlow(TableSetting())
     val tableSetting: StateFlow<TableSetting> = _tableSetting.asStateFlow()
 
+    private val _arSetting = MutableStateFlow(ArSetting())
+    val arSetting: StateFlow<com.ptpws.ikikasir.feature.pengaturan.domain.model.ArSetting> = _arSetting.asStateFlow()
+
     init {
         viewModelScope.launch {
             networkMonitor.isOnline.collect { online -> _isOnline.value = online }
@@ -85,6 +93,7 @@ class ProfilViewModel @Inject constructor(
         loadTaxSetting()
         loadPaymentMethodSetting()
         loadTableSetting()
+        loadArSetting()
     }
 
     fun loadUserProfile() {
@@ -202,6 +211,36 @@ class ProfilViewModel @Inject constructor(
             getTableSettingUseCase().collect { setting ->
                 _tableSetting.value = setting
             }
+        }
+    }
+
+    fun loadArSetting() {
+        viewModelScope.launch {
+            getArSettingUseCase().collect { setting ->
+                _arSetting.value = setting
+            }
+        }
+    }
+
+    fun saveArSetting(setting: ArSetting, onComplete: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            val result = saveArSettingUseCase(setting)
+            result.fold(
+                onSuccess = {
+                    GlobalCrudResultDialog.success("Pengaturan AR berhasil disimpan.")
+                    logActivityUseCase(
+                        title = "Perubahan Pengaturan AR",
+                        description = "Fitur AR ${if (setting.isArEnabled) "diaktifkan" else "dinonaktifkan"}.",
+                        category = "SYSTEM",
+                        action = "UPDATE"
+                    )
+                    onComplete(true)
+                },
+                onFailure = { error ->
+                    GlobalCrudResultDialog.failure(error.message ?: "Gagal menyimpan pengaturan AR.")
+                    onComplete(false)
+                }
+            )
         }
     }
 

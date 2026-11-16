@@ -316,8 +316,7 @@ private fun VerticalImageOptionCard(
 ) {
     Card(
         modifier = modifier
-            // Responsif: tinggi minimum 148dp (sama seperti sebelumnya) tapi boleh bertambah saat font diperbesar
-            .heightIn(min = 148.dp)
+            .height(130.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
@@ -325,8 +324,9 @@ private fun VerticalImageOptionCard(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(14.dp),
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .padding(vertical = 12.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
