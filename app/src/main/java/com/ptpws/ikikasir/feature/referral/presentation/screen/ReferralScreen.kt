@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -80,7 +81,6 @@ fun ReferralScreen(
     var selectedWithdrawalDetail by remember { mutableStateOf<WithdrawalTransaction?>(null) }
     var showUplineDialog by remember { mutableStateOf(false) }
     var showAjukanClientDialog by remember { mutableStateOf(false) }
-    val isLoading by viewModel.isLoading.collectAsState()
 
     Scaffold(
         containerColor = Color(0xFFF3F4F6),
@@ -104,23 +104,6 @@ fun ReferralScreen(
                         )
                     }
                 },
-                actions = {
-                    IconButton(onClick = { viewModel.refreshData() }) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                color = Color(0xFF4F46E5),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Outlined.Refresh,
-                                contentDescription = "Segarkan",
-                                tint = Color(0xFF4F46E5)
-                            )
-                        }
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFFF3F4F6),
                     titleContentColor = Color(0xFF111827),
@@ -136,12 +119,14 @@ fun ReferralScreen(
         ) {
             val isCompactPhone = maxWidth <= 340.dp
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .imePadding(),
                 contentPadding = PaddingValues(
                     start = if (isCompactPhone) 12.dp else 16.dp,
                     end = if (isCompactPhone) 12.dp else 16.dp,
                     top = if (isCompactPhone) 6.dp else 8.dp,
-                    bottom = if (isCompactPhone) 32.dp else 48.dp
+                    bottom = if (isCompactPhone) 120.dp else 180.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(if (isCompactPhone) 12.dp else 16.dp)
             ) {
@@ -1034,6 +1019,11 @@ fun UserReferralHeader(
         OutlinedTextField(
             value = searchQuery,
             onValueChange = onSearchChange,
+            textStyle = TextStyle(
+                fontFamily = interfamily,
+                fontSize = 13.sp,
+                color = Color(0xFF1E293B)
+            ),
             placeholder = {
                 Text(
                     text = "Cari toko atau pemilik...",
@@ -1070,9 +1060,7 @@ fun UserReferralHeader(
                 unfocusedBorderColor = Color(0xFFE2E8F0)
             ),
             singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
+            modifier = Modifier.fillMaxWidth()
         )
 
         // Filter Chips & Counter
