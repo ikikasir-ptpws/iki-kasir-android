@@ -1552,20 +1552,28 @@ fun AjukanCalonClientDialog(
     var isSubmitting by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = { if (!isSubmitting) onDismiss() }) {
-        Card(
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp)
+                .imePadding()
+                .systemBarsPadding(),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                    .heightIn(max = 680.dp)
+                    .padding(vertical = 16.dp)
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
                 // Header Dialog
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1844,6 +1852,7 @@ fun AjukanCalonClientDialog(
                 }
             }
         }
+      }
     }
 }
 
@@ -1868,21 +1877,29 @@ fun TarikSaldoDialog(
     val bankOptions = listOf("BCA", "Mandiri", "BRI", "BNI", "BSI", "DANA", "GoPay", "OVO", "ShopeePay")
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                .imePadding()
+                .systemBarsPadding(),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(22.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                    .heightIn(max = 680.dp)
+                    .padding(horizontal = 4.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(22.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
                 // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -2123,6 +2140,7 @@ fun TarikSaldoDialog(
                 }
             }
         }
+      }
     }
 }
 
