@@ -24,6 +24,7 @@ interface ReferralUiProvider {
     val isPackagesLoading: StateFlow<Boolean>
     val packagesError: StateFlow<String?>
     fun refreshData()
+    fun refreshStatusData()
     fun refreshPackages()
     fun setSearchQuery(query: String)
     fun setSelectedFilter(filter: String)
@@ -50,6 +51,7 @@ class HiltReferralUiProvider(private val viewModel: ReferralViewModel) : Referra
     override val isPackagesLoading: StateFlow<Boolean> get() = viewModel.isPackagesLoading
     override val packagesError: StateFlow<String?> get() = viewModel.packagesError
     override fun refreshData() = viewModel.refreshData()
+    override fun refreshStatusData() = viewModel.refreshStatusData()
     override fun refreshPackages() = viewModel.refreshPackages()
     override fun setSearchQuery(query: String) = viewModel.setSearchQuery(query)
     override fun setSelectedFilter(filter: String) = viewModel.setSelectedFilter(filter)

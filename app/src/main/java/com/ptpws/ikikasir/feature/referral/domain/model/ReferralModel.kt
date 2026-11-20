@@ -45,7 +45,8 @@ data class WithdrawalTransaction(
     val requestDate: String,
     val completedDate: String? = null,
     val status: WithdrawalStatus = WithdrawalStatus.MENUNGGU_VERIFIKASI,
-    val notes: String = ""
+    val notes: String = "",
+    val rejectionReason: String? = null
 )
 
 /**

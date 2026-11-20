@@ -87,6 +87,8 @@ class ReferralViewModel @Inject constructor(
     private val _packagesError = MutableStateFlow<String?>(null)
     val packagesError: StateFlow<String?> = _packagesError.asStateFlow()
 
+    private var isReferralRequestInProgress = false
+
     val filteredUserReferrals: StateFlow<List<UserReferralItem>> =
         combine(_userReferrals, _searchQuery, _selectedFilter) { list, query, filter ->
             list.filter { item ->
@@ -134,63 +136,88 @@ class ReferralViewModel @Inject constructor(
      * Fallback: empty state (bukan data dummy) jika server tidak dapat dijangkau.
      */
     fun loadReferralDataFromServer(onComplete: (() -> Unit)? = null) {
+        if (isReferralRequestInProgress) {
+            onComplete?.invoke()
+            return
+        }
+
         viewModelScope.launch {
+            isReferralRequestInProgress = true
             _isLoading.value = true
-            val email = SubscriptionApiConfig.CLIENT_EMAIL
+            try {
+                syncReferralDataFromServer()
+            } finally {
+                isReferralRequestInProgress = false
+                _isLoading.value = false
+                onComplete?.invoke()
+            }
+        }
+    }
 
-            // Invalidasi cache jika email berbeda (ganti pengguna)
-            preferences.invalidateCacheIfEmailChanged(email)
+    private suspend fun syncReferralDataFromServer() {
+        val email = SubscriptionApiConfig.CLIENT_EMAIL
+        preferences.invalidateCacheIfEmailChanged(email)
 
-            val result = apiService.getReferralOverview(email)
-
-            result.onSuccess { overview ->
+        apiService.getReferralOverview(email)
+            .onSuccess { overview ->
                 _referralInfo.value = overview.referralInfo
                 _userReferrals.value = overview.userReferrals
                 _withdrawals.value = overview.withdrawals
 
-                // Simpan ke cache lokal
                 preferences.saveReferralInfo(overview.referralInfo)
                 preferences.saveUserReferrals(overview.userReferrals)
                 preferences.saveWithdrawals(overview.withdrawals)
 
-                // Perbarui REFERRAL_CODE global dari data server
                 if (overview.referralInfo.referralCode.isNotBlank()) {
                     SubscriptionApiConfig.REFERRAL_CODE = overview.referralInfo.referralCode
                 }
 
-                Log.d("ReferralViewModel", "Data referral berhasil dimuat: " +
-                    "${overview.userReferrals.size} downline, " +
-                    "kode=${overview.referralInfo.referralCode}")
-
-            }.onFailure { err ->
+                Log.d(
+                    "ReferralViewModel",
+                    "Data referral berhasil dimuat: ${overview.userReferrals.size} downline, " +
+                        "kode=${overview.referralInfo.referralCode}"
+                )
+            }
+            .onFailure { err ->
                 Log.w("ReferralViewModel", "Gagal memuat referral live: ${err.message}")
-                // Gunakan cache jika ada, BUKAN data dummy
                 val cachedInfo = preferences.getReferralInfo()
-                val cachedReferrals = preferences.getUserReferrals()
-                val cachedWithdrawals = preferences.getWithdrawals()
-
                 _referralInfo.value = cachedInfo.copy(
                     uplineName = "",
                     uplineCode = "",
                     uplineBoundDate = "",
                     isBound = false
                 )
-                _userReferrals.value = cachedReferrals
-                _withdrawals.value = cachedWithdrawals
+                _userReferrals.value = preferences.getUserReferrals()
+                _withdrawals.value = preferences.getWithdrawals()
             }
-
-            _isLoading.value = false
-            onComplete?.invoke()
-        }
     }
 
     fun refreshData() {
-        if (_isLoading.value || _isRefreshing.value) return
+        if (_isLoading.value || _isRefreshing.value || isReferralRequestInProgress) return
 
         _isRefreshing.value = true
         refreshPackages()
-        loadReferralDataFromServer {
-            _isRefreshing.value = false
+        isReferralRequestInProgress = true
+        viewModelScope.launch {
+            try {
+                syncReferralDataFromServer()
+            } finally {
+                isReferralRequestInProgress = false
+                _isRefreshing.value = false
+            }
+        }
+    }
+
+    fun refreshStatusData() {
+        if (_isLoading.value || _isRefreshing.value || isReferralRequestInProgress) return
+
+        isReferralRequestInProgress = true
+        viewModelScope.launch {
+            try {
+                syncReferralDataFromServer()
+            } finally {
+                isReferralRequestInProgress = false
+            }
         }
     }
 

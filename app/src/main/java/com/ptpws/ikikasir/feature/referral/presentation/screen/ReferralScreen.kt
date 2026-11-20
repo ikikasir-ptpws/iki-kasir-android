@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
@@ -40,6 +41,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
 import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.commond.ShimmerBox
 import com.ptpws.ikikasir.commond.UserCardShimmer
@@ -73,6 +78,7 @@ fun ReferralScreen(
     BackHandler(onBack = { handleBack() })
 
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val referralInfo by viewModel.referralInfo.collectAsState()
     val userReferrals by viewModel.filteredUserReferrals.collectAsState()
     val allUserReferrals by viewModel.userReferrals.collectAsState()
@@ -87,9 +93,33 @@ fun ReferralScreen(
 
     var selectedTab by remember { mutableIntStateOf(0) } // 0: User Referal, 1: Riwayat Penarikan
     var showWithdrawDialog by remember { mutableStateOf(false) }
-    var selectedWithdrawalDetail by remember { mutableStateOf<WithdrawalTransaction?>(null) }
+    var selectedWithdrawalId by remember { mutableStateOf<String?>(null) }
+    val selectedWithdrawalDetail = selectedWithdrawalId?.let { id ->
+        withdrawals.firstOrNull { it.id == id }
+    }
     var showUplineDialog by remember { mutableStateOf(false) }
     var showAjukanClientDialog by remember { mutableStateOf(false) }
+
+    DisposableEffect(lifecycleOwner, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshStatusData()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(lifecycleOwner, viewModel, selectedTab) {
+        if (selectedTab == 1) {
+            lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    delay(10_000)
+                    viewModel.refreshStatusData()
+                }
+            }
+        }
+    }
 
     Scaffold(
         containerColor = Color(0xFFF3F4F6),
@@ -176,7 +206,10 @@ fun ReferralScreen(
                                 item {
                                     ReferralTabRow(
                                         selectedTab = selectedTab,
-                                        onTabSelected = { selectedTab = it },
+                                        onTabSelected = {
+                                            selectedTab = it
+                                            if (it == 1) viewModel.refreshStatusData()
+                                        },
                                         userReferralCount = allUserReferrals.size,
                                         withdrawalCount = withdrawals.size
                                     )
@@ -241,7 +274,7 @@ fun ReferralScreen(
                                             items(withdrawals, key = { it.id }) { tx ->
                                                 WithdrawalListItem(
                                                     transaction = tx,
-                                                    onClick = { selectedWithdrawalDetail = tx }
+                                                    onClick = { selectedWithdrawalId = tx.id }
                                                 )
                                             }
                                         }
@@ -282,7 +315,7 @@ fun ReferralScreen(
     selectedWithdrawalDetail?.let { tx ->
         DetailPenarikanDialog(
             transaction = tx,
-            onDismiss = { selectedWithdrawalDetail = null }
+            onDismiss = { selectedWithdrawalId = null }
         )
     }
 
@@ -2437,24 +2470,71 @@ fun DetailPenarikanDialog(
 
                 StepProgressItem(
                     stepNumber = 2,
-                    title = "Menunggu Verifikasi finance",
-                    subtitle = if (transaction.status == WithdrawalStatus.MENUNGGU_VERIFIKASI)
-                        "Sedang diperiksa & divalidasi oleh tim Finance Iki Kasir"
-                    else "Telah diverifikasi & disetujui Finance",
+                    title = if (transaction.status == WithdrawalStatus.DITOLAK)
+                        "Permohonan Ditolak"
+                    else "Verifikasi Finance",
+                    subtitle = when (transaction.status) {
+                        WithdrawalStatus.MENUNGGU_VERIFIKASI ->
+                            "Sedang diperiksa & divalidasi oleh tim Finance Iki Kasir"
+                        WithdrawalStatus.SELESAI ->
+                            "Permohonan telah disetujui tim Finance"
+                        WithdrawalStatus.DITOLAK ->
+                            "Permohonan tidak disetujui tim Finance"
+                    },
                     isDone = transaction.status == WithdrawalStatus.SELESAI,
                     isActive = transaction.status == WithdrawalStatus.MENUNGGU_VERIFIKASI
                 )
 
                 StepProgressItem(
                     stepNumber = 3,
-                    title = "Selesai",
-                    subtitle = if (transaction.status == WithdrawalStatus.SELESAI)
-                        "Dana telah berhasil ditransfer (${transaction.completedDate ?: "Selesai"})"
-                    else "Dana akan ditransfer otomatis setelah verifikasi finance disetujui",
+                    title = if (transaction.status == WithdrawalStatus.DITOLAK)
+                        "Tidak Dicairkan"
+                    else "Selesai",
+                    subtitle = when (transaction.status) {
+                        WithdrawalStatus.MENUNGGU_VERIFIKASI ->
+                            "Dana akan ditransfer setelah verifikasi Finance disetujui"
+                        WithdrawalStatus.SELESAI ->
+                            "Dana telah berhasil ditransfer (${transaction.completedDate ?: "Selesai"})"
+                        WithdrawalStatus.DITOLAK ->
+                            "Penarikan tidak diproses karena permohonan ditolak"
+                    },
                     isDone = transaction.status == WithdrawalStatus.SELESAI,
                     isActive = false,
                     isLast = true
                 )
+
+                transaction.rejectionReason
+                    ?.takeIf {
+                        transaction.status == WithdrawalStatus.DITOLAK && it.isNotBlank()
+                    }
+                    ?.let { reason ->
+                        Surface(
+                            color = Color(0xFFFEF2F2),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(1.dp, Color(0xFFFECACA)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = "Alasan Penolakan",
+                                    fontFamily = interfamily,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFB91C1C)
+                                )
+                                Text(
+                                    text = reason,
+                                    fontFamily = interfamily,
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF7F1D1D),
+                                    lineHeight = 17.sp
+                                )
+                            }
+                        }
+                    }
 
                 Button(
                     onClick = onDismiss,

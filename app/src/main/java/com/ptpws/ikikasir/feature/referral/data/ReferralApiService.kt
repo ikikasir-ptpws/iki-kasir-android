@@ -158,9 +158,9 @@ class ReferralApiService {
                     }
 
                     val withdrawals = (data.withdrawals ?: emptyList()).map { tx ->
-                        val statusEnum = when {
-                            tx.status.equals("Selesai", ignoreCase = true) || tx.status.equals("COMPLETED", ignoreCase = true) -> WithdrawalStatus.SELESAI
-                            tx.status.equals("Ditolak", ignoreCase = true) || tx.status.equals("REJECTED", ignoreCase = true) -> WithdrawalStatus.DITOLAK
+                        val statusEnum = when (tx.status?.trim()?.uppercase()) {
+                            "SELESAI", "COMPLETED" -> WithdrawalStatus.SELESAI
+                            "DITOLAK", "REJECTED" -> WithdrawalStatus.DITOLAK
                             else -> WithdrawalStatus.MENUNGGU_VERIFIKASI
                         }
                         WithdrawalTransaction(
@@ -172,7 +172,8 @@ class ReferralApiService {
                             requestDate = tx.requestDate ?: "-",
                             completedDate = tx.completedDate,
                             status = statusEnum,
-                            notes = tx.notes ?: ""
+                            notes = tx.notes ?: "",
+                            rejectionReason = tx.rejectionReason?.takeIf { it.isNotBlank() }
                         )
                     }
 

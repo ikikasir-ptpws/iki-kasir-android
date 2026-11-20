@@ -1691,6 +1691,7 @@ class PreviewReferralProvider : ReferralUiProvider {
         MutableStateFlow(null).asStateFlow()
 
     override fun refreshData() = Unit
+    override fun refreshStatusData() = Unit
     override fun refreshPackages() = Unit
 
     override fun setSearchQuery(query: String) {

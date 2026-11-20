@@ -91,7 +91,8 @@ data class ReferralWithdrawalDto(
     @SerializedName("requestDate") val requestDate: String? = null,
     @SerializedName("completedDate") val completedDate: String? = null,
     @SerializedName("status") val status: String? = "Menunggu Verifikasi finance",
-    @SerializedName("notes") val notes: String? = null
+    @SerializedName("notes") val notes: String? = null,
+    @SerializedName("rejectionReason") val rejectionReason: String? = null
 )
 
 data class ReferralPackageDto(
