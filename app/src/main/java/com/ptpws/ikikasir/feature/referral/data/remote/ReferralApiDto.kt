@@ -94,6 +94,14 @@ data class ReferralWithdrawalDto(
     @SerializedName("notes") val notes: String? = null
 )
 
+data class ReferralPackageDto(
+    @SerializedName("id") val id: String = "",
+    @SerializedName("name") val name: String = "",
+    @SerializedName("price") val price: Double? = null,
+    @SerializedName("period") val period: String? = null,
+    @SerializedName("isActive") val isActive: Boolean? = null
+)
+
 /**
  * Request payload untuk mengajukan calon client baru via kode referral
  */
@@ -103,6 +111,7 @@ data class SubmitClientRequestDto(
     @SerializedName("phone") val phone: String,
     @SerializedName("email") val email: String,
     @SerializedName("notes") val notes: String? = null,
+    @SerializedName("packageInterest") val packageInterest: String? = null,
     @SerializedName("referralCode") val referralCode: String? = null,
     @SerializedName("userEmail") val userEmail: String? = null,
     @SerializedName("customerId") val customerId: String? = null

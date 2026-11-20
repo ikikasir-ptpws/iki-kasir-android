@@ -67,6 +67,7 @@ import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.KasirUiProvid
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.PembayaranUiProvider
 import com.ptpws.ikikasir.feature.penjualan.presentation.viewmodel.RiwayatTransaksiUiProvider
 import com.ptpws.ikikasir.feature.referral.domain.model.ReferralInfo
+import com.ptpws.ikikasir.feature.referral.domain.model.ReferralPackageOption
 import com.ptpws.ikikasir.feature.referral.domain.model.UserReferralItem
 import com.ptpws.ikikasir.feature.referral.domain.model.WithdrawalStatus
 import com.ptpws.ikikasir.feature.referral.domain.model.WithdrawalTransaction
@@ -1669,6 +1670,9 @@ class PreviewReferralProvider : ReferralUiProvider {
     )
     override val withdrawals: StateFlow<List<WithdrawalTransaction>> = _withdrawals.asStateFlow()
 
+    override val availablePackages: StateFlow<List<ReferralPackageOption>> =
+        MutableStateFlow(emptyList<ReferralPackageOption>()).asStateFlow()
+
     private val _searchQuery = MutableStateFlow("")
     override val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
@@ -1681,7 +1685,13 @@ class PreviewReferralProvider : ReferralUiProvider {
     private val _isRefreshing = MutableStateFlow(false)
     override val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+    override val isPackagesLoading: StateFlow<Boolean> =
+        MutableStateFlow(false).asStateFlow()
+    override val packagesError: StateFlow<String?> =
+        MutableStateFlow(null).asStateFlow()
+
     override fun refreshData() = Unit
+    override fun refreshPackages() = Unit
 
     override fun setSearchQuery(query: String) {
         _searchQuery.value = query
@@ -1701,6 +1711,7 @@ class PreviewReferralProvider : ReferralUiProvider {
         phone: String,
         email: String,
         notes: String,
+        packageInterest: String,
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {

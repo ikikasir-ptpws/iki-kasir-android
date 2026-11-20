@@ -44,6 +44,7 @@ import com.ptpws.ikikasir.commond.interfamily
 import com.ptpws.ikikasir.commond.ShimmerBox
 import com.ptpws.ikikasir.commond.UserCardShimmer
 import com.ptpws.ikikasir.feature.referral.domain.model.ReferralInfo
+import com.ptpws.ikikasir.feature.referral.domain.model.ReferralPackageOption
 import com.ptpws.ikikasir.feature.referral.domain.model.UserReferralItem
 import com.ptpws.ikikasir.feature.referral.domain.model.WithdrawalStatus
 import com.ptpws.ikikasir.feature.referral.domain.model.WithdrawalTransaction
@@ -76,8 +77,11 @@ fun ReferralScreen(
     val userReferrals by viewModel.filteredUserReferrals.collectAsState()
     val allUserReferrals by viewModel.userReferrals.collectAsState()
     val withdrawals by viewModel.withdrawals.collectAsState()
+    val availablePackages by viewModel.availablePackages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val isPackagesLoading by viewModel.isPackagesLoading.collectAsState()
+    val packagesError by viewModel.packagesError.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
 
@@ -299,14 +303,19 @@ fun ReferralScreen(
     if (showAjukanClientDialog) {
         AjukanCalonClientDialog(
             referralCode = referralInfo.referralCode,
+            packages = availablePackages,
+            isPackagesLoading = isPackagesLoading,
+            packagesError = packagesError,
+            onRefreshPackages = { viewModel.refreshPackages() },
             onDismiss = { showAjukanClientDialog = false },
-            onSubmit = { name, businessName, phone, email, notes ->
+            onSubmit = { name, businessName, phone, email, notes, packageInterest ->
                 viewModel.submitClient(
                     name = name,
                     businessName = businessName,
                     phone = phone,
                     email = email,
                     notes = notes,
+                    packageInterest = packageInterest,
                     onSuccess = { message ->
                         showAjukanClientDialog = false
                         selectedTab = 0
@@ -1605,18 +1614,32 @@ fun EmptyWithdrawalCard(onTarikSekarang: () -> Unit) {
 // DIALOG: AJUKAN CALON CLIENT
 // ─────────────────────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AjukanCalonClientDialog(
     referralCode: String,
+    packages: List<ReferralPackageOption>,
+    isPackagesLoading: Boolean,
+    packagesError: String?,
+    onRefreshPackages: () -> Unit,
     onDismiss: () -> Unit,
-    onSubmit: (name: String, businessName: String, phone: String, email: String, notes: String) -> Unit
+    onSubmit: (name: String, businessName: String, phone: String, email: String, notes: String, packageInterest: String) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var businessName by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
+    var selectedPackageId by remember { mutableStateOf("") }
+    var packageMenuExpanded by remember { mutableStateOf(false) }
     var isSubmitting by remember { mutableStateOf(false) }
+    val selectedPackage = packages.firstOrNull { it.id == selectedPackageId }
+
+    LaunchedEffect(packages) {
+        if (packages.none { it.id == selectedPackageId }) {
+            selectedPackageId = ""
+        }
+    }
 
     Dialog(onDismissRequest = { if (!isSubmitting) onDismiss() }) {
         Box(
@@ -1786,6 +1809,97 @@ fun AjukanCalonClientDialog(
                     )
                 }
 
+                // Field: Paket Langganan
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "Paket Langganan *",
+                        fontFamily = interfamily,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF334155)
+                    )
+                    ExposedDropdownMenuBox(
+                        expanded = packageMenuExpanded,
+                        onExpandedChange = { packageMenuExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = when {
+                                isPackagesLoading -> "Memuat daftar paket..."
+                                selectedPackage != null ->
+                                    "${selectedPackage.name} - Rp ${formatRupiah(selectedPackage.price)} ${selectedPackage.period}".trim()
+                                else -> "Pilih paket langganan"
+                            },
+                            onValueChange = {},
+                            readOnly = true,
+                            enabled = !isPackagesLoading && packages.isNotEmpty(),
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            shape = RoundedCornerShape(10.dp),
+                            trailingIcon = {
+                                if (isPackagesLoading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = packageMenuExpanded)
+                                }
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF4F46E5),
+                                unfocusedBorderColor = Color(0xFFCBD5E1),
+                                disabledTextColor = Color(0xFF64748B)
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = packageMenuExpanded,
+                            onDismissRequest = { packageMenuExpanded = false }
+                        ) {
+                            packages.forEach { packageOption ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                            Text(
+                                                text = packageOption.name,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                            Text(
+                                                text = "Rp ${formatRupiah(packageOption.price)} ${packageOption.period}".trim(),
+                                                fontSize = 12.sp,
+                                                color = Color(0xFF64748B)
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        selectedPackageId = packageOption.id
+                                        packageMenuExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    if (packagesError != null) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = packagesError.orEmpty(),
+                                fontFamily = interfamily,
+                                fontSize = 11.sp,
+                                color = Color(0xFFDC2626),
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(
+                                onClick = onRefreshPackages,
+                                enabled = !isPackagesLoading
+                            ) {
+                                Text("Coba lagi")
+                            }
+                        }
+                    }
+                }
+
                 // Field: Nomor WhatsApp
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
@@ -1885,10 +1999,18 @@ fun AjukanCalonClientDialog(
 
                     Button(
                         onClick = {
-                            isSubmitting = true
-                            onSubmit(name, businessName, phone, email, notes)
+                            selectedPackage?.let { packageOption ->
+                                isSubmitting = true
+                                onSubmit(name, businessName, phone, email, notes, packageOption.name)
+                            }
                         },
-                        enabled = !isSubmitting && name.isNotBlank() && businessName.isNotBlank() && phone.isNotBlank() && email.isNotBlank(),
+                        enabled = !isSubmitting &&
+                            !isPackagesLoading &&
+                            selectedPackage != null &&
+                            name.isNotBlank() &&
+                            businessName.isNotBlank() &&
+                            phone.isNotBlank() &&
+                            email.isNotBlank(),
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 46.dp),

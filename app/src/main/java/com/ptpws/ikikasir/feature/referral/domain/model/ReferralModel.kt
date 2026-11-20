@@ -29,6 +29,13 @@ data class UserReferralItem(
     val commissionEarned: Double = 50000.0
 )
 
+data class ReferralPackageOption(
+    val id: String,
+    val name: String,
+    val price: Double,
+    val period: String
+)
+
 data class WithdrawalTransaction(
     val id: String,
     val amount: Double,

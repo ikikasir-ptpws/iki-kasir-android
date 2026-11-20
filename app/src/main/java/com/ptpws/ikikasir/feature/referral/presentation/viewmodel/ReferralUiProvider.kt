@@ -2,6 +2,7 @@ package com.ptpws.ikikasir.feature.referral.presentation.viewmodel
 
 import android.content.Context
 import com.ptpws.ikikasir.feature.referral.domain.model.ReferralInfo
+import com.ptpws.ikikasir.feature.referral.domain.model.ReferralPackageOption
 import com.ptpws.ikikasir.feature.referral.domain.model.UserReferralItem
 import com.ptpws.ikikasir.feature.referral.domain.model.WithdrawalTransaction
 import kotlinx.coroutines.flow.StateFlow
@@ -15,16 +16,20 @@ interface ReferralUiProvider {
     val userReferrals: StateFlow<List<UserReferralItem>>
     val filteredUserReferrals: StateFlow<List<UserReferralItem>>
     val withdrawals: StateFlow<List<WithdrawalTransaction>>
+    val availablePackages: StateFlow<List<ReferralPackageOption>>
     val searchQuery: StateFlow<String>
     val selectedFilter: StateFlow<String>
     val isLoading: StateFlow<Boolean>
     val isRefreshing: StateFlow<Boolean>
+    val isPackagesLoading: StateFlow<Boolean>
+    val packagesError: StateFlow<String?>
     fun refreshData()
+    fun refreshPackages()
     fun setSearchQuery(query: String)
     fun setSelectedFilter(filter: String)
     fun copyReferralCode(ctx: Context)
     fun shareReferral(ctx: Context)
-    fun submitClient(name: String, businessName: String, phone: String, email: String, notes: String, onSuccess: (String) -> Unit, onError: (String) -> Unit)
+    fun submitClient(name: String, businessName: String, phone: String, email: String, notes: String, packageInterest: String, onSuccess: (String) -> Unit, onError: (String) -> Unit)
     fun submitWithdrawal(amount: Double, bankOrWallet: String, accountNumber: String, accountHolder: String, notes: String, onSuccess: () -> Unit, onError: (String) -> Unit)
     fun updateUpline(uplineName: String, uplineCode: String)
 }
@@ -37,16 +42,20 @@ class HiltReferralUiProvider(private val viewModel: ReferralViewModel) : Referra
     override val userReferrals: StateFlow<List<UserReferralItem>> get() = viewModel.userReferrals
     override val filteredUserReferrals: StateFlow<List<UserReferralItem>> get() = viewModel.filteredUserReferrals
     override val withdrawals: StateFlow<List<WithdrawalTransaction>> get() = viewModel.withdrawals
+    override val availablePackages: StateFlow<List<ReferralPackageOption>> get() = viewModel.availablePackages
     override val searchQuery: StateFlow<String> get() = viewModel.searchQuery
     override val selectedFilter: StateFlow<String> get() = viewModel.selectedFilter
     override val isLoading: StateFlow<Boolean> get() = viewModel.isLoading
     override val isRefreshing: StateFlow<Boolean> get() = viewModel.isRefreshing
+    override val isPackagesLoading: StateFlow<Boolean> get() = viewModel.isPackagesLoading
+    override val packagesError: StateFlow<String?> get() = viewModel.packagesError
     override fun refreshData() = viewModel.refreshData()
+    override fun refreshPackages() = viewModel.refreshPackages()
     override fun setSearchQuery(query: String) = viewModel.setSearchQuery(query)
     override fun setSelectedFilter(filter: String) = viewModel.setSelectedFilter(filter)
     override fun copyReferralCode(ctx: Context) = viewModel.copyReferralCode(ctx)
     override fun shareReferral(ctx: Context) = viewModel.shareReferral(ctx)
-    override fun submitClient(name: String, businessName: String, phone: String, email: String, notes: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) = viewModel.submitClient(name, businessName, phone, email, notes, onSuccess, onError)
+    override fun submitClient(name: String, businessName: String, phone: String, email: String, notes: String, packageInterest: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) = viewModel.submitClient(name, businessName, phone, email, notes, packageInterest, onSuccess, onError)
     override fun submitWithdrawal(amount: Double, bankOrWallet: String, accountNumber: String, accountHolder: String, notes: String, onSuccess: () -> Unit, onError: (String) -> Unit) = viewModel.submitWithdrawal(amount, bankOrWallet, accountNumber, accountHolder, notes, onSuccess, onError)
     override fun updateUpline(uplineName: String, uplineCode: String) = viewModel.updateUpline(uplineName, uplineCode)
 }

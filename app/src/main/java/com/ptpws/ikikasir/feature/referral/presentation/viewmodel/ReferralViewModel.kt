@@ -12,6 +12,7 @@ import com.ptpws.ikikasir.feature.referral.data.ReferralApiService
 import com.ptpws.ikikasir.feature.referral.data.preferences.ReferralPreferences
 import com.ptpws.ikikasir.feature.referral.data.preferences.ReferralSessionManager
 import com.ptpws.ikikasir.feature.referral.domain.model.ReferralInfo
+import com.ptpws.ikikasir.feature.referral.domain.model.ReferralPackageOption
 import com.ptpws.ikikasir.feature.referral.domain.model.UserReferralItem
 import com.ptpws.ikikasir.feature.referral.domain.model.WithdrawalStatus
 import com.ptpws.ikikasir.feature.referral.domain.model.WithdrawalTransaction
@@ -65,6 +66,9 @@ class ReferralViewModel @Inject constructor(
     private val _withdrawals = MutableStateFlow(preferences.getWithdrawals())
     val withdrawals: StateFlow<List<WithdrawalTransaction>> = _withdrawals.asStateFlow()
 
+    private val _availablePackages = MutableStateFlow<List<ReferralPackageOption>>(emptyList())
+    val availablePackages: StateFlow<List<ReferralPackageOption>> = _availablePackages.asStateFlow()
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
@@ -76,6 +80,12 @@ class ReferralViewModel @Inject constructor(
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    private val _isPackagesLoading = MutableStateFlow(false)
+    val isPackagesLoading: StateFlow<Boolean> = _isPackagesLoading.asStateFlow()
+
+    private val _packagesError = MutableStateFlow<String?>(null)
+    val packagesError: StateFlow<String?> = _packagesError.asStateFlow()
 
     val filteredUserReferrals: StateFlow<List<UserReferralItem>> =
         combine(_userReferrals, _searchQuery, _selectedFilter) { list, query, filter ->
@@ -98,6 +108,7 @@ class ReferralViewModel @Inject constructor(
     init {
         hydrateFromSession()
         loadReferralDataFromServer()
+        refreshPackages()
     }
 
     /**
@@ -177,8 +188,31 @@ class ReferralViewModel @Inject constructor(
         if (_isLoading.value || _isRefreshing.value) return
 
         _isRefreshing.value = true
+        refreshPackages()
         loadReferralDataFromServer {
             _isRefreshing.value = false
+        }
+    }
+
+    fun refreshPackages() {
+        if (_isPackagesLoading.value) return
+
+        viewModelScope.launch {
+            _isPackagesLoading.value = true
+            _packagesError.value = null
+
+            apiService.getActivePackages()
+                .onSuccess { packages ->
+                    _availablePackages.value = packages
+                    if (packages.isEmpty()) {
+                        _packagesError.value = "Belum ada paket aktif yang tersedia."
+                    }
+                }
+                .onFailure { error ->
+                    _packagesError.value = error.message ?: "Gagal memuat daftar paket."
+                }
+
+            _isPackagesLoading.value = false
         }
     }
 
@@ -233,6 +267,7 @@ class ReferralViewModel @Inject constructor(
         phone: String,
         email: String,
         notes: String,
+        packageInterest: String,
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
@@ -250,6 +285,10 @@ class ReferralViewModel @Inject constructor(
         }
         if (email.isBlank()) {
             onError("Email calon client wajib diisi")
+            return
+        }
+        if (packageInterest.isBlank()) {
+            onError("Paket langganan wajib dipilih")
             return
         }
 
@@ -277,6 +316,7 @@ class ReferralViewModel @Inject constructor(
                 phone = phone,
                 email = email,
                 notes = notes,
+                packageInterest = packageInterest,
                 referralCode = currentCode,
                 userEmail = userEmail,
                 customerId = customerId

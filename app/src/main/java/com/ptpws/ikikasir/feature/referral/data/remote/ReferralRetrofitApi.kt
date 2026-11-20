@@ -8,6 +8,11 @@ import retrofit2.http.Query
 
 interface ReferralRetrofitApi {
 
+    @GET("packages")
+    suspend fun getPackages(
+        @Query("isActive") isActive: Boolean = true
+    ): Response<ReferralApiResponse<List<ReferralPackageDto>>>
+
     @GET("referrals/overview")
     suspend fun getReferralOverview(
         @Query("email") email: String

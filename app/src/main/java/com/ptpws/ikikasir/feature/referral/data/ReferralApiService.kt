@@ -5,10 +5,12 @@ import com.google.gson.Gson
 import com.ptpws.ikikasir.feature.referral.data.preferences.ReferralSessionManager
 import com.ptpws.ikikasir.feature.referral.data.remote.ReferralApiResponse
 import com.ptpws.ikikasir.feature.referral.data.remote.ReferralOverviewResponseDto
+import com.ptpws.ikikasir.feature.referral.data.remote.ReferralPackageDto
 import com.ptpws.ikikasir.feature.referral.data.remote.ReferralRetrofitApi
 import com.ptpws.ikikasir.feature.referral.data.remote.ReferralWithdrawRequestDto
 import com.ptpws.ikikasir.feature.referral.data.remote.SubmitClientRequestDto
 import com.ptpws.ikikasir.feature.referral.domain.model.ReferralInfo
+import com.ptpws.ikikasir.feature.referral.domain.model.ReferralPackageOption
 import com.ptpws.ikikasir.feature.referral.domain.model.ReferralToken
 import com.ptpws.ikikasir.feature.referral.domain.model.UserReferralItem
 import com.ptpws.ikikasir.feature.referral.domain.model.WithdrawalStatus
@@ -58,6 +60,48 @@ class ReferralApiService {
             "http://$cleanUrl"
         }
         return if (withScheme.endsWith("/")) withScheme else "$withScheme/"
+    }
+
+    suspend fun getActivePackages(): Result<List<ReferralPackageOption>> = withContext(Dispatchers.IO) {
+        var lastException: Exception? = null
+
+        for (baseUrl in getCandidateUrls()) {
+            try {
+                val formattedBaseUrl = formatBaseUrl(baseUrl)
+                val retrofit = Retrofit.Builder()
+                    .baseUrl(formattedBaseUrl)
+                    .client(okHttpClient)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+
+                val response = retrofit.create(ReferralRetrofitApi::class.java).getPackages()
+                val body = response.body()
+                if (response.isSuccessful && body?.success == true) {
+                    val packages = body.data.orEmpty()
+                        .filter { it.id.isNotBlank() && it.name.isNotBlank() && it.isActive != false }
+                        .map { pkg ->
+                            ReferralPackageOption(
+                                id = pkg.id,
+                                name = pkg.name,
+                                price = pkg.price ?: 0.0,
+                                period = pkg.period.orEmpty()
+                            )
+                        }
+
+                    SubscriptionApiConfig.BASE_URL = formattedBaseUrl
+                    return@withContext Result.success(packages)
+                }
+
+                val errorBody = response.errorBody()?.string().orEmpty()
+                Log.w("ReferralApi", "Fetch paket gagal HTTP ${response.code()}: $errorBody")
+                lastException = IllegalStateException("Gagal mengambil daftar paket (HTTP ${response.code()}).")
+            } catch (e: Exception) {
+                Log.w("ReferralApi", "Gagal mengambil paket dari $baseUrl: ${e.message}")
+                lastException = e
+            }
+        }
+
+        Result.failure(lastException ?: Exception("Gagal terhubung untuk mengambil daftar paket."))
     }
 
     /**
@@ -181,6 +225,7 @@ class ReferralApiService {
         phone: String,
         email: String,
         notes: String,
+        packageInterest: String,
         referralCode: String?,
         userEmail: String?,
         customerId: String? = null
@@ -193,6 +238,7 @@ class ReferralApiService {
             phone = phone.trim(),
             email = email.trim(),
             notes = notes.trim(),
+            packageInterest = packageInterest.trim().takeIf { it.isNotBlank() },
             referralCode = referralCode?.trim()?.takeIf { it.isNotBlank() },
             userEmail = userEmail?.trim()?.takeIf { it.isNotBlank() },
             customerId = customerId?.trim()?.takeIf { it.isNotBlank() }
