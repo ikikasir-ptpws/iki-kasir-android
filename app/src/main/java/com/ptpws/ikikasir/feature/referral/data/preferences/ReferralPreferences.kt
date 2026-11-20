@@ -6,7 +6,6 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.ptpws.ikikasir.feature.referral.domain.model.ReferralInfo
 import com.ptpws.ikikasir.feature.referral.domain.model.UserReferralItem
-import com.ptpws.ikikasir.feature.referral.domain.model.WithdrawalStatus
 import com.ptpws.ikikasir.feature.referral.domain.model.WithdrawalTransaction
 
 /**
@@ -106,26 +105,6 @@ class ReferralPreferences(context: Context) {
         currentList.add(0, transaction)
         saveWithdrawals(currentList)
         return true
-    }
-
-    fun updateWithdrawalStatus(transactionId: String, newStatus: WithdrawalStatus): Boolean {
-        val currentList = getWithdrawals().toMutableList()
-        val index = currentList.indexOfFirst { it.id == transactionId }
-        if (index != -1) {
-            val oldItem = currentList[index]
-            val completedTime = if (newStatus == WithdrawalStatus.SELESAI) {
-                java.text.SimpleDateFormat("dd MMM yyyy, HH:mm 'WIB'", java.util.Locale("id", "ID"))
-                    .format(java.util.Date())
-            } else oldItem.completedDate
-
-            currentList[index] = oldItem.copy(
-                status = newStatus,
-                completedDate = completedTime
-            )
-            saveWithdrawals(currentList)
-            return true
-        }
-        return false
     }
 
     fun updateUpline(uplineName: String, uplineCode: String) {

@@ -74,6 +74,9 @@ class ReferralViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     val filteredUserReferrals: StateFlow<List<UserReferralItem>> =
         combine(_userReferrals, _searchQuery, _selectedFilter) { list, query, filter ->
             list.filter { item ->
@@ -171,7 +174,12 @@ class ReferralViewModel @Inject constructor(
     }
 
     fun refreshData() {
-        loadReferralDataFromServer()
+        if (_isLoading.value || _isRefreshing.value) return
+
+        _isRefreshing.value = true
+        loadReferralDataFromServer {
+            _isRefreshing.value = false
+        }
     }
 
     fun setSearchQuery(query: String) {
@@ -363,18 +371,6 @@ class ReferralViewModel @Inject constructor(
                     onError(err.message ?: "Gagal memproses penarikan saldo.")
                 }
             }
-        }
-    }
-
-    /**
-     * Memungkinkan simulasi perubahan status dari "Menunggu Verifikasi finance" menjadi "Selesai"
-     * untuk memverifikasi alur lengkap pada mind map: Tarik Saldo -> Menunggu Verifikasi finance -> Selesai
-     */
-    fun simulateApproveWithdrawal(transactionId: String, onDone: () -> Unit = {}) {
-        viewModelScope.launch {
-            preferences.updateWithdrawalStatus(transactionId, WithdrawalStatus.SELESAI)
-            _withdrawals.value = preferences.getWithdrawals()
-            onDone()
         }
     }
 

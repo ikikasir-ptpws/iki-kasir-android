@@ -1678,6 +1678,9 @@ class PreviewReferralProvider : ReferralUiProvider {
     private val _isLoading = MutableStateFlow(false)
     override val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    override val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     override fun refreshData() = Unit
 
     override fun setSearchQuery(query: String) {
@@ -1714,10 +1717,6 @@ class PreviewReferralProvider : ReferralUiProvider {
         onError: (String) -> Unit
     ) {
         onSuccess()
-    }
-
-    override fun simulateApproveWithdrawal(transactionId: String, onDone: () -> Unit) {
-        onDone()
     }
 
     override fun updateUpline(uplineName: String, uplineCode: String) {

@@ -18,6 +18,7 @@ interface ReferralUiProvider {
     val searchQuery: StateFlow<String>
     val selectedFilter: StateFlow<String>
     val isLoading: StateFlow<Boolean>
+    val isRefreshing: StateFlow<Boolean>
     fun refreshData()
     fun setSearchQuery(query: String)
     fun setSelectedFilter(filter: String)
@@ -25,7 +26,6 @@ interface ReferralUiProvider {
     fun shareReferral(ctx: Context)
     fun submitClient(name: String, businessName: String, phone: String, email: String, notes: String, onSuccess: (String) -> Unit, onError: (String) -> Unit)
     fun submitWithdrawal(amount: Double, bankOrWallet: String, accountNumber: String, accountHolder: String, notes: String, onSuccess: () -> Unit, onError: (String) -> Unit)
-    fun simulateApproveWithdrawal(transactionId: String, onDone: () -> Unit = {})
     fun updateUpline(uplineName: String, uplineCode: String)
 }
 
@@ -40,6 +40,7 @@ class HiltReferralUiProvider(private val viewModel: ReferralViewModel) : Referra
     override val searchQuery: StateFlow<String> get() = viewModel.searchQuery
     override val selectedFilter: StateFlow<String> get() = viewModel.selectedFilter
     override val isLoading: StateFlow<Boolean> get() = viewModel.isLoading
+    override val isRefreshing: StateFlow<Boolean> get() = viewModel.isRefreshing
     override fun refreshData() = viewModel.refreshData()
     override fun setSearchQuery(query: String) = viewModel.setSearchQuery(query)
     override fun setSelectedFilter(filter: String) = viewModel.setSelectedFilter(filter)
@@ -47,6 +48,5 @@ class HiltReferralUiProvider(private val viewModel: ReferralViewModel) : Referra
     override fun shareReferral(ctx: Context) = viewModel.shareReferral(ctx)
     override fun submitClient(name: String, businessName: String, phone: String, email: String, notes: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) = viewModel.submitClient(name, businessName, phone, email, notes, onSuccess, onError)
     override fun submitWithdrawal(amount: Double, bankOrWallet: String, accountNumber: String, accountHolder: String, notes: String, onSuccess: () -> Unit, onError: (String) -> Unit) = viewModel.submitWithdrawal(amount, bankOrWallet, accountNumber, accountHolder, notes, onSuccess, onError)
-    override fun simulateApproveWithdrawal(transactionId: String, onDone: () -> Unit) = viewModel.simulateApproveWithdrawal(transactionId, onDone)
     override fun updateUpline(uplineName: String, uplineCode: String) = viewModel.updateUpline(uplineName, uplineCode)
 }

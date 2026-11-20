@@ -39,7 +39,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import com.ptpws.ikikasir.commond.interfamily
+import com.ptpws.ikikasir.commond.ShimmerBox
+import com.ptpws.ikikasir.commond.UserCardShimmer
 import com.ptpws.ikikasir.feature.referral.domain.model.ReferralInfo
 import com.ptpws.ikikasir.feature.referral.domain.model.UserReferralItem
 import com.ptpws.ikikasir.feature.referral.domain.model.WithdrawalStatus
@@ -73,6 +76,8 @@ fun ReferralScreen(
     val userReferrals by viewModel.filteredUserReferrals.collectAsState()
     val allUserReferrals by viewModel.userReferrals.collectAsState()
     val withdrawals by viewModel.withdrawals.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
 
@@ -118,117 +123,127 @@ fun ReferralScreen(
                 .padding(paddingValues)
         ) {
             val isCompactPhone = maxWidth <= 340.dp
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .imePadding(),
-                contentPadding = PaddingValues(
-                    start = if (isCompactPhone) 12.dp else 16.dp,
-                    end = if (isCompactPhone) 12.dp else 16.dp,
-                    top = if (isCompactPhone) 6.dp else 8.dp,
-                    bottom = if (isCompactPhone) 120.dp else 180.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(if (isCompactPhone) 12.dp else 16.dp)
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refreshData() },
+                modifier = Modifier.fillMaxSize()
             ) {
-                // ── 1. KODE REFERAL SAYA
-                item {
-                    KodeReferralCard(
-                        referralCode = referralInfo.referralCode,
-                        onCopy = { viewModel.copyReferralCode(context) },
-                        onShare = { viewModel.shareReferral(context) }
-                    )
-                }
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .imePadding(),
+                    contentPadding = PaddingValues(
+                        start = if (isCompactPhone) 12.dp else 16.dp,
+                        end = if (isCompactPhone) 12.dp else 16.dp,
+                        top = if (isCompactPhone) 6.dp else 8.dp,
+                        bottom = if (isCompactPhone) 120.dp else 180.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(if (isCompactPhone) 12.dp else 16.dp)
+                ) {
+                    if (isLoading) {
+                        item { ReferralScreenShimmer() }
+                    } else {
+                                // ── 1. KODE REFERAL SAYA
+                                item {
+                                    KodeReferralCard(
+                                        referralCode = referralInfo.referralCode,
+                                        onCopy = { viewModel.copyReferralCode(context) },
+                                        onShare = { viewModel.shareReferral(context) }
+                                    )
+                                }
 
-                // ── 2. AKU TERIKAT KE SIAPA ?
-                if (referralInfo.isBound && referralInfo.uplineName.isNotBlank()) item {
-                    AkuTerikatKeSiapaCard(
-                        referralInfo = referralInfo,
-                        onClickDetail = { showUplineDialog = true }
-                    )
-                }
+                                // ── 2. AKU TERIKAT KE SIAPA ?
+                                if (referralInfo.isBound && referralInfo.uplineName.isNotBlank()) item {
+                                    AkuTerikatKeSiapaCard(
+                                        referralInfo = referralInfo,
+                                        onClickDetail = { showUplineDialog = true }
+                                    )
+                                }
 
-                // ── 3. JUMLAH PENGHASILAN & TARIK SALDO
-                item {
-                    JumlahPenghasilanCard(
-                        referralInfo = referralInfo,
-                        onTarikSaldo = { showWithdrawDialog = true }
-                    )
-                }
+                                // ── 3. JUMLAH PENGHASILAN & TARIK SALDO
+                                item {
+                                    JumlahPenghasilanCard(
+                                        referralInfo = referralInfo,
+                                        onTarikSaldo = { showWithdrawDialog = true }
+                                    )
+                                }
 
-                // ── 4. TAB NAVIGATION
-                item {
-                    ReferralTabRow(
-                        selectedTab = selectedTab,
-                        onTabSelected = { selectedTab = it },
-                        userReferralCount = allUserReferrals.size,
-                        withdrawalCount = withdrawals.size
-                    )
-                }
+                                // ── 4. TAB NAVIGATION
+                                item {
+                                    ReferralTabRow(
+                                        selectedTab = selectedTab,
+                                        onTabSelected = { selectedTab = it },
+                                        userReferralCount = allUserReferrals.size,
+                                        withdrawalCount = withdrawals.size
+                                    )
+                                }
 
-                // ── 5. TAB CONTENT
-                when (selectedTab) {
-                    0 -> {
-                        // TAB: User Referal & List data User Referal
-                        item {
-                            UserReferralHeader(
-                                searchQuery = searchQuery,
-                                onSearchChange = { viewModel.setSearchQuery(it) },
-                                selectedFilter = selectedFilter,
-                                onFilterSelect = { viewModel.setSelectedFilter(it) },
-                                totalActive = allUserReferrals.count { it.isActive },
-                                onAjukanClient = { showAjukanClientDialog = true }
-                            )
-                        }
+                                // ── 5. TAB CONTENT
+                                when (selectedTab) {
+                                    0 -> {
+                                        // TAB: User Referal & List data User Referal
+                                        item {
+                                            UserReferralHeader(
+                                                searchQuery = searchQuery,
+                                                onSearchChange = { viewModel.setSearchQuery(it) },
+                                                selectedFilter = selectedFilter,
+                                                onFilterSelect = { viewModel.setSelectedFilter(it) },
+                                                totalActive = allUserReferrals.count { it.isActive },
+                                                onAjukanClient = { showAjukanClientDialog = true }
+                                            )
+                                        }
 
-                        if (userReferrals.isEmpty()) {
-                            item {
-                                EmptyUserReferralCard()
+                                        if (userReferrals.isEmpty()) {
+                                            item {
+                                                EmptyUserReferralCard()
+                                            }
+                                        } else {
+                                            items(userReferrals, key = { it.id }) { item ->
+                                                UserReferralListItem(item = item)
+                                            }
+                                        }
+                                    }
+                                    1 -> {
+                                        // TAB: Riwayat Penarikan Saldo (Menunggu Verifikasi finance -> Selesai)
+                                        item {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 4.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "RIWAYAT PENARIKAN SALDO",
+                                                    fontFamily = interfamily,
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = Color(0xFF6B7280)
+                                                )
+                                                Text(
+                                                    text = "Klik item untuk lacak alur",
+                                                    fontFamily = interfamily,
+                                                    fontSize = 11.sp,
+                                                    color = Color(0xFF4F46E5)
+                                                )
+                                            }
+                                        }
+
+                                        if (withdrawals.isEmpty()) {
+                                            item {
+                                                EmptyWithdrawalCard(onTarikSekarang = { showWithdrawDialog = true })
+                                            }
+                                        } else {
+                                            items(withdrawals, key = { it.id }) { tx ->
+                                                WithdrawalListItem(
+                                                    transaction = tx,
+                                                    onClick = { selectedWithdrawalDetail = tx }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                        } else {
-                            items(userReferrals, key = { it.id }) { item ->
-                                UserReferralListItem(item = item)
-                            }
-                        }
-                    }
-                    1 -> {
-                        // TAB: Riwayat Penarikan Saldo (Menunggu Verifikasi finance -> Selesai)
-                        item {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "RIWAYAT PENARIKAN SALDO",
-                                    fontFamily = interfamily,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF6B7280)
-                                )
-                                Text(
-                                    text = "Klik item untuk lacak alur",
-                                    fontFamily = interfamily,
-                                    fontSize = 11.sp,
-                                    color = Color(0xFF4F46E5)
-                                )
-                            }
-                        }
-
-                        if (withdrawals.isEmpty()) {
-                            item {
-                                EmptyWithdrawalCard(onTarikSekarang = { showWithdrawDialog = true })
-                            }
-                        } else {
-                            items(withdrawals, key = { it.id }) { tx ->
-                                WithdrawalListItem(
-                                    transaction = tx,
-                                    onClick = { selectedWithdrawalDetail = tx }
-                                )
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -263,13 +278,7 @@ fun ReferralScreen(
     selectedWithdrawalDetail?.let { tx ->
         DetailPenarikanDialog(
             transaction = tx,
-            onDismiss = { selectedWithdrawalDetail = null },
-            onSimulateApproval = {
-                viewModel.simulateApproveWithdrawal(tx.id) {
-                    selectedWithdrawalDetail = null
-                    GlobalCrudResultDialog.success("Status penarikan ${tx.id} berhasil disetujui (Selesai)!")
-                }
-            }
+            onDismiss = { selectedWithdrawalDetail = null }
         )
     }
 
@@ -311,6 +320,76 @@ fun ReferralScreen(
                 )
             }
         )
+    }
+}
+
+@Composable
+private fun ReferralScreenShimmer() {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    ShimmerBox(modifier = Modifier.size(34.dp), shape = RoundedCornerShape(8.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        ShimmerBox(modifier = Modifier.size(width = 100.dp, height = 12.dp))
+                        ShimmerBox(modifier = Modifier.size(width = 145.dp, height = 16.dp))
+                    }
+                }
+                ShimmerBox(
+                    modifier = Modifier.fillMaxWidth().height(96.dp),
+                    shape = RoundedCornerShape(14.dp)
+                )
+            }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    ShimmerBox(modifier = Modifier.size(28.dp), shape = CircleShape)
+                    ShimmerBox(modifier = Modifier.size(width = 120.dp, height = 14.dp))
+                }
+                ShimmerBox(modifier = Modifier.size(width = 90.dp, height = 12.dp))
+                ShimmerBox(modifier = Modifier.size(width = 145.dp, height = 24.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ShimmerBox(modifier = Modifier.weight(1f).height(36.dp))
+                    ShimmerBox(modifier = Modifier.weight(1f).height(36.dp))
+                }
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ShimmerBox(modifier = Modifier.weight(1f).height(42.dp))
+            ShimmerBox(modifier = Modifier.weight(1f).height(42.dp))
+        }
+
+        repeat(3) {
+            UserCardShimmer()
+        }
     }
 }
 
@@ -2139,8 +2218,7 @@ fun TarikSaldoDialog(
 @Composable
 fun DetailPenarikanDialog(
     transaction: WithdrawalTransaction,
-    onDismiss: () -> Unit,
-    onSimulateApproval: () -> Unit
+    onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -2255,50 +2333,6 @@ fun DetailPenarikanDialog(
                     isActive = false,
                     isLast = true
                 )
-
-                // Tombol Simulasi Approve (Jika status masih "Menunggu Verifikasi finance")
-                if (transaction.status == WithdrawalStatus.MENUNGGU_VERIFIKASI) {
-                    Surface(
-                        color = Color(0xFFF0FDF4),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Color(0xFFBBF7D0)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = "Opsi Demo / Simulasi Finance",
-                                fontFamily = interfamily,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF166534)
-                            )
-                            Button(
-                                onClick = onSimulateApproval,
-                                shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Simulasikan Disetujui Finance (Selesai)",
-                                    fontFamily = interfamily,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color.White
-                                )
-                            }
-                        }
-                    }
-                }
 
                 Button(
                     onClick = onDismiss,
