@@ -49,7 +49,14 @@ class ReferralViewModel @Inject constructor(
     private val preferences = ReferralPreferences(context)
     private val apiService = ReferralApiService()
 
-    private val _referralInfo = MutableStateFlow(preferences.getReferralInfo())
+    private val _referralInfo = MutableStateFlow(
+        preferences.getReferralInfo().copy(
+            uplineName = "",
+            uplineCode = "",
+            uplineBoundDate = "",
+            isBound = false
+        )
+    )
     val referralInfo: StateFlow<ReferralInfo> = _referralInfo.asStateFlow()
 
     private val _userReferrals = MutableStateFlow(preferences.getUserReferrals())
@@ -101,11 +108,7 @@ class ReferralViewModel @Inject constructor(
         val current = _referralInfo.value
         if (current.referralCode.isBlank() && token.referralCode.isNotBlank()) {
             _referralInfo.value = current.copy(
-                referralCode = token.referralCode,
-                uplineName = token.uplineName,
-                uplineCode = token.uplineCode,
-                uplineBoundDate = token.uplineBoundDate,
-                isBound = token.isBound
+                referralCode = token.referralCode
             )
             Log.d("ReferralViewModel", "Token referral dimuat dari session: ${token.referralCode}")
         }
@@ -152,7 +155,12 @@ class ReferralViewModel @Inject constructor(
                 val cachedReferrals = preferences.getUserReferrals()
                 val cachedWithdrawals = preferences.getWithdrawals()
 
-                _referralInfo.value = cachedInfo
+                _referralInfo.value = cachedInfo.copy(
+                    uplineName = "",
+                    uplineCode = "",
+                    uplineBoundDate = "",
+                    isBound = false
+                )
                 _userReferrals.value = cachedReferrals
                 _withdrawals.value = cachedWithdrawals
             }

@@ -139,8 +139,8 @@ fun ReferralScreen(
                     )
                 }
 
-                // ── 2. AKU TERIKAT KE SIAPA ? (MUhib)
-                item {
+                // ── 2. AKU TERIKAT KE SIAPA ?
+                if (referralInfo.isBound && referralInfo.uplineName.isNotBlank()) item {
                     AkuTerikatKeSiapaCard(
                         referralInfo = referralInfo,
                         onClickDetail = { showUplineDialog = true }
@@ -273,8 +273,8 @@ fun ReferralScreen(
         )
     }
 
-    // ── DIALOG: Detail Upline (Aku Terikat ke Siapa ? MUhib)
-    if (showUplineDialog) {
+    // ── DIALOG: Detail Upline (Aku Terikat ke Siapa ?)
+    if (showUplineDialog && referralInfo.isBound && referralInfo.uplineName.isNotBlank()) {
         AkuTerikatDialog(
             referralInfo = referralInfo,
             onDismiss = { showUplineDialog = false },
@@ -567,7 +567,7 @@ private fun ReferralCodeActions(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// KOMPONEN: AKU TERIKAT KE SIAPA ? (MUhib)
+// KOMPONEN: AKU TERIKAT KE SIAPA ?
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -651,7 +651,7 @@ fun AkuTerikatKeSiapaCard(
 
             HorizontalDivider(color = Color(0xFFF1F5F9))
 
-            // Info Upline: MUhib
+            // Info Upline
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
